@@ -19,6 +19,11 @@ namespace IBlameYou.Core
 
         private void Start()
         {
+            // Tools/I Blame You/Generate Sprites And Animations로 미리 생성해둔 아트 설정.
+            // 아직 생성 전이면 null이며, 이 경우 각 스포너가 단색 사각형으로 대체한다.
+            var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
+            var groundTile = artConfig != null ? artConfig.groundTile : null;
+
             var map = RoomGenerator.Generate(mainPathLength, extraRoomCount, seed);
             var mapRoot = new GameObject("ChapterMap").transform;
 
@@ -32,9 +37,9 @@ namespace IBlameYou.Core
                     var geometryRoot = new GameObject("StartRoomGeometry");
                     geometryRoot.transform.SetParent(mapRoot, false);
                     geometryRoot.transform.position = worldPosition;
-                    PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSize, seed);
+                    PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSize, seed, groundTile);
 
-                    PlayerSpawner.Spawn(worldPosition + new Vector3(0f, 1f, 0f));
+                    PlayerSpawner.Spawn(worldPosition + new Vector3(0f, 1f, 0f), artConfig);
                 }
             }
         }
