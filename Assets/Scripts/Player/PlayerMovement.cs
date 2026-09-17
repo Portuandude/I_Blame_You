@@ -21,8 +21,13 @@ namespace IBlameYou.Player
         [SerializeField] private float groundCheckRadius = 0.1f;
         [SerializeField] private LayerMask groundLayer;
 
+        private static readonly int SpeedParam = Animator.StringToHash("Speed");
+        private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
+        private static readonly int VerticalVelocityParam = Animator.StringToHash("VerticalVelocity");
+
         private Rigidbody2D rb;
         private StaminaSystem stamina;
+        private Animator animator;
         private bool isGrounded;
         private bool isRunning;
         private bool jumpQueued;
@@ -41,6 +46,7 @@ namespace IBlameYou.Player
         {
             rb = GetComponent<Rigidbody2D>();
             stamina = GetComponent<StaminaSystem>();
+            animator = GetComponentInChildren<Animator>();
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
             // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
@@ -56,6 +62,17 @@ namespace IBlameYou.Player
             {
                 jumpQueued = true;
             }
+
+            UpdateAnimator();
+        }
+
+        private void UpdateAnimator()
+        {
+            if (animator == null) return;
+
+            animator.SetFloat(SpeedParam, Mathf.Abs(rb.linearVelocity.x));
+            animator.SetBool(IsGroundedParam, isGrounded);
+            animator.SetFloat(VerticalVelocityParam, rb.linearVelocity.y);
         }
 
         private void FixedUpdate()

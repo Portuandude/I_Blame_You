@@ -7,7 +7,11 @@ namespace IBlameYou.Player
     // 필요한 컴포넌트를 전부 코드로 붙여 플레이어를 즉석에서 생성한다.
     public static class PlayerSpawner
     {
-        public static PlayerMovement Spawn(Vector3 position)
+        // 캐릭터 프레임(300x256, PPU 100)에는 여백이 많이 포함돼 있어, 시각적으로 적당한 크기가
+        // 되도록 균일하게 축소한다. 콜라이더 크기와는 별개.
+        private const float VisualScale = 0.7f;
+
+        public static PlayerMovement Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {
             var go = new GameObject("Player");
             go.transform.position = position;
@@ -22,10 +26,26 @@ namespace IBlameYou.Player
 
             var visual = new GameObject("Visual");
             visual.transform.SetParent(go.transform, false);
-            visual.transform.localScale = new Vector3(0.8f, 1.6f, 1f);
+
             var renderer = visual.AddComponent<SpriteRenderer>();
-            renderer.sprite = SolidSpriteFactory.CreateSquare();
-            renderer.color = new Color(0.2f, 0.8f, 0.4f);
+            renderer.sortingOrder = 1; // 바닥/플랫폼(기본 0)보다 항상 앞에 그려지도록.
+            if (artConfig != null && artConfig.playerDefaultSprite != null)
+            {
+                visual.transform.localScale = new Vector3(VisualScale, VisualScale, 1f);
+                renderer.sprite = artConfig.playerDefaultSprite;
+            }
+            else
+            {
+                visual.transform.localScale = new Vector3(0.8f, 1.6f, 1f);
+                renderer.sprite = SolidSpriteFactory.CreateSquare();
+                renderer.color = new Color(0.2f, 0.8f, 0.4f);
+            }
+
+            if (artConfig != null && artConfig.playerAnimatorController != null)
+            {
+                var animator = visual.AddComponent<Animator>();
+                animator.runtimeAnimatorController = artConfig.playerAnimatorController;
+            }
 
             var groundCheck = new GameObject("GroundCheck");
             groundCheck.transform.SetParent(go.transform, false);
