@@ -57,9 +57,12 @@ namespace IBlameYou.Player
             LayerMask groundLayer = groundLayerIndex >= 0 ? (LayerMask)(1 << groundLayerIndex) : (LayerMask)1;
             movement.ConfigureGroundCheck(groundCheck.transform, groundLayer);
 
-            var health = go.AddComponent<HealthSystem>();
+            // PlayerMovement의 RequireComponent로 이미 붙어 있음 (Health, Stamina).
+            var health = go.GetComponent<HealthSystem>();
+            var stamina = go.GetComponent<StaminaSystem>();
             var mana = go.AddComponent<ManaSystem>();
-            var stamina = go.GetComponent<StaminaSystem>(); // PlayerMovement의 RequireComponent로 이미 붙어 있음
+
+            go.AddComponent<PlayerCombat>();
 
             var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
             statusBars.Initialize(go.transform, health, stamina, mana);
