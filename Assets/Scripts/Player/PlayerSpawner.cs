@@ -18,6 +18,7 @@ namespace IBlameYou.Player
 
             var collider = go.AddComponent<BoxCollider2D>();
             collider.size = new Vector2(0.8f, 1.6f);
+            collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             var visual = new GameObject("Visual");
             visual.transform.SetParent(go.transform, false);
