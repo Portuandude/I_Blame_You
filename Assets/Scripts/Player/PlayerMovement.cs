@@ -5,6 +5,7 @@ namespace IBlameYou.Player
 {
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(StaminaSystem))]
+    [RequireComponent(typeof(HealthSystem))]
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Movement")]
@@ -16,6 +17,12 @@ namespace IBlameYou.Player
         [SerializeField] private float runStaminaDrainPerSecond = 25f;
         [SerializeField] private float minStaminaToStartRun = 10f;
 
+        [Header("Dash")]
+        [SerializeField] private float dashSpeed = 20f;
+        [SerializeField] private float dashDuration = 0.2f;
+        [SerializeField] private float dashStaminaCost = 50f;
+        [SerializeField] private KeyCode dashKey = KeyCode.LeftControl;
+
         [Header("Ground Check")]
         [SerializeField] private Transform groundCheck;
         [SerializeField] private float groundCheckRadius = 0.1f;
@@ -24,16 +31,23 @@ namespace IBlameYou.Player
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
         private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
         private static readonly int VerticalVelocityParam = Animator.StringToHash("VerticalVelocity");
+        private static readonly int IsDashingParam = Animator.StringToHash("IsDashing");
 
         private Rigidbody2D rb;
         private StaminaSystem stamina;
+        private HealthSystem health;
         private Animator animator;
         private bool isGrounded;
         private bool isRunning;
         private bool jumpQueued;
+        private bool isDashing;
+        private float dashTimeRemaining;
+        private float dashDirection;
+        private float defaultGravityScale;
 
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
+        public bool IsDashing => isDashing;
 
         // 인스펙터에서 손으로 배치한 프리팹이 아니라 코드로 생성한 플레이어(예: PlayerSpawner)를 위한 설정 진입점.
         public void ConfigureGroundCheck(Transform check, LayerMask layer)
@@ -46,7 +60,9 @@ namespace IBlameYou.Player
         {
             rb = GetComponent<Rigidbody2D>();
             stamina = GetComponent<StaminaSystem>();
+            health = GetComponent<HealthSystem>();
             animator = GetComponentInChildren<Animator>();
+            defaultGravityScale = rb.gravityScale;
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
             // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
@@ -63,6 +79,11 @@ namespace IBlameYou.Player
                 jumpQueued = true;
             }
 
+            if (Input.GetKeyDown(dashKey) && !isDashing && stamina.TryConsume(dashStaminaCost))
+            {
+                StartDash();
+            }
+
             UpdateAnimator();
         }
 
@@ -73,10 +94,38 @@ namespace IBlameYou.Player
             animator.SetFloat(SpeedParam, Mathf.Abs(rb.linearVelocity.x));
             animator.SetBool(IsGroundedParam, isGrounded);
             animator.SetFloat(VerticalVelocityParam, rb.linearVelocity.y);
+            animator.SetBool(IsDashingParam, isDashing);
+        }
+
+        private void StartDash()
+        {
+            isDashing = true;
+            dashTimeRemaining = dashDuration;
+            dashDirection = Mathf.Sign(transform.localScale.x);
+            rb.gravityScale = 0f;
+            health.Invulnerable = true;
+        }
+
+        private void EndDash()
+        {
+            isDashing = false;
+            rb.gravityScale = defaultGravityScale;
+            health.Invulnerable = false;
         }
 
         private void FixedUpdate()
         {
+            if (isDashing)
+            {
+                rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
+                dashTimeRemaining -= Time.fixedDeltaTime;
+                if (dashTimeRemaining <= 0f)
+                {
+                    EndDash();
+                }
+                return;
+            }
+
             if (jumpQueued)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
