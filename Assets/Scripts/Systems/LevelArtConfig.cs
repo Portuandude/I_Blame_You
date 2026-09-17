@@ -10,5 +10,7 @@ namespace IBlameYou.Systems
         public Sprite groundTile;
         public RuntimeAnimatorController playerAnimatorController;
         public Sprite playerDefaultSprite;
+        public RuntimeAnimatorController slimeAnimatorController;
+        public Sprite slimeDefaultSprite;
     }
 }
