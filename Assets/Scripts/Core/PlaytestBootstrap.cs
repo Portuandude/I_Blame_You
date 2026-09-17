@@ -1,3 +1,4 @@
+using IBlameYou.Enemies;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -40,6 +41,7 @@ namespace IBlameYou.Core
                     PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSize, seed, groundTile);
 
                     PlayerSpawner.Spawn(worldPosition + new Vector3(0f, 1f, 0f), artConfig);
+                    EnemySpawner.SpawnSlime(worldPosition + new Vector3(3f, 1f, 0f), artConfig);
                 }
             }
         }

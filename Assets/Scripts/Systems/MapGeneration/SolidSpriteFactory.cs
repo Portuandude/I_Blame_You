@@ -6,17 +6,30 @@ namespace IBlameYou.Systems
     public static class SolidSpriteFactory
     {
         private static Sprite cachedSquare;
+        private static Sprite cachedLeftPivotSquare;
 
         public static Sprite CreateSquare()
         {
             if (cachedSquare != null) return cachedSquare;
+            cachedSquare = CreateSquare(new Vector2(0.5f, 0.5f));
+            return cachedSquare;
+        }
 
+        // 왼쪽 가장자리를 고정한 채 가로 스케일만 줄여서 채움 게이지(HP/기력/마나 바 등)를 표현할 때 쓴다.
+        public static Sprite CreateLeftPivotSquare()
+        {
+            if (cachedLeftPivotSquare != null) return cachedLeftPivotSquare;
+            cachedLeftPivotSquare = CreateSquare(new Vector2(0f, 0.5f));
+            return cachedLeftPivotSquare;
+        }
+
+        private static Sprite CreateSquare(Vector2 pivot)
+        {
             var texture = new Texture2D(1, 1);
             texture.SetPixel(0, 0, Color.white);
             texture.Apply();
 
-            cachedSquare = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
-            return cachedSquare;
+            return Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), pivot, 1f);
         }
     }
 }
