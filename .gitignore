@@ -58,3 +58,8 @@ crashlytics-build.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# ---- Third-party asset packs (too large / licensed, re-import via Asset Store instead) ----
+# Placed after the "!*.meta" negation above so it actually takes effect.
+/Assets/2D Platformer Tileset/
+/Assets/2D Platformer Tileset.meta
