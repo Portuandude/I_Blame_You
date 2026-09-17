@@ -30,6 +30,13 @@ namespace IBlameYou.Player
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
 
+        // 인스펙터에서 손으로 배치한 프리팹이 아니라 코드로 생성한 플레이어(예: PlayerSpawner)를 위한 설정 진입점.
+        public void ConfigureGroundCheck(Transform check, LayerMask layer)
+        {
+            groundCheck = check;
+            groundLayer = layer;
+        }
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
