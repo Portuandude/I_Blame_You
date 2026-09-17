@@ -15,7 +15,7 @@ namespace IBlameYou.Systems
 
         public static ChapterMap Generate(int mainPathLength, int extraRoomCount, int seed)
         {
-            var rng = new Random(seed);
+            var rng = new System.Random(seed);
             var rooms = new Dictionary<Vector2Int, RoomNode>();
             var mainPath = new List<Vector2Int>();
 
@@ -30,7 +30,7 @@ namespace IBlameYou.Systems
             return new ChapterMap(rooms, start);
         }
 
-        private static void GrowMainPath(Dictionary<Vector2Int, RoomNode> rooms, List<Vector2Int> mainPath, int mainPathLength, Random rng)
+        private static void GrowMainPath(Dictionary<Vector2Int, RoomNode> rooms, List<Vector2Int> mainPath, int mainPathLength, System.Random rng)
         {
             int guard = 0;
             while (mainPath.Count < mainPathLength && guard < mainPathLength * 50)
@@ -48,7 +48,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        private static void AssignMainPathRoomTypes(Dictionary<Vector2Int, RoomNode> rooms, List<Vector2Int> mainPath, Random rng)
+        private static void AssignMainPathRoomTypes(Dictionary<Vector2Int, RoomNode> rooms, List<Vector2Int> mainPath, System.Random rng)
         {
             if (mainPath.Count == 0) return;
 
@@ -71,7 +71,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        private static void GrowBranchRooms(Dictionary<Vector2Int, RoomNode> rooms, int extraRoomCount, Random rng)
+        private static void GrowBranchRooms(Dictionary<Vector2Int, RoomNode> rooms, int extraRoomCount, System.Random rng)
         {
             int added = 0;
             int guard = 0;
@@ -92,7 +92,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        private static Vector2Int? FindCellWithFreeNeighbor(List<Vector2Int> candidates, Dictionary<Vector2Int, RoomNode> rooms, Random rng, bool preferLast)
+        private static Vector2Int? FindCellWithFreeNeighbor(List<Vector2Int> candidates, Dictionary<Vector2Int, RoomNode> rooms, System.Random rng, bool preferLast)
         {
             if (preferLast && candidates.Count > 0)
             {
