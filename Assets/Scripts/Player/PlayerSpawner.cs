@@ -1,4 +1,5 @@
 using IBlameYou.Systems;
+using IBlameYou.UI;
 using UnityEngine;
 
 namespace IBlameYou.Player
@@ -55,6 +56,13 @@ namespace IBlameYou.Player
             int groundLayerIndex = LayerMask.NameToLayer("Ground");
             LayerMask groundLayer = groundLayerIndex >= 0 ? (LayerMask)(1 << groundLayerIndex) : (LayerMask)1;
             movement.ConfigureGroundCheck(groundCheck.transform, groundLayer);
+
+            var health = go.AddComponent<HealthSystem>();
+            var mana = go.AddComponent<ManaSystem>();
+            var stamina = go.GetComponent<StaminaSystem>(); // PlayerMovement의 RequireComponent로 이미 붙어 있음
+
+            var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
+            statusBars.Initialize(go.transform, health, stamina, mana);
 
             return movement;
         }
