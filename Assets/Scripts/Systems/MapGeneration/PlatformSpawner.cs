@@ -5,10 +5,21 @@ namespace IBlameYou.Systems
     // 방 하나 안에 실제로 밟고 다닐 수 있는 바닥/플랫폼 콜라이더를 절차적으로 배치한다.
     public static class PlatformSpawner
     {
+        private const float WallThickness = 1f;
+
         public static void BuildRoomGeometry(Transform parent, Vector2 roomSize, int seed)
         {
+            BuildBorders(parent, roomSize);
             BuildFloor(parent, roomSize);
             BuildFloatingPlatforms(parent, roomSize, seed);
+        }
+
+        // 방 좌우에 벽을 세워서 플레이어가 방 경계 밖으로 걸어나가 맵 밖으로 떨어지는 것을 막는다.
+        private static void BuildBorders(Transform parent, Vector2 roomSize)
+        {
+            float x = roomSize.x / 2f - WallThickness / 2f;
+            CreatePlatform(parent, "WallLeft", new Vector2(-x, 0f), new Vector2(WallThickness, roomSize.y));
+            CreatePlatform(parent, "WallRight", new Vector2(x, 0f), new Vector2(WallThickness, roomSize.y));
         }
 
         private static void BuildFloor(Transform parent, Vector2 roomSize)
@@ -41,7 +52,8 @@ namespace IBlameYou.Systems
             int groundLayer = LayerMask.NameToLayer("Ground");
             go.layer = groundLayer >= 0 ? groundLayer : 0;
 
-            go.AddComponent<BoxCollider2D>();
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = SolidSpriteFactory.CreateSquare();
