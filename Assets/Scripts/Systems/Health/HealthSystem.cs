@@ -12,6 +12,7 @@ namespace IBlameYou.Systems
         public float Max => maxHealth;
         public float Current => current;
         public bool IsDead => current <= 0f;
+        public bool Invulnerable { get; set; }
         public event Action<float, float> HealthChanged;
 
         private void Awake()
@@ -19,9 +20,16 @@ namespace IBlameYou.Systems
             current = maxHealth;
         }
 
+        // 스폰 시 몹마다 다른 최대 체력을 코드로 지정할 때 사용 (예: 잡몹은 플레이어보다 적게).
+        public void ConfigureMaxHealth(float value)
+        {
+            maxHealth = value;
+            current = maxHealth;
+        }
+
         public void TakeDamage(float amount)
         {
-            if (amount <= 0f) return;
+            if (amount <= 0f || Invulnerable) return;
             SetCurrent(current - amount);
         }
 
