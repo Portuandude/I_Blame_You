@@ -41,6 +41,10 @@ namespace IBlameYou.Player
         {
             rb = GetComponent<Rigidbody2D>();
             stamina = GetComponent<StaminaSystem>();
+
+            // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
+            // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
+            rb.freezeRotation = true;
         }
 
         private void Update()
