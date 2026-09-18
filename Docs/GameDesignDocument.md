@@ -99,5 +99,5 @@
 
 ## 6. 기술 메모
 
-- 오브젝트 구성은 `PlayerSpawner.Build` / `EnemySpawner.BuildSlime`이 단일 출처이며, 에디터 툴이 프리팹으로 굽는다. 자세한 내용은 [README.md](../README.md) 참고.
+- 오브젝트 구성은 `PlayerSpawner.Build` / 적별 Spawner(예: `SlimeSpawner.Build`)가 단일 출처이며, 에디터 툴이 프리팹으로 굽는다. 자세한 내용은 [README.md](../README.md) 참고.
 - 아트 에셋(2D Platformer Tileset)은 저장소에 포함하지 않는다(`.gitignore`).

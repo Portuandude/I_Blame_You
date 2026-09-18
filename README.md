@@ -58,7 +58,9 @@ Assets/
   Scripts/
     Core/                     # PlaytestBootstrap — 챕터 맵 생성 + 시작 방 구성 + 플레이어/슬라임 스폰
     Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
-    Enemies/Common/           # EnemyController(순찰/접촉 데미지/사망), EnemySpawner (슬라임)
+    Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
+      Common/Slime/           # SlimeController(순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
+      Elite/, Bosses/         # (비어 있음)
     Systems/
       Health/                 # HealthSystem (체력, 무적 플래그)
       Stamina/                # StaminaSystem (소모/재생)
@@ -78,7 +80,7 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 
 ## 프리팹 구조
 
-`PlayerSpawner.Build` / `EnemySpawner.BuildSlime`이 오브젝트 구성의 **단일 출처**이고, `PrefabSetup`이 이를 프리팹으로 굽는다.
+`PlayerSpawner.Build` / `SlimeSpawner.Build`(적마다 각자의 Spawner)가 오브젝트 구성의 **단일 출처**이고, `PrefabSetup`이 이를 프리팹으로 굽는다.
 런타임 `Spawn`은 `LevelArtConfig`에 프리팹이 있으면 인스턴스화하고, 없으면 `Build`로 즉석 조립해 동작한다.
 플레이어 프리팹의 컴포넌트: Rigidbody2D, CapsuleCollider2D, PlayerMovement, HealthSystem, StaminaSystem, ManaSystem, PlayerCombat + 자식(Visual: SpriteRenderer/Animator, GroundCheck).
 HP/마나/기력 바(`StatusBarsUI`)는 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 스폰 시 붙인다.
