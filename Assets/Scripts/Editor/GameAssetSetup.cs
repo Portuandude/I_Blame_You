@@ -120,23 +120,36 @@ namespace IBlameYou.EditorTools
 
             stateMachine.defaultState = idleState;
 
-            // 평가 순서가 곧 우선순위: Dash > Attack > (Rise/Fall/Run/Idle는 서로 배타적인 조건).
+            // Any State는 canTransitionToSelf=false로 "이미 그 상태면 스스로에게는 전이하지 않는다"는
+            // 뜻일 뿐, 검사를 멈추지는 않는다. 그래서 Dash/Attack에 머물러 있는 동안에도 매 프레임
+            // 아래 4개 조건이 계속 같이 만족되면 그쪽으로 전이했다가, 다음 프레임에 IsDashing/IsAttacking이
+            // 여전히 true라서 다시 Dash/Attack으로 돌아오는 게 반복돼 매 프레임 상태가 뒤바뀌며
+            // 버벅이는 것처럼 보였다. Rise/Fall/Run/Idle 쪽에 "대쉬/공격 중이 아닐 때만"이라는
+            // 조건을 추가해서 막는다.
             AddAnyStateTransition(stateMachine, dashState, ("IsDashing", AnimatorConditionMode.If, 0f));
             AddAnyStateTransition(stateMachine, attackState, ("IsAttacking", AnimatorConditionMode.If, 0f));
 
             AddAnyStateTransition(stateMachine, riseState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.IfNot, 0f),
                 ("VerticalVelocity", AnimatorConditionMode.Greater, 0.05f));
 
             AddAnyStateTransition(stateMachine, fallState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.IfNot, 0f),
                 ("VerticalVelocity", AnimatorConditionMode.Less, 0.05f));
 
             AddAnyStateTransition(stateMachine, runState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.If, 0f),
                 ("Speed", AnimatorConditionMode.Greater, 0.05f));
 
             AddAnyStateTransition(stateMachine, idleState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.If, 0f),
                 ("Speed", AnimatorConditionMode.Less, 0.05f));
 

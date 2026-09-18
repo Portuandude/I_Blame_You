@@ -7,11 +7,15 @@ namespace IBlameYou.Systems
     {
         private const float WallThickness = 1f;
 
-        public static void BuildRoomGeometry(Transform parent, Vector2 roomSize, int seed, Sprite groundTile = null)
+        public static void BuildRoomGeometry(Transform parent, Vector2 roomSize, int seed, Sprite groundTile = null, bool includeFloatingPlatforms = true)
         {
             BuildBorders(parent, roomSize, groundTile);
             BuildFloor(parent, roomSize, groundTile);
-            BuildFloatingPlatforms(parent, roomSize, seed, groundTile);
+
+            if (includeFloatingPlatforms)
+            {
+                BuildFloatingPlatforms(parent, roomSize, seed, groundTile);
+            }
         }
 
         // 방 좌우에 벽을 세워서 플레이어가 방 경계 밖으로 걸어나가 맵 밖으로 떨어지는 것을 막는다.

@@ -15,8 +15,9 @@ namespace IBlameYou.Core
         [SerializeField] private int seed = 0;
 
         [Header("Layout")]
-        [SerializeField] private Vector2 roomSize = new Vector2(16f, 9f);
-        [SerializeField] private float roomSpacing = 20f;
+        [SerializeField] private Vector2 roomSize = new Vector2(64f, 36f); // 기존 16x9의 4배
+        [SerializeField] private float roomSpacing = 80f; // roomSize와 같은 비율로 확대
+        [SerializeField] private bool spawnFloatingPlatforms = false; // 일단 비활성화, 필요해지면 true로
 
         private void Start()
         {
@@ -38,10 +39,12 @@ namespace IBlameYou.Core
                     var geometryRoot = new GameObject("StartRoomGeometry");
                     geometryRoot.transform.SetParent(mapRoot, false);
                     geometryRoot.transform.position = worldPosition;
-                    PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSize, seed, groundTile);
+                    PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSize, seed, groundTile, spawnFloatingPlatforms);
 
-                    PlayerSpawner.Spawn(worldPosition + new Vector3(0f, 1f, 0f), artConfig);
-                    EnemySpawner.SpawnSlime(worldPosition + new Vector3(3f, 1f, 0f), artConfig);
+                    // 바닥 기준 상대 높이로 스폰해서, 방 크기가 바뀌어도 항상 바닥 바로 위에서 시작한다.
+                    float spawnY = worldPosition.y - roomSize.y / 2f + 2f;
+                    PlayerSpawner.Spawn(new Vector3(worldPosition.x, spawnY, 0f), artConfig);
+                    EnemySpawner.SpawnSlime(new Vector3(worldPosition.x + 3f, spawnY, 0f), artConfig);
                 }
             }
         }
