@@ -6,6 +6,7 @@ namespace IBlameYou.Player
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(StaminaSystem))]
     [RequireComponent(typeof(HealthSystem))]
+    [RequireComponent(typeof(HitStun))]
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Movement")]
@@ -36,6 +37,7 @@ namespace IBlameYou.Player
         private Rigidbody2D rb;
         private StaminaSystem stamina;
         private HealthSystem health;
+        private HitStun hitStun;
         private Animator animator;
         private bool isGrounded;
         private bool isRunning;
@@ -61,6 +63,8 @@ namespace IBlameYou.Player
             rb = GetComponent<Rigidbody2D>();
             stamina = GetComponent<StaminaSystem>();
             health = GetComponent<HealthSystem>();
+            hitStun = GetComponent<HitStun>();
+            if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
             animator = GetComponentInChildren<Animator>();
             defaultGravityScale = rb.gravityScale;
 
@@ -74,12 +78,14 @@ namespace IBlameYou.Player
             isGrounded = groundCheck != null &&
                 Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-            if (Input.GetButtonDown("Jump") && isGrounded)
+            bool stunned = hitStun.IsStunned;
+
+            if (Input.GetButtonDown("Jump") && isGrounded && !stunned)
             {
                 jumpQueued = true;
             }
 
-            if (Input.GetKeyDown(dashKey) && !isDashing && stamina.TryConsume(dashStaminaCost))
+            if (Input.GetKeyDown(dashKey) && !isDashing && !stunned && stamina.TryConsume(dashStaminaCost))
             {
                 StartDash();
             }
@@ -123,6 +129,14 @@ namespace IBlameYou.Player
                 {
                     EndDash();
                 }
+                return;
+            }
+
+            if (hitStun.IsStunned)
+            {
+                isRunning = false;
+                jumpQueued = false;
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                 return;
             }
 

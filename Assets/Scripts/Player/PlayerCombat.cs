@@ -17,6 +17,7 @@ namespace IBlameYou.Player
         private Animator animator;
         private PlayerMovement movement;
         private HealthSystem health;
+        private HitStun hitStun;
         private bool isAttacking;
         private float attackTimeRemaining;
 
@@ -25,11 +26,13 @@ namespace IBlameYou.Player
             animator = GetComponentInChildren<Animator>();
             movement = GetComponent<PlayerMovement>();
             health = GetComponent<HealthSystem>();
+            hitStun = GetComponent<HitStun>();
+            if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
         }
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(0) && !isAttacking && !movement.IsDashing)
+            if (Input.GetMouseButtonDown(0) && !isAttacking && !movement.IsDashing && !hitStun.IsStunned)
             {
                 StartAttack();
             }
