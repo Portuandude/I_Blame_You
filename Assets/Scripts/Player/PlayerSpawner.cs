@@ -22,8 +22,8 @@ namespace IBlameYou.Player
             rb.freezeRotation = true;
 
             var collider = go.AddComponent<CapsuleCollider2D>();
-            collider.offset = new Vector2(-0.06f, 0.06f);
-            collider.size = new Vector2(0.68f, 2f);
+            collider.offset = new Vector2(-0.03f, 0.06f);
+            collider.size = new Vector2(0.68f, 1.08f);
             collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             var visual = new GameObject("Visual");
