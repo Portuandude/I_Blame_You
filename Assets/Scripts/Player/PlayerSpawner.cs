@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace IBlameYou.Player
 {
-    // 아직 손으로 만든 플레이어 프리팹이 없는 상태에서, 빠르게 이동/점프/달리기를 테스트해보기 위해
-    // 필요한 컴포넌트를 전부 코드로 붙여 플레이어를 즉석에서 생성한다.
+    // Spawn: LevelArtConfig에 플레이어 프리팹이 있으면 그걸 인스턴스화하고, 없으면 Build로 즉석 조립한다.
+    // Build: 플레이어의 컴포넌트 구성의 단일 출처. 에디터 툴(PrefabSetup)이 이걸로 Player.prefab을 굽는다.
     public static class PlayerSpawner
     {
         // 캐릭터 프레임(300x256, PPU 100)에는 여백이 많이 포함돼 있어, 시각적으로 적당한 크기가
@@ -14,8 +14,29 @@ namespace IBlameYou.Player
 
         public static PlayerMovement Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {
+            GameObject go;
+            if (artConfig != null && artConfig.playerPrefab != null)
+            {
+                go = Object.Instantiate(artConfig.playerPrefab, position, Quaternion.identity);
+            }
+            else
+            {
+                go = Build(artConfig);
+                go.transform.position = position;
+            }
+
+            go.name = "Player";
+
+            // 상태 바는 플레이어 자식이 아니라 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 붙인다.
+            var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
+            statusBars.Initialize(go.transform, go.GetComponent<HealthSystem>(), go.GetComponent<StaminaSystem>(), go.GetComponent<ManaSystem>());
+
+            return go.GetComponent<PlayerMovement>();
+        }
+
+        public static GameObject Build(LevelArtConfig artConfig)
+        {
             var go = new GameObject("Player");
-            go.transform.position = position;
 
             var rb = go.AddComponent<Rigidbody2D>();
             rb.gravityScale = 3f;
@@ -53,22 +74,15 @@ namespace IBlameYou.Player
             groundCheck.transform.SetParent(go.transform, false);
             groundCheck.transform.localPosition = new Vector3(0f, -0.85f, 0f);
 
-            var movement = go.AddComponent<PlayerMovement>();
+            var movement = go.AddComponent<PlayerMovement>(); // RequireComponent로 Stamina/Health도 함께 붙는다.
             int groundLayerIndex = LayerMask.NameToLayer("Ground");
             LayerMask groundLayer = groundLayerIndex >= 0 ? (LayerMask)(1 << groundLayerIndex) : (LayerMask)1;
             movement.ConfigureGroundCheck(groundCheck.transform, groundLayer);
 
-            // PlayerMovement의 RequireComponent로 이미 붙어 있음 (Health, Stamina).
-            var health = go.GetComponent<HealthSystem>();
-            var stamina = go.GetComponent<StaminaSystem>();
-            var mana = go.AddComponent<ManaSystem>();
-
+            go.AddComponent<ManaSystem>();
             go.AddComponent<PlayerCombat>();
 
-            var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
-            statusBars.Initialize(go.transform, health, stamina, mana);
-
-            return movement;
+            return go;
         }
     }
 }
