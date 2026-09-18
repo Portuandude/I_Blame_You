@@ -13,9 +13,12 @@ namespace IBlameYou.Enemies
         private const float SpriteWidth = 2.58f;
         private const float SpriteHeight = 1.53f;
         private const float SlimeMaxHealth = 30f;
+        private const float SlimeStunDuration = 0.3f;
 
         public static EnemyController SpawnSlime(Vector3 position, LevelArtConfig artConfig = null)
         {
+            CharacterLayers.EnsureCollisionRules();
+
             GameObject go;
             if (artConfig != null && artConfig.slimePrefab != null)
             {
@@ -71,11 +74,13 @@ namespace IBlameYou.Enemies
 
             var health = go.AddComponent<HealthSystem>();
             health.ConfigureMaxHealth(SlimeMaxHealth);
+            go.AddComponent<HitStun>().Configure(SlimeStunDuration, false);
 
             var controller = go.AddComponent<EnemyController>();
             int groundLayerIndex = LayerMask.NameToLayer("Ground");
             LayerMask groundLayer = groundLayerIndex >= 0 ? (LayerMask)(1 << groundLayerIndex) : (LayerMask)1;
             controller.ConfigureObstacleLayer(groundLayer);
+            CharacterLayers.Assign(go, CharacterLayers.EnemyLayerName);
 
             return go;
         }
