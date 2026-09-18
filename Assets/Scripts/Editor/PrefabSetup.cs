@@ -7,7 +7,7 @@ using UnityEngine;
 namespace IBlameYou.EditorTools
 {
     // Tools > I Blame You > Generate Prefabs
-    // PlayerSpawner.Build / EnemySpawner.BuildSlime이 조립한 오브젝트를 프리팹으로 굽고,
+    // PlayerSpawner.Build / SlimeSpawner.Build가 조립한 오브젝트를 프리팹으로 굽고,
     // LevelArtConfig에 참조를 채운다. GameAssetSetup.Generate가 컨트롤러를 새로 만들 때마다
     // 프리팹의 애니메이터 참조가 끊어지지 않도록 그 끝에서 자동으로 함께 호출된다.
     public static class PrefabSetup
@@ -33,7 +33,7 @@ namespace IBlameYou.EditorTools
             var frictionless = GetOrCreateFrictionless();
 
             config.playerPrefab = Bake(PlayerSpawner.Build(config), PlayerPrefabPath, frictionless);
-            config.slimePrefab = Bake(EnemySpawner.BuildSlime(config), SlimePrefabPath, frictionless);
+            config.slimePrefab = Bake(SlimeSpawner.Build(config), SlimePrefabPath, frictionless);
 
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
