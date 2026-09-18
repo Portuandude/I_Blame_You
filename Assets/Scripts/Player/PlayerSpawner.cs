@@ -21,8 +21,9 @@ namespace IBlameYou.Player
             rb.gravityScale = 3f;
             rb.freezeRotation = true;
 
-            var collider = go.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.8f, 1.6f);
+            var collider = go.AddComponent<CapsuleCollider2D>();
+            collider.offset = new Vector2(-0.06f, 0.06f);
+            collider.size = new Vector2(0.68f, 2f);
             collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             var visual = new GameObject("Visual");
