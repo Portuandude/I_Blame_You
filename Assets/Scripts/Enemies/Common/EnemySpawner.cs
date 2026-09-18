@@ -11,7 +11,6 @@ namespace IBlameYou.Enemies
 
         // 슬라임 프레임 원본 크기(258x153, PPU 100), 피벗이 좌하단(0,0)이라 시각 오브젝트를 절반만큼 옮겨서 가운데를 맞춘다.
         private const float SpriteWidth = 2.58f;
-        private const float SpriteHeight = 1.53f;
         private const float SlimeMaxHealth = 30f;
         private const float SlimeStunDuration = 0.3f;
 
@@ -42,11 +41,9 @@ namespace IBlameYou.Enemies
             rb.gravityScale = 3f;
             rb.freezeRotation = true;
 
-            float colliderWidth = SpriteWidth * VisualScale * 0.6f;
-            float colliderHeight = SpriteHeight * VisualScale * 0.8f;
-            var collider = go.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(colliderWidth, colliderHeight);
-            collider.offset = new Vector2(0f, colliderHeight / 2f);
+            var collider = go.AddComponent<CircleCollider2D>();
+            collider.offset = new Vector2(-1.27f, -0.09f);
+            collider.radius = 0f;
             collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             var visual = new GameObject("Visual");
