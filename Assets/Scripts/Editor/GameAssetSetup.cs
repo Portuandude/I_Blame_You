@@ -63,7 +63,10 @@ namespace IBlameYou.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[GameAssetSetup] 완료: Player/Slime 애니메이션 + LevelArtConfig 생성/갱신됨. Play를 눌러 확인하세요.");
+            // 컨트롤러를 지웠다 다시 만들기 때문에 GUID가 바뀌므로, 프리팹의 애니메이터 참조도 같이 갱신한다.
+            PrefabSetup.Generate();
+
+            Debug.Log("[GameAssetSetup] 완료: Player/Slime 애니메이션 + LevelArtConfig + 프리팹 생성/갱신됨. Play를 눌러 확인하세요.");
         }
 
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()

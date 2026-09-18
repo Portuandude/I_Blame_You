@@ -15,5 +15,7 @@ MonoBehaviour:
   groundTile: {fileID: -8450295650506546065, guid: aff2e1025b3883346993693f07b2c3c5, type: 3}
   playerAnimatorController: {fileID: 9100000, guid: e5f1d22a97d41ca4d948c703586f6494, type: 2}
   playerDefaultSprite: {fileID: 21300000, guid: 423177b1411ba2b4f9852dfb3a65948e, type: 3}
+  playerPrefab: {fileID: 8767928049927380175, guid: 50a730276229f8f469cf683a773fd0e7, type: 3}
   slimeAnimatorController: {fileID: 9100000, guid: fea3400aa916cac4eb54c84764f48bf1, type: 2}
   slimeDefaultSprite: {fileID: 21300000, guid: 248438d48ebdaf246be6f0ff28a569d3, type: 3}
+  slimePrefab: {fileID: 6122282390325487353, guid: 2376d0d6618926541aafdd1945d1a228, type: 3}
