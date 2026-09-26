@@ -18,6 +18,7 @@ namespace IBlameYou.EditorTools
     {
         private const string CharacterRoot = "Assets/2D Platformer Tileset/Sprites/Main_Character/Player Sword";
         private const string SlimeSpriteRoot = "Assets/Art/Sprites/Enemies/Slime"; // 프로젝트 전용 슬라임 아트(공격 시트에서 만든 Attack/Idle/Run/Die)
+        private const string WizardSpriteRoot = "Assets/Art/Sprites/Characters/Wizard"; // 플레이어 마법사 아트 (동작별로 하나씩 교체 중)
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
         private const string GroundTileName = "tileset_1_39";
 
@@ -73,7 +74,9 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()
         {
-            var idleFrames = LoadNamedFrames($"{CharacterRoot}/idle", "player_sword_idle_", 0, 7);
+            // Idle만 마법사 아트로 교체 (나머지 동작은 Player Sword 그대로, 순서대로 교체 예정).
+            // 프레임이 빛나는 스태프의 밝기 변화라서, 끝에서 처음으로 튀지 않게 왕복(핑퐁) 재생한다.
+            var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport));
             var runFrames = LoadNamedFrames($"{CharacterRoot}/run", "player_sword_run_", 0, 9, padWidth: 2);
             var riseSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_rise.png");
             var fallSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_fall.png");
@@ -87,7 +90,7 @@ namespace IBlameYou.EditorTools
                 return (null, null);
             }
 
-            var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 10f, true);
+            var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 8f, true);
             var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 14f, true);
             var riseClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Rise", new[] { riseSprite }, 1f, true);
             var fallClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Fall", new[] { fallSprite }, 1f, true);
@@ -96,6 +99,16 @@ namespace IBlameYou.EditorTools
 
             var controller = BuildPlayerAnimatorController(idleClip, runClip, riseClip, fallClip, dashClip, attackClip);
             return (controller, idleFrames[0]);
+        }
+
+        // 0,1,...,n-1,n-2,...,1 순서로 (첫/끝 프레임은 한 번씩만) — 루프할 때 이음매가 없다.
+        private static Sprite[] PingPong(Sprite[] frames)
+        {
+            if (frames.Length < 3) return frames;
+
+            var result = new List<Sprite>(frames);
+            for (int i = frames.Length - 2; i >= 1; i--) result.Add(frames[i]);
+            return result.ToArray();
         }
 
         private static AnimatorController BuildPlayerAnimatorController(AnimationClip idle, AnimationClip run,
@@ -303,7 +316,12 @@ namespace IBlameYou.EditorTools
         }
 
         // 슬라임 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗 = root가 발밑 가운데, 무압축)로 임포트한다.
-        private static void EnsureSlimeSpriteImport(string path)
+        private static void EnsureSlimeSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.BottomCenter); }
+
+        // 마법사 프레임은 기존 Player Sword와 같은 300x256 캔버스(중앙 피벗)라 전환해도 발 위치가 어긋나지 않는다.
+        private static void EnsureWizardSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.Center); }
+
+        private static void EnsureSingleSpriteImport(string path, SpriteAlignment alignment)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null) return;
@@ -314,7 +332,7 @@ namespace IBlameYou.EditorTools
             bool upToDate = importer.textureType == TextureImporterType.Sprite
                 && importer.spriteImportMode == SpriteImportMode.Single
                 && Mathf.Approximately(importer.spritePixelsPerUnit, 100f)
-                && settings.spriteAlignment == (int)SpriteAlignment.BottomCenter
+                && settings.spriteAlignment == (int)alignment
                 && importer.alphaIsTransparency
                 && !importer.mipmapEnabled
                 && importer.textureCompression == TextureImporterCompression.Uncompressed;
@@ -328,7 +346,7 @@ namespace IBlameYou.EditorTools
             importer.textureCompression = TextureImporterCompression.Uncompressed;
 
             importer.ReadTextureSettings(settings);
-            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            settings.spriteAlignment = (int)alignment;
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
         }
