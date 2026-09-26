@@ -33,6 +33,7 @@ namespace IBlameYou.Player
         private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
         private static readonly int VerticalVelocityParam = Animator.StringToHash("VerticalVelocity");
         private static readonly int IsDashingParam = Animator.StringToHash("IsDashing");
+        private static readonly int IsRunningParam = Animator.StringToHash("IsRunning");
 
         private Rigidbody2D rb;
         private StaminaSystem stamina;
@@ -101,6 +102,7 @@ namespace IBlameYou.Player
             animator.SetBool(IsGroundedParam, isGrounded);
             animator.SetFloat(VerticalVelocityParam, rb.linearVelocity.y);
             animator.SetBool(IsDashingParam, isDashing);
+            animator.SetBool(IsRunningParam, isRunning);
         }
 
         private void StartDash()
