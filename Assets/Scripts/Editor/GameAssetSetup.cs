@@ -77,13 +77,14 @@ namespace IBlameYou.EditorTools
             // 임시 프레임이다(기울임/늘임/회전/지팡이 휘두르기/수정 빛). 동작별 그림이 생기면 같은 폴더의 PNG만 바꿔 다시 실행하면 된다.
             // Idle 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
             var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 6, padWidth: 2, prepare: EnsureWizardSpriteImport));
+            var walkFrames = LoadNamedFrames($"{WizardSpriteRoot}/Walk", "wizard_walk_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
             var runFrames = LoadNamedFrames($"{WizardSpriteRoot}/Run", "wizard_run_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
             var riseSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_rise.png", EnsureWizardSpriteImport);
             var fallSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_fall.png", EnsureWizardSpriteImport);
             var dashFrames = LoadNamedFrames($"{WizardSpriteRoot}/Dash", "wizard_dash_", 0, 5, padWidth: 2, prepare: EnsureWizardSpriteImport);
             var attackFrames = LoadNamedFrames($"{WizardSpriteRoot}/Attack", "wizard_attack_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
 
-            if (idleFrames.Length == 0 || runFrames.Length == 0 || riseSprite == null || fallSprite == null
+            if (idleFrames.Length == 0 || walkFrames.Length == 0 || runFrames.Length == 0 || riseSprite == null || fallSprite == null
                 || dashFrames.Length == 0 || attackFrames.Length == 0)
             {
                 Debug.LogError("[GameAssetSetup] 플레이어(마법사) 프레임을 찾지 못했습니다. Assets/Art/Sprites/Characters/Wizard 경로를 확인하세요.");
@@ -91,14 +92,16 @@ namespace IBlameYou.EditorTools
             }
 
             var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 8f, true);
-            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 12f, true);
+            // 걷기(속도 5)는 2걸음 사이클 약 0.57초, 달리기(속도 9)는 발을 더 빨리 굴러 약 0.4초.
+            var walkClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Walk", walkFrames, 14f, true);
+            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 20f, true);
             var riseClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Rise", new[] { riseSprite }, 1f, true);
             var fallClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Fall", new[] { fallSprite }, 1f, true);
             // 길이를 게임플레이 시간과 맞춘다: 대쉬 6프레임@30 = 0.2초(PlayerMovement.dashDuration), 공격 8프레임@16 = 0.5초(PlayerCombat.attackDuration).
             var dashClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Dash", dashFrames, 30f, false);
             var attackClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Attack", attackFrames, 16f, false);
 
-            var controller = BuildPlayerAnimatorController(idleClip, runClip, riseClip, fallClip, dashClip, attackClip);
+            var controller = BuildPlayerAnimatorController(idleClip, walkClip, runClip, riseClip, fallClip, dashClip, attackClip);
             return (controller, idleFrames[0]);
         }
 
@@ -112,7 +115,7 @@ namespace IBlameYou.EditorTools
             return result.ToArray();
         }
 
-        private static AnimatorController BuildPlayerAnimatorController(AnimationClip idle, AnimationClip run,
+        private static AnimatorController BuildPlayerAnimatorController(AnimationClip idle, AnimationClip walk, AnimationClip run,
             AnimationClip rise, AnimationClip fall, AnimationClip dash, AnimationClip attack)
         {
             string controllerPath = $"{PlayerOutputFolder}/PlayerAnimator.controller";
@@ -127,10 +130,12 @@ namespace IBlameYou.EditorTools
             controller.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
             controller.AddParameter("IsDashing", AnimatorControllerParameterType.Bool);
             controller.AddParameter("IsAttacking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsRunning", AnimatorControllerParameterType.Bool);
 
             var stateMachine = controller.layers[0].stateMachine;
 
             var idleState = stateMachine.AddState("Idle"); idleState.motion = idle;
+            var walkState = stateMachine.AddState("Walk"); walkState.motion = walk;
             var runState = stateMachine.AddState("Run"); runState.motion = run;
             var riseState = stateMachine.AddState("Rise"); riseState.motion = rise;
             var fallState = stateMachine.AddState("Fall"); fallState.motion = fall;
@@ -160,11 +165,20 @@ namespace IBlameYou.EditorTools
                 ("IsGrounded", AnimatorConditionMode.IfNot, 0f),
                 ("VerticalVelocity", AnimatorConditionMode.Less, 0.05f));
 
+            // 걷기와 달리기는 IsRunning(Shift+기력 있음)으로 서로 배타적으로 갈린다.
             AddAnyStateTransition(stateMachine, runState,
                 ("IsDashing", AnimatorConditionMode.IfNot, 0f),
                 ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.If, 0f),
-                ("Speed", AnimatorConditionMode.Greater, 0.05f));
+                ("Speed", AnimatorConditionMode.Greater, 0.05f),
+                ("IsRunning", AnimatorConditionMode.If, 0f));
+
+            AddAnyStateTransition(stateMachine, walkState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
+                ("IsGrounded", AnimatorConditionMode.If, 0f),
+                ("Speed", AnimatorConditionMode.Greater, 0.05f),
+                ("IsRunning", AnimatorConditionMode.IfNot, 0f));
 
             AddAnyStateTransition(stateMachine, idleState,
                 ("IsDashing", AnimatorConditionMode.IfNot, 0f),
