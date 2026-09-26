@@ -72,6 +72,10 @@ namespace IBlameYou.Player
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
             // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
             rb.freezeRotation = true;
+
+            // 물리는 고정 프레임(50Hz)으로 위치를 갱신하는데 카메라는 렌더 프레임마다 따라가서, 보간이 없으면
+            // 캐릭터가 계단식으로 움직이고 카메라와 박자가 어긋나 번져/떨려 보인다. 렌더 프레임 사이를 보간한다.
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         }
 
         private void Update()
