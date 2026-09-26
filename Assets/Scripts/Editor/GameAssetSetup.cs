@@ -9,14 +9,13 @@ using UnityEngine;
 namespace IBlameYou.EditorTools
 {
     // Tools > I Blame You > Generate Sprites And Animations 메뉴 한 번으로:
-    // - 2D Platformer Tileset의 Player Sword 프레임들로 Idle/Run/Rise/Fall/Dash/Attack 클립 + 애니메이터를 만들고
+    // - 마법사 프레임들(Assets/Art/Sprites/Characters/Wizard)로 Idle/Run/Rise/Fall/Dash/Attack 클립 + 애니메이터를 만들고
     // - Slime 프레임들로 Idle/Run/Die 클립 + 애니메이터를 만들고
     // - 바닥 타일 스프라이트를 골라
     // Assets/Resources/LevelArtConfig.asset에 전부 담아둔다. 런타임 코드는 이 설정 하나만 Resources.Load로 읽는다.
     // 몇 번을 다시 실행해도 기존 결과물을 덮어쓰도록 만들어져 있다(idempotent).
     public static class GameAssetSetup
     {
-        private const string CharacterRoot = "Assets/2D Platformer Tileset/Sprites/Main_Character/Player Sword";
         private const string SlimeSpriteRoot = "Assets/Art/Sprites/Enemies/Slime"; // 프로젝트 전용 슬라임 아트(공격 시트에서 만든 Attack/Idle/Run/Die)
         private const string WizardSpriteRoot = "Assets/Art/Sprites/Characters/Wizard"; // 플레이어 마법사 아트 (동작별로 하나씩 교체 중)
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
@@ -74,28 +73,30 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()
         {
-            // Idle만 마법사 아트로 교체 (나머지 동작은 Player Sword 그대로, 순서대로 교체 예정).
-            // 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
+            // 플레이어는 전부 마법사 아트. Idle은 직접 준비한 그림이고, Run/Jump/Dash/Attack은 그 마법사 한 장을 변형해서 만든
+            // 임시 프레임이다(기울임/늘임/회전/지팡이 휘두르기/수정 빛). 동작별 그림이 생기면 같은 폴더의 PNG만 바꿔 다시 실행하면 된다.
+            // Idle 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
             var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 6, padWidth: 2, prepare: EnsureWizardSpriteImport));
-            var runFrames = LoadNamedFrames($"{CharacterRoot}/run", "player_sword_run_", 0, 9, padWidth: 2);
-            var riseSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_rise.png");
-            var fallSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_fall.png");
-            var dashFrames = LoadNamedFrames($"{CharacterRoot}/roll", "player_sword_roll_", 0, 10, padWidth: 2);
-            var attackFrames = LoadNamedFrames($"{CharacterRoot}/attack_1", "player_sword_attack1_", 0, 7);
+            var runFrames = LoadNamedFrames($"{WizardSpriteRoot}/Run", "wizard_run_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
+            var riseSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_rise.png", EnsureWizardSpriteImport);
+            var fallSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_fall.png", EnsureWizardSpriteImport);
+            var dashFrames = LoadNamedFrames($"{WizardSpriteRoot}/Dash", "wizard_dash_", 0, 5, padWidth: 2, prepare: EnsureWizardSpriteImport);
+            var attackFrames = LoadNamedFrames($"{WizardSpriteRoot}/Attack", "wizard_attack_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
 
             if (idleFrames.Length == 0 || runFrames.Length == 0 || riseSprite == null || fallSprite == null
                 || dashFrames.Length == 0 || attackFrames.Length == 0)
             {
-                Debug.LogError("[GameAssetSetup] 플레이어(Player Sword) 프레임을 찾지 못했습니다. 임포트 경로를 확인하세요.");
+                Debug.LogError("[GameAssetSetup] 플레이어(마법사) 프레임을 찾지 못했습니다. Assets/Art/Sprites/Characters/Wizard 경로를 확인하세요.");
                 return (null, null);
             }
 
             var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 8f, true);
-            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 14f, true);
+            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 12f, true);
             var riseClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Rise", new[] { riseSprite }, 1f, true);
             var fallClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Fall", new[] { fallSprite }, 1f, true);
-            var dashClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Dash", dashFrames, 18f, false);
-            var attackClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Attack", attackFrames, 14f, false);
+            // 길이를 게임플레이 시간과 맞춘다: 대쉬 6프레임@30 = 0.2초(PlayerMovement.dashDuration), 공격 8프레임@16 = 0.5초(PlayerCombat.attackDuration).
+            var dashClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Dash", dashFrames, 30f, false);
+            var attackClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Attack", attackFrames, 16f, false);
 
             var controller = BuildPlayerAnimatorController(idleClip, runClip, riseClip, fallClip, dashClip, attackClip);
             return (controller, idleFrames[0]);
@@ -292,6 +293,14 @@ namespace IBlameYou.EditorTools
             return clip;
         }
 
+        private static Sprite LoadSingleSprite(string path, System.Action<string> prepare = null)
+        {
+            prepare?.Invoke(path);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) Debug.LogWarning($"[GameAssetSetup] 스프라이트를 찾지 못함: {path}");
+            return sprite;
+        }
+
         // prepare: 스프라이트를 로드하기 전에 해당 파일의 임포트 설정을 맞추는 콜백(선택).
         private static Sprite[] LoadNamedFrames(string folder, string prefix, int startIndex, int endIndexInclusive,
             int padWidth = 1, System.Action<string> prepare = null)
@@ -318,7 +327,7 @@ namespace IBlameYou.EditorTools
         // 슬라임 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗 = root가 발밑 가운데, 무압축)로 임포트한다.
         private static void EnsureSlimeSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.BottomCenter); }
 
-        // 마법사 프레임은 기존 Player Sword와 같은 300x256 캔버스(중앙 피벗)라 전환해도 발 위치가 어긋나지 않는다.
+        // 마법사 프레임은 모두 같은 300x256 캔버스(중앙 피벗, 발 y=193)라 동작이 바뀌어도 발 위치가 어긋나지 않는다.
         private static void EnsureWizardSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.Center); }
 
         private static void EnsureSingleSpriteImport(string path, SpriteAlignment alignment)
