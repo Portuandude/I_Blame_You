@@ -24,12 +24,11 @@ namespace IBlameYou.Enemies
         private const float ChaseSpeed = 2.5f;
         private const float DetectionRange = 8f;
 
-        private static readonly Vector2 ColliderOffset = new Vector2(-1.27f, -0.09f);
-        private const float ColliderRadius = 0.27f;
-
         public static SlimeController Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {
+            // 재생성 전의 구버전 프리팹(스프라이트 콜라이더 없음)은 쓰지 않고 코드로 조립한다.
             var prefab = artConfig != null ? artConfig.slimePrefab : null;
+            if (prefab != null && prefab.GetComponent<SpriteColliderFitter>() == null) prefab = null;
             return EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "Slime");
         }
 
@@ -37,18 +36,20 @@ namespace IBlameYou.Enemies
         {
             var go = EnemySpawner.CreateBody("Slime");
 
-            var collider = go.AddComponent<CircleCollider2D>();
-            collider.offset = ColliderOffset;
-            collider.radius = ColliderRadius;
+            // 콜라이더는 현재 스프라이트 프레임의 윤곽을 따라간다 (SpriteColliderFitter).
+            var collider = go.AddComponent<PolygonCollider2D>();
             collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
-            EnemySpawner.AddVisual(
+            // 피벗이 좌하단이라 (스케일이 적용된 폭)/2만큼 옮겨야 스프라이트가 root 가운데에 온다.
+            var visual = EnemySpawner.AddVisual(
                 go,
                 artConfig != null ? artConfig.slimeDefaultSprite : null,
                 artConfig != null ? artConfig.slimeAnimatorController : null,
                 VisualScale,
-                new Vector3(-SpriteWidth / 2f, 0f, 0f),
+                new Vector3(-SpriteWidth * VisualScale / 2f, 0f, 0f),
                 new Color(0.6f, 0.2f, 0.7f));
+
+            go.AddComponent<SpriteColliderFitter>().Configure(visual.GetComponent<SpriteRenderer>(), collider);
 
             EnemySpawner.AddHealthAndStun(go, MaxHealth, StunDuration);
 
