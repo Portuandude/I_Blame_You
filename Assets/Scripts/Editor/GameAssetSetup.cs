@@ -17,8 +17,7 @@ namespace IBlameYou.EditorTools
     public static class GameAssetSetup
     {
         private const string CharacterRoot = "Assets/2D Platformer Tileset/Sprites/Main_Character/Player Sword";
-        private const string SlimeRoot = "Assets/2D Platformer Tileset/Sprites/Enemy/Slime";
-        private const string SlimeAttackFolder = "Assets/Art/Sprites/Enemies/Slime/Attack";
+        private const string SlimeSpriteRoot = "Assets/Art/Sprites/Enemies/Slime"; // 프로젝트 전용 슬라임 아트(공격 시트에서 만든 Attack/Idle/Run/Die)
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
         private const string GroundTileName = "tileset_1_39";
 
@@ -165,11 +164,11 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GenerateSlimeAnimations()
         {
-            // 슬라임 스프라이트는 모두 하단 중앙 피벗으로 통일한다 (원본 팩은 좌하단 피벗이라 임포트 설정을 맞춘다).
-            var idleFrames = LoadNamedFrames($"{SlimeRoot}/idle", "slime_idle_", 0, 10, padWidth: 2, prepare: EnsureBottomCenterPivot);
-            var runFrames = LoadNamedFrames($"{SlimeRoot}/run", "slime_run_", 0, 11, padWidth: 2, prepare: EnsureBottomCenterPivot);
-            var dieFrames = LoadNamedFrames($"{SlimeRoot}/die", "slime_die_", 0, 12, padWidth: 2, prepare: EnsureBottomCenterPivot);
-            var attackFrames = LoadNamedFrames(SlimeAttackFolder, "slime_attack_", 0, 9, padWidth: 2, prepare: EnsureAttackSpriteImport);
+            // 슬라임은 직접 만든 아트(공격 시트에서 분리)로 Attack/Idle/Run/Die 전부 통일. 임포트 설정은 아래에서 자동으로 맞춘다.
+            var idleFrames = LoadNamedFrames($"{SlimeSpriteRoot}/Idle", "slime_idle_", 0, 7, padWidth: 2, prepare: EnsureSlimeSpriteImport);
+            var runFrames = LoadNamedFrames($"{SlimeSpriteRoot}/Run", "slime_run_", 0, 7, padWidth: 2, prepare: EnsureSlimeSpriteImport);
+            var dieFrames = LoadNamedFrames($"{SlimeSpriteRoot}/Die", "slime_die_", 0, 7, padWidth: 2, prepare: EnsureSlimeSpriteImport);
+            var attackFrames = LoadNamedFrames($"{SlimeSpriteRoot}/Attack", "slime_attack_", 0, 9, padWidth: 2, prepare: EnsureSlimeSpriteImport);
 
             if (idleFrames.Length == 0 || runFrames.Length == 0 || dieFrames.Length == 0 || attackFrames.Length == 0)
             {
@@ -303,23 +302,8 @@ namespace IBlameYou.EditorTools
             return list.ToArray();
         }
 
-        // 원본 팩의 슬라임 프레임은 피벗이 좌하단이라, 하단 중앙으로 바꿔서 root 위치가 몸통 가운데 발밑이 되게 한다.
-        private static void EnsureBottomCenterPivot(string path)
-        {
-            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null) return;
-
-            var settings = new TextureImporterSettings();
-            importer.ReadTextureSettings(settings);
-            if (settings.spriteAlignment == (int)SpriteAlignment.BottomCenter) return;
-
-            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
-            importer.SetTextureSettings(settings);
-            importer.SaveAndReimport();
-        }
-
-        // 새로 추가한 공격 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗, 무압축)로 임포트한다.
-        private static void EnsureAttackSpriteImport(string path)
+        // 슬라임 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗 = root가 발밑 가운데, 무압축)로 임포트한다.
+        private static void EnsureSlimeSpriteImport(string path)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null) return;
