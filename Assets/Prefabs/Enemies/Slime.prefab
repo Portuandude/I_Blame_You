@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 2802164607838642725}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.29, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.6, y: 0.6, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -82,12 +82,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 248438d48ebdaf246be6f0ff28a569d3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8721545594c908d4abb64b70e942ab13, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.58, y: 1.53}
+  m_Size: {x: 1.14, y: 0.66}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -124,7 +124,8 @@ GameObject:
   m_Component:
   - component: {fileID: 595973640134715475}
   - component: {fileID: 6527191259107218779}
-  - component: {fileID: 3420081236149629982}
+  - component: {fileID: 4604448543349099009}
+  - component: {fileID: 5977924681888743694}
   - component: {fileID: 4136701487012526702}
   - component: {fileID: 1276626858064329114}
   - component: {fileID: 5603642453161443466}
@@ -178,8 +179,8 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!58 &3420081236149629982
-CircleCollider2D:
+--- !u!60 &4604448543349099009
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -212,8 +213,43 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -1.27, y: -0.09}
-  m_Radius: 0.27
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0.174, y: 0.33600003}
+      - {x: 0.08400001, y: 0.37800002}
+      - {x: -0.066, y: 0.37800002}
+      - {x: -0.192, y: 0.324}
+      - {x: -0.252, y: 0.276}
+      - {x: -0.324, y: 0.132}
+      - {x: -0.324, y: 0}
+      - {x: 0.33, y: 0}
+      - {x: 0.33, y: 0.08400001}
+      - {x: 0.24, y: 0.294}
+  m_UseDelaunayMesh: 1
+--- !u!114 &5977924681888743694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6122282390325487353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4598efb8223c48a4a87f5c4b85a403e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IBlameYou.Systems.SpriteColliderFitter
+  source: {fileID: 4132313080674538526}
+  target: {fileID: 4604448543349099009}
 --- !u!114 &4136701487012526702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -262,6 +298,10 @@ MonoBehaviour:
   chaseSpeed: 2.5
   detectionRange: 8
   loseRangeMultiplier: 1.25
+  attackRange: 4
+  attackDamage: 12
+  attackCooldown: 2
+  maxLeapSpeed: 8
   wallCheckDistance: 0.6
   wallCheckHeight: 0.4
   obstacleLayer:
