@@ -55,7 +55,7 @@ namespace IBlameYou.Core
                 }
             }
 
-            var startRoomCenter = new Vector3(map.StartPosition.x * roomSpacing, map.StartPosition.y * roomSpacing, 0f);
+            var startRoomCenter = new Vector3(map.StartPosition.x * roomSpacingUnits, map.StartPosition.y * roomSpacingUnits, 0f);
             SetupCamera(startRoomCenter);
         }
 
@@ -80,7 +80,7 @@ namespace IBlameYou.Core
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
 
             var roomCenter = (Vector2)startRoomCenter;
-            follow.SetBounds(new Rect(roomCenter - roomSize / 2f, roomSize));
+            follow.SetBounds(new Rect(roomCenter - roomSizeUnits / 2f, roomSizeUnits));
             follow.SetTarget(player.transform);
         }
     }
