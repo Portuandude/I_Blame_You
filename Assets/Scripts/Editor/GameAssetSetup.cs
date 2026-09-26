@@ -75,8 +75,8 @@ namespace IBlameYou.EditorTools
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()
         {
             // Idle만 마법사 아트로 교체 (나머지 동작은 Player Sword 그대로, 순서대로 교체 예정).
-            // 프레임이 빛나는 스태프의 밝기 변화라서, 끝에서 처음으로 튀지 않게 왕복(핑퐁) 재생한다.
-            var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport));
+            // 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
+            var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 6, padWidth: 2, prepare: EnsureWizardSpriteImport));
             var runFrames = LoadNamedFrames($"{CharacterRoot}/run", "player_sword_run_", 0, 9, padWidth: 2);
             var riseSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_rise.png");
             var fallSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_fall.png");
