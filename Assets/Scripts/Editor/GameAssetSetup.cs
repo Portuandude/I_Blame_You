@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using IBlameYou.Enemies;
 using IBlameYou.Systems;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -17,6 +18,7 @@ namespace IBlameYou.EditorTools
     {
         private const string CharacterRoot = "Assets/2D Platformer Tileset/Sprites/Main_Character/Player Sword";
         private const string SlimeRoot = "Assets/2D Platformer Tileset/Sprites/Enemy/Slime";
+        private const string SlimeAttackFolder = "Assets/Art/Sprites/Enemies/Slime/Attack";
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
         private const string GroundTileName = "tileset_1_39";
 
@@ -163,11 +165,13 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GenerateSlimeAnimations()
         {
-            var idleFrames = LoadNamedFrames($"{SlimeRoot}/idle", "slime_idle_", 0, 10, padWidth: 2);
-            var runFrames = LoadNamedFrames($"{SlimeRoot}/run", "slime_run_", 0, 11, padWidth: 2);
-            var dieFrames = LoadNamedFrames($"{SlimeRoot}/die", "slime_die_", 0, 12, padWidth: 2);
+            // 슬라임 스프라이트는 모두 하단 중앙 피벗으로 통일한다 (원본 팩은 좌하단 피벗이라 임포트 설정을 맞춘다).
+            var idleFrames = LoadNamedFrames($"{SlimeRoot}/idle", "slime_idle_", 0, 10, padWidth: 2, prepare: EnsureBottomCenterPivot);
+            var runFrames = LoadNamedFrames($"{SlimeRoot}/run", "slime_run_", 0, 11, padWidth: 2, prepare: EnsureBottomCenterPivot);
+            var dieFrames = LoadNamedFrames($"{SlimeRoot}/die", "slime_die_", 0, 12, padWidth: 2, prepare: EnsureBottomCenterPivot);
+            var attackFrames = LoadNamedFrames(SlimeAttackFolder, "slime_attack_", 0, 9, padWidth: 2, prepare: EnsureAttackSpriteImport);
 
-            if (idleFrames.Length == 0 || runFrames.Length == 0 || dieFrames.Length == 0)
+            if (idleFrames.Length == 0 || runFrames.Length == 0 || dieFrames.Length == 0 || attackFrames.Length == 0)
             {
                 Debug.LogError("[GameAssetSetup] 슬라임 프레임을 찾지 못했습니다. 임포트 경로를 확인하세요.");
                 return (null, null);
@@ -176,12 +180,14 @@ namespace IBlameYou.EditorTools
             var idleClip = CreateOrReplaceClip(EnemyOutputFolder, "Slime_Idle", idleFrames, 8f, true);
             var runClip = CreateOrReplaceClip(EnemyOutputFolder, "Slime_Run", runFrames, 12f, true);
             var dieClip = CreateOrReplaceClip(EnemyOutputFolder, "Slime_Die", dieFrames, 12f, false);
+            // 프레임레이트는 SlimeController의 구간(윈드업/공중/회복) 물리 타이밍과 맞물려 있다.
+            var attackClip = CreateOrReplaceClip(EnemyOutputFolder, "Slime_Attack", attackFrames, SlimeController.AttackFrameRate, false);
 
-            var controller = BuildSlimeAnimatorController(idleClip, runClip, dieClip);
+            var controller = BuildSlimeAnimatorController(idleClip, runClip, dieClip, attackClip);
             return (controller, idleFrames[0]);
         }
 
-        private static AnimatorController BuildSlimeAnimatorController(AnimationClip idle, AnimationClip run, AnimationClip die)
+        private static AnimatorController BuildSlimeAnimatorController(AnimationClip idle, AnimationClip run, AnimationClip die, AnimationClip attack)
         {
             string controllerPath = $"{EnemyOutputFolder}/SlimeAnimator.controller";
             if (AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath) != null)
@@ -192,23 +198,33 @@ namespace IBlameYou.EditorTools
             var controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
             controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
             controller.AddParameter("IsDead", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsAttacking", AnimatorControllerParameterType.Bool);
 
             var stateMachine = controller.layers[0].stateMachine;
 
             var idleState = stateMachine.AddState("Idle"); idleState.motion = idle;
             var runState = stateMachine.AddState("Run"); runState.motion = run;
             var dieState = stateMachine.AddState("Die"); dieState.motion = die;
+            var attackState = stateMachine.AddState("Attack"); attackState.motion = attack;
 
             stateMachine.defaultState = idleState;
 
+            // Any State는 "이미 그 상태면 자기 자신으로는 전이 안 함"일 뿐 검사를 멈추지 않으므로,
+            // 상위 우선순위 상태(Die/Attack)에 머무는 동안 아래 조건들이 새지 않게 서로 제외 조건을 건다.
             AddAnyStateTransition(stateMachine, dieState, ("IsDead", AnimatorConditionMode.If, 0f));
+
+            AddAnyStateTransition(stateMachine, attackState,
+                ("IsDead", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.If, 0f));
 
             AddAnyStateTransition(stateMachine, runState,
                 ("IsDead", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("Speed", AnimatorConditionMode.Greater, 0.05f));
 
             AddAnyStateTransition(stateMachine, idleState,
                 ("IsDead", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("Speed", AnimatorConditionMode.Less, 0.05f));
 
             EditorUtility.SetDirty(controller);
@@ -264,13 +280,16 @@ namespace IBlameYou.EditorTools
             return clip;
         }
 
-        private static Sprite[] LoadNamedFrames(string folder, string prefix, int startIndex, int endIndexInclusive, int padWidth = 1)
+        // prepare: 스프라이트를 로드하기 전에 해당 파일의 임포트 설정을 맞추는 콜백(선택).
+        private static Sprite[] LoadNamedFrames(string folder, string prefix, int startIndex, int endIndexInclusive,
+            int padWidth = 1, System.Action<string> prepare = null)
         {
             var list = new List<Sprite>();
             for (int i = startIndex; i <= endIndexInclusive; i++)
             {
                 string number = i.ToString().PadLeft(padWidth, '0');
                 string path = $"{folder}/{prefix}{number}.png";
+                prepare?.Invoke(path);
                 var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (sprite == null)
                 {
@@ -282,6 +301,52 @@ namespace IBlameYou.EditorTools
             }
 
             return list.ToArray();
+        }
+
+        // 원본 팩의 슬라임 프레임은 피벗이 좌하단이라, 하단 중앙으로 바꿔서 root 위치가 몸통 가운데 발밑이 되게 한다.
+        private static void EnsureBottomCenterPivot(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) return;
+
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            if (settings.spriteAlignment == (int)SpriteAlignment.BottomCenter) return;
+
+            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            importer.SetTextureSettings(settings);
+            importer.SaveAndReimport();
+        }
+
+        // 새로 추가한 공격 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗, 무압축)로 임포트한다.
+        private static void EnsureAttackSpriteImport(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) return;
+
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+
+            bool upToDate = importer.textureType == TextureImporterType.Sprite
+                && importer.spriteImportMode == SpriteImportMode.Single
+                && Mathf.Approximately(importer.spritePixelsPerUnit, 100f)
+                && settings.spriteAlignment == (int)SpriteAlignment.BottomCenter
+                && importer.alphaIsTransparency
+                && !importer.mipmapEnabled
+                && importer.textureCompression == TextureImporterCompression.Uncompressed;
+            if (upToDate) return;
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100f;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+
+            importer.ReadTextureSettings(settings);
+            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            importer.SetTextureSettings(settings);
+            importer.SaveAndReimport();
         }
 
         // 바닥/벽/플랫폼을 SpriteDrawMode.Tiled로 그리려면 스프라이트 Mesh Type이 Full Rect여야 한다.
