@@ -256,7 +256,12 @@ MonoBehaviour:
   contactDamage: 8
   contactDamageCooldown: 1
   destroyDelayAfterDeath: 1.5
+  idleBehaviour: 0
   patrolSpeed: 1.5
+  patrolRadius: 3
+  chaseSpeed: 2.5
+  detectionRange: 8
+  loseRangeMultiplier: 1.25
   wallCheckDistance: 0.6
   wallCheckHeight: 0.4
   obstacleLayer:

@@ -60,7 +60,7 @@ Assets/
                               # CameraFollow — 플레이어 추적, 시작 방 경계 제한, 피격 시 화면 흔들림
     Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
-      Common/Slime/           # SlimeController(순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
+      Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
       Elite/, Bosses/         # (비어 있음)
     Systems/
       Health/                 # HealthSystem (체력, 무적 플래그)

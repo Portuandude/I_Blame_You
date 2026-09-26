@@ -17,6 +17,13 @@ namespace IBlameYou.Enemies
         private const float ContactDamage = 8f;
         private const float ContactDamageCooldown = 1f;
 
+        // 행동: 플레이어가 DetectionRange 안이면 추적, 아니면 IdleBehaviour대로(짧게 왕복하거나 가만히 서 있기).
+        private const SlimeController.IdleBehaviour Idle = SlimeController.IdleBehaviour.Patrol;
+        private const float PatrolSpeed = 1.5f;
+        private const float PatrolRadius = 3f;
+        private const float ChaseSpeed = 2.5f;
+        private const float DetectionRange = 8f;
+
         private static readonly Vector2 ColliderOffset = new Vector2(-1.27f, -0.09f);
         private const float ColliderRadius = 0.27f;
 
@@ -47,6 +54,7 @@ namespace IBlameYou.Enemies
 
             var controller = go.AddComponent<SlimeController>();
             controller.ConfigureContactDamage(ContactDamage, ContactDamageCooldown);
+            controller.Configure(Idle, PatrolSpeed, PatrolRadius, ChaseSpeed, DetectionRange);
             controller.ConfigureObstacleLayer(EnemySpawner.GroundMask());
 
             EnemySpawner.AssignEnemyLayer(go);
