@@ -43,6 +43,7 @@ namespace IBlameYou.Enemies
         protected virtual void Awake()
         {
             Rb = GetComponent<Rigidbody2D>();
+            Rb.interpolation = RigidbodyInterpolation2D.Interpolate; // 카메라가 움직일 때 적도 번져 보이지 않게 (PlayerMovement 참고)
             Health = GetComponent<HealthSystem>();
             hitStun = GetComponent<HitStun>();
             if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
