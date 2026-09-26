@@ -46,7 +46,7 @@ Assets/
     Animations/Player/        # 생성된 애니메이션 클립 + PlayerAnimator.controller
     Animations/Enemies/Slime/ # 슬라임 클립 + SlimeAnimator.controller
     Materials/                # Frictionless.physicsMaterial2D (프리팹 콜라이더용)
-    Sprites/Characters/Wizard/ # 플레이어 마법사 프레임(투명 PNG, 300x256 캔버스). 교체 진행 중 — 현재 Idle 7장(스태프 빛이 꺼짐→켜짐으로 단계적으로 밝아지는 프레임, 왕복 재생)만 있고 나머지 동작은 Player Sword 임시 아트
+    Sprites/Characters/Wizard/ # 플레이어 마법사 프레임(투명 PNG, 300x256 캔버스, 발 y=193). Idle 7장(직접 준비, 수정 빛이 단계적으로 켜짐, 왕복 재생) + Run 8 / Jump 2 / Dash 6 / Attack 8장(Idle 한 장을 변형한 임시 프레임 — 동작별 그림이 생기면 같은 이름의 PNG로 교체 후 툴 재실행)
     Sprites/Enemies/Slime/     # 슬라임 프레임(직접 만든 일러스트, 투명 PNG): Attack 10장, Idle/Run/Die 각 8장. 그 외 Characters, Environment, UI는 비어 있음
   Audio/                      # Music, SFX (비어 있음)
   Data/                       # Characters, Enemies, Rooms — ScriptableObject 인스턴스용 (비어 있음)
