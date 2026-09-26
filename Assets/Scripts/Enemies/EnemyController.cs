@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -21,8 +22,12 @@ namespace IBlameYou.Enemies
         [Header("Death")]
         [SerializeField] private float destroyDelayAfterDeath = 1.5f;
 
+        private const float TargetSearchInterval = 0.5f;
+
         private HitStun hitStun;
         private Collider2D bodyCollider;
+        private Transform target;
+        private float nextTargetSearchTime;
         private readonly Dictionary<HealthSystem, float> lastHitTime = new Dictionary<HealthSystem, float>();
 
         protected Rigidbody2D Rb { get; private set; }
@@ -47,6 +52,19 @@ namespace IBlameYou.Enemies
         {
             contactDamage = damage;
             contactDamageCooldown = cooldown;
+        }
+
+        // 추적/감지 대상(플레이어). 없거나 사라졌으면 일정 간격으로만 다시 찾아서 매 프레임 탐색하지 않는다.
+        protected Transform FindTarget()
+        {
+            if (target == null && Time.time >= nextTargetSearchTime)
+            {
+                var player = FindFirstObjectByType<PlayerMovement>();
+                target = player != null ? player.transform : null;
+                nextTargetSearchTime = Time.time + TargetSearchInterval;
+            }
+
+            return target;
         }
 
         // 생존 중 매 프레임 실행 (감지, 방향 전환 등 판단 로직).
