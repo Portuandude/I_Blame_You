@@ -65,6 +65,7 @@ namespace IBlameYou.Core
             {
                 var slime = SlimeSpawner.Spawn(new Vector3(room.Center.x + offsetX, spawnY, 0f), artConfig);
                 slime.transform.SetParent(room.transform, true);
+                room.RegisterEnemy(slime.GetComponent<HealthSystem>());
             }
         }
 
