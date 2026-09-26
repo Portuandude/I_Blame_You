@@ -56,7 +56,8 @@ Assets/
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
-    Core/                     # PlaytestBootstrap — 챕터 맵 생성 + 시작 방 구성 + 플레이어/슬라임 스폰
+    Core/                     # PlaytestBootstrap — 챕터 맵 생성 + 시작 방 구성 + 플레이어/슬라임 스폰 + 카메라 준비
+                              # CameraFollow — 플레이어 추적, 시작 방 경계 제한, 피격 시 화면 흔들림
     Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가

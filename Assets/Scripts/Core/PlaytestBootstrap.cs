@@ -47,6 +47,34 @@ namespace IBlameYou.Core
                     SlimeSpawner.Spawn(new Vector3(worldPosition.x + 3f, spawnY, 0f), artConfig);
                 }
             }
+
+            var startRoomCenter = new Vector3(map.StartPosition.x * roomSpacing, map.StartPosition.y * roomSpacing, 0f);
+            SetupCamera(startRoomCenter);
+        }
+
+        // 플레이어를 쫓아다니는 카메라를 준비하고, 시야가 시작 방 밖으로 나가지 않게 제한한다.
+        private void SetupCamera(Vector3 startRoomCenter)
+        {
+            var player = FindFirstObjectByType<PlayerMovement>();
+            if (player == null) return;
+
+            var cam = Camera.main;
+            if (cam == null)
+            {
+                var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
+                cam = cameraObject.AddComponent<Camera>();
+                cameraObject.AddComponent<AudioListener>();
+                cam.orthographicSize = 6f;
+            }
+
+            cam.orthographic = true;
+
+            var follow = cam.GetComponent<CameraFollow>();
+            if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
+
+            var roomCenter = (Vector2)startRoomCenter;
+            follow.SetBounds(new Rect(roomCenter - roomSize / 2f, roomSize));
+            follow.SetTarget(player.transform);
         }
     }
 }
