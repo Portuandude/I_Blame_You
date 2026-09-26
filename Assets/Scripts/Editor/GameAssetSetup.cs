@@ -9,15 +9,15 @@ using UnityEngine;
 namespace IBlameYou.EditorTools
 {
     // Tools > I Blame You > Generate Sprites And Animations 메뉴 한 번으로:
-    // - 2D Platformer Tileset의 Player Sword 프레임들로 Idle/Run/Rise/Fall/Dash/Attack 클립 + 애니메이터를 만들고
+    // - 마법사 프레임들(Assets/Art/Sprites/Characters/Wizard)로 Idle/Run/Rise/Fall/Dash/Attack 클립 + 애니메이터를 만들고
     // - Slime 프레임들로 Idle/Run/Die 클립 + 애니메이터를 만들고
     // - 바닥 타일 스프라이트를 골라
     // Assets/Resources/LevelArtConfig.asset에 전부 담아둔다. 런타임 코드는 이 설정 하나만 Resources.Load로 읽는다.
     // 몇 번을 다시 실행해도 기존 결과물을 덮어쓰도록 만들어져 있다(idempotent).
     public static class GameAssetSetup
     {
-        private const string CharacterRoot = "Assets/2D Platformer Tileset/Sprites/Main_Character/Player Sword";
         private const string SlimeSpriteRoot = "Assets/Art/Sprites/Enemies/Slime"; // 프로젝트 전용 슬라임 아트(공격 시트에서 만든 Attack/Idle/Run/Die)
+        private const string WizardSpriteRoot = "Assets/Art/Sprites/Characters/Wizard"; // 플레이어 마법사 아트 (동작별로 하나씩 교체 중)
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
         private const string GroundTileName = "tileset_1_39";
 
@@ -73,32 +73,49 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()
         {
-            var idleFrames = LoadNamedFrames($"{CharacterRoot}/idle", "player_sword_idle_", 0, 7);
-            var runFrames = LoadNamedFrames($"{CharacterRoot}/run", "player_sword_run_", 0, 9, padWidth: 2);
-            var riseSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_rise.png");
-            var fallSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{CharacterRoot}/jump/player_sword_fall.png");
-            var dashFrames = LoadNamedFrames($"{CharacterRoot}/roll", "player_sword_roll_", 0, 10, padWidth: 2);
-            var attackFrames = LoadNamedFrames($"{CharacterRoot}/attack_1", "player_sword_attack1_", 0, 7);
+            // 플레이어는 전부 마법사 아트. Idle은 직접 준비한 그림이고, Run/Jump/Dash/Attack은 그 마법사 한 장을 변형해서 만든
+            // 임시 프레임이다(기울임/늘임/회전/지팡이 휘두르기/수정 빛). 동작별 그림이 생기면 같은 폴더의 PNG만 바꿔 다시 실행하면 된다.
+            // Idle 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
+            var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 6, padWidth: 2, prepare: EnsureWizardSpriteImport));
+            var walkFrames = LoadNamedFrames($"{WizardSpriteRoot}/Walk", "wizard_walk_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
+            var runFrames = LoadNamedFrames($"{WizardSpriteRoot}/Run", "wizard_run_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
+            var riseSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_rise.png", EnsureWizardSpriteImport);
+            var fallSprite = LoadSingleSprite($"{WizardSpriteRoot}/Jump/wizard_fall.png", EnsureWizardSpriteImport);
+            var dashFrames = LoadNamedFrames($"{WizardSpriteRoot}/Dash", "wizard_dash_", 0, 5, padWidth: 2, prepare: EnsureWizardSpriteImport);
+            var attackFrames = LoadNamedFrames($"{WizardSpriteRoot}/Attack", "wizard_attack_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
 
-            if (idleFrames.Length == 0 || runFrames.Length == 0 || riseSprite == null || fallSprite == null
+            if (idleFrames.Length == 0 || walkFrames.Length == 0 || runFrames.Length == 0 || riseSprite == null || fallSprite == null
                 || dashFrames.Length == 0 || attackFrames.Length == 0)
             {
-                Debug.LogError("[GameAssetSetup] 플레이어(Player Sword) 프레임을 찾지 못했습니다. 임포트 경로를 확인하세요.");
+                Debug.LogError("[GameAssetSetup] 플레이어(마법사) 프레임을 찾지 못했습니다. Assets/Art/Sprites/Characters/Wizard 경로를 확인하세요.");
                 return (null, null);
             }
 
-            var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 10f, true);
-            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 14f, true);
+            var idleClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Idle", idleFrames, 8f, true);
+            // 걷기(속도 5)는 2걸음 사이클 약 0.57초, 달리기(속도 9)는 발을 더 빨리 굴러 약 0.4초.
+            var walkClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Walk", walkFrames, 14f, true);
+            var runClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Run", runFrames, 20f, true);
             var riseClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Rise", new[] { riseSprite }, 1f, true);
             var fallClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Fall", new[] { fallSprite }, 1f, true);
-            var dashClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Dash", dashFrames, 18f, false);
-            var attackClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Attack", attackFrames, 14f, false);
+            // 길이를 게임플레이 시간과 맞춘다: 대쉬 6프레임@30 = 0.2초(PlayerMovement.dashDuration), 공격 8프레임@16 = 0.5초(PlayerCombat.attackDuration).
+            var dashClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Dash", dashFrames, 30f, false);
+            var attackClip = CreateOrReplaceClip(PlayerOutputFolder, "Player_Attack", attackFrames, 16f, false);
 
-            var controller = BuildPlayerAnimatorController(idleClip, runClip, riseClip, fallClip, dashClip, attackClip);
+            var controller = BuildPlayerAnimatorController(idleClip, walkClip, runClip, riseClip, fallClip, dashClip, attackClip);
             return (controller, idleFrames[0]);
         }
 
-        private static AnimatorController BuildPlayerAnimatorController(AnimationClip idle, AnimationClip run,
+        // 0,1,...,n-1,n-2,...,1 순서로 (첫/끝 프레임은 한 번씩만) — 루프할 때 이음매가 없다.
+        private static Sprite[] PingPong(Sprite[] frames)
+        {
+            if (frames.Length < 3) return frames;
+
+            var result = new List<Sprite>(frames);
+            for (int i = frames.Length - 2; i >= 1; i--) result.Add(frames[i]);
+            return result.ToArray();
+        }
+
+        private static AnimatorController BuildPlayerAnimatorController(AnimationClip idle, AnimationClip walk, AnimationClip run,
             AnimationClip rise, AnimationClip fall, AnimationClip dash, AnimationClip attack)
         {
             string controllerPath = $"{PlayerOutputFolder}/PlayerAnimator.controller";
@@ -113,10 +130,12 @@ namespace IBlameYou.EditorTools
             controller.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
             controller.AddParameter("IsDashing", AnimatorControllerParameterType.Bool);
             controller.AddParameter("IsAttacking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsRunning", AnimatorControllerParameterType.Bool);
 
             var stateMachine = controller.layers[0].stateMachine;
 
             var idleState = stateMachine.AddState("Idle"); idleState.motion = idle;
+            var walkState = stateMachine.AddState("Walk"); walkState.motion = walk;
             var runState = stateMachine.AddState("Run"); runState.motion = run;
             var riseState = stateMachine.AddState("Rise"); riseState.motion = rise;
             var fallState = stateMachine.AddState("Fall"); fallState.motion = fall;
@@ -146,11 +165,20 @@ namespace IBlameYou.EditorTools
                 ("IsGrounded", AnimatorConditionMode.IfNot, 0f),
                 ("VerticalVelocity", AnimatorConditionMode.Less, 0.05f));
 
+            // 걷기와 달리기는 IsRunning(Shift+기력 있음)으로 서로 배타적으로 갈린다.
             AddAnyStateTransition(stateMachine, runState,
                 ("IsDashing", AnimatorConditionMode.IfNot, 0f),
                 ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
                 ("IsGrounded", AnimatorConditionMode.If, 0f),
-                ("Speed", AnimatorConditionMode.Greater, 0.05f));
+                ("Speed", AnimatorConditionMode.Greater, 0.05f),
+                ("IsRunning", AnimatorConditionMode.If, 0f));
+
+            AddAnyStateTransition(stateMachine, walkState,
+                ("IsDashing", AnimatorConditionMode.IfNot, 0f),
+                ("IsAttacking", AnimatorConditionMode.IfNot, 0f),
+                ("IsGrounded", AnimatorConditionMode.If, 0f),
+                ("Speed", AnimatorConditionMode.Greater, 0.05f),
+                ("IsRunning", AnimatorConditionMode.IfNot, 0f));
 
             AddAnyStateTransition(stateMachine, idleState,
                 ("IsDashing", AnimatorConditionMode.IfNot, 0f),
@@ -279,6 +307,14 @@ namespace IBlameYou.EditorTools
             return clip;
         }
 
+        private static Sprite LoadSingleSprite(string path, System.Action<string> prepare = null)
+        {
+            prepare?.Invoke(path);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) Debug.LogWarning($"[GameAssetSetup] 스프라이트를 찾지 못함: {path}");
+            return sprite;
+        }
+
         // prepare: 스프라이트를 로드하기 전에 해당 파일의 임포트 설정을 맞추는 콜백(선택).
         private static Sprite[] LoadNamedFrames(string folder, string prefix, int startIndex, int endIndexInclusive,
             int padWidth = 1, System.Action<string> prepare = null)
@@ -303,7 +339,12 @@ namespace IBlameYou.EditorTools
         }
 
         // 슬라임 프레임 PNG를 단일 스프라이트(PPU 100, 하단 중앙 피벗 = root가 발밑 가운데, 무압축)로 임포트한다.
-        private static void EnsureSlimeSpriteImport(string path)
+        private static void EnsureSlimeSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.BottomCenter); }
+
+        // 마법사 프레임은 모두 같은 300x256 캔버스(중앙 피벗, 발 y=193)라 동작이 바뀌어도 발 위치가 어긋나지 않는다.
+        private static void EnsureWizardSpriteImport(string path) { EnsureSingleSpriteImport(path, SpriteAlignment.Center); }
+
+        private static void EnsureSingleSpriteImport(string path, SpriteAlignment alignment)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null) return;
@@ -314,7 +355,7 @@ namespace IBlameYou.EditorTools
             bool upToDate = importer.textureType == TextureImporterType.Sprite
                 && importer.spriteImportMode == SpriteImportMode.Single
                 && Mathf.Approximately(importer.spritePixelsPerUnit, 100f)
-                && settings.spriteAlignment == (int)SpriteAlignment.BottomCenter
+                && settings.spriteAlignment == (int)alignment
                 && importer.alphaIsTransparency
                 && !importer.mipmapEnabled
                 && importer.textureCompression == TextureImporterCompression.Uncompressed;
@@ -328,7 +369,7 @@ namespace IBlameYou.EditorTools
             importer.textureCompression = TextureImporterCompression.Uncompressed;
 
             importer.ReadTextureSettings(settings);
-            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            settings.spriteAlignment = (int)alignment;
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
         }
