@@ -44,12 +44,17 @@ namespace IBlameYou.Core
             targetHealth = newTarget != null ? newTarget.GetComponent<HealthSystem>() : null;
             if (targetHealth != null) targetHealth.Damaged += OnTargetDamaged;
 
-            if (target != null)
-            {
-                followPosition = Clamp(DesiredPosition());
-                velocity = Vector3.zero;
-                transform.position = followPosition;
-            }
+            SnapToTarget();
+        }
+
+        // 부드럽게 따라가지 않고 즉시 대상 위치(범위 안으로 제한)로 옮긴다. 방 이동처럼 순간이동할 때 쓴다.
+        public void SnapToTarget()
+        {
+            if (target == null) return;
+
+            followPosition = Clamp(DesiredPosition());
+            velocity = Vector3.zero;
+            transform.position = followPosition;
         }
 
         public void SetBounds(Rect worldBounds)
