@@ -158,10 +158,11 @@ GameObject:
   - component: {fileID: 1268655787431443881}
   - component: {fileID: 6915554993904572874}
   - component: {fileID: 4382568022036350243}
+  - component: {fileID: 1460667404914493202}
   - component: {fileID: 8463224474944666812}
   - component: {fileID: 5699881049855410368}
   - component: {fileID: 8669163351810609034}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -277,6 +278,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IBlameYou.Systems.HealthSystem
   maxHealth: 100
+--- !u!114 &1460667404914493202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8767928049927380175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31692a0a9eec6cf4783693886267ff42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IBlameYou.Systems.HitStun
+  stunDuration: 0.4
+  invulnerableWhileStunned: 1
 --- !u!114 &8463224474944666812
 MonoBehaviour:
   m_ObjectHideFlags: 0

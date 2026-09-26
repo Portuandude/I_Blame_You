@@ -44,7 +44,7 @@ namespace IBlameYou.Core
                     // 바닥 기준 상대 높이로 스폰해서, 방 크기가 바뀌어도 항상 바닥 바로 위에서 시작한다.
                     float spawnY = worldPosition.y - roomSize.y / 2f + 2f;
                     PlayerSpawner.Spawn(new Vector3(worldPosition.x, spawnY, 0f), artConfig);
-                    EnemySpawner.SpawnSlime(new Vector3(worldPosition.x + 3f, spawnY, 0f), artConfig);
+                    SlimeSpawner.Spawn(new Vector3(worldPosition.x + 3f, spawnY, 0f), artConfig);
                 }
             }
         }

@@ -17,7 +17,8 @@
 3. 메뉴 **`Tools > I Blame You > Generate Sprites And Animations`** 를 한 번 실행한다.
    - 플레이어(Player Sword)/슬라임 애니메이션 클립 + 애니메이터 컨트롤러
    - 바닥 타일 선택, `Assets/Resources/LevelArtConfig.asset` 생성
-   - 이어서 자동으로 플레이어/슬라임 **프리팹** 생성 (`Tools > I Blame You > Generate Prefabs`)
+   - 이어서 자동으로 플레이어/슬라임 **프리팹** 생성 (`Tools > I Blame You > Generate Prefabs`) — 이때 `Player`/`Enemy` 레이어도 없으면 자동 추가
+   - 컴포넌트 구성이 바뀐 커밋(예: 경직 추가)을 받은 뒤에는 이 메뉴를 한 번 다시 실행해 프리팹을 갱신할 것
    - 컨트롤러를 매번 새로 만들기 때문에, `GameAssetSetup.cs`를 수정했다면 반드시 다시 실행해야 결과물에 반영된다.
 4. 빈 씬에 GameObject를 만들고 `PlaytestBootstrap` 컴포넌트를 붙인 뒤 Play. (`Assets/Scenes/testScene.unity`가 이렇게 구성되어 있음)
 
@@ -57,11 +58,14 @@ Assets/
   Scripts/
     Core/                     # PlaytestBootstrap — 챕터 맵 생성 + 시작 방 구성 + 플레이어/슬라임 스폰
     Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
-    Enemies/Common/           # EnemyController(순찰/접촉 데미지/사망), EnemySpawner (슬라임)
+    Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
+      Common/Slime/           # SlimeController(순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
+      Elite/, Bosses/         # (비어 있음)
     Systems/
       Health/                 # HealthSystem (체력, 무적 플래그)
       Stamina/                # StaminaSystem (소모/재생)
       Mana/                   # ManaSystem (소모/자동 재생)
+      Combat/                 # HitStun(피격 경직), CharacterLayers(플레이어/적 레이어와 몸체 충돌 규칙)
       MapGeneration/          # RoomGenerator(방 배치), PlatformSpawner(바닥/벽/플랫폼), RoomBuilder, SolidSpriteFactory, PhysicsMaterialFactory
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바
@@ -76,7 +80,7 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 
 ## 프리팹 구조
 
-`PlayerSpawner.Build` / `EnemySpawner.BuildSlime`이 오브젝트 구성의 **단일 출처**이고, `PrefabSetup`이 이를 프리팹으로 굽는다.
+`PlayerSpawner.Build` / `SlimeSpawner.Build`(적마다 각자의 Spawner)가 오브젝트 구성의 **단일 출처**이고, `PrefabSetup`이 이를 프리팹으로 굽는다.
 런타임 `Spawn`은 `LevelArtConfig`에 프리팹이 있으면 인스턴스화하고, 없으면 `Build`로 즉석 조립해 동작한다.
 플레이어 프리팹의 컴포넌트: Rigidbody2D, CapsuleCollider2D, PlayerMovement, HealthSystem, StaminaSystem, ManaSystem, PlayerCombat + 자식(Visual: SpriteRenderer/Animator, GroundCheck).
 HP/마나/기력 바(`StatusBarsUI`)는 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 스폰 시 붙인다.
