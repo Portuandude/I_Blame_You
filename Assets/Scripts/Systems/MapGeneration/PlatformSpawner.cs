@@ -5,7 +5,10 @@ namespace IBlameYou.Systems
     // 방 하나 안에 실제로 밟고 다닐 수 있는 바닥/플랫폼 콜라이더를 절차적으로 배치한다.
     public static class PlatformSpawner
     {
-        private const float WallThickness = 1f;
+        public const float WallThickness = 1f;
+
+        // 방 로컬 좌표에서 바닥 윗면의 y (바닥은 방 아래쪽에 두께 1로 깔린다). 문/스폰 위치 계산에 쓴다.
+        public static float FloorTopY(Vector2 roomSize) => -roomSize.y / 2f + 1f;
 
         public static void BuildRoomGeometry(Transform parent, Vector2 roomSize, int seed, Sprite groundTile = null, bool includeFloatingPlatforms = true)
         {

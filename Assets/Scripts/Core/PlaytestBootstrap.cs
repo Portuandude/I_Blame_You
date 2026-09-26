@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace IBlameYou.Core
 {
-    // 빈 씬에 이 컴포넌트 하나만 두고 Play를 누르면: 챕터 맵을 생성해 방 배치를 시각화하고,
-    // 시작 방에는 실제로 밟을 수 있는 바닥/플랫폼과 플레이어를 배치해 이동을 바로 테스트할 수 있게 한다.
+    // 빈 씬에 이 컴포넌트 하나만 두고 Play를 누르면: 챕터 맵의 모든 방을 만들고(바닥/벽/슬라임),
+    // 이웃한 방끼리 문으로 이어 준 뒤, 시작 방에 플레이어와 카메라를 준비한다.
     public class PlaytestBootstrap : MonoBehaviour
     {
         [Header("Chapter Map")]
@@ -20,7 +20,9 @@ namespace IBlameYou.Core
         [SerializeField] private bool spawnFloatingPlatforms = false; // 일단 비활성화, 필요해지면 true로
 
         [Header("Enemies")]
-        [SerializeField] private float[] slimeSpawnOffsetsX = { 10f, -14f, 24f }; // 시작 방 중앙 기준 X 오프셋, 원소 수 = 슬라임 수
+        // 방 중앙 기준 X 오프셋. 원소 수 = 방마다 스폰할 슬라임 수 (테스트용으로 방마다 2마리).
+        // (씬에 저장된 옛 값이 코드 기본값을 덮어쓰지 않도록 이전 slimeSpawnOffsetsX에서 이름을 바꿈)
+        [SerializeField] private float[] slimeOffsetsXPerRoom = { -16f, 16f };
 
         private void Start()
         {
@@ -31,40 +33,45 @@ namespace IBlameYou.Core
 
             var map = RoomGenerator.Generate(mainPathLength, extraRoomCount, seed);
             var mapRoot = new GameObject("ChapterMap").transform;
+            var manager = new GameObject("RoomManager").AddComponent<RoomManager>();
 
+            RoomInstance startRoom = null;
             foreach (var kvp in map.Rooms)
             {
                 var worldPosition = new Vector3(kvp.Key.x * roomSpacingUnits, kvp.Key.y * roomSpacingUnits, 0f);
-                RoomBuilder.BuildRoomBackground(mapRoot, kvp.Value, roomSizeUnits, worldPosition);
+                var room = RoomBuilder.CreateRoom(mapRoot, kvp.Value, roomSizeUnits, worldPosition);
 
-                if (kvp.Key == map.StartPosition)
-                {
-                    var geometryRoot = new GameObject("StartRoomGeometry");
-                    geometryRoot.transform.SetParent(mapRoot, false);
-                    geometryRoot.transform.position = worldPosition;
-                    PlatformSpawner.BuildRoomGeometry(geometryRoot.transform, roomSizeUnits, seed, groundTile, spawnFloatingPlatforms);
+                int roomSeed = seed + kvp.Key.x * 31 + kvp.Key.y * 17;
+                PlatformSpawner.BuildRoomGeometry(room.transform, roomSizeUnits, roomSeed, groundTile, spawnFloatingPlatforms);
+                SpawnSlimes(room, artConfig);
 
-                    // 바닥 기준 상대 높이로 스폰해서, 방 크기가 바뀌어도 항상 바닥 바로 위에서 시작한다.
-                    float spawnY = worldPosition.y - roomSizeUnits.y / 2f + 2f;
-                    PlayerSpawner.Spawn(new Vector3(worldPosition.x, spawnY, 0f), artConfig);
-
-                    foreach (float offsetX in slimeSpawnOffsetsX)
-                    {
-                        SlimeSpawner.Spawn(new Vector3(worldPosition.x + offsetX, spawnY, 0f), artConfig);
-                    }
-                }
+                manager.Register(room);
+                if (kvp.Key == map.StartPosition) startRoom = room;
             }
 
-            var startRoomCenter = new Vector3(map.StartPosition.x * roomSpacingUnits, map.StartPosition.y * roomSpacingUnits, 0f);
-            SetupCamera(startRoomCenter);
+            manager.BuildDoors();
+
+            // 바닥 기준 상대 높이로 스폰해서, 방 크기가 바뀌어도 항상 바닥 바로 위에서 시작한다.
+            var playerSpawn = new Vector3(startRoom.Center.x, startRoom.Center.y - roomSizeUnits.y / 2f + 2f, 0f);
+            var player = PlayerSpawner.Spawn(playerSpawn, artConfig);
+
+            SetupCamera(manager, startRoom, player);
         }
 
-        // 플레이어를 쫓아다니는 카메라를 준비하고, 시야가 시작 방 밖으로 나가지 않게 제한한다.
-        private void SetupCamera(Vector3 startRoomCenter)
+        private void SpawnSlimes(RoomInstance room, LevelArtConfig artConfig)
         {
-            var player = FindFirstObjectByType<PlayerMovement>();
-            if (player == null) return;
+            float spawnY = room.Center.y - roomSizeUnits.y / 2f + 2f;
+            foreach (float offsetX in slimeOffsetsXPerRoom)
+            {
+                var slime = SlimeSpawner.Spawn(new Vector3(room.Center.x + offsetX, spawnY, 0f), artConfig);
+                slime.transform.SetParent(room.transform, true);
+                room.RegisterEnemy(slime.GetComponent<HealthSystem>());
+            }
+        }
 
+        // 플레이어를 쫓아다니는 카메라를 준비하고, 시야를 현재 방 안으로 제한한다 (방을 옮기면 RoomManager가 범위를 바꾼다).
+        private void SetupCamera(RoomManager manager, RoomInstance startRoom, PlayerMovement player)
+        {
             var cam = Camera.main;
             if (cam == null)
             {
@@ -79,9 +86,9 @@ namespace IBlameYou.Core
             var follow = cam.GetComponent<CameraFollow>();
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
 
-            var roomCenter = (Vector2)startRoomCenter;
-            follow.SetBounds(new Rect(roomCenter - roomSizeUnits / 2f, roomSizeUnits));
+            follow.SetBounds(startRoom.WorldBounds);
             follow.SetTarget(player.transform);
+            manager.Begin(startRoom, follow);
         }
     }
 }

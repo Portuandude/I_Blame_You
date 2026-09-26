@@ -57,7 +57,7 @@ Assets/
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
-    Core/                     # PlaytestBootstrap — 챕터 맵 생성 + 시작 방 구성 + 플레이어/슬라임 스폰 + 카메라 준비
+    Core/                     # PlaytestBootstrap — 챕터 맵의 모든 방 생성(바닥/벽/슬라임 2마리) + 문 연결 + 시작 방에 플레이어/카메라 준비
                               # CameraFollow — 플레이어 추적, 시작 방 경계 제한, 피격 시 화면 흔들림
     Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
@@ -68,7 +68,7 @@ Assets/
       Stamina/                # StaminaSystem (소모/재생)
       Mana/                   # ManaSystem (소모/자동 재생)
       Combat/                 # HitStun(피격 경직), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
-      MapGeneration/          # RoomGenerator(방 배치), PlatformSpawner(바닥/벽/플랫폼), RoomBuilder, SolidSpriteFactory, PhysicsMaterialFactory
+      MapGeneration/          # RoomGenerator(방 배치), PlatformSpawner(바닥/벽/플랫폼), RoomBuilder, RoomInstance(방), RoomDoor/DoorBuilder(문), RoomManager(현재 방/방 이동/암전), RoomDirection, SolidSpriteFactory, PhysicsMaterialFactory
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
