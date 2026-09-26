@@ -5,9 +5,22 @@ namespace IBlameYou.Systems
     // 생성된 챕터 맵 전체를 눈으로 확인할 수 있도록 방마다 타입별 색상의 배경을 배치한다.
     public static class RoomBuilder
     {
+        // 방 루트 오브젝트(RoomInstance)를 만들고 그 아래에 배경을 깐다. 바닥/벽/문/적은 이 루트 아래에 붙는다.
+        public static RoomInstance CreateRoom(Transform parent, RoomNode node, Vector2 roomSize, Vector3 worldPosition)
+        {
+            var go = new GameObject($"Room_{node.GridPosition.x}_{node.GridPosition.y}_{node.Type}");
+            go.transform.SetParent(parent, false);
+            go.transform.position = worldPosition;
+
+            var room = go.AddComponent<RoomInstance>();
+            room.Initialize(node, roomSize);
+            BuildRoomBackground(go.transform, node, roomSize, worldPosition);
+            return room;
+        }
+
         public static Transform BuildRoomBackground(Transform parent, RoomNode room, Vector2 roomSize, Vector3 worldPosition)
         {
-            var go = new GameObject($"Room_{room.GridPosition.x}_{room.GridPosition.y}_{room.Type}");
+            var go = new GameObject("Background");
             go.transform.SetParent(parent, false);
             go.transform.position = worldPosition;
             go.transform.localScale = new Vector3(roomSize.x, roomSize.y, 1f);
