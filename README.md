@@ -66,7 +66,7 @@ Assets/
       Health/                 # HealthSystem (체력, 무적 플래그)
       Stamina/                # StaminaSystem (소모/재생)
       Mana/                   # ManaSystem (소모/자동 재생)
-      Combat/                 # HitStun(피격 경직), CharacterLayers(플레이어/적 레이어와 몸체 충돌 규칙)
+      Combat/                 # HitStun(피격 경직), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # RoomGenerator(방 배치), PlatformSpawner(바닥/벽/플랫폼), RoomBuilder, SolidSpriteFactory, PhysicsMaterialFactory
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바
