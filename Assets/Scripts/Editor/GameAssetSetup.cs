@@ -40,6 +40,7 @@ namespace IBlameYou.EditorTools
                 return;
             }
 
+            EnsureFullRectMesh(TilesetPath);
             var groundTile = FindSprite(TilesetPath, GroundTileName);
             if (groundTile == null)
             {
@@ -281,6 +282,22 @@ namespace IBlameYou.EditorTools
             }
 
             return list.ToArray();
+        }
+
+        // 바닥/벽/플랫폼을 SpriteDrawMode.Tiled로 그리려면 스프라이트 Mesh Type이 Full Rect여야 한다.
+        // (Tight면 "Sprite Tiling might not appear correctly" 경고와 함께 타일링이 어긋날 수 있음)
+        private static void EnsureFullRectMesh(string texturePath)
+        {
+            var importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+            if (importer == null) return;
+
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            if (settings.spriteMeshType == SpriteMeshType.FullRect) return;
+
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
+            importer.SaveAndReimport();
         }
 
         private static Sprite FindSprite(string texturePath, string spriteName)
