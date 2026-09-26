@@ -34,6 +34,11 @@ namespace IBlameYou.Enemies
         protected HealthSystem Health { get; private set; }
         protected Animator Animator { get; private set; }
         protected bool IsDead { get; private set; }
+        protected bool IsStunned => hitStun.IsStunned;
+        protected Bounds BodyBounds => bodyCollider.bounds;
+
+        // 적이 자체 공격 중일 때처럼 기본 접촉 데미지를 끄고 싶으면 파생 클래스에서 false를 반환한다.
+        protected virtual bool ContactDamageActive => true;
 
         protected virtual void Awake()
         {
@@ -94,13 +99,13 @@ namespace IBlameYou.Enemies
             }
 
             Move();
-            ApplyContactDamage();
+            if (ContactDamageActive) ApplyContactDamage();
         }
 
         // 플레이어와 몸체 충돌은 꺼져 있어(밀어내지 않기 위해) 충돌 콜백 대신 겹침 조회로 접촉 데미지를 준다.
         private void ApplyContactDamage()
         {
-            var bounds = bodyCollider.bounds;
+            var bounds = BodyBounds;
             foreach (var hit in Physics2D.OverlapBoxAll(bounds.center, bounds.size, 0f))
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();

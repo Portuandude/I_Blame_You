@@ -46,7 +46,7 @@ Assets/
     Animations/Player/        # 생성된 애니메이션 클립 + PlayerAnimator.controller
     Animations/Enemies/Slime/ # 슬라임 클립 + SlimeAnimator.controller
     Materials/                # Frictionless.physicsMaterial2D (프리팹 콜라이더용)
-    Sprites/                  # (비어 있음) Characters, Enemies, Environment, UI
+    Sprites/Enemies/Slime/     # 슬라임 프레임(직접 만든 일러스트, 투명 PNG): Attack 10장, Idle/Run/Die 각 8장. 그 외 Characters, Environment, UI는 비어 있음
   Audio/                      # Music, SFX (비어 있음)
   Data/                       # Characters, Enemies, Rooms — ScriptableObject 인스턴스용 (비어 있음)
   Prefabs/

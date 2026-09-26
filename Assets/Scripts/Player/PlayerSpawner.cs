@@ -11,7 +11,7 @@ namespace IBlameYou.Player
         // 캐릭터 프레임(300x256, PPU 100)에는 여백이 많이 포함돼 있어, 시각적으로 적당한 크기가
         // 되도록 균일하게 축소한다. 콜라이더 크기와는 별개.
         private const float VisualScale = 0.7f;
-        private const float PlayerStunDuration = 0.4f;
+        private const float PlayerStunDuration = 0.2f;
 
         public static PlayerMovement Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {

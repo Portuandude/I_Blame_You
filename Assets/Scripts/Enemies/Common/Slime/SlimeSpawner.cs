@@ -9,9 +9,6 @@ namespace IBlameYou.Enemies
     {
         private const float VisualScale = 0.6f;
 
-        // 슬라임 프레임 원본 크기(258x153, PPU 100), 피벗이 좌하단(0,0)이라 시각 오브젝트를 절반만큼 옮겨서 가운데를 맞춘다.
-        private const float SpriteWidth = 2.58f;
-
         private const float MaxHealth = 30f;
         private const float StunDuration = 0.3f;
         private const float ContactDamage = 8f;
@@ -24,11 +21,18 @@ namespace IBlameYou.Enemies
         private const float ChaseSpeed = 2.5f;
         private const float DetectionRange = 8f;
 
+        // 공격(도약 덮치기): 사거리 안이면 웅크렸다가 플레이어 쪽으로 뛰어 덮친다.
+        private const float AttackRange = 4f;
+        private const float AttackDamage = 12f;
+        private const float AttackCooldown = 2f;
+        private const float MaxLeapSpeed = 8f;
+
         public static SlimeController Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {
-            // 재생성 전의 구버전 프리팹(스프라이트 콜라이더 없음)은 쓰지 않고 코드로 조립한다.
+            // 재생성 전의 구버전 프리팹(스프라이트 콜라이더가 없거나, 피벗 변경 전의 비주얼 오프셋)은
+            // 쓰지 않고 코드로 조립한다.
             var prefab = artConfig != null ? artConfig.slimePrefab : null;
-            if (prefab != null && prefab.GetComponent<SpriteColliderFitter>() == null) prefab = null;
+            if (prefab != null && !IsCurrentPrefab(prefab)) prefab = null;
             return EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "Slime");
         }
 
@@ -40,13 +44,13 @@ namespace IBlameYou.Enemies
             var collider = go.AddComponent<PolygonCollider2D>();
             collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
-            // 피벗이 좌하단이라 (스케일이 적용된 폭)/2만큼 옮겨야 스프라이트가 root 가운데에 온다.
+            // 모든 슬라임 스프라이트의 피벗은 하단 중앙(GameAssetSetup이 임포트 설정으로 맞춤)이라 오프셋이 필요 없다.
             var visual = EnemySpawner.AddVisual(
                 go,
                 artConfig != null ? artConfig.slimeDefaultSprite : null,
                 artConfig != null ? artConfig.slimeAnimatorController : null,
                 VisualScale,
-                new Vector3(-SpriteWidth * VisualScale / 2f, 0f, 0f),
+                Vector3.zero,
                 new Color(0.6f, 0.2f, 0.7f));
 
             go.AddComponent<SpriteColliderFitter>().Configure(visual.GetComponent<SpriteRenderer>(), collider);
@@ -56,10 +60,19 @@ namespace IBlameYou.Enemies
             var controller = go.AddComponent<SlimeController>();
             controller.ConfigureContactDamage(ContactDamage, ContactDamageCooldown);
             controller.Configure(Idle, PatrolSpeed, PatrolRadius, ChaseSpeed, DetectionRange);
+            controller.ConfigureAttack(AttackRange, AttackDamage, AttackCooldown, MaxLeapSpeed);
             controller.ConfigureObstacleLayer(EnemySpawner.GroundMask());
 
             EnemySpawner.AssignEnemyLayer(go);
             return go;
+        }
+
+        private static bool IsCurrentPrefab(GameObject prefab)
+        {
+            if (prefab.GetComponent<SpriteColliderFitter>() == null) return false;
+
+            var visual = prefab.transform.Find("Visual");
+            return visual != null && Mathf.Abs(visual.localPosition.x) < 0.001f;
         }
     }
 }

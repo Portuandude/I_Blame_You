@@ -290,7 +290,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31692a0a9eec6cf4783693886267ff42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IBlameYou.Systems.HitStun
-  stunDuration: 0.4
+  stunDuration: 0.2
   invulnerableWhileStunned: 1
 --- !u!114 &8463224474944666812
 MonoBehaviour:
