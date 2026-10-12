@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace IBlameYou.Systems
 {
@@ -12,24 +13,24 @@ namespace IBlameYou.Systems
         public float maxMana;
         public float maxStamina;
         public float moveSpeed;
-        public float resistance;
+        [FormerlySerializedAs("resistance")] public float debuffResistance; // 디버프 저항도: 디버프가 걸릴 확률만 낮춘다
         public float defense;
         [Range(0f, 1f)] public float critChance;
         public float critDamage = 1.5f;
         public float[] elementDamage = new float[ElementInfo.Count];
-        public float[] elementResistance = new float[ElementInfo.Count];
+        [FormerlySerializedAs("elementResistance")] public float[] elementDefense = new float[ElementInfo.Count]; // 속성 방어력
         public float attackSpeed;
         public float physicalDamage;
         public float experience;
 
         public float ElementDamage(Element element) => elementDamage[(int)element];
-        public float ElementResistance(Element element) => elementResistance[(int)element];
+        public float ElementDefense(Element element) => elementDefense[(int)element];
 
         public StatBlock Clone()
         {
             var copy = (StatBlock)MemberwiseClone();
             copy.elementDamage = (float[])elementDamage.Clone();
-            copy.elementResistance = (float[])elementResistance.Clone();
+            copy.elementDefense = (float[])elementDefense.Clone();
             return copy;
         }
     }

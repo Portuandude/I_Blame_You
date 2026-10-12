@@ -16,7 +16,8 @@ namespace IBlameYou.Systems
 
     // 기획서 5.2에서 확정한 비율식 데미지 공식.
     //   물리 피해 = 물리 데미지 × 100 / (100 + 방어력)
-    //   마법 피해 = 속성 데미지 × 100 / (100 + 저항도 × 0.5 + 속성 저항도 × 0.5)
+    //   마법 피해 = 속성 데미지 × 100 / (100 + 속성 방어력)
+    // 디버프 저항도는 디버프 확률에만 쓰고 피해 계산에는 쓰지 않는다 (StatusEffects.Chance).
     // 치명타는 방어 계산 후 최종 피해에 배율을 곱한다 (기획서 5.3 추천안).
     public static class DamageCalculator
     {
@@ -25,10 +26,9 @@ namespace IBlameYou.Systems
             return attack * 100f / (100f + Mathf.Max(defense, -50f));
         }
 
-        public static float Magic(float elementDamage, float resistance, float elementResistance)
+        public static float Magic(float elementDamage, float elementDefense)
         {
-            float mitigation = resistance * 0.5f + elementResistance * 0.5f;
-            return elementDamage * 100f / (100f + Mathf.Max(mitigation, -50f));
+            return elementDamage * 100f / (100f + Mathf.Max(elementDefense, -50f));
         }
 
         // 공격자 스탯으로 대상에게 한 번 피해를 준다. multiplier는 스킬 계수.
@@ -60,7 +60,7 @@ namespace IBlameYou.Systems
             }
             else
             {
-                damage = Magic(raw, defenderStats.Stats.resistance, defenderStats.Stats.ElementResistance(element));
+                damage = Magic(raw, defenderStats.Stats.ElementDefense(element));
             }
 
             bool critical = attack != null && attack.critChance > 0f && Random.value < attack.critChance;
