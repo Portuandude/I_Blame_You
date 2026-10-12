@@ -37,6 +37,11 @@ namespace IBlameYou.EditorTools
             EnsureFolder(EnemyOutputFolder);
             EnsureFolder("Assets/Resources");
 
+            // 새 PNG를 처음 임포트(SaveAndReimport)하면 에셋 DB가 새로고침되면서, 아직 디스크에 저장되지 않은
+            // 애니메이터 컨트롤러가 파라미터/상태 없는 빈 파일로 되돌아간다("Parameter ... does not exist").
+            // 그래서 컨트롤러를 만들기 전에 모든 스프라이트의 임포트 설정부터 끝낸다.
+            PrepareAllSpriteImports();
+
             var (playerController, playerDefaultSprite) = GeneratePlayerAnimations();
             var (slimeController, slimeDefaultSprite) = GenerateSlimeAnimations();
 
@@ -212,6 +217,7 @@ namespace IBlameYou.EditorTools
                 ("Speed", AnimatorConditionMode.Less, 0.05f));
 
             EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets(); // 이후 임포트/새로고침이 있어도 파라미터와 상태가 사라지지 않도록 바로 저장
             return controller;
         }
 
@@ -293,6 +299,32 @@ namespace IBlameYou.EditorTools
             return list.ToArray();
         }
 
+        private static void PrepareAllSpriteImports()
+        {
+            foreach (string folder in new[] { "Goblin", "GoblinArcher", "GoblinSoldier", "GoblinWarrior" })
+            {
+                PrepareFolder($"{EnemySpriteRoot}/{folder}", path => EnsureSingleSpriteImport(path, SpriteAlignment.BottomCenter));
+            }
+
+            PrepareFolder($"{EffectSpriteRoot}/EarthSpike", path => EnsureSingleSpriteImport(path, SpriteAlignment.BottomCenter));
+            foreach (string folder in new[] { "Fireball", "WaterLance", "WindGust", "ArcaneOrb", "Shield", "Teleport", "Arrow", "Slash" })
+            {
+                PrepareFolder($"{EffectSpriteRoot}/{folder}", path => EnsureSingleSpriteImport(path, SpriteAlignment.Center));
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private static void PrepareFolder(string folder, System.Action<string> prepare)
+        {
+            if (!Directory.Exists(folder)) return;
+            foreach (string file in Directory.GetFiles(folder, "*.png", SearchOption.AllDirectories))
+            {
+                prepare(file.Replace('\\', '/'));
+            }
+        }
+
         private static AnimatorController BuildSlimeAnimatorController(AnimationClip idle, AnimationClip run, AnimationClip die, AnimationClip attack)
         {
             return BuildEnemyAnimatorController($"{EnemyOutputFolder}/SlimeAnimator.controller", idle, run, die, attack);
@@ -340,6 +372,7 @@ namespace IBlameYou.EditorTools
                 ("Speed", AnimatorConditionMode.Less, 0.05f));
 
             EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets(); // 이후 임포트/새로고침이 있어도 파라미터와 상태가 사라지지 않도록 바로 저장
             return controller;
         }
 
