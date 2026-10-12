@@ -42,8 +42,19 @@ namespace IBlameYou.Systems
         {
             if (health.IsDead) return;
 
+            // 대지 디버프로 더 긴 경직이 남아 있으면 줄이지 않는다.
+            remaining = IsStunned ? Mathf.Max(remaining, stunDuration) : stunDuration;
             IsStunned = true;
-            remaining = stunDuration;
+            if (invulnerableWhileStunned) health.Invulnerable = true;
+        }
+
+        // 피격과 별개로 정해진 시간만큼 경직시킨다 (대지 속성 디버프). 이미 더 긴 경직 중이면 유지.
+        public void Apply(float duration)
+        {
+            if (health.IsDead || duration <= 0f) return;
+
+            IsStunned = true;
+            remaining = Mathf.Max(remaining, duration);
             if (invulnerableWhileStunned) health.Invulnerable = true;
         }
 
