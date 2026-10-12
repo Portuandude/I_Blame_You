@@ -167,7 +167,7 @@ namespace IBlameYou.Enemies
                     return;
             }
 
-            float speed = (chasing ? chaseSpeed : patrolSpeed) * Stats.MoveSpeedMultiplier;
+            float speed = (chasing ? chaseSpeed : patrolSpeed) * Stats.TotalMoveMultiplier;
             Rb.linearVelocity = new Vector2(moveDirection * speed, Rb.linearVelocity.y);
         }
 
