@@ -47,8 +47,7 @@ namespace IBlameYou.Enemies
 
         [Header("Attack (도약 덮치기)")]
         [SerializeField] private float attackRange = 4f;
-        [SerializeField] private float attackDamage = 12f;
-        [SerializeField] private float attackCooldown = 2f;
+        [SerializeField] private float attackCooldown = 5f; // 스포너가 공격 속도(초당 횟수)로 정한다
         [SerializeField] private float maxLeapSpeed = 8f;
 
         [Header("Wall Check")]
@@ -83,10 +82,10 @@ namespace IBlameYou.Enemies
             detectionRange = detection;
         }
 
-        public void ConfigureAttack(float range, float damage, float cooldown, float leapSpeed)
+        // 도약 피해는 CombatStats의 물리 데미지로 계산한다 (EnemyController.StrikePlayer).
+        public void ConfigureAttack(float range, float cooldown, float leapSpeed)
         {
             attackRange = range;
-            attackDamage = damage;
             attackCooldown = cooldown;
             maxLeapSpeed = leapSpeed;
         }
@@ -168,7 +167,7 @@ namespace IBlameYou.Enemies
                     return;
             }
 
-            float speed = chasing ? chaseSpeed : patrolSpeed;
+            float speed = (chasing ? chaseSpeed : patrolSpeed) * Stats.MoveSpeedMultiplier;
             Rb.linearVelocity = new Vector2(moveDirection * speed, Rb.linearVelocity.y);
         }
 
@@ -244,7 +243,7 @@ namespace IBlameYou.Enemies
                 if (targetHealth.GetComponent<EnemyController>() != null) continue; // 적끼리는 피해 없음
                 if (!attackedThisLeap.Add(targetHealth)) continue;
 
-                targetHealth.TakeDamage(attackDamage);
+                StrikePlayer(targetHealth);
             }
         }
 

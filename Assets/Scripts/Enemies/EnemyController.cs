@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using IBlameYou.Player;
 using IBlameYou.Systems;
@@ -5,18 +6,20 @@ using UnityEngine;
 
 namespace IBlameYou.Enemies
 {
-    // 모든 적의 공통 기반: 체력/경직/접촉 데미지/사망 처리.
+    // 모든 적의 공통 기반: 체력/경직/접촉 데미지/사망 처리. 수치는 CombatStats(스탯 문서 값)에서 읽는다.
     // 적별 행동은 파생 클래스에서 Move(매 물리 프레임 이동)와 필요하면 OnAliveUpdate/OnDied를 구현한다.
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(HealthSystem))]
     [RequireComponent(typeof(HitStun))]
+    [RequireComponent(typeof(CombatStats))]
     public abstract class EnemyController : MonoBehaviour
     {
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
         private static readonly int IsDeadParam = Animator.StringToHash("IsDead");
 
+        // 몸통 접촉 피해 = 물리 데미지 × 이 배율 (스탯 문서에 접촉 피해 항목이 없어 가안으로 30%).
         [Header("Contact Damage")]
-        [SerializeField] private float contactDamage = 8f;
+        [SerializeField] private float contactDamageMultiplier = 0.3f;
         [SerializeField] private float contactDamageCooldown = 1f;
 
         [Header("Death")]
@@ -30,9 +33,13 @@ namespace IBlameYou.Enemies
         private float nextTargetSearchTime;
         private readonly Dictionary<HealthSystem, float> lastHitTime = new Dictionary<HealthSystem, float>();
 
+        // 적이 죽을 때 (적, 드랍 경험치). HUD가 경험치를 모은다.
+        public static event Action<EnemyController, float> Killed;
+
         protected Rigidbody2D Rb { get; private set; }
         protected HealthSystem Health { get; private set; }
         protected Animator Animator { get; private set; }
+        protected CombatStats Stats { get; private set; }
         protected bool IsDead { get; private set; }
         protected bool IsStunned => hitStun.IsStunned;
         protected Bounds BodyBounds => bodyCollider.bounds;
@@ -49,15 +56,27 @@ namespace IBlameYou.Enemies
             if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
             bodyCollider = GetComponent<Collider2D>();
             Animator = GetComponentInChildren<Animator>();
+            Stats = GetComponent<CombatStats>();
 
             Health.HealthChanged += OnHealthChanged;
         }
 
         // 스포너가 적마다 다른 접촉 데미지를 지정할 때 사용.
-        public void ConfigureContactDamage(float damage, float cooldown)
+        public void ConfigureContactDamage(float damageMultiplier, float cooldown)
         {
-            contactDamage = damage;
+            contactDamageMultiplier = damageMultiplier;
             contactDamageCooldown = cooldown;
+        }
+
+        // 공격 판정이 닿은 대상에게 물리 피해를 준다 (적끼리는 피해 없음). 피해를 줬으면 true.
+        protected bool StrikePlayer(Component target, float multiplier = 1f)
+        {
+            var targetHealth = target.GetComponentInParent<HealthSystem>();
+            if (targetHealth == null || targetHealth == Health) return false;
+            if (targetHealth.GetComponent<EnemyController>() != null) return false;
+
+            DamageCalculator.Strike(Stats, targetHealth, DamageKind.Physical, Element.Neutral, multiplier);
+            return true;
         }
 
         // 추적/감지 대상(플레이어). 없거나 사라졌으면 일정 간격으로만 다시 찾아서 매 프레임 탐색하지 않는다.
@@ -68,6 +87,13 @@ namespace IBlameYou.Enemies
                 var player = FindFirstObjectByType<PlayerMovement>();
                 target = player != null ? player.transform : null;
                 nextTargetSearchTime = Time.time + TargetSearchInterval;
+            }
+
+            // 플레이어가 죽었으면 더 이상 쫓지 않는다.
+            if (target != null)
+            {
+                var targetHealth = target.GetComponent<HealthSystem>();
+                if (targetHealth != null && targetHealth.IsDead) return null;
             }
 
             return target;
@@ -115,7 +141,7 @@ namespace IBlameYou.Enemies
 
                 if (lastHitTime.TryGetValue(targetHealth, out float last) && Time.time - last < contactDamageCooldown) continue;
 
-                targetHealth.TakeDamage(contactDamage);
+                DamageCalculator.Strike(Stats, targetHealth, DamageKind.Physical, Element.Neutral, contactDamageMultiplier);
                 lastHitTime[targetHealth] = Time.time;
             }
         }
@@ -127,6 +153,7 @@ namespace IBlameYou.Enemies
             IsDead = true;
             if (Animator != null) Animator.SetBool(IsDeadParam, true);
             OnDied();
+            Killed?.Invoke(this, Stats != null ? Stats.Stats.experience : 0f);
             Destroy(gameObject, destroyDelayAfterDeath);
         }
 
