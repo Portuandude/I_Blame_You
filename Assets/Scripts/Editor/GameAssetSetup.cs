@@ -11,6 +11,8 @@ namespace IBlameYou.EditorTools
     // Tools > I Blame You > Generate Sprites And Animations 메뉴 한 번으로:
     // - 마법사 프레임들(Assets/Art/Sprites/Characters/Wizard)로 Idle/Run/Rise/Fall/Dash/Attack 클립 + 애니메이터를 만들고
     // - Slime 프레임들로 Idle/Run/Die 클립 + 애니메이터를 만들고
+    // - 고블린 4종(고블린/궁수/병사/대전사) 프레임으로 Idle/Run/Attack/Die 클립 + 애니메이터를 만들고
+    // - 스킬/투사체 이펙트 프레임(Assets/Art/Sprites/Effects)을 모아
     // - 바닥 타일 스프라이트를 골라
     // Assets/Resources/LevelArtConfig.asset에 전부 담아둔다. 런타임 코드는 이 설정 하나만 Resources.Load로 읽는다.
     // 몇 번을 다시 실행해도 기존 결과물을 덮어쓰도록 만들어져 있다(idempotent).
@@ -20,9 +22,12 @@ namespace IBlameYou.EditorTools
         private const string WizardSpriteRoot = "Assets/Art/Sprites/Characters/Wizard"; // 플레이어 마법사 아트 (동작별로 하나씩 교체 중)
         private const string TilesetPath = "Assets/2D Platformer Tileset/Sprites/Tileset/tileset_1.png";
         private const string GroundTileName = "tileset_1_39";
+        private const string EnemySpriteRoot = "Assets/Art/Sprites/Enemies";
+        private const string EffectSpriteRoot = "Assets/Art/Sprites/Effects";
 
         private const string PlayerOutputFolder = "Assets/Art/Animations/Player";
         private const string EnemyOutputFolder = "Assets/Art/Animations/Enemies/Slime";
+        private const string EnemyAnimationRoot = "Assets/Art/Animations/Enemies";
         private const string ConfigPath = "Assets/Resources/LevelArtConfig.asset";
 
         [MenuItem("Tools/I Blame You/Generate Sprites And Animations")]
@@ -60,6 +65,26 @@ namespace IBlameYou.EditorTools
             config.playerDefaultSprite = playerDefaultSprite;
             config.slimeAnimatorController = slimeController;
             config.slimeDefaultSprite = slimeDefaultSprite;
+
+            // 고블린류는 Tools/ArtGen/generate_sprites.py로 만든 임시 아트. 프레임이 없으면 비워 두고 스포너가 단색 사각형으로 대체한다.
+            (config.goblinAnimatorController, config.goblinDefaultSprite) =
+                GenerateGoblinAnimations("Goblin", "goblin", GoblinController.AttackFrameRate);
+            (config.goblinArcherAnimatorController, config.goblinArcherDefaultSprite) =
+                GenerateGoblinAnimations("GoblinArcher", "goblin_archer", GoblinArcherController.AttackFrameRate);
+            (config.goblinSoldierAnimatorController, config.goblinSoldierDefaultSprite) =
+                GenerateGoblinAnimations("GoblinSoldier", "goblin_soldier", GoblinController.AttackFrameRate);
+            (config.goblinWarriorAnimatorController, config.goblinWarriorDefaultSprite) =
+                GenerateGoblinAnimations("GoblinWarrior", "goblin_warrior", GoblinController.AttackFrameRate);
+
+            config.fireballFrames = LoadEffectFrames("Fireball", "fx_fireball_");
+            config.waterLanceFrames = LoadEffectFrames("WaterLance", "fx_water_");
+            config.windGustFrames = LoadEffectFrames("WindGust", "fx_wind_");
+            config.earthSpikeFrames = LoadEffectFrames("EarthSpike", "fx_earth_", SpriteAlignment.BottomCenter);
+            config.arcaneOrbFrames = LoadEffectFrames("ArcaneOrb", "fx_arcane_");
+            config.shieldFrames = LoadEffectFrames("Shield", "fx_shield_");
+            config.teleportFrames = LoadEffectFrames("Teleport", "fx_teleport_");
+            config.arrowFrames = LoadEffectFrames("Arrow", "fx_arrow_");
+            config.slashFrames = LoadEffectFrames("Slash", "fx_slash_");
             EditorUtility.SetDirty(config);
 
             AssetDatabase.SaveAssets();
@@ -214,9 +239,69 @@ namespace IBlameYou.EditorTools
             return (controller, idleFrames[0]);
         }
 
+        // Assets/Art/Sprites/Enemies/<folder>/{Idle,Run,Attack,Die}/<prefix>_<동작>_NN.png → 클립 + 애니메이터.
+        // 공격 클립은 컨트롤러의 판정 타이밍과 맞물리도록 attackFrameRate로 만든다.
+        private static (AnimatorController controller, Sprite defaultSprite) GenerateGoblinAnimations(string folder, string prefix,
+            float attackFrameRate)
+        {
+            string spriteRoot = $"{EnemySpriteRoot}/{folder}";
+            string outputFolder = $"{EnemyAnimationRoot}/{folder}";
+
+            var idleFrames = LoadSequentialFrames($"{spriteRoot}/Idle", $"{prefix}_idle_", EnsureSlimeSpriteImport);
+            var runFrames = LoadSequentialFrames($"{spriteRoot}/Run", $"{prefix}_run_", EnsureSlimeSpriteImport);
+            var attackFrames = LoadSequentialFrames($"{spriteRoot}/Attack", $"{prefix}_attack_", EnsureSlimeSpriteImport);
+            var dieFrames = LoadSequentialFrames($"{spriteRoot}/Die", $"{prefix}_die_", EnsureSlimeSpriteImport);
+
+            if (idleFrames.Length == 0 || runFrames.Length == 0 || attackFrames.Length == 0 || dieFrames.Length == 0)
+            {
+                Debug.LogWarning($"[GameAssetSetup] {folder} 프레임이 없어 애니메이션을 건너뜁니다 ({spriteRoot}).");
+                return (null, null);
+            }
+
+            EnsureFolder(outputFolder);
+            var idleClip = CreateOrReplaceClip(outputFolder, $"{folder}_Idle", idleFrames, 8f, true);
+            var runClip = CreateOrReplaceClip(outputFolder, $"{folder}_Run", runFrames, 12f, true);
+            var dieClip = CreateOrReplaceClip(outputFolder, $"{folder}_Die", dieFrames, 10f, false);
+            var attackClip = CreateOrReplaceClip(outputFolder, $"{folder}_Attack", attackFrames, attackFrameRate, false);
+
+            var controller = BuildEnemyAnimatorController($"{outputFolder}/{folder}Animator.controller", idleClip, runClip, dieClip, attackClip);
+            return (controller, idleFrames[0]);
+        }
+
+        private static Sprite[] LoadEffectFrames(string folder, string prefix, SpriteAlignment alignment = SpriteAlignment.Center)
+        {
+            var frames = LoadSequentialFrames($"{EffectSpriteRoot}/{folder}", prefix, path => EnsureSingleSpriteImport(path, alignment));
+            if (frames.Length == 0) Debug.LogWarning($"[GameAssetSetup] 이펙트 프레임 없음: {EffectSpriteRoot}/{folder} (원형으로 대체됨)");
+            return frames;
+        }
+
+        // prefix00.png, prefix01.png ... 를 처음 빠진 번호까지 읽는다.
+        private static Sprite[] LoadSequentialFrames(string folder, string prefix, System.Action<string> prepare)
+        {
+            var list = new List<Sprite>();
+            for (int i = 0; i < 100; i++)
+            {
+                string path = $"{folder}/{prefix}{i:00}.png";
+                if (!File.Exists(path)) break;
+
+                prepare?.Invoke(path);
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (sprite == null) break;
+                list.Add(sprite);
+            }
+
+            return list.ToArray();
+        }
+
         private static AnimatorController BuildSlimeAnimatorController(AnimationClip idle, AnimationClip run, AnimationClip die, AnimationClip attack)
         {
-            string controllerPath = $"{EnemyOutputFolder}/SlimeAnimator.controller";
+            return BuildEnemyAnimatorController($"{EnemyOutputFolder}/SlimeAnimator.controller", idle, run, die, attack);
+        }
+
+        // 적 공통 애니메이터: Idle/Run(Speed), Attack(IsAttacking), Die(IsDead). EnemyController 파생 클래스가 이 파라미터를 쓴다.
+        private static AnimatorController BuildEnemyAnimatorController(string controllerPath, AnimationClip idle, AnimationClip run,
+            AnimationClip die, AnimationClip attack)
+        {
             if (AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath) != null)
             {
                 AssetDatabase.DeleteAsset(controllerPath);
