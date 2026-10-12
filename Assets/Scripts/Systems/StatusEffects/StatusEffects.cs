@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace IBlameYou.Systems
@@ -12,13 +11,17 @@ namespace IBlameYou.Systems
     }
 
     // 적에게 걸리는 디버프 (화상/젖음/경직). 처음 디버프가 걸릴 때 대상에 자동으로 붙는다.
-    // - 확률: 100 × 0.1 / 저항도 (% 단위) = 10 / 저항도. 저항도 10 이하는 100%, 15는 67%, 30은 33%.
-    // - 화상: 맞을 때마다 한 중첩씩 쌓이고, 중첩마다 5초 동안 초당 (공격자 불 속성 데미지 / 10)의 고정 피해.
+    // - 확률: 7.5 / 디버프 저항도 (최대 100%). 평균 디버프 저항도 25에서 30%가 되도록 맞춘 값.
+    //   디버프 저항도 7.5 이하는 100%, 15는 50%, 30은 25%.
+    // - 화상: 맞을 때마다 한 중첩씩 쌓인다. 1초마다 중첩 수 × (공격자 불 속성 데미지 / 10)의 고정 피해를 5초 동안.
+    //   새 중첩이 쌓이면 늘어난 중첩 수로 5초를 처음부터 다시 센다.
     // - 젖음: 3초 동안 이동속도 40% 감소. 다시 맞으면 시간만 갱신.
     // - 화상과 젖음은 함께 걸리지 않는다. 새로 걸린 쪽이 다른 쪽을 지운다.
     // - 경직: 1초 동안 이동/공격 정지.
     public class StatusEffects : MonoBehaviour
     {
+        public const float ChanceAtReference = 0.3f;   // 기준 디버프 저항도에서의 확률
+        public const float ReferenceResistance = 25f;  // 기준(평균) 디버프 저항도
         public const float BurnDuration = 5f;
         public const float BurnRatio = 0.1f;
         public const float WetDuration = 3f;
@@ -29,28 +32,24 @@ namespace IBlameYou.Systems
         private static readonly Color WetColor = new Color(0.35f, 0.65f, 1f);
         private static readonly Color StunColor = new Color(0.8f, 0.65f, 0.4f);
 
-        private class BurnStack
-        {
-            public float DamagePerSecond;
-            public float Remaining;
-        }
-
-        private readonly List<BurnStack> burns = new List<BurnStack>();
+        private int burnStacks;
+        private float burnDamagePerStack;
+        private float burnRemaining;
         private HealthSystem health;
         private CombatStats stats;
         private HitStun hitStun;
         private float wetRemaining;
         private float burnTickTimer;
 
-        public int BurnStacks => burns.Count;
+        public int BurnStacks => burnStacks;
         public bool IsWet => wetRemaining > 0f;
 
         // 디버프가 걸릴 확률 (0~1).
         public static float Chance(CombatStats target)
         {
-            float resistance = target != null ? target.Stats.resistance : 0f;
+            float resistance = target != null ? target.Stats.debuffResistance : 0f;
             if (resistance <= 0f) return 1f;
-            return Mathf.Clamp01(100f * 0.1f / resistance);
+            return Mathf.Clamp01(ChanceAtReference * ReferenceResistance / resistance);
         }
 
         // 확률 판정 후 디버프를 건다. 걸렸으면 true.
@@ -82,13 +81,15 @@ namespace IBlameYou.Systems
                 case StatusDebuff.Burn:
                     ClearWet();
                     float fire = attacker != null ? attacker.Stats.ElementDamage(Element.Fire) : 0f;
-                    if (burns.Count == 0) burnTickTimer = 1f;
-                    burns.Add(new BurnStack { DamagePerSecond = fire * BurnRatio, Remaining = BurnDuration });
-                    Announce($"화상 x{burns.Count}", BurnColor);
+                    burnStacks++;
+                    burnDamagePerStack = fire * BurnRatio;
+                    burnRemaining = BurnDuration;
+                    burnTickTimer = 1f;
+                    Announce($"화상 x{burnStacks}", BurnColor);
                     break;
 
                 case StatusDebuff.Wet:
-                    burns.Clear();
+                    ClearBurn();
                     wetRemaining = WetDuration;
                     if (stats != null) stats.SlowMultiplier = 1f - WetSlow;
                     Announce("젖음", WetColor);
@@ -105,7 +106,7 @@ namespace IBlameYou.Systems
         {
             if (health == null || health.IsDead)
             {
-                burns.Clear();
+                ClearBurn();
                 ClearWet();
                 return;
             }
@@ -116,25 +117,27 @@ namespace IBlameYou.Systems
                 if (wetRemaining <= 0f) ClearWet();
             }
 
-            if (burns.Count == 0) return;
+            if (burnStacks == 0) return;
 
-            // 1초마다 모든 중첩의 피해를 합쳐 한 번에 준다. 방어/저항을 무시하는 고정 피해.
+            // 1초마다 중첩 수만큼의 피해를 한 번에 준다. 방어력/속성 방어력을 무시하는 고정 피해.
             burnTickTimer -= Time.deltaTime;
             if (burnTickTimer > 0f) return;
             burnTickTimer += 1f;
 
-            float total = 0f;
-            for (int i = burns.Count - 1; i >= 0; i--)
-            {
-                total += burns[i].DamagePerSecond;
-                burns[i].Remaining -= 1f;
-                if (burns[i].Remaining <= 0.001f) burns.RemoveAt(i);
-            }
+            float total = burnStacks * burnDamagePerStack;
+            burnRemaining -= 1f;
+            if (burnRemaining <= 0.001f) ClearBurn();
 
             if (total <= 0f) return;
             health.Drain(total);
             DamageNumbers.ShowText(transform.position + new Vector3(Random.Range(-0.3f, 0.3f), 1.5f, 0f),
                 total.ToString("0.#"), BurnColor, 0.8f);
+        }
+
+        private void ClearBurn()
+        {
+            burnStacks = 0;
+            burnRemaining = 0f;
         }
 
         private void ClearWet()
