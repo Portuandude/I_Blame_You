@@ -30,13 +30,25 @@ Unity.exe -batchmode -nographics -projectPath "<프로젝트 경로>" -executeMe
 
 ## 조작키
 
-| 입력 | 동작 |
-| --- | --- |
-| A / D, ← / → | 좌우 이동 |
-| Space | 점프 |
-| Shift (누르고 이동) | 달리기 — 기력을 지속 소모, 바닥나면 걷기로 전환 |
-| Left Ctrl | 대쉬 — 기력 50 소모, 대쉬 중 피격 무적 |
-| 마우스 좌클릭 | 공격 (전방 판정) |
+Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)는 한 사람이 A/B를 동시에 조작하고 스킬 미니게임을 숫자키 즉시 발동으로 대체한다.
+한 캐릭터를 플레이어 A(이동·방어)와 B(공격)가 나눠 조작하며, 마나는 하나를 같이 쓴다.
+
+| 역할 | 입력 | 동작 |
+| --- | --- | --- |
+| A | A / D | 좌우 이동 |
+| A | Space | 점프 |
+| A | Shift (누르고 이동) | 달리기 — 기력을 지속 소모 |
+| A | Left Ctrl | 대쉬 — 기력 50, 대쉬 중 무적 |
+| A | 방향키 + Enter | 순간이동 (마나 20, 미니게임 없음) |
+| A | 넘패드 1~5 | 불/물/바람/땅/무 방어막 → 화면에 뜬 W/A/S/D 순서 입력 (입력 중 정지, 틀리면 마나만 소모) |
+| B | 마우스 좌클릭 | 평타 (마우스 쪽으로) |
+| B | 상단 1~5 | 불/물/바람/땅/무 공격 스킬 → 영창문 타이핑 후 Enter (오타면 마나만 소모, Esc 취소) |
+| 개발자 모드 | 상단 1~5 / 6~9·0 | A 방어막 / B 공격 스킬 즉시 발동 |
+| 개발자 모드 | F1 / F2 / F3 / F4 | 무적 / 마나 무한 / 방 안의 적 처치 / 체력 회복 |
+| 공통 | R / M (쓰러졌을 때) | 다시 시작 / 시작 화면 |
+
+수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
+고블린 4종과 스킬 이펙트 그림은 `Tools/ArtGen/generate_sprites.py`로 만든 임시 아트다 (`python3 Tools/ArtGen/generate_sprites.py`로 다시 생성).
 
 ## 폴더 구조
 
@@ -47,6 +59,8 @@ Assets/
     Animations/Enemies/Slime/ # 슬라임 클립 + SlimeAnimator.controller
     Materials/                # Frictionless.physicsMaterial2D (프리팹 콜라이더용)
     Sprites/Characters/Wizard/ # 플레이어 마법사 프레임(투명 PNG, 300x256 캔버스, 발 y=193). Idle 7장(직접 준비, 수정 빛이 단계적으로 켜짐, 왕복 재생) + Walk 8 / Run 8 / Jump 2 / Dash 6 / Attack 8장(Idle 한 장을 변형한 임시 프레임. 걷기/달리기는 로브 끝자락을 발처럼 번갈아 내디딤 — 동작별 그림이 생기면 같은 이름의 PNG로 교체 후 툴 재실행)
+    Sprites/Enemies/Goblin*/   # 고블린/궁수/병사/대전사 Idle/Run/Attack/Die (임시 아트, Tools/ArtGen)
+    Sprites/Effects/           # 스킬/투사체/방어막/순간이동 이펙트 프레임 (임시 아트, Tools/ArtGen)
     Sprites/Enemies/Slime/     # 슬라임 프레임(직접 만든 일러스트, 투명 PNG): Attack 10장, Idle/Run/Die 각 8장. 그 외 Characters, Environment, UI는 비어 있음
   Audio/                      # Music, SFX (비어 있음)
   Data/                       # Characters, Enemies, Rooms — ScriptableObject 인스턴스용 (비어 있음)
@@ -59,18 +73,26 @@ Assets/
   Scripts/
     Core/                     # PlaytestBootstrap — 챕터 맵의 모든 방 생성(바닥/벽/슬라임 2마리) + 문 연결 + 시작 방에 플레이어/카메라 준비
                               # CameraFollow — 플레이어 추적, 시작 방 경계 제한, 피격 시 화면 흔들림
-    Player/                   # PlayerMovement(이동/점프/달리기/대쉬), PlayerCombat(공격), PlayerSpawner
+    Player/                   # PlayerMovement(A: 이동/점프/달리기/대쉬), PlayerCombat(B: 평타), PlayerSpawner
+      Input/                  # RoleInput(A/B 역할별 키), PlayerControlState(미니게임 정지/영창 중 입력 잠금)
+      Skills/                 # A: TeleportSkill, ElementShieldSkill/ElementShield · B: SpellCaster/SpellBook, GroundSpike
+    Core/ (추가)              # StartMenu(개발자 모드 선택), GameSession, DevCheats
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
-      Elite/, Bosses/         # (비어 있음)
+      Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
+      Common/GoblinArcher/    # GoblinArcherController(거리 유지 + 화살), GoblinArcherSpawner
+      Elite/MotherSlime/      # 어미 슬라임(사망 시 슬라임 3기로 분열)
+      Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화)
+      Bosses/                 # (비어 있음)
     Systems/
       Health/                 # HealthSystem (체력, 무적 플래그)
       Stamina/                # StaminaSystem (소모/재생)
-      Mana/                   # ManaSystem (소모/자동 재생)
+      Mana/                   # ManaSystem (소모/자동 재생, A/B가 쓴·날린 마나 기록)
+      Stats/                  # StatTable(스탯 문서 값), CombatStats, DamageCalculator(비율식 공식), Element
       Combat/                 # HitStun(피격 경직), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # RoomGenerator(방 배치), PlatformSpawner(바닥/벽/플랫폼), RoomBuilder, RoomInstance(방), RoomDoor/DoorBuilder(문), RoomManager(현재 방/방 이동/암전), RoomDirection, SolidSpriteFactory, PhysicsMaterialFactory
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
-    UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바
+    UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/, Data/, Enemies/Elite/, Enemies/Bosses/, Systems/StatusEffects/  # (비어 있음)
   Plugins/, Settings/
