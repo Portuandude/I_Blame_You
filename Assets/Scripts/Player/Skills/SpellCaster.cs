@@ -129,19 +129,22 @@ namespace IBlameYou.Player
         {
             var go = new GameObject($"Spell_{spell.Element}");
             go.transform.position = origin;
-            float size = spell.Shape == SpellShape.Wave ? spell.Radius * 2f : spell.Radius * 2.5f;
             EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.SpellFrames(spell.Element), 14f, true,
-                ElementInfo.Color(spell.Element), size);
+                ElementInfo.Color(spell.Element), spell.Radius * 2.5f);
 
-            go.AddComponent<Projectile>().Launch(stats, true, DamageKind.Magic, spell.Element, direction, spell.Speed,
-                spell.Radius, spell.Range, spell.Shape != SpellShape.Projectile, spell.DamageMultiplier);
+            var projectile = go.AddComponent<Projectile>();
+            projectile.Launch(stats, true, DamageKind.Magic, spell.Element, direction, spell.Speed,
+                spell.Radius, spell.Range, spell.Shape == SpellShape.Piercing, spell.DamageMultiplier);
+            projectile.SetHoming(spell.HomingTurnRate, SpellBook.HomingRange);
+            projectile.Hit = target => StatusEffects.TryApply(target, spell.Debuff, stats);
         }
 
         private void SpawnGroundSpike(SpellDefinition spell, Vector2 aim)
         {
-            // 조준점이 사거리 밖이면 사거리 끝으로 당기고, 그 아래 땅을 찾는다.
+            // 조준점이 사거리 밖이면 사거리 끝으로 당긴다. 사거리 안에서 조준점에 가장 가까운 적을 노린다.
             Vector2 self = transform.position;
             if (Vector2.Distance(self, aim) > spell.Range) aim = self + (aim - self).normalized * spell.Range;
+            var target = FindSpikeTarget(self, aim, spell.Range);
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
@@ -150,11 +153,28 @@ namespace IBlameYou.Player
 
             var go = new GameObject("Spell_Earth");
             go.transform.position = point;
-            var frames = EffectLibrary.SpellFrames(Element.Earth);
-            var visual = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 14f, false,
-                ElementInfo.Color(Element.Earth), spell.Radius * 1.5f);
-            if (frames == null) visual.transform.localPosition = new Vector3(0f, 0.6f, 0f);
-            go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier);
+            go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.CastDelay, target,
+                groundMask, health => StatusEffects.TryApply(health, spell.Debuff, stats));
+        }
+
+        private static HealthSystem FindSpikeTarget(Vector2 self, Vector2 aim, float range)
+        {
+            HealthSystem best = null;
+            float bestDistance = float.MaxValue;
+            foreach (var col in Physics2D.OverlapCircleAll(self, range))
+            {
+                var health = col.GetComponentInParent<HealthSystem>();
+                if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;
+
+                float distance = ((Vector2)health.transform.position - aim).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = health;
+                }
+            }
+
+            return best;
         }
 
         private void OnDisable()
