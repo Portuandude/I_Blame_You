@@ -35,6 +35,13 @@ namespace IBlameYou.Systems
             Damaged?.Invoke(amount);
         }
 
+        // 경직/화면 흔들림 없이 체력만 깎는다 (광폭화의 지속 체력 감소 같은 자해 효과용).
+        public void Drain(float amount)
+        {
+            if (amount <= 0f || IsDead) return;
+            SetCurrent(current - amount);
+        }
+
         public void Heal(float amount)
         {
             if (amount <= 0f) return;
