@@ -7,6 +7,8 @@ namespace IBlameYou.Player
     [RequireComponent(typeof(StaminaSystem))]
     [RequireComponent(typeof(HealthSystem))]
     [RequireComponent(typeof(HitStun))]
+    [RequireComponent(typeof(PlayerControlState))]
+    // 플레이어 A(이동 담당)의 이동/점프/달리기/대쉬. 입력은 RoleInput에서 A 역할 키만 읽는다.
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Movement")]
@@ -22,7 +24,6 @@ namespace IBlameYou.Player
         [SerializeField] private float dashSpeed = 20f;
         [SerializeField] private float dashDuration = 0.2f;
         [SerializeField] private float dashStaminaCost = 50f;
-        [SerializeField] private KeyCode dashKey = KeyCode.LeftControl;
 
         [Header("Ground Check")]
         [SerializeField] private Transform groundCheck;
@@ -39,6 +40,7 @@ namespace IBlameYou.Player
         private StaminaSystem stamina;
         private HealthSystem health;
         private HitStun hitStun;
+        private PlayerControlState control;
         private Animator animator;
         private bool isGrounded;
         private bool isRunning;
@@ -51,6 +53,14 @@ namespace IBlameYou.Player
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
         public bool IsDashing => isDashing;
+        public float Facing => Mathf.Sign(transform.localScale.x);
+
+        // 스탯 문서의 이동속도(문서 단위)를 게임 속도로 바꿔 지정한다. 달리기는 기획서 5.1 가안대로 걷기 × 1.8.
+        public void ConfigureSpeeds(float walk, float run)
+        {
+            walkSpeed = walk;
+            runSpeed = run;
+        }
 
         // 인스펙터에서 손으로 배치한 프리팹이 아니라 코드로 생성한 플레이어(예: PlayerSpawner)를 위한 설정 진입점.
         public void ConfigureGroundCheck(Transform check, LayerMask layer)
@@ -66,6 +76,8 @@ namespace IBlameYou.Player
             health = GetComponent<HealthSystem>();
             hitStun = GetComponent<HitStun>();
             if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
+            control = GetComponent<PlayerControlState>();
+            if (control == null) control = gameObject.AddComponent<PlayerControlState>();
             animator = GetComponentInChildren<Animator>();
             defaultGravityScale = rb.gravityScale;
 
@@ -85,12 +97,12 @@ namespace IBlameYou.Player
 
             bool stunned = hitStun.IsStunned;
 
-            if (Input.GetButtonDown("Jump") && isGrounded && !stunned)
+            if (RoleInput.JumpDown(control) && isGrounded && !stunned)
             {
                 jumpQueued = true;
             }
 
-            if (Input.GetKeyDown(dashKey) && !isDashing && !stunned && stamina.TryConsume(dashStaminaCost))
+            if (RoleInput.DashDown(control) && !isDashing && !stunned && stamina.TryConsume(dashStaminaCost))
             {
                 StartDash();
             }
@@ -138,7 +150,7 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (hitStun.IsStunned)
+            if (hitStun.IsStunned || control.MovementFrozen)
             {
                 isRunning = false;
                 jumpQueued = false;
@@ -152,9 +164,8 @@ namespace IBlameYou.Player
                 jumpQueued = false;
             }
 
-            float moveInput = Input.GetAxisRaw("Horizontal");
-            bool wantsToRun = Mathf.Abs(moveInput) > 0.01f &&
-                (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+            float moveInput = RoleInput.MoveAxis(control);
+            bool wantsToRun = Mathf.Abs(moveInput) > 0.01f && RoleInput.RunHeld(control);
 
             // 스태미나가 임계치 이상일 때만 달리기를 새로 시작하게 해서, 0 근처에서 걷기/달리기가 매 프레임 토글되는 것을 막는다.
             if (wantsToRun && !isRunning && stamina.Current >= minStaminaToStartRun)

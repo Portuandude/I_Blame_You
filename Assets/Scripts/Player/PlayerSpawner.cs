@@ -12,13 +12,15 @@ namespace IBlameYou.Player
         // 되도록 균일하게 축소한다. 콜라이더 크기와는 별개.
         private const float VisualScale = 0.7f;
         private const float PlayerStunDuration = 0.2f;
+        private const float RunSpeedMultiplier = 1.8f; // 기획서 5.1 가안: 달리기 = 걷기 × 1.8
 
         public static PlayerMovement Spawn(Vector3 position, LevelArtConfig artConfig = null)
         {
             CharacterLayers.EnsureCollisionRules();
 
             GameObject go;
-            if (artConfig != null && artConfig.playerPrefab != null)
+            // 역할 분리/스킬이 들어가기 전의 구버전 프리팹은 쓰지 않고 코드로 조립한다 (툴을 다시 돌리면 갱신됨).
+            if (artConfig != null && artConfig.playerPrefab != null && artConfig.playerPrefab.GetComponent<SpellCaster>() != null)
             {
                 go = Object.Instantiate(artConfig.playerPrefab, position, Quaternion.identity);
             }
@@ -77,14 +79,24 @@ namespace IBlameYou.Player
             groundCheck.transform.SetParent(go.transform, false);
             groundCheck.transform.localPosition = new Vector3(0f, -0.85f, 0f);
 
-            var movement = go.AddComponent<PlayerMovement>(); // RequireComponent로 Stamina/Health도 함께 붙는다.
+            var stats = StatTable.Player;
+            go.AddComponent<CombatStats>().Configure(stats);
+
+            var movement = go.AddComponent<PlayerMovement>(); // RequireComponent로 Stamina/Health/ControlState도 함께 붙는다.
+            float walk = StatUnits.MoveSpeedToUnits(stats.moveSpeed);
+            movement.ConfigureSpeeds(walk, walk * RunSpeedMultiplier);
+            go.GetComponent<HealthSystem>().ConfigureMaxHealth(stats.maxHealth);
             int groundLayerIndex = LayerMask.NameToLayer("Ground");
             LayerMask groundLayer = groundLayerIndex >= 0 ? (LayerMask)(1 << groundLayerIndex) : (LayerMask)1;
             movement.ConfigureGroundCheck(groundCheck.transform, groundLayer);
 
             go.GetComponent<HitStun>().Configure(PlayerStunDuration, true); // 경직 동안 무적
-            go.AddComponent<ManaSystem>();
-            go.AddComponent<PlayerCombat>();
+            go.AddComponent<ManaSystem>().ConfigureMax(stats.maxMana);
+            go.AddComponent<PlayerCombat>();      // B: 평타
+            go.AddComponent<SpellCaster>();       // B: 공격 스킬 (영창)
+            go.AddComponent<ElementShield>();
+            go.AddComponent<ElementShieldSkill>(); // A: 속성 방어막 (방향키 미니게임)
+            go.AddComponent<TeleportSkill>();      // A: 순간이동
             CharacterLayers.Assign(go, CharacterLayers.PlayerLayerName);
 
             return go;
