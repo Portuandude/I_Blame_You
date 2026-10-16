@@ -184,15 +184,30 @@ def cast_earth():
     return normalize(fade_edges(rumble + drone + grit))
 
 
+def pluck(freq, seconds, damping=0.996, brightness=0.5):
+    """카플러스-스트롱 현 뜯기: 잡음 한 주기를 되먹임하며 걸러 줄이 튕기는 소리를 만든다."""
+    n = int(seconds * SR)
+    period = max(2, int(SR / freq))
+    buf = lowpass(noise(period), 2000 + 6000 * brightness)
+    out = np.empty(n)
+    for i in range(n):
+        j = i % period
+        out[i] = buf[j]
+        buf[j] = damping * 0.5 * (buf[j] + buf[(j + 1) % period])
+    return out
+
+
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 낮게 울리는 '웅' 하는 발사음. 높은 벨소리 대신 저음 위주로 무겁게."""
-    n = int(0.4 * SR)
+    """무속성 마력탄 (평타): 활시위를 놓을 때처럼 '퉁' 하는 현 소리 + 공기를 가르는 '슉'. 저음 위주로 무겁게."""
+    n = int(0.45 * SR)
     t = np.arange(n) / SR
-    thump = osc("sine", 140 * np.exp(-t * 9) + 70, n) * env_exp(n, 0.12)
-    hum = osc("saw", 98 + 30 * np.exp(-t * 12), n) + osc("saw", 98.8 + 30 * np.exp(-t * 12), n)
-    hum = lowpass(hum * 0.3, 600) * env_adsr(n, 0.01, 0.12, 0.35, 0.2)
-    air = lowpass(noise(n), 900) * env_exp(n, 0.05) * 0.5
-    return normalize(fade_edges(thump * 1.2 + hum + air))
+    string = pluck(82, 0.45, damping=0.994, brightness=0.35)        # 낮은 시위 울림 (E2 근처)
+    string = lowpass(string, 1400) * env_exp(n, 0.16) * 1.1
+    snap = highpass(noise(n), 1800) * env_exp(n, 0.006) * 0.8        # 시위가 손가락을 떠나는 '탁'
+    thump = osc("sine", 120 * np.exp(-t * 18) + 55, n) * env_exp(n, 0.07) * 0.9  # 활 몸통의 묵직한 반동
+    center = 2200 * np.exp(-t * 9) + 350                               # 날아가는 '슉' (높은 데서 낮게)
+    whoosh = bandpass(noise(n), center * 0.5, center) * env_adsr(n, 0.01, 0.06, 0.5, 0.2) * 0.55
+    return normalize(fade_edges(string + snap + thump + whoosh))
 
 
 def hit_fire():
