@@ -24,6 +24,7 @@ namespace IBlameYou.Player
         public SpellDefinition PendingSpell { get; private set; }
         public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
+        private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
 
         private void Awake()
@@ -110,27 +111,26 @@ namespace IBlameYou.Player
 
         private void Cast(SpellDefinition spell)
         {
+            // 공격 스킬은 마우스가 아니라 캐릭터가 바라보는 방향으로 나간다 (B는 영창 중 손이 키보드에 있음).
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f);
-            Vector2 aim = RoleInput.AimWorldPoint(origin + Vector2.right * Mathf.Sign(transform.localScale.x));
-            if (combat != null) combat.PlayCastAnimation(aim);
+            float facing = Mathf.Sign(transform.localScale.x);
+            if (combat != null) combat.PlayCastAnimation(origin + Vector2.right * facing); // 방향은 그대로 두고 동작만
 
             if (spell.Shape == SpellShape.GroundSpike)
             {
                 // 선딜: 시전 동작 뒤 Windup초가 지나야 가시가 예고된다. 그동안 다른 공격 스킬은 못 쓴다.
-                StartCoroutine(GroundSpikeAfterWindup(spell, aim));
+                StartCoroutine(GroundSpikeAfterWindup(spell, facing));
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 시전 중...");
                 return;
             }
 
-            // 첫 발사각은 항상 수평 (조준점이 있는 쪽). 이후 방향은 유도가 꺾는다.
-            float side = aim.x - origin.x;
-            if (Mathf.Abs(side) < 0.01f) side = Mathf.Sign(transform.localScale.x);
-            SpawnProjectile(spell, origin, new Vector2(Mathf.Sign(side), 0f));
+            // 첫 발사각은 바라보는 방향으로 수평. 이후 방향은 유도가 꺾는다.
+            SpawnProjectile(spell, origin, new Vector2(facing, 0f));
 
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
 
-        private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, Vector2 aim)
+        private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, float facing)
         {
             WindingUp = true;
             charge = EffectLibrary.CreateVisual(transform, "EarthCharge", null, 0f, false,
@@ -144,7 +144,7 @@ namespace IBlameYou.Player
             WindingUp = false;
             if (health.IsDead) yield break;
 
-            SpawnGroundSpike(spell, aim);
+            SpawnGroundSpike(spell, facing);
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
 
@@ -162,12 +162,12 @@ namespace IBlameYou.Player
             projectile.Hit = target => StatusEffects.TryApply(target, spell.Debuff, stats);
         }
 
-        private void SpawnGroundSpike(SpellDefinition spell, Vector2 aim)
+        private void SpawnGroundSpike(SpellDefinition spell, float facing)
         {
-            // 조준점이 사거리 밖이면 사거리 끝으로 당긴다. 사거리 안에서 조준점에 가장 가까운 적을 노린다.
+            // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
-            if (Vector2.Distance(self, aim) > spell.Range) aim = self + (aim - self).normalized * spell.Range;
-            var target = FindSpikeTarget(self, aim, spell.Range);
+            var target = FindSpikeTarget(self, facing, spell.Range);
+            Vector2 aim = target != null ? (Vector2)target.transform.position : self + new Vector2(facing * SpikeDefaultDistance, 0f);
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
@@ -180,7 +180,7 @@ namespace IBlameYou.Player
                 groundMask, health => StatusEffects.TryApply(health, spell.Debuff, stats));
         }
 
-        private static HealthSystem FindSpikeTarget(Vector2 self, Vector2 aim, float range)
+        private static HealthSystem FindSpikeTarget(Vector2 self, float facing, float range)
         {
             HealthSystem best = null;
             float bestDistance = float.MaxValue;
@@ -189,7 +189,10 @@ namespace IBlameYou.Player
                 var health = col.GetComponentInParent<HealthSystem>();
                 if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;
 
-                float distance = ((Vector2)health.transform.position - aim).sqrMagnitude;
+                Vector2 offset = (Vector2)health.transform.position - self;
+                if (offset.x * facing < 0f) continue; // 등 뒤의 적은 노리지 않는다
+
+                float distance = offset.sqrMagnitude;
                 if (distance < bestDistance)
                 {
                     bestDistance = distance;
