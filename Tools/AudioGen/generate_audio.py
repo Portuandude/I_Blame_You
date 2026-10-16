@@ -185,15 +185,17 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 공을 던질 때의 짧은 '휙'. 가볍되 경박하지 않게 중저역 위주, 0.2초."""
+    """무속성 마력탄 (평타라 자주 들림): 공을 던질 때의 짧고 부드러운 '훅'. 고역을 거의 없애고 천천히 부풀었다 빠진다, 0.2초."""
     n = int(0.2 * SR)
     t = np.arange(n) / SR
-    # 팔을 휘두르는 바람: 중역에서 시작해 살짝 내려가는 띠대역 잡음, 앞이 빠르게 커지고 뒤가 부드럽게 빠진다
-    center = 1400 * np.exp(-t * 6) + 450
-    # 1차 필터는 고역이 많이 새므로 저역통과를 두 번 더 걸어 '쉭'이 아니라 둥근 '휙'이 되게 한다
-    swing = lowpass(lowpass(bandpass(noise(n), center * 0.55, center), center), 2200) * env_adsr(n, 0.025, 0.05, 0.45, 0.11)
-    # 손을 떠나는 순간의 작은 '툭' (아주 짧은 저음)
-    release = osc("sine", 180 * np.exp(-t * 30) + 90, n) * env_exp(n, 0.025) * 0.35
+    # 팔을 휘두르는 바람: 낮은 대역 잡음을 저역통과로 여러 번 걸러 날카로운 '쉭' 성분을 없앤다
+    center = 700 * np.exp(-t * 5) + 280
+    swing = bandpass(noise(n), center * 0.5, center)
+    for _ in range(3):
+        swing = lowpass(swing, 1100)
+    swing *= env_adsr(n, 0.045, 0.05, 0.5, 0.1)
+    # 손을 떠나는 순간의 아주 작은 저음 (클릭이 생기지 않게 5ms에 걸쳐 시작)
+    release = osc("sine", 120 * np.exp(-t * 20) + 75, n) * env_adsr(n, 0.005, 0.03, 0.0, 0.0) * 0.3
     return normalize(fade_edges(swing + release))
 
 
@@ -392,9 +394,16 @@ def main():
         "Hit_Neutral": hit_neutral,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
+    soft = {"Cast_Neutral": 0.13}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
-        save_wav(fade_edges(loudness(fn())), "SFX", f"{name}.wav")
+        sound = fn()
+        if name in soft:
+            sound = normalize(sound, 1.0)
+            sound *= soft[name] / np.sqrt(np.mean(sound ** 2))
+        else:
+            sound = loudness(sound)
+        save_wav(fade_edges(sound), "SFX", f"{name}.wav")
     reseed("Menu")
     save_wav(menu_theme(), "Music", "Menu.wav")
     reseed("Dungeon")
