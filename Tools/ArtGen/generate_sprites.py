@@ -2,7 +2,7 @@
 
 고블린 4종(고블린/궁수/병사/대전사)의 Idle/Run/Attack/Die 프레임과
 스킬·투사체 이펙트 프레임을 그려 Assets/Art/Sprites 아래에 PNG로 저장한다.
-디버프 아이콘은 런타임 로드용으로 Assets/Resources/StatusIcons 에 저장한다.
+디버프 아이콘과 마법 비행/적중 이펙트는 런타임 로드용으로 Assets/Resources 아래에 저장한다.
 진짜 아트가 생기면 같은 경로/이름의 PNG로 바꾸고 Unity에서
 Tools > I Blame You > Generate Sprites And Animations 를 다시 실행하면 된다.
 
@@ -707,12 +707,312 @@ def generate_status_icons():
         fn().save(os.path.join(folder, f"{name}.png"))
 
 
+# ---------------------------------------------------------------------------
+# 마법 투사체 비행 애니메이션 / 적중 이펙트 (Assets/Resources/Effects/{Flight,Hit}/<속성>/NN.png)
+# 런타임에 Resources에서 읽어 바로 쓰므로 Unity에서 Generate를 다시 돌릴 필요가 없다.
+# 비행 프레임은 오른쪽을 향하고 중심이 투사체 위치다. 100px = 1유닛.
+
+FX_FRAMES = 8
+
+
+def ring(d, cx, cy, r, width, col):
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=col, width=max(1, int(width)))
+
+
+def dot(d, x, y, r, col):
+    d.ellipse([x - r, y - r, x + r, y + r], fill=col)
+
+
+def fire_flight():
+    frames = []
+    w, h = 120, 64
+    for i in range(FX_FRAMES):
+        rnd = random.Random(100 + i)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        cx, cy = 84 * SS, 32 * SS
+        ph = i / FX_FRAMES * math.tau
+        # 뒤로 흩날리는 불꽃 혀 3갈래
+        for k, off in enumerate((-9, 0, 9)):
+            pts = []
+            for j in range(12):
+                t = j / 11
+                x = cx - t * (62 + 8 * math.sin(ph + k)) * SS
+                y = cy + (off * (1 - t * 0.3) + math.sin(t * 6 + ph * 2 + k * 2) * 4 * t) * SS
+                pts.append((x, y))
+            for j, (x, y) in enumerate(pts):
+                t = j / 11
+                r = (12 - 10 * t) * SS
+                col = (255, int(190 - 140 * t), int(50 - 40 * t), int(230 - 200 * t))
+                dot(d, x, y, r, col)
+        # 불씨
+        for k in range(6):
+            t = ((i / FX_FRAMES) + k / 6) % 1
+            x = cx - (20 + t * 70) * SS
+            y = cy + (rnd.uniform(-14, 14) - t * 6) * SS
+            dot(d, x, y, (2.5 - 1.5 * t) * SS, (255, 230, 120, int(255 * (1 - t))))
+        pulse = 1 + 0.1 * math.sin(ph * 2)
+        for r, col in [(20, (220, 60, 25, 255)), (16, (255, 120, 35, 255)), (11, (255, 200, 80, 255)), (6, (255, 250, 220, 255))]:
+            dot(d, cx, cy, r * SS * pulse, col)
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def water_flight():
+    frames = []
+    w, h = 112, 48
+    for i in range(FX_FRAMES):
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        ph = i / FX_FRAMES * math.tau
+        cx, cy = 80 * SS, 24 * SS
+        # 물방울 몸통 (앞이 둥글고 뒤로 가늘어짐), 출렁임
+        wob = math.sin(ph * 2) * 1.5
+        body = []
+        for a in range(-90, 91, 10):
+            r = 14 + wob * math.cos(math.radians(a) * 2)
+            body.append((cx + math.cos(math.radians(a)) * r * SS, cy + math.sin(math.radians(a)) * r * SS))
+        body.append((cx - 60 * SS, cy + math.sin(ph) * 2 * SS))
+        d.polygon(body, fill=(40, 120, 230, 235))
+        inner = [(cx + (x - cx) * 0.62 + 3 * SS, cy + (y - cy) * 0.55) for x, y in body]
+        d.polygon(inner, fill=(110, 190, 255, 255))
+        dot(d, cx + 5 * SS, cy - 5 * SS, 3.5 * SS, (235, 248, 255, 255))
+        # 감기는 물줄기 링
+        for k in range(2):
+            a = ph + k * math.pi
+            x = cx - (18 + 22 * k) * SS
+            ry = 12 * math.cos(a) * SS
+            d.arc([x - 5 * SS, cy - abs(ry) - 1, x + 5 * SS, cy + abs(ry) + 1], 90 if ry > 0 else 270, 270 if ry > 0 else 450,
+                  fill=(200, 235, 255, 200), width=2 * SS)
+        # 뒤에 떨어지는 물방울
+        for k in range(4):
+            t = ((i / FX_FRAMES) + k / 4) % 1
+            x = cx - (30 + t * 50) * SS
+            y = cy + (t * 14 - 4 + k % 2 * 4) * SS
+            dot(d, x, y, (3 - 2 * t) * SS, (150, 210, 255, int(230 * (1 - t))))
+        frames.append(finish(img, w, h, 2))
+    return frames
+
+
+def wind_flight():
+    frames = []
+    w, h = 104, 72
+    for i in range(FX_FRAMES):
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        ph = i / FX_FRAMES
+        cx, cy = 66 * SS, 36 * SS
+        # 앞을 향한 초승달 칼날 2겹
+        for k, (r, a, wd) in enumerate([(26, 235, 7), (19, 200, 4)]):
+            jitter = math.sin(ph * math.tau * 2 + k) * 6
+            d.arc([cx - r * SS - 14 * SS, cy - r * SS, cx + r * SS - 14 * SS, cy + r * SS], -70 + jitter, 70 + jitter,
+                  fill=(225, 255, 235, a), width=wd * SS)
+        # 흐르는 속도선
+        for k in range(6):
+            t = (ph + k / 6) % 1
+            y = cy + (k - 2.5) * 7 * SS
+            x0 = cx - (10 + t * 70) * SS
+            ln = (24 - 14 * t) * SS
+            d.line([(x0, y), (x0 - ln, y)], fill=(200, 255, 220, int(220 * (1 - t))), width=2 * SS)
+        # 소용돌이 점
+        for k in range(5):
+            a = (ph + k / 5) * math.tau
+            dot(d, cx - 8 * SS + math.cos(a) * 12 * SS, cy + math.sin(a) * 12 * SS, 2.2 * SS, (240, 255, 245, 230))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def arcane_flight():
+    frames = []
+    w = h = 72
+    for i in range(FX_FRAMES):
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        ph = i / FX_FRAMES * math.tau
+        c = w / 2 * SS
+        pulse = 1 + 0.12 * math.sin(ph * 2)
+        for r, col in [(17, (110, 50, 210, 255)), (13, (165, 105, 255, 255)), (7, (240, 225, 255, 255))]:
+            dot(d, c, c, r * SS * pulse, col)
+        ring(d, c, c, 24 * SS, 2 * SS, (200, 160, 255, 160))
+        for k in range(3):
+            a = ph + k * math.tau / 3
+            x, y = c + math.cos(a) * 24 * SS, c + math.sin(a) * 24 * SS
+            d.polygon([(x, y - 5 * SS), (x + 3 * SS, y), (x, y + 5 * SS), (x - 3 * SS, y)], fill=(235, 205, 255, 255))
+        for k in range(3):
+            a = -ph * 1.5 + k * math.tau / 3
+            dot(d, c + math.cos(a) * 30 * SS, c + math.sin(a) * 30 * SS, 2 * SS, (255, 240, 255, 200))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def fire_hit():
+    frames = []
+    w = h = 140
+    rnd = random.Random(11)
+    petals = [(rnd.uniform(0, 360), rnd.uniform(0.7, 1.0)) for _ in range(9)]
+    for i in range(FX_FRAMES):
+        t = i / (FX_FRAMES - 1)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        c = w / 2 * SS
+        fade = 1 - max(0, t - 0.4) / 0.6
+        # 연기
+        for k in range(6):
+            a = math.radians(k * 60 + 20)
+            r = (20 + 40 * t) * SS
+            dot(d, c + math.cos(a) * r, c + math.sin(a) * r - 10 * t * SS, (10 + 14 * t) * SS, (70, 60, 60, int(140 * fade * t)))
+        # 불꽃 꽃잎
+        for a, s in petals:
+            rad = math.radians(a)
+            ln = (14 + 46 * math.sqrt(t)) * s * SS
+            x, y = c + math.cos(rad) * ln, c + math.sin(rad) * ln
+            dot(d, x, y, (12 - 8 * t) * s * SS, (255, int(160 - 80 * t), 40, int(255 * fade)))
+        core = (26 * (1 - t) + 6) * SS
+        dot(d, c, c, core, (255, 120, 40, int(255 * fade)))
+        dot(d, c, c, core * 0.6, (255, 230, 150, int(255 * fade)))
+        ring(d, c, c, (12 + 52 * t) * SS, (8 - 6 * t) * SS, (255, 200, 90, int(220 * (1 - t))))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def water_hit():
+    frames = []
+    w = h = 140
+    rnd = random.Random(12)
+    drops = [(rnd.uniform(200, 340), rnd.uniform(55, 85)) for _ in range(10)]
+    for i in range(FX_FRAMES):
+        t = i / (FX_FRAMES - 1)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        c = w / 2 * SS
+        ring(d, c, c, (10 + 50 * t) * SS, (7 - 5 * t) * SS, (120, 200, 255, int(230 * (1 - t))))
+        ring(d, c, c, (6 + 30 * t) * SS, (4 - 3 * t) * SS, (220, 245, 255, int(200 * (1 - t))))
+        for a, sp in drops:
+            rad = math.radians(a)
+            x = c + math.cos(rad) * sp * t * SS
+            y = c + math.sin(rad) * sp * t * SS + 60 * t * t * SS  # 포물선으로 떨어짐
+            dot(d, x, y, (5 - 3 * t) * SS, (90, 170, 255, int(255 * (1 - t * 0.8))))
+            dot(d, x - 1 * SS, y - 1 * SS, (2 - t) * SS, (230, 245, 255, int(255 * (1 - t))))
+        if t < 0.4:
+            dot(d, c, c, (16 - 30 * t) * SS, (180, 225, 255, 220))
+        frames.append(finish(img, w, h, 2))
+    return frames
+
+
+def wind_hit():
+    frames = []
+    w = h = 140
+    for i in range(FX_FRAMES):
+        t = i / (FX_FRAMES - 1)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        c = w / 2 * SS
+        for k in range(3):
+            r = (14 + 18 * k + 26 * t) * SS
+            start = t * 300 + k * 120
+            d.arc([c - r, c - r, c + r, c + r], start, start + 140 - 60 * t,
+                  fill=(225, 255, 235, int((230 - 50 * k) * (1 - t))), width=int((6 - k * 1.5) * SS))
+        for k in range(8):
+            a = math.radians(k * 45 + t * 90)
+            r0, r1 = (10 + 40 * t) * SS, (22 + 50 * t) * SS
+            d.line([(c + math.cos(a) * r0, c + math.sin(a) * r0), (c + math.cos(a) * r1, c + math.sin(a) * r1)],
+                   fill=(200, 255, 220, int(200 * (1 - t))), width=2 * SS)
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def earth_hit():
+    frames = []
+    w = h = 140
+    rnd = random.Random(14)
+    rocks = [(rnd.uniform(190, 350), rnd.uniform(50, 80), rnd.uniform(4, 8), rnd.uniform(0, 360)) for _ in range(9)]
+    for i in range(FX_FRAMES):
+        t = i / (FX_FRAMES - 1)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        c = w / 2 * SS
+        # 먼지 구름
+        for k in range(7):
+            a = math.radians(k * 51)
+            r = (10 + 34 * t) * SS
+            dot(d, c + math.cos(a) * r, c + math.sin(a) * r * 0.6 + 8 * SS, (12 + 10 * t) * SS,
+                (160, 130, 90, int(170 * (1 - t))))
+        # 튀는 돌조각
+        for a, sp, size, rot in rocks:
+            rad = math.radians(a)
+            x = c + math.cos(rad) * sp * t * SS
+            y = c + math.sin(rad) * sp * t * SS + 70 * t * t * SS
+            pts = []
+            for j in range(5):
+                aa = math.radians(rot + t * 360 + j * 72)
+                rr = size * (1 if j % 2 else 0.7) * SS
+                pts.append((x + math.cos(aa) * rr, y + math.sin(aa) * rr))
+            d.polygon(pts, fill=(140, 105, 65, int(255 * (1 - t * 0.7))), outline=(40, 30, 20, int(255 * (1 - t * 0.7))))
+        if t < 0.35:
+            star = []
+            for j in range(12):
+                rr = (30 if j % 2 == 0 else 12) * (1 - t) * SS
+                aa = math.radians(j * 30)
+                star.append((c + math.cos(aa) * rr, c + math.sin(aa) * rr))
+            d.polygon(star, fill=(230, 200, 140, 230))
+        frames.append(finish(img, w, h, 2))
+    return frames
+
+
+def arcane_hit():
+    frames = []
+    w = h = 140
+    for i in range(FX_FRAMES):
+        t = i / (FX_FRAMES - 1)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        c = w / 2 * SS
+        ring(d, c, c, (10 + 50 * t) * SS, (6 - 4 * t) * SS, (190, 140, 255, int(230 * (1 - t))))
+        star = []
+        for j in range(16):
+            rr = (40 if j % 2 == 0 else 12) * (0.4 + 0.8 * t) * SS
+            aa = math.radians(j * 22.5 + t * 40)
+            star.append((c + math.cos(aa) * rr, c + math.sin(aa) * rr))
+        d.polygon(star, fill=(200, 160, 255, int(220 * (1 - t))))
+        dot(d, c, c, (14 * (1 - t) + 3) * SS, (250, 240, 255, int(255 * (1 - t))))
+        for k in range(10):
+            a = math.radians(k * 36 + 15)
+            r = (20 + 45 * t) * SS
+            x, y = c + math.cos(a) * r, c + math.sin(a) * r
+            s2 = 4 * (1 - t) * SS
+            d.polygon([(x, y - s2), (x + s2 / 2, y), (x, y + s2), (x - s2 / 2, y)], fill=(240, 220, 255, int(255 * (1 - t))))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def generate_spell_fx():
+    base = os.path.join(ROOT, "Assets", "Resources", "Effects")
+    sets = {
+        ("Flight", "Fire"): fire_flight(),
+        ("Flight", "Water"): water_flight(),
+        ("Flight", "Wind"): wind_flight(),
+        ("Flight", "Neutral"): arcane_flight(),
+        ("Hit", "Fire"): fire_hit(),
+        ("Hit", "Water"): water_hit(),
+        ("Hit", "Wind"): wind_hit(),
+        ("Hit", "Earth"): earth_hit(),
+        ("Hit", "Neutral"): arcane_hit(),
+    }
+    for (kind, element), frames in sets.items():
+        folder = os.path.join(base, kind, element)
+        os.makedirs(folder, exist_ok=True)
+        for i, img in enumerate(frames):
+            img.save(os.path.join(folder, f"{i:02d}.png"))
+    return sets
+
+
 if __name__ == "__main__":
     import sys
 
     generate_goblins()
     generate_effects()
     generate_status_icons()
+    generate_spell_fx()
     if len(sys.argv) > 1:
         contact_sheet(sys.argv[1])
     print("done")
