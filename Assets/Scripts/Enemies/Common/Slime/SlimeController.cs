@@ -82,7 +82,14 @@ namespace IBlameYou.Enemies
             detectionRange = detection;
         }
 
-        // 도약 피해는 CombatStats의 물리 데미지로 계산한다 (EnemyController.StrikePlayer).
+        // 이동속도만 바꾼다 (이미 구워진 프리팹에도 스탯 표의 현재 속도를 적용하려고 스폰 때 부른다).
+        public void ConfigureSpeed(float idleSpeed, float chase)
+        {
+            patrolSpeed = idleSpeed;
+            chaseSpeed = chase;
+        }
+
+        // 도약 피해는 EnemyController.StrikePlayer로 계산한다 (속성 슬라임이면 그 속성의 마법 피해).
         public void ConfigureAttack(float range, float cooldown, float leapSpeed)
         {
             attackRange = range;

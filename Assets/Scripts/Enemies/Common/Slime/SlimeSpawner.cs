@@ -30,7 +30,43 @@ namespace IBlameYou.Enemies
             // 쓰지 않고 코드로 조립한다.
             var prefab = artConfig != null ? artConfig.slimePrefab : null;
             if (prefab != null && !IsCurrentPrefab(prefab)) prefab = null;
-            return EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "Slime");
+            var slime = EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "Slime");
+            if (slime != null) ApplyRandomElement(slime);
+            return slime;
+        }
+
+        // 일반 슬라임은 스폰될 때마다 무작위 속성을 받는다 (2026-10-16).
+        // - 몸 색: 회색 프레임에 속성 색을 곱한다 (ElementRecolor)
+        // - 공격(도약): 그 속성의 마법 피해. 스탯 문서의 무속성 데미지(25)를 그 속성으로 옮긴다
+        // - 피격: B의 마법에 속성 상성 적용 (ElementAffinity)
+        // - 이동속도: 스탯 표 값(문서 0.3의 1.5배 = 0.45)으로 프리팹 값을 덮어쓴다
+        private static void ApplyRandomElement(SlimeController slime)
+        {
+            var element = (Element)Random.Range(0, ElementInfo.Count);
+
+            var stats = slime.GetComponent<CombatStats>();
+            if (stats != null)
+            {
+                var block = stats.Stats;
+                float elemental = 0f;
+                for (int i = 0; i < block.elementDamage.Length; i++)
+                {
+                    elemental = Mathf.Max(elemental, block.elementDamage[i]);
+                    block.elementDamage[i] = 0f;
+                }
+
+                block.elementDamage[(int)element] = elemental;
+                stats.SetBodyElement(element);
+            }
+
+            slime.SetAttackElement(element);
+            float chaseSpeed = StatUnits.MoveSpeedToUnits(StatTable.Slime.moveSpeed);
+            slime.ConfigureSpeed(chaseSpeed * PatrolSpeedRatio, chaseSpeed);
+            slime.name = $"Slime_{element}";
+
+            var visual = slime.transform.Find("Visual");
+            var renderer = visual != null ? visual.GetComponent<SpriteRenderer>() : null;
+            if (renderer != null) ElementRecolor.Attach(renderer, "Enemies/SlimeGray", ElementInfo.Color(element));
         }
 
         public static GameObject Build(LevelArtConfig artConfig)

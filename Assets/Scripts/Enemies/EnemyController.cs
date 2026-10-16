@@ -68,14 +68,26 @@ namespace IBlameYou.Enemies
             contactDamageCooldown = cooldown;
         }
 
-        // 공격 판정이 닿은 대상에게 물리 피해를 준다 (적끼리는 피해 없음). 피해를 줬으면 true.
+        // 속성 공격을 하는 적(속성 슬라임)이면 공격(도약 등)이 그 속성의 마법 피해가 된다. 접촉 피해는 계속 물리.
+        public bool HasAttackElement { get; private set; }
+        public Element AttackElement { get; private set; }
+
+        public void SetAttackElement(Element element)
+        {
+            HasAttackElement = true;
+            AttackElement = element;
+        }
+
+        // 공격 판정이 닿은 대상에게 피해를 준다 (적끼리는 피해 없음). 피해를 줬으면 true.
+        // 공격 속성이 있으면 그 속성의 마법 피해, 없으면 물리 피해.
         protected bool StrikePlayer(Component target, float multiplier = 1f)
         {
             var targetHealth = target.GetComponentInParent<HealthSystem>();
             if (targetHealth == null || targetHealth == Health) return false;
             if (targetHealth.GetComponent<EnemyController>() != null) return false;
 
-            DamageCalculator.Strike(Stats, targetHealth, DamageKind.Physical, Element.Neutral, multiplier);
+            if (HasAttackElement) DamageCalculator.Strike(Stats, targetHealth, DamageKind.Magic, AttackElement, multiplier);
+            else DamageCalculator.Strike(Stats, targetHealth, DamageKind.Physical, Element.Neutral, multiplier);
             return true;
         }
 
