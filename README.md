@@ -49,6 +49,7 @@ Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)�
 
 수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
 고블린 4종과 스킬 이펙트 그림은 `Tools/ArtGen/generate_sprites.py`로 만든 임시 아트다 (`python3 Tools/ArtGen/generate_sprites.py`로 다시 생성).
+배경음악(메뉴/던전)과 마법 발동·적중 효과음은 `Tools/AudioGen/generate_audio.py`로 합성한 임시 사운드다 (`python3 Tools/AudioGen/generate_audio.py`로 다시 생성).
 
 ## 폴더 구조
 
@@ -69,6 +70,9 @@ Assets/
     Enemies/Slime.prefab      # 툴이 생성
     Bosses/, Props/, Rooms/   # (비어 있음)
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
+  Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
+  Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
+  Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성> 효과음 (런타임 로드, Tools/AudioGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
     Core/                     # PlaytestBootstrap — 챕터 맵의 모든 방 생성(바닥/벽/슬라임 2마리) + 문 연결 + 시작 방에 플레이어/카메라 준비
