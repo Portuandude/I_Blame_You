@@ -1006,6 +1006,37 @@ def generate_spell_fx():
     return sets
 
 
+# ---------------------------------------------------------------------------
+# 속성 슬라임용 회색 프레임 (Assets/Resources/Enemies/SlimeGray/<원본 파일명>.png)
+# 원본(초록) 슬라임 프레임의 밝기만 남겨 회색으로 만든다. 게임에서 이 회색 프레임에 속성 색을 곱해
+# 불/물/바람/땅/무 슬라임을 만든다 (ElementRecolor). 원본 파일은 건드리지 않는다.
+
+def slime_gray(src):
+    img = Image.open(src).convert("RGBA")
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            # 외곽선(아주 어두운 부분)은 그대로 어둡게, 몸통은 밝게 올려서 색을 곱했을 때 잘 보이게 한다.
+            v = lum if lum < 0.12 else min(1.0, 0.35 + (lum / 0.62) ** 0.8 * 0.65)
+            c = int(v * 255)
+            px[x, y] = (c, c, c, a)
+    return img
+
+
+def generate_slime_gray():
+    src_root = os.path.join(SPRITES, "Enemies", "Slime")
+    dst = os.path.join(ROOT, "Assets", "Resources", "Enemies", "SlimeGray")
+    os.makedirs(dst, exist_ok=True)
+    for folder, _, files in os.walk(src_root):
+        for name in sorted(files):
+            if name.endswith(".png"):
+                slime_gray(os.path.join(folder, name)).save(os.path.join(dst, name))
+
+
 if __name__ == "__main__":
     import sys
 
@@ -1013,6 +1044,7 @@ if __name__ == "__main__":
     generate_effects()
     generate_status_icons()
     generate_spell_fx()
+    generate_slime_gray()
     if len(sys.argv) > 1:
         contact_sheet(sys.argv[1])
     print("done")
