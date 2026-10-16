@@ -190,7 +190,8 @@ def cast_neutral():
     t = np.arange(n) / SR
     # 팔을 휘두르는 바람: 중역에서 시작해 살짝 내려가는 띠대역 잡음, 앞이 빠르게 커지고 뒤가 부드럽게 빠진다
     center = 1400 * np.exp(-t * 6) + 450
-    swing = bandpass(noise(n), center * 0.55, center) * env_adsr(n, 0.025, 0.05, 0.45, 0.11)
+    # 1차 필터는 고역이 많이 새므로 저역통과를 두 번 더 걸어 '쉭'이 아니라 둥근 '휙'이 되게 한다
+    swing = lowpass(lowpass(bandpass(noise(n), center * 0.55, center), center), 2200) * env_adsr(n, 0.025, 0.05, 0.45, 0.11)
     # 손을 떠나는 순간의 작은 '툭' (아주 짧은 저음)
     release = osc("sine", 180 * np.exp(-t * 30) + 90, n) * env_exp(n, 0.025) * 0.35
     return normalize(fade_edges(swing + release))
