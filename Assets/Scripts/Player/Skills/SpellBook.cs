@@ -32,7 +32,7 @@ namespace IBlameYou.Player
     // 속성별 성격 (2026-10-12 사용자 지시):
     //   불: 강한 피해, 낮은 유도, 중첩 화상 / 물: 느린 탄, 낮은 피해, 젖음(둔화)
     //   바람: 빠른 탄, 높은 유도, 낮은 피해 / 대지: 선딜 + 긴 딜레이, 낮은 피해, 타겟팅, 경직
-    //   무: 보통 유도·속도·피해
+    //   무: 평타로 전환 (BasicBolt). 보통 유도·속도, 피해 절반, 마나 5
     public static class SpellBook
     {
         public const float HomingRange = 12f;
@@ -51,11 +51,19 @@ namespace IBlameYou.Player
             new SpellDefinition { Element = Element.Earth, Name = "바위 가시", ManaCost = 25f, Chant = "대지여, 솟아올라라!",
                 Shape = SpellShape.GroundSpike, Radius = 1.2f, Range = 12f, DamageMultiplier = 0.7f,
                 Windup = 0.5f, CastDelay = 0.8f, Debuff = StatusDebuff.Stun },
-            new SpellDefinition { Element = Element.Neutral, Name = "마력탄", ManaCost = 10f, Chant = "마력이여, 모여라!",
-                Shape = SpellShape.Projectile, Speed = 14f, Radius = 0.3f, Range = 14f, DamageMultiplier = 1f,
-                HomingTurnRate = 270f },
+            null, // 무속성은 영창 스킬이 아니라 B의 평타(BasicBolt)
         };
 
+        // B의 평타 (2026-10-16): 좌클릭으로 영창 없이 쏘는 무속성 마력탄. 피해는 예전 마력탄(×1.0)의 절반, 마나 5.
+        // 연사 간격은 공격 속도(초당 1회)로 정한다 (PlayerCombat).
+        public static readonly SpellDefinition BasicBolt = new SpellDefinition
+        {
+            Element = Element.Neutral, Name = "마력탄", ManaCost = 5f, Chant = "",
+            Shape = SpellShape.Projectile, Speed = 14f, Radius = 0.3f, Range = 14f, DamageMultiplier = 0.5f,
+            HomingTurnRate = 270f
+        };
+
+        // 영창으로 쓰는 공격 스킬. 무속성은 없다(null).
         public static SpellDefinition Get(Element element) => Spells[(int)element];
     }
 }

@@ -54,6 +54,11 @@ namespace IBlameYou.Player
             if (!RoleInput.SpellDown(control, out var element)) return;
 
             var spell = SpellBook.Get(element);
+            if (spell == null)
+            {
+                SkillMessages.Post(ManaUser.PlayerB, "무속성 마력탄은 평타(좌클릭)로 바뀌었어요", true);
+                return;
+            }
             if (GameSession.DevMode)
             {
                 if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
@@ -129,6 +134,24 @@ namespace IBlameYou.Player
             SpawnProjectile(spell, origin, new Vector2(facing, 0f));
 
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+        }
+
+        // B의 평타: 바라보는 방향으로 무속성 마력탄을 쏜다. 마나가 모자라면 false.
+        public bool FireBasicBolt()
+        {
+            var bolt = SpellBook.BasicBolt;
+            if (health.IsDead || WindingUp || ChantOpen) return false;
+            if (!mana.TryConsume(bolt.ManaCost, ManaUser.PlayerB))
+            {
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {bolt.ManaCost:0})", true);
+                return false;
+            }
+
+            Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f);
+            float facing = Mathf.Sign(transform.localScale.x);
+            SpawnProjectile(bolt, origin, new Vector2(facing, 0f));
+            GameAudio.PlaySfx("Cast_Neutral", 0.8f);
+            return true;
         }
 
         private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, float facing)
