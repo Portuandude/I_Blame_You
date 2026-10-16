@@ -185,8 +185,8 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 수정(크리스탈)을 가볍게 톡 친 듯한 맑은 울림. 시작은 또렷하되 고역은 눌러서 거슬리지 않게, 0.18초."""
-    n = int(0.18 * SR)
+    """무속성 마력탄 (평타라 자주 들림): 수정(크리스탈)을 가볍게 톡 친 듯한 맑은 울림. 시작은 또렷하되 고역은 눌러서 거슬리지 않게, 발사 뒤 잔음이 은은하게 남는 0.4초."""
+    n = int(0.4 * SR)
     t = np.arange(n) / SR
     # 유리처럼 배음이 어긋난 부분음들: 높은 부분음일수록 빨리 사라져 '팅' 다음엔 둥근 여운만 남는다
     partials = [(1.0, 1.0, 20), (2.76, 0.3, 34), (5.40, 0.08, 55)]
@@ -194,7 +194,10 @@ def cast_neutral():
     ring = np.zeros(n)
     for ratio, amp, decay in partials:
         ring += np.sin(2 * np.pi * base * ratio * t) * amp * np.exp(-t * decay)
-    ring = lowpass(ring, 5500)
+    # 발사 뒤 잔음: 기본음과 두 번째 부분음이 천천히 사라지며 살짝 일렁인다
+    shimmer = 1 + 0.15 * np.sin(2 * np.pi * 9 * t)
+    tail = (np.sin(2 * np.pi * base * t) * 0.22 + np.sin(2 * np.pi * base * 2.76 * t + 1.3) * 0.06) * np.exp(-t * 5) * shimmer
+    ring = lowpass(ring + tail, 5500)
     ring *= env_adsr(n, 0.003, 0.0, 1.0, 0.0)
     # 한 옥타브 아래 음을 아주 살짝만 (밑이 비지 않을 정도)
     body = osc("sine", base * 0.5, n) * np.exp(-t * 28) * env_adsr(n, 0.006, 0.0, 1.0, 0.0) * 0.15
@@ -398,7 +401,7 @@ def main():
         "Hit_Neutral": hit_neutral,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
