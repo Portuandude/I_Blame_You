@@ -29,6 +29,9 @@ namespace IBlameYou.Systems
         // 피해를 준 직후 대상마다 한 번 호출된다 (속성 디버프 부여 등).
         public System.Action<HealthSystem> Hit;
 
+        // 벽/바닥에 부딪혀 사라질 때 그 위치로 한 번 호출된다 (적중 이펙트 등).
+        public System.Action<Vector2> Impact;
+
         // turnRate: 초당 최대 회전 각도(도). range: 이 거리 안의 대상만 쫓는다.
         public void SetHoming(float turnRate, float range)
         {
@@ -65,8 +68,10 @@ namespace IBlameYou.Systems
             if (homingTurnRate > 0f) Steer(position);
             Vector2 step = velocity * Time.fixedDeltaTime;
 
-            if (groundMask != 0 && Physics2D.Raycast(position, step.normalized, step.magnitude, groundMask))
+            var wall = groundMask != 0 ? Physics2D.Raycast(position, step.normalized, step.magnitude, groundMask) : default;
+            if (wall.collider != null)
             {
+                Impact?.Invoke(wall.point);
                 Destroy(gameObject);
                 return;
             }
