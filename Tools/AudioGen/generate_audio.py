@@ -18,6 +18,11 @@ SR = 22050
 RNG = np.random.default_rng(42)
 
 
+def reseed(name):
+    global RNG
+    RNG = np.random.default_rng(sum(ord(c) * (i + 1) for i, c in enumerate(name)))
+
+
 # ---------------------------------------------------------------------------
 # 기본 도구
 
@@ -180,16 +185,14 @@ def cast_earth():
 
 
 def cast_neutral():
-    n = int(0.55 * SR)
-    out = np.zeros(n)
-    for k, name in enumerate(("A5", "C#6", "E6", "A6")):
-        start = int(k * 0.06 * SR)
-        m = n - start
-        f = note_hz(name)
-        bell = (osc("sine", f, m) + 0.4 * osc("sine", f * 2.76, m) * env_exp(m, 0.05)) * env_exp(m, 0.18)
-        out[start:] += bell * 0.5
-    shimmer = highpass(noise(n), 5000) * env_adsr(n, 0.05, 0.1, 0.3, 0.3) * 0.15
-    return normalize(fade_edges(out + shimmer))
+    """무속성 마력탄 (평타라 자주 들림): 낮게 울리는 '웅' 하는 발사음. 높은 벨소리 대신 저음 위주로 무겁게."""
+    n = int(0.4 * SR)
+    t = np.arange(n) / SR
+    thump = osc("sine", 140 * np.exp(-t * 9) + 70, n) * env_exp(n, 0.12)
+    hum = osc("saw", 98 + 30 * np.exp(-t * 12), n) + osc("saw", 98.8 + 30 * np.exp(-t * 12), n)
+    hum = lowpass(hum * 0.3, 600) * env_adsr(n, 0.01, 0.12, 0.35, 0.2)
+    air = lowpass(noise(n), 900) * env_exp(n, 0.05) * 0.5
+    return normalize(fade_edges(thump * 1.2 + hum + air))
 
 
 def hit_fire():
@@ -241,13 +244,13 @@ def hit_earth():
 
 
 def hit_neutral():
-    n = int(0.5 * SR)
+    """무속성 적중: 묵직한 '퍽' + 짧은 저음 공명."""
+    n = int(0.4 * SR)
     t = np.arange(n) / SR
-    zap = osc("square", 1400 * np.exp(-t * 9) + 300, n, duty=0.3) * env_exp(n, 0.06) * 0.35
-    zap = lowpass(zap, 5000)
-    bell = (osc("sine", note_hz("E6"), n) + osc("sine", note_hz("B6"), n) * 0.6) * env_exp(n, 0.15) * 0.5
-    burst = highpass(noise(n), 2500) * env_exp(n, 0.04) * 0.5
-    return normalize(fade_edges(zap + bell + burst))
+    punch = osc("sine", 110 * np.exp(-t * 14) + 50, n) * env_exp(n, 0.1) * 1.3
+    body = lowpass(noise(n), 700) * env_exp(n, 0.04)
+    ring_ = osc("tri", note_hz("A2"), n) * env_exp(n, 0.15) * 0.35
+    return normalize(fade_edges(punch + body + ring_))
 
 
 # ---------------------------------------------------------------------------
@@ -386,9 +389,13 @@ def main():
         "Hit_Fire": hit_fire, "Hit_Water": hit_water, "Hit_Wind": hit_wind, "Hit_Earth": hit_earth,
         "Hit_Neutral": hit_neutral,
     }
+    # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
     for name, fn in sfx.items():
+        reseed(name)
         save_wav(fade_edges(loudness(fn())), "SFX", f"{name}.wav")
+    reseed("Menu")
     save_wav(menu_theme(), "Music", "Menu.wav")
+    reseed("Dungeon")
     save_wav(dungeon_theme(), "Music", "Dungeon.wav")
     print("done")
 
