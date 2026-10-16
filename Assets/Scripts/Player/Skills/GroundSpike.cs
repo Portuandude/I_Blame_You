@@ -50,6 +50,7 @@ namespace IBlameYou.Player
             if (!struck && age >= delay)
             {
                 struck = true;
+                GameAudio.PlaySfx("Hit_Earth");
                 if (telegraph != null) Destroy(telegraph);
                 var frames = EffectLibrary.SpellFrames(Element.Earth);
                 var visual = EffectLibrary.CreateVisual(transform, "Visual", frames, 14f, false,

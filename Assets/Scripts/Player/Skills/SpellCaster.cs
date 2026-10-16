@@ -115,6 +115,7 @@ namespace IBlameYou.Player
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f);
             float facing = Mathf.Sign(transform.localScale.x);
             if (combat != null) combat.PlayCastAnimation(origin + Vector2.right * facing); // 방향은 그대로 두고 동작만
+            GameAudio.PlaySfx($"Cast_{spell.Element}");
 
             if (spell.Shape == SpellShape.GroundSpike)
             {
@@ -163,9 +164,14 @@ namespace IBlameYou.Player
             projectile.Hit = target =>
             {
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
+                GameAudio.PlaySfx($"Hit_{spell.Element}");
                 StatusEffects.TryApply(target, spell.Debuff, stats);
             };
-            projectile.Impact = point => EffectLibrary.PlayHit(spell.Element, point, 0.7f);
+            projectile.Impact = point =>
+            {
+                EffectLibrary.PlayHit(spell.Element, point, 0.7f);
+                GameAudio.PlaySfx($"Hit_{spell.Element}", 0.5f);
+            };
         }
 
         private void SpawnGroundSpike(SpellDefinition spell, float facing)
