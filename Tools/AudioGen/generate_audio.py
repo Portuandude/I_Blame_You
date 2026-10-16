@@ -185,25 +185,26 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 수정(크리스탈)을 가볍게 톡 친 듯한 맑은 울림. 시작은 또렷하되 고역은 눌러서 거슬리지 않게, 발사 뒤 잔음이 은은하게 남는 0.4초."""
+    """무속성 마력탄 (평타라 자주 들림): 마법소녀풍의 통통 튀는 '퓽~'에 반짝이는 소리를 얹는다. 발사 뒤 반짝임이 잔음으로 남는 0.4초."""
     n = int(0.4 * SR)
     t = np.arange(n) / SR
-    # 유리처럼 배음이 어긋난 부분음들: 높은 부분음일수록 빨리 사라져 '팅' 다음엔 둥근 여운만 남는다
-    partials = [(1.0, 1.0, 20), (2.76, 0.3, 34), (5.40, 0.08, 55)]
-    base = 1450
-    ring = np.zeros(n)
-    for ratio, amp, decay in partials:
-        ring += np.sin(2 * np.pi * base * ratio * t) * amp * np.exp(-t * decay)
-    # 발사 뒤 잔음: 기본음과 두 번째 부분음이 천천히 사라지며 살짝 일렁인다
-    shimmer = 1 + 0.15 * np.sin(2 * np.pi * 9 * t)
-    tail = (np.sin(2 * np.pi * base * t) * 0.22 + np.sin(2 * np.pi * base * 2.76 * t + 1.3) * 0.06) * np.exp(-t * 5) * shimmer
-    ring = lowpass(ring + tail, 5500)
-    ring *= env_adsr(n, 0.003, 0.0, 1.0, 0.0)
-    # 한 옥타브 아래 음을 아주 살짝만 (밑이 비지 않을 정도)
-    body = osc("sine", base * 0.5, n) * np.exp(-t * 28) * env_adsr(n, 0.006, 0.0, 1.0, 0.0) * 0.15
+    # 위로 튀어 오르는 '퓽': 삼각파가 짧게 올라갔다가 살짝 내려앉는다 (부드러운 음색이라 귀를 찌르지 않는다)
+    sweep = np.where(t < 0.06, 620 + (1480 - 620) * (t / 0.06), 1480 - 180 * (1 - np.exp(-(t - 0.06) * 12)))
+    pew = osc("tri", sweep, n) * env_adsr(n, 0.004, 0.05, 0.35, 0.0) * np.exp(-t * 9)
+    pew = lowpass(pew, 4500)
+    # 반짝임: 장화음 세 음이 차례로 '찰랑' 울리고 천천히 사라진다
+    sparkle = np.zeros(n)
+    for k, freq in enumerate([1568, 1976, 2349]):
+        start = int((0.03 + 0.035 * k) * SR)
+        m = n - start
+        tt = np.arange(m) / SR
+        note = (np.sin(2 * np.pi * freq * tt) + 0.25 * np.sin(2 * np.pi * freq * 2.01 * tt)) * np.exp(-tt * 10)
+        note *= 1 + 0.2 * np.sin(2 * np.pi * 11 * tt)
+        sparkle[start:] += note * env_adsr(m, 0.002, 0.0, 1.0, 0.0) * (0.32 - 0.06 * k)
+    sparkle = lowpass(sparkle, 5500)
     # 날아가는 느낌의 아주 옅은 바람
-    air = lowpass(bandpass(noise(n), 600, 2400), 2500) * env_adsr(n, 0.015, 0.05, 0.3, 0.06) * 0.1
-    return normalize(fade_edges(ring + body + air))
+    air = lowpass(bandpass(noise(n), 800, 3000), 3000) * env_adsr(n, 0.01, 0.06, 0.2, 0.08) * 0.08
+    return normalize(fade_edges(pew + sparkle + air))
 
 
 def hit_fire():
@@ -401,7 +402,7 @@ def main():
         "Hit_Neutral": hit_neutral,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
