@@ -185,21 +185,21 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 수정(크리스탈)을 톡 친 듯한 맑은 울림. 시작은 또렷하되 고역은 눌러서 거슬리지 않게, 0.25초."""
-    n = int(0.25 * SR)
+    """무속성 마력탄 (평타라 자주 들림): 수정(크리스탈)을 가볍게 톡 친 듯한 맑은 울림. 시작은 또렷하되 고역은 눌러서 거슬리지 않게, 0.18초."""
+    n = int(0.18 * SR)
     t = np.arange(n) / SR
     # 유리처럼 배음이 어긋난 부분음들: 높은 부분음일수록 빨리 사라져 '팅' 다음엔 둥근 여운만 남는다
-    partials = [(1.0, 1.0, 14), (2.76, 0.35, 26), (5.40, 0.12, 45)]
-    base = 1150
+    partials = [(1.0, 1.0, 20), (2.76, 0.3, 34), (5.40, 0.08, 55)]
+    base = 1450
     ring = np.zeros(n)
     for ratio, amp, decay in partials:
         ring += np.sin(2 * np.pi * base * ratio * t) * amp * np.exp(-t * decay)
-    ring = lowpass(ring, 5000)
+    ring = lowpass(ring, 5500)
     ring *= env_adsr(n, 0.003, 0.0, 1.0, 0.0)
-    # 무게감을 주는 한 옥타브 아래 음 (너무 가볍지 않게)
-    body = osc("sine", base * 0.5, n) * np.exp(-t * 18) * env_adsr(n, 0.006, 0.0, 1.0, 0.0) * 0.4
+    # 한 옥타브 아래 음을 아주 살짝만 (밑이 비지 않을 정도)
+    body = osc("sine", base * 0.5, n) * np.exp(-t * 28) * env_adsr(n, 0.006, 0.0, 1.0, 0.0) * 0.15
     # 날아가는 느낌의 아주 옅은 바람
-    air = lowpass(bandpass(noise(n), 600, 2400), 2500) * env_adsr(n, 0.02, 0.06, 0.3, 0.08) * 0.12
+    air = lowpass(bandpass(noise(n), 600, 2400), 2500) * env_adsr(n, 0.015, 0.05, 0.3, 0.06) * 0.1
     return normalize(fade_edges(ring + body + air))
 
 
