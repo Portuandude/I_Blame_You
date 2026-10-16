@@ -61,11 +61,13 @@ namespace IBlameYou.Core
 
         private void ShowMenu()
         {
+            GameAudio.PlayMusic("Menu");
             gameObject.AddComponent<StartMenu>().Initialize(BuildWorld);
         }
 
         private void BuildWorld()
         {
+            GameAudio.PlayMusic("Dungeon");
             // Tools/I Blame You/Generate Sprites And Animations로 미리 생성해둔 아트 설정.
             // 아직 생성 전이면 null이며, 이 경우 각 스포너가 단색 사각형으로 대체한다.
             var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
@@ -179,7 +181,7 @@ namespace IBlameYou.Core
             {
                 var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
                 cam = cameraObject.AddComponent<Camera>();
-                cameraObject.AddComponent<AudioListener>();
+                if (FindAnyObjectByType<AudioListener>() == null) cameraObject.AddComponent<AudioListener>(); // GameAudio가 이미 둔 경우 중복 방지
                 cam.orthographicSize = 6f;
             }
 
