@@ -152,14 +152,20 @@ namespace IBlameYou.Player
         {
             var go = new GameObject($"Spell_{spell.Element}");
             go.transform.position = origin;
-            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.SpellFrames(spell.Element), 14f, true,
+            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.FlightFrames(spell.Element), 16f, true,
                 ElementInfo.Color(spell.Element), spell.Radius * 2.5f);
+            go.AddComponent<ProjectileTrail>().Begin(spell.Element);
 
             var projectile = go.AddComponent<Projectile>();
             projectile.Launch(stats, true, DamageKind.Magic, spell.Element, direction, spell.Speed,
                 spell.Radius, spell.Range, spell.Shape == SpellShape.Piercing, spell.DamageMultiplier);
             projectile.SetHoming(spell.HomingTurnRate, SpellBook.HomingRange);
-            projectile.Hit = target => StatusEffects.TryApply(target, spell.Debuff, stats);
+            projectile.Hit = target =>
+            {
+                EffectLibrary.PlayHit(spell.Element, HitPoint(target));
+                StatusEffects.TryApply(target, spell.Debuff, stats);
+            };
+            projectile.Impact = point => EffectLibrary.PlayHit(spell.Element, point, 0.7f);
         }
 
         private void SpawnGroundSpike(SpellDefinition spell, float facing)
@@ -177,7 +183,18 @@ namespace IBlameYou.Player
             var go = new GameObject("Spell_Earth");
             go.transform.position = point;
             go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.CastDelay, target,
-                groundMask, health => StatusEffects.TryApply(health, spell.Debuff, stats));
+                groundMask, health =>
+                {
+                    EffectLibrary.PlayHit(Element.Earth, HitPoint(health));
+                    StatusEffects.TryApply(health, spell.Debuff, stats);
+                });
+        }
+
+        // 적중 이펙트를 띄울 자리: 맞은 대상 몸통의 가운데.
+        private static Vector3 HitPoint(HealthSystem target)
+        {
+            var body = target.GetComponent<Collider2D>();
+            return body != null ? body.bounds.center : target.transform.position + new Vector3(0f, 0.5f, 0f);
         }
 
         private static HealthSystem FindSpikeTarget(Vector2 self, float facing, float range)
