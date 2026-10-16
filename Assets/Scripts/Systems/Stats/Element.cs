@@ -38,4 +38,32 @@ namespace IBlameYou.Systems
             }
         }
     }
+
+    // 속성 상성 (2026-10-16 확정): 물 > 불 > 무 > 바람 > 땅 > 물.
+    // 공격 속성이 이기면 ×1.5, 지면 ×0.5, 관계가 없으면(같은 속성 포함) ×1.
+    public static class ElementAffinity
+    {
+        public const float Advantage = 1.5f;
+        public const float Disadvantage = 0.5f;
+
+        // 각 속성이 이기는 상대.
+        public static Element Beats(Element element)
+        {
+            switch (element)
+            {
+                case Element.Water: return Element.Fire;
+                case Element.Fire: return Element.Neutral;
+                case Element.Neutral: return Element.Wind;
+                case Element.Wind: return Element.Earth;
+                default: return Element.Water; // Earth
+            }
+        }
+
+        public static float Multiplier(Element attack, Element defender)
+        {
+            if (Beats(attack) == defender) return Advantage;
+            if (Beats(defender) == attack) return Disadvantage;
+            return 1f;
+        }
+    }
 }

@@ -25,6 +25,16 @@ namespace IBlameYou.Systems
         // 공격 사이 간격(초) = 1 / (문서 공격 속도 × 버프 배율).
         public float AttackInterval => StatUnits.AttackInterval(stats.attackSpeed * AttackSpeedMultiplier);
 
+        // 몸의 속성 (속성 슬라임 등). 있으면 마법 피해에 속성 상성이 적용된다. 없으면 상성 없음.
+        public bool HasBodyElement { get; private set; }
+        public Element BodyElement { get; private set; }
+
+        public void SetBodyElement(Element element)
+        {
+            HasBodyElement = true;
+            BodyElement = element;
+        }
+
         public void Configure(StatBlock block)
         {
             stats = block.Clone();

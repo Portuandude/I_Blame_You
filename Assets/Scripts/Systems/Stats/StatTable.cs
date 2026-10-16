@@ -17,7 +17,7 @@ namespace IBlameYou.Systems
 
         public static StatBlock Slime => new StatBlock
         {
-            maxHealth = 50, maxMana = 0, maxStamina = 25, moveSpeed = 0.3f,
+            maxHealth = 50, maxMana = 0, maxStamina = 25, moveSpeed = 0.45f, // 문서 0.3의 1.5배 (2026-10-16 사용자 지시)
             debuffResistance = 0, defense = 10, critChance = 0f, critDamage = 1.5f,
             elementDamage = new float[] { 0, 0, 0, 0, 25 },
             elementDefense = new float[] { 0, 0, 0, 0, 25 },

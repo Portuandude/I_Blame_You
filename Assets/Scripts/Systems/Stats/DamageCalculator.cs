@@ -19,6 +19,7 @@ namespace IBlameYou.Systems
     //   마법 피해 = 속성 데미지 × 100 / (100 + 속성 방어력)
     // 디버프 저항도는 디버프 확률에만 쓰고 피해 계산에는 쓰지 않는다 (StatusEffects.Chance).
     // 치명타는 방어 계산 후 최종 피해에 배율을 곱한다 (기획서 5.3 추천안).
+    // 마법 피해는 대상에게 몸 속성이 있으면 속성 상성(ElementAffinity) 배율을 곱한다.
     public static class DamageCalculator
     {
         public static float Physical(float attack, float defense)
@@ -50,6 +51,7 @@ namespace IBlameYou.Systems
             raw *= multiplier;
 
             float damage;
+            float affinity = 1f;
             if (defenderStats == null)
             {
                 damage = raw;
@@ -61,6 +63,8 @@ namespace IBlameYou.Systems
             else
             {
                 damage = Magic(raw, defenderStats.Stats.ElementDefense(element));
+                if (defenderStats.HasBodyElement) affinity = ElementAffinity.Multiplier(element, defenderStats.BodyElement);
+                damage *= affinity;
             }
 
             bool critical = attack != null && attack.critChance > 0f && Random.value < attack.critChance;
@@ -75,7 +79,12 @@ namespace IBlameYou.Systems
 
             bool applied = !health.Invulnerable;
             health.TakeDamage(damage);
-            if (applied) DamageNumbers.Show(health.transform.position, damage, critical, kind, element);
+            if (applied)
+            {
+                DamageNumbers.Show(health.transform.position, damage, critical, kind, element);
+                if (affinity > 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "약점!", new Color(1f, 0.85f, 0.3f), 0.75f);
+                else if (affinity < 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "저항", new Color(0.7f, 0.7f, 0.75f), 0.7f);
+            }
             return damage;
         }
     }
