@@ -185,26 +185,24 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 마법소녀풍의 통통 튀는 '퓽~'에 반짝이는 소리를 얹는다. 발사 뒤 반짝임이 잔음으로 남는 0.4초."""
+    """무속성 마력탄 (평타라 자주 들림): 마법사가 순수한 마력을 쏘아 보내는 '슈웅'. 신비한 울림이 잔음으로 남는 0.4초."""
     n = int(0.4 * SR)
     t = np.arange(n) / SR
-    # 위로 튀어 오르는 '퓽': 삼각파가 짧게 올라갔다가 살짝 내려앉는다 (부드러운 음색이라 귀를 찌르지 않는다)
-    sweep = np.where(t < 0.06, 620 + (1480 - 620) * (t / 0.06), 1480 - 180 * (1 - np.exp(-(t - 0.06) * 12)))
-    pew = osc("tri", sweep, n) * env_adsr(n, 0.004, 0.05, 0.35, 0.0) * np.exp(-t * 9)
-    pew = lowpass(pew, 4500)
-    # 반짝임: 장화음 세 음이 차례로 '찰랑' 울리고 천천히 사라진다
-    sparkle = np.zeros(n)
-    for k, freq in enumerate([1568, 1976, 2349]):
-        start = int((0.03 + 0.035 * k) * SR)
-        m = n - start
-        tt = np.arange(m) / SR
-        note = (np.sin(2 * np.pi * freq * tt) + 0.25 * np.sin(2 * np.pi * freq * 2.01 * tt)) * np.exp(-tt * 10)
-        note *= 1 + 0.2 * np.sin(2 * np.pi * 11 * tt)
-        sparkle[start:] += note * env_adsr(m, 0.002, 0.0, 1.0, 0.0) * (0.32 - 0.06 * k)
-    sparkle = lowpass(sparkle, 5500)
-    # 날아가는 느낌의 아주 옅은 바람
-    air = lowpass(bandpass(noise(n), 800, 3000), 3000) * env_adsr(n, 0.01, 0.06, 0.2, 0.08) * 0.08
-    return normalize(fade_edges(pew + sparkle + air))
+    # 마력이 뻗어 나가는 바람: 대역이 높은 곳에서 낮은 곳으로 미끄러진다
+    center = 1500 * np.exp(-t * 8) + 500
+    rush = bandpass(noise(n), center * 0.6, center)
+    rush = lowpass(rush, 3000) * env_adsr(n, 0.012, 0.08, 0.25, 0.1) * 0.5
+    # 신비한 울림: 완전5도 두 음을 각각 살짝 어긋나게 겹쳐서 일렁이는 마력 소리를 만든다
+    drop = 1 - 0.06 * (1 - np.exp(-t * 10))
+    hum = np.zeros(n)
+    for freq, amp in [(523, 1.0), (784, 0.6)]:
+        # 어긋난 음을 절반 크기로만 겹쳐 소리가 끊기듯 출렁이지 않고 은은하게만 일렁인다
+        for detune, weight in ((0.0, 1.0), (3.0, 0.4)):
+            hum += osc("sine", freq * drop + detune, n) * amp * weight
+    hum = hum * 0.25 * env_adsr(n, 0.008, 0.0, 1.0, 0.0) * np.exp(-t * 6)
+    # 은은한 배음 하나가 잔음 위에 얹힌다
+    halo = osc("sine", 1568 * drop, n) * env_adsr(n, 0.02, 0.0, 1.0, 0.0) * np.exp(-t * 9) * 0.12
+    return normalize(fade_edges(rush + hum + halo))
 
 
 def hit_fire():
@@ -402,7 +400,7 @@ def main():
         "Hit_Neutral": hit_neutral,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.11}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
