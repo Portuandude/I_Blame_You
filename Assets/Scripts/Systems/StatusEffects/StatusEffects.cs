@@ -34,7 +34,9 @@ namespace IBlameYou.Systems
 
         private int burnStacks;
         private float burnDamagePerStack;
-        private float burnRemaining;
+        private float burnRemaining;   // 화면 표시용 남은 시간 (매 프레임 감소)
+        private int burnTicksLeft;     // 남은 피해 횟수
+        private float stunRemaining;   // 화면 표시용 (실제 경직은 HitStun이 처리)
         private HealthSystem health;
         private CombatStats stats;
         private HitStun hitStun;
@@ -43,6 +45,11 @@ namespace IBlameYou.Systems
 
         public int BurnStacks => burnStacks;
         public bool IsWet => wetRemaining > 0f;
+
+        // 머리 위 아이콘(StatusIconBar)이 쓰는 남은 시간 비율 (1 = 방금 걸림, 0 = 끝).
+        public float BurnFraction => burnStacks > 0 ? Mathf.Clamp01(burnRemaining / BurnDuration) : 0f;
+        public float WetFraction => Mathf.Clamp01(wetRemaining / WetDuration);
+        public float StunFraction => Mathf.Clamp01(stunRemaining / StunDuration);
 
         // 디버프가 걸릴 확률 (0~1).
         public static float Chance(CombatStats target)
@@ -72,6 +79,7 @@ namespace IBlameYou.Systems
             health = GetComponent<HealthSystem>();
             stats = GetComponent<CombatStats>();
             hitStun = GetComponent<HitStun>();
+            StatusIconBar.Attach(this);
         }
 
         private void Apply(StatusDebuff debuff, CombatStats attacker)
@@ -84,6 +92,7 @@ namespace IBlameYou.Systems
                     burnStacks++;
                     burnDamagePerStack = fire * BurnRatio;
                     burnRemaining = BurnDuration;
+                    burnTicksLeft = Mathf.RoundToInt(BurnDuration);
                     burnTickTimer = 1f;
                     Announce($"화상 x{burnStacks}", BurnColor);
                     break;
@@ -97,6 +106,7 @@ namespace IBlameYou.Systems
 
                 case StatusDebuff.Stun:
                     if (hitStun != null) hitStun.Apply(StunDuration);
+                    stunRemaining = Mathf.Max(stunRemaining, StunDuration);
                     Announce("경직", StunColor);
                     break;
             }
@@ -108,8 +118,11 @@ namespace IBlameYou.Systems
             {
                 ClearBurn();
                 ClearWet();
+                stunRemaining = 0f;
                 return;
             }
+
+            if (stunRemaining > 0f) stunRemaining -= Time.deltaTime;
 
             if (wetRemaining > 0f)
             {
@@ -120,13 +133,14 @@ namespace IBlameYou.Systems
             if (burnStacks == 0) return;
 
             // 1초마다 중첩 수만큼의 피해를 한 번에 준다. 방어력/속성 방어력을 무시하는 고정 피해.
+            burnRemaining -= Time.deltaTime;
             burnTickTimer -= Time.deltaTime;
             if (burnTickTimer > 0f) return;
             burnTickTimer += 1f;
 
             float total = burnStacks * burnDamagePerStack;
-            burnRemaining -= 1f;
-            if (burnRemaining <= 0.001f) ClearBurn();
+            burnTicksLeft--;
+            if (burnTicksLeft <= 0) ClearBurn();
 
             if (total <= 0f) return;
             health.Drain(total);
@@ -138,6 +152,7 @@ namespace IBlameYou.Systems
         {
             burnStacks = 0;
             burnRemaining = 0f;
+            burnTicksLeft = 0;
         }
 
         private void ClearWet()
