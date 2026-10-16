@@ -23,6 +23,8 @@ namespace IBlameYou.Player
         public bool ChantOpen { get; private set; }
         public SpellDefinition PendingSpell { get; private set; }
         public int ChantOpenedFrame { get; private set; }
+        public bool WindingUp { get; private set; } // 바위 가시 선딜 중
+        private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
 
         private void Awake()
         {
@@ -47,6 +49,7 @@ namespace IBlameYou.Player
                 return;
             }
 
+            if (WindingUp) return;
             if (!RoleInput.SpellDown(control, out var element)) return;
 
             var spell = SpellBook.Get(element);
@@ -113,15 +116,35 @@ namespace IBlameYou.Player
 
             if (spell.Shape == SpellShape.GroundSpike)
             {
-                SpawnGroundSpike(spell, aim);
-            }
-            else
-            {
-                var direction = aim - origin;
-                if (direction.sqrMagnitude < 0.01f) direction = Vector2.right * Mathf.Sign(transform.localScale.x);
-                SpawnProjectile(spell, origin, direction.normalized);
+                // 선딜: 시전 동작 뒤 Windup초가 지나야 가시가 예고된다. 그동안 다른 공격 스킬은 못 쓴다.
+                StartCoroutine(GroundSpikeAfterWindup(spell, aim));
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 시전 중...");
+                return;
             }
 
+            // 첫 발사각은 항상 수평 (조준점이 있는 쪽). 이후 방향은 유도가 꺾는다.
+            float side = aim.x - origin.x;
+            if (Mathf.Abs(side) < 0.01f) side = Mathf.Sign(transform.localScale.x);
+            SpawnProjectile(spell, origin, new Vector2(Mathf.Sign(side), 0f));
+
+            SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+        }
+
+        private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, Vector2 aim)
+        {
+            WindingUp = true;
+            charge = EffectLibrary.CreateVisual(transform, "EarthCharge", null, 0f, false,
+                new Color(0.75f, 0.55f, 0.3f, 0.5f), 0.9f, 6);
+            charge.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+
+            yield return new WaitForSeconds(spell.Windup);
+
+            if (charge != null) Destroy(charge.gameObject);
+            charge = null;
+            WindingUp = false;
+            if (health.IsDead) yield break;
+
+            SpawnGroundSpike(spell, aim);
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
 
@@ -179,6 +202,8 @@ namespace IBlameYou.Player
 
         private void OnDisable()
         {
+            WindingUp = false;
+            if (charge != null) Destroy(charge.gameObject);
             if (ChantOpen) CloseChant();
         }
     }
