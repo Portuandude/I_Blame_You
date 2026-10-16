@@ -9,7 +9,7 @@ namespace IBlameYou.Systems
     public class GameAudio : MonoBehaviour
     {
         public static float MusicVolume = 0.45f;
-        public static float SfxVolume = 0.8f;
+        public static float SfxVolume = 0.5f;
 
         private const int SfxVoices = 12;
         private const float SameClipCooldown = 0.05f; // 같은 소리가 한꺼번에 겹쳐 터지는 것을 막는다
