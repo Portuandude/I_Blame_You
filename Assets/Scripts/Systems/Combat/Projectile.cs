@@ -5,7 +5,7 @@ namespace IBlameYou.Systems
 {
     // 날아가며 겹친 대상에게 피해를 주는 투사체 (B의 공격 스킬, 고블린 궁수의 화살).
     // Rigidbody 없이 매 물리 프레임 위치를 옮기고 겹침 조회로 판정한다. 벽/바닥에 닿으면 사라진다.
-    // SetHoming을 부르면 가장 가까운 대상 쪽으로 초당 turnRate도까지 방향을 꺾는다 (유도성).
+    // SetHoming을 부르면 가장 가까운 대상 쪽으로 초당 turnRate도까지 방향을 꺾는다 (유도성). 플레이어 투사체만.
     public class Projectile : MonoBehaviour
     {
         private CombatStats owner;
@@ -32,6 +32,7 @@ namespace IBlameYou.Systems
         // turnRate: 초당 최대 회전 각도(도). range: 이 거리 안의 대상만 쫓는다.
         public void SetHoming(float turnRate, float range)
         {
+            if (!hitsEnemies) return; // 적이 쏜 투사체(화살 등)는 유도하지 않는다. Launch 뒤에 불러야 한다.
             homingTurnRate = turnRate;
             homingRange = range;
             retargetTimer = 0f;
