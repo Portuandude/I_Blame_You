@@ -2,6 +2,7 @@
 
 고블린 4종(고블린/궁수/병사/대전사)의 Idle/Run/Attack/Die 프레임과
 스킬·투사체 이펙트 프레임을 그려 Assets/Art/Sprites 아래에 PNG로 저장한다.
+디버프 아이콘은 런타임 로드용으로 Assets/Resources/StatusIcons 에 저장한다.
 진짜 아트가 생기면 같은 경로/이름의 PNG로 바꾸고 Unity에서
 Tools > I Blame You > Generate Sprites And Animations 를 다시 실행하면 된다.
 
@@ -645,11 +646,73 @@ def contact_sheet(path):
     sheet.save(path)
 
 
+# ---------------------------------------------------------------------------
+# 디버프 아이콘 (Assets/Resources/StatusIcons). 사각형 바탕 + 가운데 그림.
+# 런타임에 Resources.Load로 읽어 적 머리 위에 띄운다 (StatusIconBar).
+
+ICON = 64
+
+
+def icon_base(fill, border):
+    img = blank(ICON, ICON)
+    d = ImageDraw.Draw(img)
+    m = 3 * SS
+    d.rounded_rectangle([m, m, ICON * SS - m, ICON * SS - m], radius=8 * SS, fill=rgba(fill),
+                        outline=OUTLINE, width=3 * SS)
+    d.rounded_rectangle([m + 4 * SS, m + 4 * SS, ICON * SS - m - 4 * SS, ICON * SS - m - 4 * SS],
+                        radius=6 * SS, outline=rgba(border), width=2 * SS)
+    return img, d
+
+
+def burn_icon():
+    img, d = icon_base("#5a1e0e", "#c8501e")
+    s = SS
+    outer = [(32, 10), (42, 24), (47, 36), (44, 47), (36, 54), (28, 54), (20, 47), (17, 37), (21, 27), (26, 33), (27, 22)]
+    inner = [(32, 26), (38, 36), (39, 45), (34, 51), (29, 51), (25, 45), (26, 37), (30, 40)]
+    d.polygon([(x * s, y * s) for x, y in outer], fill=rgba("#ff7a1a"), outline=OUTLINE, width=3 * s)
+    d.polygon([(x * s, y * s) for x, y in inner], fill=rgba("#ffd84a"))
+    return finish(img, ICON, ICON)
+
+
+def wet_icon():
+    img, d = icon_base("#0e2a52", "#3c8ce6")
+    s = SS
+    pts = [(32, 10)]
+    for i in range(0, 181, 10):
+        a = math.radians(i)
+        pts.append((32 + 15 * math.cos(a), 38 + 15 * math.sin(a)))
+    pts = pts[:1] + [(47, 38)] + pts[2:] + [(17, 38)]
+    d.polygon([(x * s, y * s) for x, y in pts], fill=rgba("#4fa8ff"), outline=OUTLINE, width=3 * s)
+    d.ellipse([24 * s, 34 * s, 30 * s, 44 * s], fill=rgba("#d6ecff"))
+    return finish(img, ICON, ICON)
+
+
+def stun_icon():
+    img, d = icon_base("#3a2a14", "#b4874a")
+    s = SS
+    pts = []
+    for i in range(10):
+        r = 20 if i % 2 == 0 else 9
+        a = math.radians(-90 + i * 36)
+        pts.append((32 + r * math.cos(a), 33 + r * math.sin(a)))
+    d.polygon([(x * s, y * s) for x, y in pts], fill=rgba("#ffd23c"), outline=OUTLINE, width=3 * s)
+    d.ellipse([28 * s, 29 * s, 36 * s, 37 * s], fill=rgba("#fff3b0"))
+    return finish(img, ICON, ICON)
+
+
+def generate_status_icons():
+    folder = os.path.join(ROOT, "Assets", "Resources", "StatusIcons")
+    os.makedirs(folder, exist_ok=True)
+    for name, fn in (("Burn", burn_icon), ("Wet", wet_icon), ("Stun", stun_icon)):
+        fn().save(os.path.join(folder, f"{name}.png"))
+
+
 if __name__ == "__main__":
     import sys
 
     generate_goblins()
     generate_effects()
+    generate_status_icons()
     if len(sys.argv) > 1:
         contact_sheet(sys.argv[1])
     print("done")
