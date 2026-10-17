@@ -68,5 +68,14 @@ namespace IBlameYou.Systems
             elementDefense = new float[] { 30, 15, 5, 10, 50 },
             attackSpeed = 0.5f, physicalDamage = 18, experience = 480
         };
+
+        // 함정 (스탯 문서에 없는 가안). 플레이어 방어력 10 기준 가시 약 18, 화살 약 15, 불기둥 한 번 약 12 + 화상.
+        public static StatBlock Trap => new StatBlock
+        {
+            maxHealth = 1, moveSpeed = 0f, critChance = 0f, critDamage = 1.5f,
+            elementDamage = new float[] { 20, 0, 0, 0, 0 },
+            elementDefense = new float[] { 0, 0, 0, 0, 0 },
+            physicalDamage = 20
+        };
     }
 }
