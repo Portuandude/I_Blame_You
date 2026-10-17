@@ -57,6 +57,8 @@ namespace IBlameYou.Core
             transform.position = followPosition;
         }
 
+        public Rect? Bounds => bounds;
+
         public void SetBounds(Rect worldBounds)
         {
             bounds = worldBounds;

@@ -15,6 +15,11 @@ namespace IBlameYou.EditorTools
         private const string ConfigPath = "Assets/Resources/LevelArtConfig.asset";
         private const string PlayerPrefabPath = "Assets/Prefabs/Characters/Player.prefab";
         private const string SlimePrefabPath = "Assets/Prefabs/Enemies/Slime.prefab";
+        private const string MotherSlimePrefabPath = "Assets/Prefabs/Enemies/MotherSlime.prefab";
+        private const string GoblinPrefabPath = "Assets/Prefabs/Enemies/Goblin.prefab";
+        private const string GoblinArcherPrefabPath = "Assets/Prefabs/Enemies/GoblinArcher.prefab";
+        private const string GoblinSoldierPrefabPath = "Assets/Prefabs/Enemies/GoblinSoldier.prefab";
+        private const string GoblinWarriorPrefabPath = "Assets/Prefabs/Enemies/GoblinWarrior.prefab";
         private const string FrictionlessPath = "Assets/Art/Materials/Frictionless.physicsMaterial2D";
 
         [MenuItem("Tools/I Blame You/Generate Prefabs")]
@@ -34,12 +39,23 @@ namespace IBlameYou.EditorTools
 
             config.playerPrefab = Bake(PlayerSpawner.Build(config), PlayerPrefabPath, frictionless);
             config.slimePrefab = Bake(SlimeSpawner.Build(config), SlimePrefabPath, frictionless);
+            config.motherSlimePrefab = Bake(MotherSlimeSpawner.Build(config), MotherSlimePrefabPath, frictionless);
+
+            // 고블린류는 아트(애니메이터)가 있을 때만 굽는다. 없으면 스포너가 코드로 단색 사각형 몸을 조립한다.
+            config.goblinPrefab = config.goblinAnimatorController != null
+                ? Bake(GoblinSpawner.BuildGoblin(config), GoblinPrefabPath, frictionless) : null;
+            config.goblinArcherPrefab = config.goblinArcherAnimatorController != null
+                ? Bake(GoblinArcherSpawner.Build(config), GoblinArcherPrefabPath, frictionless) : null;
+            config.goblinSoldierPrefab = config.goblinSoldierAnimatorController != null
+                ? Bake(GoblinSpawner.BuildSoldier(config), GoblinSoldierPrefabPath, frictionless) : null;
+            config.goblinWarriorPrefab = config.goblinWarriorAnimatorController != null
+                ? Bake(GoblinWarriorSpawner.Build(config), GoblinWarriorPrefabPath, frictionless) : null;
 
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[PrefabSetup] 완료: Player.prefab / Slime.prefab 생성/갱신 + LevelArtConfig 연결됨.");
+            Debug.Log("[PrefabSetup] 완료: 플레이어/슬라임/어미 슬라임/고블린류 프리팹 생성/갱신 + LevelArtConfig 연결됨.");
         }
 
         // 프리팹 오브젝트에 지정할 레이어가 프로젝트에 없으면 빈 사용자 레이어 슬롯(8~31)에 추가한다.

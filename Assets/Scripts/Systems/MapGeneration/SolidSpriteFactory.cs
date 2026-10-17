@@ -23,6 +23,31 @@ namespace IBlameYou.Systems
             return cachedLeftPivotSquare;
         }
 
+        private static Sprite cachedCircle;
+
+        // 이펙트 스프라이트가 아직 생성되지 않았을 때 투사체/방어막 대신 그리는 부드러운 원.
+        public static Sprite CreateCircle()
+        {
+            if (cachedCircle != null) return cachedCircle;
+
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            float radius = size / 2f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(radius, radius)) / radius;
+                    float alpha = Mathf.Clamp01((1f - d) * 4f);
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+
+            texture.Apply();
+            cachedCircle = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+            return cachedCircle;
+        }
+
         private static Sprite CreateSquare(Vector2 pivot)
         {
             var texture = new Texture2D(1, 1);

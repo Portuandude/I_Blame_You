@@ -47,8 +47,7 @@ namespace IBlameYou.Enemies
 
         [Header("Attack (도약 덮치기)")]
         [SerializeField] private float attackRange = 4f;
-        [SerializeField] private float attackDamage = 12f;
-        [SerializeField] private float attackCooldown = 2f;
+        [SerializeField] private float attackCooldown = 5f; // 스포너가 공격 속도(초당 횟수)로 정한다
         [SerializeField] private float maxLeapSpeed = 8f;
 
         [Header("Wall Check")]
@@ -83,10 +82,17 @@ namespace IBlameYou.Enemies
             detectionRange = detection;
         }
 
-        public void ConfigureAttack(float range, float damage, float cooldown, float leapSpeed)
+        // 이동속도만 바꾼다 (이미 구워진 프리팹에도 스탯 표의 현재 속도를 적용하려고 스폰 때 부른다).
+        public void ConfigureSpeed(float idleSpeed, float chase)
+        {
+            patrolSpeed = idleSpeed;
+            chaseSpeed = chase;
+        }
+
+        // 도약 피해는 EnemyController.StrikePlayer로 계산한다 (속성 슬라임이면 그 속성의 마법 피해).
+        public void ConfigureAttack(float range, float cooldown, float leapSpeed)
         {
             attackRange = range;
-            attackDamage = damage;
             attackCooldown = cooldown;
             maxLeapSpeed = leapSpeed;
         }
@@ -168,7 +174,7 @@ namespace IBlameYou.Enemies
                     return;
             }
 
-            float speed = chasing ? chaseSpeed : patrolSpeed;
+            float speed = (chasing ? chaseSpeed : patrolSpeed) * Stats.TotalMoveMultiplier;
             Rb.linearVelocity = new Vector2(moveDirection * speed, Rb.linearVelocity.y);
         }
 
@@ -244,7 +250,7 @@ namespace IBlameYou.Enemies
                 if (targetHealth.GetComponent<EnemyController>() != null) continue; // 적끼리는 피해 없음
                 if (!attackedThisLeap.Add(targetHealth)) continue;
 
-                targetHealth.TakeDamage(attackDamage);
+                StrikePlayer(targetHealth);
             }
         }
 
@@ -277,7 +283,7 @@ namespace IBlameYou.Enemies
         private bool WallAhead(float direction)
         {
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, wallCheckHeight);
-            return Physics2D.Raycast(origin, new Vector2(direction, 0f), wallCheckDistance, obstacleLayer);
+            return LedgeAhead(direction, obstacleLayer) || Physics2D.Raycast(origin, new Vector2(direction, 0f), wallCheckDistance, obstacleLayer);
         }
 
         private void SetFacing(float direction)
