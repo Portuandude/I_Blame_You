@@ -98,7 +98,7 @@ namespace IBlameYou.Systems
 
         // Resources/<path>/ 의 PNG를 이름순으로 읽어 중심 피벗 스프라이트로 만든다 (100px = 1유닛).
         // 텍스처로 읽어 직접 스프라이트를 만들기 때문에 임포트 설정(Sprite/Default)에 상관없이 동작한다.
-        private static Sprite[] LoadRuntimeFrames(string path)
+        public static Sprite[] LoadRuntimeFrames(string path)
         {
             if (RuntimeFrames.TryGetValue(path, out var cached)) return cached;
 
