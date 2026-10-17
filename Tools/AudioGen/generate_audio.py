@@ -185,24 +185,18 @@ def cast_earth():
 
 
 def cast_neutral():
-    """무속성 마력탄 (평타라 자주 들림): 마법사가 순수한 마력을 쏘아 보내는 '슈웅'. 신비한 울림이 잔음으로 남는 0.4초."""
-    n = int(0.4 * SR)
+    """무속성 마력탄 (평타라 자주 들림): 공을 던질 때의 짧고 부드러운 '훅'. 고역을 거의 없애고 천천히 부풀었다 빠진다, 0.2초."""
+    n = int(0.2 * SR)
     t = np.arange(n) / SR
-    # 마력이 뻗어 나가는 바람: 대역이 높은 곳에서 낮은 곳으로 미끄러진다
-    center = 1500 * np.exp(-t * 8) + 500
-    rush = bandpass(noise(n), center * 0.6, center)
-    rush = lowpass(rush, 3000) * env_adsr(n, 0.012, 0.08, 0.25, 0.1) * 0.5
-    # 신비한 울림: 완전5도 두 음을 각각 살짝 어긋나게 겹쳐서 일렁이는 마력 소리를 만든다
-    drop = 1 - 0.06 * (1 - np.exp(-t * 10))
-    hum = np.zeros(n)
-    for freq, amp in [(523, 1.0), (784, 0.6)]:
-        # 어긋난 음을 절반 크기로만 겹쳐 소리가 끊기듯 출렁이지 않고 은은하게만 일렁인다
-        for detune, weight in ((0.0, 1.0), (3.0, 0.4)):
-            hum += osc("sine", freq * drop + detune, n) * amp * weight
-    hum = hum * 0.25 * env_adsr(n, 0.008, 0.0, 1.0, 0.0) * np.exp(-t * 6)
-    # 은은한 배음 하나가 잔음 위에 얹힌다
-    halo = osc("sine", 1568 * drop, n) * env_adsr(n, 0.02, 0.0, 1.0, 0.0) * np.exp(-t * 9) * 0.12
-    return normalize(fade_edges(rush + hum + halo))
+    # 팔을 휘두르는 바람: 낮은 대역 잡음을 저역통과로 여러 번 걸러 날카로운 '쉭' 성분을 없앤다
+    center = 700 * np.exp(-t * 5) + 280
+    swing = bandpass(noise(n), center * 0.5, center)
+    for _ in range(3):
+        swing = lowpass(swing, 1100)
+    swing *= env_adsr(n, 0.045, 0.05, 0.5, 0.1)
+    # 손을 떠나는 순간의 아주 작은 저음 (클릭이 생기지 않게 5ms에 걸쳐 시작)
+    release = osc("sine", 120 * np.exp(-t * 20) + 75, n) * env_adsr(n, 0.005, 0.03, 0.0, 0.0) * 0.3
+    return normalize(fade_edges(swing + release))
 
 
 def hit_fire():
@@ -254,13 +248,13 @@ def hit_earth():
 
 
 def hit_neutral():
-    """무속성 적중: 묵직한 '퍽' + 짧은 저음 공명."""
-    n = int(0.4 * SR)
+    n = int(0.5 * SR)
     t = np.arange(n) / SR
-    punch = osc("sine", 110 * np.exp(-t * 14) + 50, n) * env_exp(n, 0.1) * 1.3
-    body = lowpass(noise(n), 700) * env_exp(n, 0.04)
-    ring_ = osc("tri", note_hz("A2"), n) * env_exp(n, 0.15) * 0.35
-    return normalize(fade_edges(punch + body + ring_))
+    zap = osc("square", 1400 * np.exp(-t * 9) + 300, n, duty=0.3) * env_exp(n, 0.06) * 0.35
+    zap = lowpass(zap, 5000)
+    bell = (osc("sine", note_hz("E6"), n) + osc("sine", note_hz("B6"), n) * 0.6) * env_exp(n, 0.15) * 0.5
+    burst = highpass(noise(n), 2500) * env_exp(n, 0.04) * 0.5
+    return normalize(fade_edges(zap + bell + burst))
 
 
 # ---------------------------------------------------------------------------
@@ -400,7 +394,7 @@ def main():
         "Hit_Neutral": hit_neutral,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.11}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
