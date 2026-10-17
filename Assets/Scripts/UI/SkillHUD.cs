@@ -12,7 +12,8 @@ namespace IBlameYou.UI
     // - 좌상단: 체력/마나, A와 B가 쓴/날린 마나, 경험치, 모드
     // - 우상단: 스킬 알림 피드 (실패는 빨간색, 마나 부족이면 최근에 마나를 많이 쓴 쪽을 탓함)
     // - 중앙: A의 방어막 미니게임(방향키 순서), B의 영창 입력창
-    // - 하단: 조작 안내, 사망 시 다시 시작 안내
+    // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
+    // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내
     public class SkillHUD : MonoBehaviour
     {
         private const int MaxFeed = 7;
@@ -47,6 +48,13 @@ namespace IBlameYou.UI
         private float experience;
         private string chantText = "";
         private bool deathHandled;
+        private bool stageCleared;
+        private float runStartTime;
+        private float clearTime;
+        private string notice;
+        private float noticeTime;
+
+        private const float NoticeDuration = 2.5f;
 
         private GUIStyle panel;
         private GUIStyle label;
@@ -73,6 +81,9 @@ namespace IBlameYou.UI
             mana.ManaSpent += OnManaSpent;
             SkillMessages.Posted += OnSkillMessage;
             EnemyController.Killed += OnEnemyKilled;
+            StageEvents.Notice += OnStageNotice;
+            StageEvents.Cleared += OnStageCleared;
+            runStartTime = Time.time;
         }
 
         private void OnDestroy()
@@ -80,6 +91,8 @@ namespace IBlameYou.UI
             if (mana != null) mana.ManaSpent -= OnManaSpent;
             SkillMessages.Posted -= OnSkillMessage;
             EnemyController.Killed -= OnEnemyKilled;
+            StageEvents.Notice -= OnStageNotice;
+            StageEvents.Cleared -= OnStageCleared;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -91,6 +104,20 @@ namespace IBlameYou.UI
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             experience += xp;
+        }
+
+        private void OnStageNotice(string text)
+        {
+            notice = text;
+            noticeTime = Time.time;
+        }
+
+        private void OnStageCleared()
+        {
+            if (stageCleared || deathHandled) return;
+            stageCleared = true;
+            clearTime = Time.time - runStartTime;
+            control.Locked = true;
         }
 
         private void OnSkillMessage(ManaUser who, string text, bool bad)
@@ -137,7 +164,7 @@ namespace IBlameYou.UI
                 if (visual != null) visual.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
             }
 
-            if (deathHandled)
+            if (deathHandled || stageCleared)
             {
                 if (Input.GetKeyDown(KeyCode.R)) restart?.Invoke(false);
                 else if (Input.GetKeyDown(KeyCode.M)) restart?.Invoke(true);
@@ -162,11 +189,14 @@ namespace IBlameYou.UI
             EnsureStyles();
 
             DrawStatusPanel();
+            DrawStageBar();
+            DrawNotice();
             DrawFeed();
             DrawShieldMinigame();
             DrawChantInput();
             DrawHelp();
             if (deathHandled) DrawGameOver();
+            else if (stageCleared) DrawStageClear();
         }
 
         private void DrawStatusPanel()
@@ -308,6 +338,44 @@ namespace IBlameYou.UI
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
+                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+        }
+
+        private void DrawStageBar()
+        {
+            var rect = new Rect(12f, 168f, 360f, 30f);
+            GUI.Box(rect, GUIContent.none, panel);
+            var fill = new Rect(rect.x + 150f, rect.y + 10f, (rect.width - 162f) * StageEvents.Progress, 10f);
+            GUI.DrawTexture(new Rect(rect.x + 150f, rect.y + 10f, rect.width - 162f, 10f), Texture2D.grayTexture);
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 0.85f, 0.4f);
+            GUI.DrawTexture(fill, Texture2D.whiteTexture);
+            GUI.color = previous;
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
+        }
+
+        private void DrawNotice()
+        {
+            if (string.IsNullOrEmpty(notice) || Time.time - noticeTime > NoticeDuration) return;
+
+            float alpha = Mathf.Clamp01((NoticeDuration - (Time.time - noticeTime)) / 0.5f);
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.Label(new Rect(0f, Screen.height * 0.16f, Screen.width, 40f), notice, big);
+            GUI.color = previous;
+        }
+
+        private void DrawStageClear()
+        {
+            var rect = new Rect((Screen.width - 520f) / 2f, Screen.height * 0.35f, 520f, 130f);
+            GUI.Box(rect, GUIContent.none, panel);
+            GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
+            int minutes = Mathf.FloorToInt(clearTime / 60f);
+            int seconds = Mathf.FloorToInt(clearTime % 60f);
+            GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
+                $"걸린 시간 {minutes}분 {seconds:00}초 · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
+                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
         }
     }
