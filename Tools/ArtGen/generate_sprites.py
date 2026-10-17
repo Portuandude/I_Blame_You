@@ -2,7 +2,7 @@
 
 고블린 4종(고블린/궁수/병사/대전사)의 Idle/Run/Attack/Die 프레임과
 스킬·투사체 이펙트 프레임을 그려 Assets/Art/Sprites 아래에 PNG로 저장한다.
-디버프 아이콘과 마법 비행/적중 이펙트는 런타임 로드용으로 Assets/Resources 아래에 저장한다.
+디버프 아이콘, 마법 비행/적중 이펙트, 스테이지 함정 그림은 런타임 로드용으로 Assets/Resources 아래에 저장한다.
 진짜 아트가 생기면 같은 경로/이름의 PNG로 바꾸고 Unity에서
 Tools > I Blame You > Generate Sprites And Animations 를 다시 실행하면 된다.
 
@@ -1037,6 +1037,205 @@ def generate_slime_gray():
                 slime_gray(os.path.join(folder, name)).save(os.path.join(dst, name))
 
 
+# ---------------------------------------------------------------------------
+# 스테이지 함정/오브젝트 (Assets/Resources/Stage/<이름>/NN.png). 런타임에 읽는다 (TrapCommon.Frames).
+# 100px = 1유닛, 그림 가운데가 오브젝트 위치다.
+
+def spikes_sprite():
+    w, h = 100, 60
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    for i in range(3):
+        cx = (17 + i * 33) * S
+        d.polygon([(cx - 15 * S, h * S), (cx, 3 * S), (cx + 15 * S, h * S)], fill=OUTLINE)
+        d.polygon([(cx - 11 * S, (h - 2) * S), (cx, 9 * S), (cx + 11 * S, (h - 2) * S)], fill=rgba("#b9bcc8"))
+        d.polygon([(cx - 1 * S, 12 * S), (cx + 9 * S, (h - 3) * S), (cx + 1 * S, (h - 3) * S)], fill=rgba("#e9ecf5"))
+    return finish(img, w, h)
+
+
+def flame_vent_sprite():
+    w, h = 100, 30
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    d.rounded_rectangle([2 * S, 4 * S, 98 * S, 30 * S], 6 * S, fill=OUTLINE)
+    d.rounded_rectangle([6 * S, 8 * S, 94 * S, 27 * S], 4 * S, fill=rgba("#4a3f3c"))
+    for x in range(16, 90, 14):
+        d.rectangle([x * S, 11 * S, (x + 6) * S, 24 * S], fill=rgba("#1c1414"))
+        d.rectangle([x * S, 20 * S, (x + 6) * S, 24 * S], fill=rgba("#ff7a2a", 160))
+    return finish(img, w, h)
+
+
+def flame_frames():
+    frames = []
+    w, h = 80, 320
+    for i in range(8):
+        rnd = random.Random(400 + i)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        for layer, (col, width) in enumerate(((rgba("#ff5a1a", 200), 34), (rgba("#ffa030", 220), 24), (rgba("#ffe58a", 235), 12))):
+            pts_l, pts_r = [], []
+            for k in range(13):
+                t = k / 12
+                y = h - t * (h - 6)
+                wobble = math.sin(t * 9 + i * 0.8 + layer) * 6 * (0.3 + t)
+                half = width * (1 - t * 0.75) + rnd.uniform(-2, 2)
+                pts_l.append(((w / 2 - half + wobble) * S, y * S))
+                pts_r.append(((w / 2 + half + wobble) * S, y * S))
+            d.polygon(pts_l + pts_r[::-1], fill=col)
+        for _ in range(10):
+            x = w / 2 + rnd.uniform(-22, 22)
+            y = rnd.uniform(10, h - 40)
+            dot(d, x * S, y * S, rnd.uniform(2, 4) * S, rgba("#ffd36a", 200))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def smoke_frames():
+    frames = []
+    w = h = 60
+    for i in range(6):
+        rnd = random.Random(500 + i)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        for _ in range(7):
+            x = w / 2 + rnd.uniform(-14, 14)
+            y = h - 12 - rnd.uniform(0, 30) - i * 2
+            r = rnd.uniform(6, 11)
+            dot(d, x * S, y * S, r * S, (110, 100, 100, 150))
+        frames.append(finish(img, w, h, 2))
+    return frames
+
+
+def arrow_trap_sprite():
+    w = h = 100
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    d.rectangle([0, 0, w * S, h * S], fill=OUTLINE)
+    d.rectangle([4 * S, 4 * S, 96 * S, 96 * S], fill=rgba("#6b625c"))
+    for y in (34, 66):
+        d.line([4 * S, y * S, 96 * S, y * S], fill=rgba("#4f4743"), width=3 * S)
+    d.line([50 * S, 4 * S, 50 * S, 34 * S], fill=rgba("#4f4743"), width=3 * S)
+    d.line([30 * S, 66 * S, 30 * S, 96 * S], fill=rgba("#4f4743"), width=3 * S)
+    # 왼쪽을 보는 발사구 (오른쪽으로 쏘는 함정은 게임에서 좌우 반전)
+    d.rounded_rectangle([0, 38 * S, 40 * S, 62 * S], 4 * S, fill=rgba("#1a1416"))
+    d.polygon([(6 * S, 50 * S), (20 * S, 43 * S), (20 * S, 57 * S)], fill=rgba("#c9c3b8"))
+    dot(d, 70 * S, 50 * S, 9 * S, rgba("#9e2b2b"))
+    dot(d, 70 * S, 50 * S, 4 * S, rgba("#ff6a5a"))
+    return finish(img, w, h)
+
+
+def plank(color, cracks, w=100, h=40):
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    d.rectangle([0, 0, w * S, h * S], fill=OUTLINE)
+    d.rectangle([0, 4 * S, w * S, (h - 4) * S], fill=color)
+    d.rectangle([0, 4 * S, w * S, 10 * S], fill=shade(color, 1.25))
+    d.line([0, (h / 2 + 4) * S, w * S, (h / 2 + 4) * S], fill=shade(color, 0.7), width=2 * S)
+    for x in (3, 97):
+        dot(d, x * S, (h / 2) * S, 3 * S, rgba("#2c2422"))
+    rnd = random.Random(int(color[0]) + cracks)
+    for _ in range(cracks):
+        x = rnd.uniform(15, 85)
+        pts = [(x * S, 4 * S)]
+        for k in range(3):
+            x += rnd.uniform(-8, 8)
+            pts.append((x * S, (4 + (k + 1) * (h - 8) / 3) * S))
+        d.line(pts, fill=rgba("#1e1614"), width=2 * S)
+    return finish(img, w, h)
+
+
+def checkpoint_frames():
+    frames = []
+    w, h = 100, 200
+    for i in range(8):
+        pulse = 0.5 + 0.5 * math.sin(i / 8 * math.tau)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        # 받침대
+        d.polygon([(18 * S, 200 * S), (26 * S, 160 * S), (74 * S, 160 * S), (82 * S, 200 * S)], fill=OUTLINE)
+        d.polygon([(23 * S, 197 * S), (30 * S, 164 * S), (70 * S, 164 * S), (77 * S, 197 * S)], fill=rgba("#5d5a66"))
+        # 떠 있는 수정
+        cy = 95 - 4 * math.sin(i / 8 * math.tau)
+        crystal = [(50 * S, (cy - 50) * S), (72 * S, cy * S), (50 * S, (cy + 50) * S), (28 * S, cy * S)]
+        glow_col = (120, 220, 255, int(70 + 80 * pulse))
+        dot(d, 50 * S, cy * S, (40 + 6 * pulse) * S, glow_col)
+        d.polygon(crystal, fill=OUTLINE)
+        inner = [(50 * S, (cy - 44) * S), (66 * S, cy * S), (50 * S, (cy + 44) * S), (34 * S, cy * S)]
+        d.polygon(inner, fill=rgba("#5fd0ff"))
+        d.polygon([(50 * S, (cy - 44) * S), (66 * S, cy * S), (50 * S, cy * S)], fill=rgba("#bff0ff"))
+        frames.append(finish(img, w, h, 4))
+    return frames
+
+
+def gate_frames():
+    frames = []
+    w, h = 100, 300
+    for i in range(6):
+        rnd = random.Random(600 + i)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        d.rectangle([30 * S, 0, 70 * S, h * S], fill=(255, 70, 90, 90))
+        d.rectangle([42 * S, 0, 58 * S, h * S], fill=(255, 150, 160, 150))
+        for _ in range(9):
+            y = rnd.uniform(0, h)
+            pts = [(rnd.uniform(32, 68) * S, y * S)]
+            for _ in range(3):
+                y += rnd.uniform(8, 20)
+                pts.append((rnd.uniform(32, 68) * S, y * S))
+            d.line(pts, fill=(255, 220, 225, 230), width=2 * S)
+        frames.append(finish(img, w, h, 5))
+    return frames
+
+
+def exit_frames():
+    frames = []
+    w, h = 140, 300
+    for i in range(8):
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        cx, cy = 70, 150
+        d.ellipse([(cx - 52) * S, (cy - 130) * S, (cx + 52) * S, (cy + 130) * S], fill=(255, 220, 90, 70))
+        for k in range(5):
+            r = 1 - k * 0.18
+            a = i / 8 * math.tau + k
+            col = (255, int(200 + 10 * k), int(80 + 30 * k), 200)
+            d.ellipse([(cx - 46 * r) * S, (cy - 120 * r) * S, (cx + 46 * r) * S, (cy + 120 * r) * S], outline=col, width=4 * S)
+            dot(d, (cx + math.cos(a) * 40 * r) * S, (cy + math.sin(a) * 110 * r) * S, 5 * S, (255, 255, 220, 255))
+        frames.append(finish(img, w, h, 6))
+    return frames
+
+
+def generate_stage_art():
+    base = os.path.join(ROOT, "Assets", "Resources", "Stage")
+    sets = {
+        "Spikes": [spikes_sprite()],
+        "FlameVent": [flame_vent_sprite()],
+        "Flame": flame_frames(),
+        "Smoke": smoke_frames(),
+        "ArrowTrap": [arrow_trap_sprite()],
+        "Platform": [plank(rgba("#a07a4e"), 0)],
+        "Crumble": [plank(rgba("#8a6a4a"), 3, h=45)],
+        "Checkpoint": checkpoint_frames(),
+        "Gate": gate_frames(),
+        "Exit": exit_frames(),
+    }
+    for name, frames in sets.items():
+        folder = os.path.join(base, name)
+        os.makedirs(folder, exist_ok=True)
+        for i, img in enumerate(frames):
+            img.save(os.path.join(folder, f"{i:02d}.png"))
+    return sets
+
+
 if __name__ == "__main__":
     import sys
 
@@ -1045,6 +1244,7 @@ if __name__ == "__main__":
     generate_status_icons()
     generate_spell_fx()
     generate_slime_gray()
+    generate_stage_art()
     if len(sys.argv) > 1:
         contact_sheet(sys.argv[1])
     print("done")
