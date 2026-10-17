@@ -199,7 +199,7 @@ namespace IBlameYou.Enemies
         private bool WallAhead(float direction)
         {
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, wallCheckHeight);
-            return Physics2D.Raycast(origin, new Vector2(direction, 0f), wallCheckDistance, obstacleLayer);
+            return LedgeAhead(direction, obstacleLayer) || Physics2D.Raycast(origin, new Vector2(direction, 0f), wallCheckDistance, obstacleLayer);
         }
 
         private void SetFacing(float direction)

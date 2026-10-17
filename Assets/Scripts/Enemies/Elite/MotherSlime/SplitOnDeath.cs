@@ -25,15 +25,15 @@ namespace IBlameYou.Enemies
             if (current > 0f || split) return;
             split = true;
 
-            var room = GetComponentInParent<RoomInstance>();
+            var group = GetComponentInParent<IEnemyGroup>(); // 전투 구역이면 분열한 슬라임도 다 잡아야 문이 열린다
             for (int i = 0; i < count; i++)
             {
                 float offset = (i - (count - 1) / 2f) * spread;
                 var slime = SlimeSpawner.Spawn(transform.position + new Vector3(offset, 0.3f, 0f), EffectLibrary.Config);
-                if (room != null)
+                if (group != null)
                 {
-                    slime.transform.SetParent(room.transform, true);
-                    room.RegisterEnemy(slime.GetComponent<HealthSystem>());
+                    slime.transform.SetParent(((Component)group).transform, true);
+                    group.RegisterEnemy(slime.GetComponent<HealthSystem>());
                 }
             }
 

@@ -26,6 +26,7 @@ namespace IBlameYou.Enemies
         [SerializeField] private float destroyDelayAfterDeath = 1.5f;
 
         private const float TargetSearchInterval = 0.5f;
+        private const float LedgeDropLimit = 3f;
 
         private HitStun hitStun;
         private Collider2D bodyCollider;
@@ -109,6 +110,18 @@ namespace IBlameYou.Enemies
             }
 
             return target;
+        }
+
+        // 바로 앞에 디딜 땅이 없으면(낭떠러지나 3칸 넘게 꺼진 곳) true. 순찰/추적 중 스스로 떨어지지 않게 벽처럼 취급한다.
+        // 공중에 떠 있을 때(도약 중)는 판단하지 않는다.
+        protected bool LedgeAhead(float direction, LayerMask ground)
+        {
+            var bounds = BodyBounds;
+            Vector2 feet = new Vector2(bounds.center.x, bounds.min.y + 0.05f);
+            if (!Physics2D.Raycast(feet, Vector2.down, 0.3f, ground)) return false;
+
+            Vector2 ahead = new Vector2(bounds.center.x + direction * (bounds.extents.x + 0.25f), bounds.min.y + 0.1f);
+            return !Physics2D.Raycast(ahead, Vector2.down, LedgeDropLimit, ground);
         }
 
         // 생존 중 매 프레임 실행 (감지, 방향 전환 등 판단 로직).
