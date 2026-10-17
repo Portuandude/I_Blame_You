@@ -97,6 +97,7 @@ namespace IBlameYou.Player
             go.AddComponent<ElementShield>();
             go.AddComponent<ElementShieldSkill>(); // A: 속성 방어막 (방향키 미니게임)
             go.AddComponent<TeleportSkill>();      // A: 순간이동
+            go.AddComponent<FallRecovery>();       // 낭떠러지에 떨어지면 마지막 안전한 땅으로
             CharacterLayers.Assign(go, CharacterLayers.PlayerLayerName);
 
             return go;
