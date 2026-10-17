@@ -4,20 +4,22 @@ using UnityEngine;
 
 namespace IBlameYou.Core
 {
-    // 개발자 모드 전용 치트 (기획서 2.9 개발 편의 기능). F1 무적, F2 마나 무한, F3 현재 방의 적 처치, F4 체력 회복.
+    // 개발자 모드 전용 치트 (기획서 2.9 개발 편의 기능). F1 무적, F2 마나 무한, F3 주변 적 처치, F4 체력 회복.
     public class DevCheats : MonoBehaviour
     {
         private HealthSystem health;
         private ManaSystem mana;
-        private RoomManager rooms;
+        private Transform player;
+
+        private const float KillRadius = 25f;
 
         public bool GodMode { get; private set; }
 
-        public void Initialize(GameObject player, RoomManager roomManager)
+        public void Initialize(GameObject playerObject)
         {
-            health = player.GetComponent<HealthSystem>();
-            mana = player.GetComponent<ManaSystem>();
-            rooms = roomManager;
+            player = playerObject.transform;
+            health = playerObject.GetComponent<HealthSystem>();
+            mana = playerObject.GetComponent<ManaSystem>();
         }
 
         private void Update()
@@ -31,7 +33,7 @@ namespace IBlameYou.Core
             }
 
             if (Input.GetKeyDown(KeyCode.F2)) mana.Infinite = !mana.Infinite;
-            if (Input.GetKeyDown(KeyCode.F3)) KillRoomEnemies();
+            if (Input.GetKeyDown(KeyCode.F3)) KillNearbyEnemies();
             if (Input.GetKeyDown(KeyCode.F4)) health.Heal(health.Max);
         }
 
@@ -41,11 +43,11 @@ namespace IBlameYou.Core
             if (GodMode && health != null) health.Invulnerable = true;
         }
 
-        private void KillRoomEnemies()
+        private void KillNearbyEnemies()
         {
-            if (rooms == null || rooms.CurrentRoom == null) return;
-            foreach (var enemy in rooms.CurrentRoom.GetComponentsInChildren<EnemyController>())
+            foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None))
             {
+                if (Vector2.Distance(enemy.transform.position, player.position) > KillRadius) continue;
                 var enemyHealth = enemy.GetComponent<HealthSystem>();
                 if (enemyHealth != null && !enemyHealth.IsDead) enemyHealth.TakeDamage(enemyHealth.Max * 10f);
             }
