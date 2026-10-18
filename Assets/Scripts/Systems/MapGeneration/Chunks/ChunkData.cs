@@ -48,7 +48,8 @@ namespace IBlameYou.Systems
         GoblinArcher,
         GoblinSoldier,
         MotherSlime,
-        GoblinWarrior
+        GoblinWarrior,
+        SlimeKing    // 스테이지 1 보스
     }
 
     public struct ChunkFeature

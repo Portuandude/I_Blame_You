@@ -32,6 +32,7 @@ namespace IBlameYou.Systems
         private Rect? previousCameraBounds;
 
         public bool IsCleared => cleared;
+        public Rect Area => area; // 구역 범위 (보스가 무작위 위치를 고를 때)
 
         // left/right: 구역 양 끝 x(월드), ground: 바닥 윗면 y. 이미 클리어한 구역이면 아무 일도 하지 않는다.
         public static ArenaZone Create(Transform parent, float left, float right, float ground, List<Spawn> spawns, bool alreadyCleared,
@@ -65,6 +66,13 @@ namespace IBlameYou.Systems
                 alive.Remove(enemy);
                 CheckCleared();
             };
+        }
+
+        // 쓰러지지 않고 사라진 적(보스에게 흡수된 슬라임 등)은 목록에서 빼고 클리어 여부를 다시 본다.
+        private void Update()
+        {
+            if (!active || alive.Count == 0) return;
+            if (alive.RemoveWhere(enemy => enemy == null) > 0) CheckCleared();
         }
 
         private void OnTriggerEnter2D(Collider2D other)

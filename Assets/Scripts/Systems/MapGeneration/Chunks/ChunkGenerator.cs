@@ -421,7 +421,7 @@ namespace IBlameYou.Systems
             chunk.AddFeature(FeatureKind.Checkpoint, W / 2, chunk.EntryHeight);
         }
 
-        // 마지막 전투: 정예 둘 + 궁수. 이기면 오른쪽 끝 출구가 열린다.
+        // 마지막 전투: 보스 슬라임 킹. 이기면 오른쪽 끝 출구가 열린다.
         private static void BuildBoss(ChunkData chunk, int[] heights)
         {
             int ground = chunk.EntryHeight;
@@ -431,10 +431,7 @@ namespace IBlameYou.Systems
             chunk.SetRow(9, 13, ground + 1, StageTile.Platform);
             chunk.SetRow(18, 22, ground + 1, StageTile.Platform);
             chunk.AddFeature(FeatureKind.Arena, 2, ground, W - 6);
-            chunk.AddEnemy(StageEnemy.MotherSlime, 18, ground, true);
-            chunk.AddEnemy(StageEnemy.GoblinWarrior, 23, ground, true);
-            chunk.AddEnemy(StageEnemy.GoblinArcher, 26, ground, true);
-            chunk.AddEnemy(StageEnemy.GoblinSoldier, 12, ground, true);
+            chunk.AddEnemy(StageEnemy.SlimeKing, 20, ground, true); // 보스 슬라임 킹 (부하는 킹이 직접 소환한다)
             chunk.AddFeature(FeatureKind.Exit, W - 3, ground);
         }
 
