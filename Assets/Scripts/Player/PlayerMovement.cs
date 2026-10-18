@@ -42,6 +42,7 @@ namespace IBlameYou.Player
         private HitStun hitStun;
         private PlayerControlState control;
         private Animator animator;
+        private CombatStats combatStats;
         private bool isGrounded;
         private bool isRunning;
         private bool jumpQueued;
@@ -54,6 +55,18 @@ namespace IBlameYou.Player
         public bool IsGrounded => isGrounded;
         public bool IsDashing => isDashing;
         public float Facing => Mathf.Sign(transform.localScale.x);
+
+        public float DashStaminaCost
+        {
+            get => dashStaminaCost;
+            set => dashStaminaCost = value;
+        }
+
+        public float DashDuration
+        {
+            get => dashDuration;
+            set => dashDuration = value;
+        }
 
         // 스탯 문서의 이동속도(문서 단위)를 게임 속도로 바꿔 지정한다. 달리기는 기획서 5.1 가안대로 걷기 × 1.8.
         public void ConfigureSpeeds(float walk, float run)
@@ -79,6 +92,7 @@ namespace IBlameYou.Player
             control = GetComponent<PlayerControlState>();
             if (control == null) control = gameObject.AddComponent<PlayerControlState>();
             animator = GetComponentInChildren<Animator>();
+            combatStats = GetComponent<CombatStats>();
             defaultGravityScale = rb.gravityScale;
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
@@ -179,6 +193,7 @@ namespace IBlameYou.Player
             }
 
             float speed = isRunning ? runSpeed : walkSpeed;
+            if (combatStats != null) speed *= combatStats.TotalMoveMultiplier; // 특성 이동속도, 젖음/붙잡기 둔화
             rb.linearVelocity = new Vector2(moveInput * speed, rb.linearVelocity.y);
 
             if (Mathf.Abs(moveInput) > 0.01f)

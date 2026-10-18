@@ -30,6 +30,12 @@ namespace IBlameYou.Player
 
         public float ManaCost => manaCost;
 
+        public float Distance
+        {
+            get => distance;
+            set => distance = value;
+        }
+
         private void Awake()
         {
             control = GetComponent<PlayerControlState>();

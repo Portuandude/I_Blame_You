@@ -137,13 +137,17 @@ namespace IBlameYou.Player
         }
 
         // B의 평타: 바라보는 방향으로 무속성 마력탄을 쏜다. 마나가 모자라면 false.
+        // 평타 마나 소모 감소량 (레벨업 특성).
+        public float BoltCostReduction { get; set; }
+
         public bool FireBasicBolt()
         {
             var bolt = SpellBook.BasicBolt;
             if (health.IsDead || WindingUp || ChantOpen) return false;
-            if (!mana.TryConsume(bolt.ManaCost, ManaUser.PlayerB))
+            float cost = Mathf.Max(0f, bolt.ManaCost - BoltCostReduction);
+            if (!mana.TryConsume(cost, ManaUser.PlayerB))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {bolt.ManaCost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {cost:0})", true);
                 return false;
             }
 
