@@ -113,6 +113,7 @@ public static class StagePreview
             case StageEnemy.GoblinArcher: c = 'a'; break;
             case StageEnemy.GoblinSoldier: c = 'o'; break;
             case StageEnemy.MotherSlime: c = 'm'; break;
+            case StageEnemy.SlimeKing: c = 'k'; break;
             default: c = 'w'; break;
         }
 
