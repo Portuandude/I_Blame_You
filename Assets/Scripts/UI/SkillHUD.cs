@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using IBlameYou.Core;
-using IBlameYou.Enemies;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -14,7 +13,8 @@ namespace IBlameYou.UI
     // - 중앙: A의 방어막 미니게임(방향키 순서), B의 영창 입력창
     // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내
-    public class SkillHUD : MonoBehaviour
+    // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs)
+    public partial class SkillHUD : MonoBehaviour
     {
         private const int MaxFeed = 7;
         private const float FeedLifetime = 6f;
@@ -45,7 +45,7 @@ namespace IBlameYou.UI
         private SpellCaster caster;
         private DevCheats cheats;
         private Action<bool> restart; // (시작 화면으로 돌아갈지)
-        private float experience;
+        private PlayerProgression progression;
         private string chantText = "";
         private bool deathHandled;
         private bool stageCleared;
@@ -76,13 +76,18 @@ namespace IBlameYou.UI
             shieldSkill = player.GetComponent<ElementShieldSkill>();
             shield = player.GetComponent<ElementShield>();
             caster = player.GetComponent<SpellCaster>();
+            progression = player.GetComponent<PlayerProgression>();
             cheats = devCheats;
 
             mana.ManaSpent += OnManaSpent;
             SkillMessages.Posted += OnSkillMessage;
-            EnemyController.Killed += OnEnemyKilled;
             StageEvents.Notice += OnStageNotice;
             StageEvents.Cleared += OnStageCleared;
+            if (progression != null)
+            {
+                progression.LeveledUp += OnLeveledUp;
+                progression.TraitRaised += OnTraitRaised;
+            }
             runStartTime = Time.time;
         }
 
@@ -90,20 +95,20 @@ namespace IBlameYou.UI
         {
             if (mana != null) mana.ManaSpent -= OnManaSpent;
             SkillMessages.Posted -= OnSkillMessage;
-            EnemyController.Killed -= OnEnemyKilled;
             StageEvents.Notice -= OnStageNotice;
             StageEvents.Cleared -= OnStageCleared;
+            if (progression != null)
+            {
+                progression.LeveledUp -= OnLeveledUp;
+                progression.TraitRaised -= OnTraitRaised;
+            }
+            if (traitWindowOpen) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
         private void OnManaSpent(ManaUser user, float amount, bool wasted)
         {
             if (!wasted) recentSpending.Add(new SpendRecord { Time = Time.time, User = user, Amount = amount });
-        }
-
-        private void OnEnemyKilled(EnemyController enemy, float xp)
-        {
-            experience += xp;
         }
 
         private void OnStageNotice(string text)
@@ -115,6 +120,7 @@ namespace IBlameYou.UI
         private void OnStageCleared()
         {
             if (stageCleared || deathHandled) return;
+            CloseTraitWindow();
             stageCleared = true;
             clearTime = Time.time - runStartTime;
             control.Locked = true;
@@ -158,11 +164,14 @@ namespace IBlameYou.UI
 
             if (health.IsDead && !deathHandled)
             {
+                CloseTraitWindow();
                 deathHandled = true;
                 control.Locked = true;
                 var visual = health.GetComponentInChildren<SpriteRenderer>();
                 if (visual != null) visual.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
             }
+
+            UpdateTraitWindowInput();
 
             if (deathHandled || stageCleared)
             {
@@ -190,11 +199,13 @@ namespace IBlameYou.UI
 
             DrawStatusPanel();
             DrawStageBar();
+            DrawLevelBar();
             DrawNotice();
             DrawFeed();
             DrawShieldMinigame();
             DrawChantInput();
             DrawHelp();
+            DrawTraitWindow();
             if (deathHandled) DrawGameOver();
             else if (stageCleared) DrawStageClear();
         }
@@ -211,7 +222,7 @@ namespace IBlameYou.UI
             string shieldText = shield != null && shield.Active
                 ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
                 : "방어막: 없음";
-            GUILayout.Label($"경험치 {experience:0}    {shieldText}", label);
+            GUILayout.Label(shieldText, label);
             string mode = GameSession.DevMode ? "<color=#ffd84d>개발자 모드</color>" : "일반 모드 (로컬)";
             if (cheats != null && cheats.GodMode) mode += "  <color=#ffd84d>무적</color>";
             GUILayout.Label(mode, label);
