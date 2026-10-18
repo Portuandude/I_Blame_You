@@ -75,6 +75,7 @@ Assets/
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성> 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/출구 그림 (런타임 로드, Tools/ArtGen)
+  Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
     Core/                     # PlaytestBootstrap — 시드로 스테이지 1 생성 + 청크 스트리머/플레이어/카메라/HUD 준비, 적 종류별 생성
@@ -82,6 +83,7 @@ Assets/
     Player/                   # PlayerMovement(A: 이동/점프/달리기/대쉬), PlayerCombat(B: 평타), PlayerSpawner
       Input/                  # RoleInput(A/B 역할별 키), PlayerControlState(미니게임 정지/영창 중 입력 잠금)
       Skills/                 # A: TeleportSkill, ElementShieldSkill/ElementShield · B: SpellCaster/SpellBook, GroundSpike
+      Progression/            # PlayerProgression(경험치/레벨/특성 포인트), TraitTree(던그리드식 특성 5갈래), LastStandGuard
     Core/ (추가)              # StartMenu(개발자 모드 선택), GameSession, DevCheats
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
@@ -89,7 +91,8 @@ Assets/
       Common/GoblinArcher/    # GoblinArcherController(거리 유지 + 화살), GoblinArcherSpawner
       Elite/MotherSlime/      # 어미 슬라임(사망 시 슬라임 3기로 분열)
       Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화)
-      Bosses/                 # (비어 있음)
+      Bosses/                 # BossEvents(보스 체력바 값)
+      Bosses/SlimeKing/       # 스테이지 1 보스: SlimeKingController(패턴 6개·페이즈 2개), SlimeKingSpawner, SlimeBrood(소환 무리·합체), SlimeKingTentacle, SlimeKingCrown
     Systems/
       Health/                 # HealthSystem (체력, 무적 플래그)
       Stamina/                # StaminaSystem (소모/재생)
@@ -104,8 +107,9 @@ Assets/
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
+                              # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
-    Puzzles/, Data/, Enemies/Elite/, Enemies/Bosses/, Systems/StatusEffects/  # (비어 있음)
+    Puzzles/, Data/  # (비어 있음)
   Plugins/, Settings/
 Packages/manifest.json
 ProjectSettings/
@@ -122,6 +126,31 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 - 지형 규칙은 점프 능력에서 나왔다 (최대 2칸 오르기, 최대 3칸 낭떠러지). `StageValidator`가 청크마다 통과 가능 여부와 빠지면 못 나오는 구덩이를 검사하고, 실패하면 다시 만든다.
 - 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 켠 체크포인트는 기록해 둔다.
 - 낭떠러지에 떨어지면 체력 15%를 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다. 보스 구역을 돌파하면 출구가 열리고, 들어가면 클리어.
+
+## 레벨업 특성 (던그리드식)
+
+적을 쓰러뜨리면 경험치가 쌓이고 레벨이 오를 때마다 특성 포인트 1을 받는다. 다음 레벨까지 경험치는 `60 + 25 × (레벨 - 1)`이라 스테이지 1 보스 앞에서 13~14레벨쯤 된다.
+Tab으로 특성 창을 열면 게임이 멈추고, 다섯 갈래 중 하나에 포인트를 찍는다. 포인트는 A와 B가 함께 쓰는 하나의 주머니다.
+
+| 갈래 | 주로 | 포인트당 | 5 | 10 | 20 |
+|---|---|---|---|---|---|
+| 분노 | B | 주는 피해 +3% | 평타 마나 5 → 3 | 치명타 +10% | 처치 시 마나 +5 |
+| 신속 | A | 이동속도 +2% | 대쉬 기력 50 → 35 | 순간이동 4 → 6 | 대쉬 거리 1.5배 |
+| 인내 | A | 방어력 +2 | 피격 무적 0.2 → 0.5초 | 디버프 저항 +25 | 체력 30% 이하 피해 -25% |
+| 신비 | 공용 | 최대 마나 +5 | 마나 재생 +30% | 실패로 날린 마나 절반 환급 | 모든 마나 소모 -20% |
+| 생명 | 공용 | 최대 체력 +5 | 체크포인트 회복 75% | 처치 시 체력 +2 | 한 번 쓰러질 피해를 30%로 버팀 |
+
+## 스테이지 1 보스: 슬라임 킹
+
+체력 1200 · 방어 25 · 물리 35 · 마나 100(초당 4) · 기력 100(초당 10) · 경험치 1000. 패턴 중에는 경직되지 않는다.
+
+- 1페이즈: 패턴 1~4. 체력 50%에서 패턴 5(분열)로 2기가 되며 2페이즈 시작, 2페이즈는 패턴 2·3·4·6 (소환 무리가 없을 때만 1).
+- 패턴 1 소환 (마나 60): 어미 슬라임 3체. 60초 안에 분열한 슬라임까지 다 잡지 못하면 킹에게 돌아가 합체하고, 어미 하나당 8%·슬라임 하나당 3% 체력을 회복한다.
+- 패턴 2 내려찍기 (기력 30): 6.5칸 떠올라 0.9초 동안 플레이어 머리 위를 따라오며 그림자로 예고한 뒤 낙하 (폭 4.5칸, 피해 ×1.2).
+- 패턴 3 촉수 (기력 25): 촉수 4가닥(하나는 정확히, 나머지는 ±35°)을 사거리 9칸으로 뻗는다. 닿으면 2초 동안 이동속도 절반, 5초 안에 11칸 넘게 멀어지지 못하면 끌려가 피해 ×1.2 + 1초 경직.
+- 패턴 4 박치기: 웅크렸다가 도약해 덮친다.
+- 패턴 5 분열: 체력·최대 체력·경험치를 반씩 나눈 2기로 갈라지고 몸이 0.8배로 작아진다.
+- 패턴 6 발광 (체력 5%): 2페이즈 전용. 빛나며 구역 안 무작위 위치를 5번 빠르게 내려찍는다 (피해 ×0.8).
 
 Unity 없이 생성기를 검증하고 미리보기 그림을 만들 수 있다 (mono 필요):
 
