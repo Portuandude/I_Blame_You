@@ -1236,6 +1236,52 @@ def generate_stage_art():
     return sets
 
 
+# ---- 보스: 슬라임 킹 (Resources/Bosses/SlimeKing) ----
+def crown_sprite():
+    """슬라임 킹 머리 위에 얹는 금관 (가로 120 × 세로 70, 아래 가운데가 머리에 닿는 자리)."""
+    w, h = 120, 70
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    outer = [(8, 66), (8, 22), (30, 40), (44, 6), (60, 34), (76, 6), (90, 40), (112, 22), (112, 66)]
+    inner = [(14, 61), (14, 33), (31, 47), (44, 18), (60, 42), (76, 18), (89, 47), (106, 33), (106, 61)]
+    d.polygon([(x * S, y * S) for x, y in outer], fill=OUTLINE)
+    d.polygon([(x * S, y * S) for x, y in inner], fill=rgba("#f2c14e"))
+    d.rectangle([14 * S, 50 * S, 106 * S, 61 * S], fill=rgba("#d39a2a"))
+    for x, col in ((32, "#e2445c"), (60, "#5fd0ff"), (88, "#e2445c")):
+        dot(d, x * S, 55 * S, 6 * S, OUTLINE)
+        dot(d, x * S, 55 * S, 4 * S, rgba(col))
+    for x in (44, 76):
+        dot(d, x * S, 12 * S, 6 * S, OUTLINE)
+        dot(d, x * S, 12 * S, 4 * S, rgba("#fff2b0"))
+    d.polygon([(18 * S, 36 * S), (30 * S, 46 * S), (18 * S, 48 * S)], fill=rgba("#fff2b0", 160))
+    return finish(img, w, h)
+
+
+def shadow_sprite():
+    """내려찍기 낙하 지점 예고용 그림자 (가로로 납작한 타원)."""
+    w, h = 200, 50
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    for i in range(6):
+        a = 40 + i * 25
+        inset = i * 12
+        d.ellipse([inset * S, (inset / 4) * S, (w - inset) * S, (h - inset / 4) * S], fill=(30, 0, 40, a))
+    return finish(img, w, h)
+
+
+def generate_boss_art():
+    base = os.path.join(ROOT, "Assets", "Resources", "Bosses", "SlimeKing")
+    sets = {"Crown": [crown_sprite()], "Shadow": [shadow_sprite()]}
+    for name, frames in sets.items():
+        folder = os.path.join(base, name)
+        os.makedirs(folder, exist_ok=True)
+        for i, img in enumerate(frames):
+            img.save(os.path.join(folder, f"{i:02d}.png"))
+    return sets
+
+
 if __name__ == "__main__":
     import sys
 
@@ -1245,6 +1291,7 @@ if __name__ == "__main__":
     generate_spell_fx()
     generate_slime_gray()
     generate_stage_art()
+    generate_boss_art()
     if len(sys.argv) > 1:
         contact_sheet(sys.argv[1])
     print("done")
