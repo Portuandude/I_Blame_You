@@ -51,6 +51,7 @@ namespace IBlameYou.Core
             var movement = PlayerSpawner.Spawn(streamer.PlayerStart, artConfig);
             player = movement.gameObject;
             if (player.GetComponent<FallRecovery>() == null) player.AddComponent<FallRecovery>(); // 프리팹을 다시 굽기 전 대비
+            if (player.GetComponent<PlayerProgression>() == null) player.AddComponent<PlayerProgression>();
             streamer.SetPlayer(player.transform);
 
             SetupCamera(streamer, movement);
