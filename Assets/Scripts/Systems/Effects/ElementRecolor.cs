@@ -20,6 +20,13 @@ namespace IBlameYou.Systems
         private Dictionary<string, Texture2D> textures;
         private Color tint = Color.white;
 
+        // 곱할 색 (보스의 발광처럼 잠깐 색을 바꿀 때).
+        public Color Tint
+        {
+            get => tint;
+            set => tint = value;
+        }
+
         public static ElementRecolor Attach(SpriteRenderer renderer, string resourcesFolder, Color color)
         {
             var recolor = renderer.GetComponent<ElementRecolor>();

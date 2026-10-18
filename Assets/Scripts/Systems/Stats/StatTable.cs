@@ -69,6 +69,17 @@ namespace IBlameYou.Systems
             attackSpeed = 0.5f, physicalDamage = 18, experience = 480
         };
 
+        // 스테이지 1 보스 슬라임 킹 (스탯 문서에 없는 가안, 2026-10-18).
+        // 체력 절반에서 둘로 분열해 체력을 나눠 가진다. 마나는 소환, 기력은 내려찍기/촉수에 쓴다.
+        public static StatBlock SlimeKing => new StatBlock
+        {
+            maxHealth = 1200, maxMana = 100, maxStamina = 100, moveSpeed = 0.6f,
+            debuffResistance = 40, defense = 25, critChance = 0f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 30 },
+            elementDefense = new float[] { 10, 10, 10, 10, 25 },
+            attackSpeed = 0.5f, physicalDamage = 35, experience = 1000
+        };
+
         // 함정 (스탯 문서에 없는 가안). 플레이어 방어력 10 기준 가시 약 18, 화살 약 15, 불기둥 한 번 약 12 + 화상.
         public static StatBlock Trap => new StatBlock
         {
