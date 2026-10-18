@@ -74,6 +74,7 @@ namespace IBlameYou.Core
                 case StageEnemy.GoblinSoldier: enemy = GoblinSpawner.SpawnSoldier(position, artConfig); break;
                 case StageEnemy.MotherSlime: enemy = MotherSlimeSpawner.Spawn(position, artConfig); break;
                 case StageEnemy.GoblinWarrior: enemy = GoblinWarriorSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.SlimeKing: enemy = SlimeKingSpawner.Spawn(position, artConfig); break;
                 default: enemy = SlimeSpawner.Spawn(position, artConfig); break;
             }
 
