@@ -21,6 +21,11 @@ namespace IBlameYou.Systems
         private readonly float[] wastedByUser = new float[3];
 
         public float Max => maxMana;
+
+        // 레벨업 특성용 배율: 재생 속도, 소모량, 헛되이 날린 마나 중 돌려받는 비율.
+        public float RegenMultiplier { get; set; } = 1f;
+        public float CostMultiplier { get; set; } = 1f;
+        public float WastedRefundRatio { get; set; }
         public float Current => current;
         public bool Infinite { get; set; } // 개발자 모드 치트
         public event Action<float, float> ManaChanged;
@@ -46,8 +51,15 @@ namespace IBlameYou.Systems
         {
             if (current < maxMana)
             {
-                SetCurrent(current + regenPerSecond * Time.deltaTime);
+                SetCurrent(current + regenPerSecond * RegenMultiplier * Time.deltaTime);
             }
+        }
+
+        // 최대 마나를 늘린다 (늘어난 만큼 현재 마나도 채운다).
+        public void AddMax(float amount)
+        {
+            maxMana += amount;
+            SetCurrent(current + Mathf.Max(amount, 0f));
         }
 
         // 체크포인트 등에서 마나를 채운다 (사용/낭비 기록에는 넣지 않는다).
@@ -63,6 +75,7 @@ namespace IBlameYou.Systems
         public bool TryConsume(float amount, ManaUser user)
         {
             if (amount <= 0f) return true;
+            amount *= CostMultiplier;
             if (!HasEnough(amount)) return false;
 
             if (!Infinite) SetCurrent(current - amount);
@@ -76,6 +89,7 @@ namespace IBlameYou.Systems
         {
             wastedByUser[(int)user] += amount;
             ManaSpent?.Invoke(user, amount, true);
+            if (WastedRefundRatio > 0f && !Infinite) SetCurrent(current + amount * CostMultiplier * WastedRefundRatio);
         }
 
         private void SetCurrent(float value)

@@ -16,8 +16,14 @@ namespace IBlameYou.Systems
         // 디버프(젖음) 둔화 배율. 버프 배율과 따로 두어 서로 덮어쓰지 않게 한다.
         public float SlowMultiplier { get; set; } = 1f;
 
+        // 붙잡기 둔화 배율 (슬라임 킹 촉수). 젖음과 겹쳐도 서로 지우지 않게 따로 둔다.
+        public float GrabSlowMultiplier { get; set; } = 1f;
+
         // 버프와 디버프를 합친 최종 이동속도 배율.
-        public float TotalMoveMultiplier => MoveSpeedMultiplier * SlowMultiplier;
+        public float TotalMoveMultiplier => MoveSpeedMultiplier * SlowMultiplier * GrabSlowMultiplier;
+
+        // 주는 피해 배율 (레벨업 특성 등). 방어 계산 전 공격 수치에 곱한다.
+        public float DamageMultiplier { get; set; } = 1f;
 
         // 이동속도(유닛/초) = 문서 이동속도 × 2 × 버프 배율 × 둔화 배율.
         public float MoveSpeedUnits => StatUnits.MoveSpeedToUnits(stats.moveSpeed) * TotalMoveMultiplier;

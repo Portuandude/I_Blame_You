@@ -49,6 +49,7 @@ namespace IBlameYou.Systems
                 ? (attack != null ? attack.physicalDamage : 0f)
                 : (attack != null ? attack.ElementDamage(element) : 0f);
             raw *= multiplier;
+            if (attacker != null) raw *= attacker.DamageMultiplier;
 
             float damage;
             float affinity = 1f;
