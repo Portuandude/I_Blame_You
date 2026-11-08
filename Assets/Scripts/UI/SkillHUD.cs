@@ -12,7 +12,7 @@ namespace IBlameYou.UI
     // - 우상단: 스킬 알림 피드 (실패는 빨간색, 마나 부족이면 최근에 마나를 많이 쓴 쪽을 탓함)
     // - 중앙: A의 방어막 미니게임(방향키 순서), B의 영창 입력창
     // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
-    // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내
+    // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내 (사망 연출: SkillHUD.Death.cs)
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
     // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs), Esc: 일시정지 메뉴 (SkillHUD.Pause.cs)
     public partial class SkillHUD : MonoBehaviour
@@ -103,7 +103,7 @@ namespace IBlameYou.UI
                 progression.LeveledUp -= OnLeveledUp;
                 progression.TraitRaised -= OnTraitRaised;
             }
-            if (traitWindowOpen || paused) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || deathSlowMotion) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -168,14 +168,15 @@ namespace IBlameYou.UI
                 CloseTraitWindow();
                 deathHandled = true;
                 control.Locked = true;
-                var visual = health.GetComponentInChildren<SpriteRenderer>();
-                if (visual != null) visual.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+                BeginDeathSequence(); // 슬로모션, 회색으로 바래기, 화면 어두워짐 (SkillHUD.Death.cs)
             }
+
+            UpdateDeathSequence();
 
             UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
             UpdateTraitWindowInput();
 
-            if (deathHandled || stageCleared)
+            if (GameOverReady || stageCleared)
             {
                 if (Input.GetKeyDown(KeyCode.R)) restart?.Invoke(false);
                 else if (Input.GetKeyDown(KeyCode.M)) restart?.Invoke(true);
@@ -211,6 +212,7 @@ namespace IBlameYou.UI
             DrawHelp();
             DrawTraitWindow();
             DrawPauseMenu();
+            DrawDeathFade();
             if (deathHandled) DrawGameOver();
             else if (stageCleared) DrawStageClear();
         }
@@ -347,6 +349,11 @@ namespace IBlameYou.UI
 
         private void DrawGameOver()
         {
+            float alpha = GameOverAlpha;
+            if (alpha <= 0f) return;
+            var previousColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+
             var rect = new Rect((Screen.width - 520f) / 2f, Screen.height * 0.35f, 520f, 130f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", big);
@@ -355,6 +362,7 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.color = previousColor;
         }
 
         private void DrawStageBar()
