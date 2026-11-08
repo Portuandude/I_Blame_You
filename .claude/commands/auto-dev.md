@@ -18,6 +18,7 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 
 `gh api repos/Portuandude/I_Blame_You/pulls?state=open` 으로 head가 `feature-auto-`로 시작하는 열린 PR을 찾는다.
 
+- CI(`Unity CI` 워크플로)가 **성공**했고 설정의 머지 방식이 `auto`면: `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/merge -f merge_method=merge`로 머지한다 (`--no-ff`와 같은 merge commit). 그 뒤 develop에서 새 브랜치로 진행한다.
 - CI(`Unity CI` 워크플로)가 **실패**한 PR이 있으면: 그 브랜치를 체크아웃해 실패 로그(`gh api .../actions/runs`, job 로그)를 읽고 최소 수정으로 고친 뒤 푸시한다. 이번 실행의 첫 작업으로 센다.
 - CI가 **진행 중**인 PR이 있으면: 그 브랜치 위에서 이어서 작업한다 (같은 PR에 커밋이 쌓인다).
 - 열린 PR이 없으면: `origin/develop`에서 `feature-auto-YYYYMMDD-HHMM` (UTC) 브랜치를 새로 만든다.
@@ -41,7 +42,10 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 
 1. `git push -u origin <브랜치>`.
 2. 열린 PR이 없으면 develop 대상으로 PR을 만든다. 본문: 이번에 한 작업 목록, 바뀐 조작/수치, **플레이테스트 체크리스트** (Unity에서 무엇을 눌러 확인하면 되는지), 에디터 툴 재실행이 필요한지.
-3. 설정의 머지 방식이 `auto`면 PR에 자동 머지(merge commit 방식, `--no-ff`와 같음)를 켠다: `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/ccr/auto_merge -f merge_method=merge`. `manual`이면 켜지 않는다.
+3. 설정의 머지 방식이 `auto`면 이번 푸시의 CI가 끝날 때까지 기다린다 (백그라운드로 `gh api .../actions/runs?head_sha=<sha>`의 status를 확인, 보통 10~20분).
+   - `editmode` 잡이 **success**면 `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/merge -f merge_method=merge`로 직접 머지한다.
+   - **skipped**(라이선스 없음)나 **failure**면 머지하지 않는다. 실패면 원인을 고쳐 다시 푸시하고 한 번 더 기다린다. 그래도 실패면 다음 실행에서 1단계가 처리한다.
+   - `manual`이면 머지하지 않는다.
 
 ## 4. 기록
 
