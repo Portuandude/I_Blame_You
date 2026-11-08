@@ -14,7 +14,7 @@ namespace IBlameYou.UI
     // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
-    // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs)
+    // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs), Esc: 일시정지 메뉴 (SkillHUD.Pause.cs)
     public partial class SkillHUD : MonoBehaviour
     {
         private const int MaxFeed = 7;
@@ -103,7 +103,7 @@ namespace IBlameYou.UI
                 progression.LeveledUp -= OnLeveledUp;
                 progression.TraitRaised -= OnTraitRaised;
             }
-            if (traitWindowOpen) Time.timeScale = 1f;
+            if (traitWindowOpen || paused) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -172,6 +172,7 @@ namespace IBlameYou.UI
                 if (visual != null) visual.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
             }
 
+            UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
             UpdateTraitWindowInput();
 
             if (deathHandled || stageCleared)
@@ -209,6 +210,7 @@ namespace IBlameYou.UI
             DrawChantInput();
             DrawHelp();
             DrawTraitWindow();
+            DrawPauseMenu();
             if (deathHandled) DrawGameOver();
             else if (stageCleared) DrawStageClear();
         }
@@ -337,9 +339,9 @@ namespace IBlameYou.UI
         {
             string help = GameSession.DevMode
                 ? "A: A/D 이동 · Space 점프 · Shift 달리기 · L.Ctrl 대쉬 · 방향키+Enter 순간이동 · 1~5 방어막    " +
-                  "B: 좌클릭 마력탄(마나 5) · 6~9 공격 스킬    F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복"
+                  "B: 좌클릭 마력탄(마나 5) · 6~9 공격 스킬    F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복    Esc 일시정지"
                 : "A: A/D 이동 · Space 점프 · Shift 달리기 · L.Ctrl 대쉬 · 방향키+Enter 순간이동 · 넘패드 1~5 방어막(→W/A/S/D)    " +
-                  "B: 좌클릭 마력탄(마나 5) · 1~4 공격 스킬(→영창 타이핑+Enter)";
+                  "B: 좌클릭 마력탄(마나 5) · 1~4 공격 스킬(→영창 타이핑+Enter)    Esc 일시정지";
             GUI.Label(new Rect(12f, Screen.height - 30f, Screen.width - 24f, 24f), help, small);
         }
 
