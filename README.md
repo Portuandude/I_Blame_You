@@ -45,7 +45,8 @@ Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)�
 | B | 상단 1~5 | 불/물/바람/땅/무 공격 스킬 → 영창문 타이핑 후 Enter (오타면 마나만 소모, Esc 취소) |
 | 개발자 모드 | 상단 1~5 / 6~9·0 | A 방어막 / B 공격 스킬 즉시 발동 |
 | 개발자 모드 | F1 / F2 / F3 / F4 | 무적 / 마나 무한 / 주변 적 처치 / 체력 회복 |
-| 공통 | R / M (쓰러졌을 때) | 다시 시작 / 시작 화면 |
+| 공통 | Esc | 일시정지 메뉴 (계속하기/다시 시작/시작 화면). B의 영창 중에는 영창 취소, Tab 특성 창이 열려 있으면 창 닫기 |
+| 공통 | R / M (쓰러졌을 때) | 다시 시작 / 시작 화면 (사망 연출이 끝나고 게임오버 창이 뜬 뒤) |
 
 수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
 고블린 4종과 스킬 이펙트 그림은 `Tools/ArtGen/generate_sprites.py`로 만든 임시 아트다 (`python3 Tools/ArtGen/generate_sprites.py`로 다시 생성).
@@ -107,6 +108,7 @@ Assets/
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
+                              # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지, SkillHUD.Death — 사망 연출
                               # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/, Data/  # (비어 있음)

@@ -17,6 +17,8 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 ## 1. 이전 실행 정리 (새 작업보다 먼저)
 
 `gh api repos/Portuandude/I_Blame_You/pulls?state=open` 으로 head가 `feature-auto-`로 시작하는 열린 PR을 찾는다.
+세션 환경이 브랜치 이름을 `claude/...`로 정해 주는 경우도 있으므로, base가 `develop`이고 head가 `claude/`로 시작하며 제목이 `AutoDev`로 시작하는 열린 PR도 같은 방식으로 처리한다.
+이번 세션에 개발 브랜치가 지정되어 있으면 새 `feature-auto-*` 대신 그 브랜치를 `origin/develop`에서 다시 만들어 쓰고, PR 제목은 `AutoDev: `로 시작한다.
 
 - CI(`Unity CI` 워크플로)가 **성공**했고 설정의 머지 방식이 `auto`면: `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/merge -f merge_method=merge`로 머지한다 (`--no-ff`와 같은 merge commit). 그 뒤 develop에서 새 브랜치로 진행한다.
 - CI(`Unity CI` 워크플로)가 **실패**한 PR이 있으면: 그 브랜치를 체크아웃해 실패 로그(`gh api .../actions/runs`, job 로그)를 읽고 최소 수정으로 고친 뒤 푸시한다. 이번 실행의 첫 작업으로 센다.
