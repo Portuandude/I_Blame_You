@@ -122,6 +122,7 @@ namespace IBlameYou.UI
         {
             if (stageCleared || deathHandled) return;
             CloseTraitWindow();
+            ClosePauseMenu();
             stageCleared = true;
             clearTime = Time.time - runStartTime;
             control.Locked = true;
@@ -166,6 +167,7 @@ namespace IBlameYou.UI
             if (health.IsDead && !deathHandled)
             {
                 CloseTraitWindow();
+                ClosePauseMenu();
                 deathHandled = true;
                 control.Locked = true;
                 BeginDeathSequence(); // 슬로모션, 회색으로 바래기, 화면 어두워짐 (SkillHUD.Death.cs)
