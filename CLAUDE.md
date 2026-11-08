@@ -41,3 +41,7 @@ master와 develop가 항상 유지되는 메인 브랜치이고, 나머지(featu
 ## 프로젝트 구조
 
 폴더 구조와 각 폴더의 용도는 [README.md](README.md)를 참고. 기획 문서는 [Docs/GameDesignDocument.md](Docs/GameDesignDocument.md).
+
+## 자동 개발 세션
+
+예약 실행되는 무인 세션은 `/auto-dev` 절차(`.claude/commands/auto-dev.md`)를 따른다. 설정과 사람이 할 일은 [Docs/AutoDev/README.md](Docs/AutoDev/README.md).
