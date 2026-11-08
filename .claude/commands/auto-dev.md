@@ -42,7 +42,8 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 
 1. `git push -u origin <브랜치>`.
 2. 열린 PR이 없으면 develop 대상으로 PR을 만든다. 본문: 이번에 한 작업 목록, 바뀐 조작/수치, **플레이테스트 체크리스트** (Unity에서 무엇을 눌러 확인하면 되는지), 에디터 툴 재실행이 필요한지.
-3. 설정의 머지 방식이 `auto`면 이번 푸시의 CI가 끝날 때까지 기다린다 (백그라운드로 `gh api .../actions/runs?head_sha=<sha>`의 status를 확인, 보통 10~20분).
+3. 설정의 머지 방식이 `auto`면 먼저 GitHub 자동 머지를 켠다: `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/ccr/auto_merge -f merge_method=merge` (develop 브랜치 규칙이 `editmode` 통과를 요구하므로, 세션이 먼저 끝나도 CI 통과 시 GitHub가 머지한다). 실패해도 아래 직접 머지로 진행한다.
+   그다음 이번 푸시의 CI가 끝날 때까지 기다린다 (백그라운드로 `gh api .../actions/runs?head_sha=<sha>`의 status를 확인, 보통 10~20분).
    - `editmode` 잡이 **success**면 `gh api -X PUT repos/Portuandude/I_Blame_You/pulls/<번호>/merge -f merge_method=merge`로 직접 머지한다.
    - **skipped**(라이선스 없음)나 **failure**면 머지하지 않는다. 실패면 원인을 고쳐 다시 푸시하고 한 번 더 기다린다. 그래도 실패면 다음 실행에서 1단계가 처리한다.
    - `manual`이면 머지하지 않는다.
