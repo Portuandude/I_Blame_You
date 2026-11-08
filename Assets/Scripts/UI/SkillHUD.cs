@@ -14,6 +14,7 @@ namespace IBlameYou.UI
     // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
+    // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs)
     public partial class SkillHUD : MonoBehaviour
     {
         private const int MaxFeed = 7;
@@ -197,6 +198,7 @@ namespace IBlameYou.UI
             if (health == null) return;
             EnsureStyles();
 
+            DrawLowHealthWarning(); // 화면 가장자리 효과라 다른 UI보다 먼저(아래에) 그린다
             DrawStatusPanel();
             DrawStageBar();
             DrawLevelBar();
