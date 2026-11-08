@@ -73,7 +73,7 @@ namespace IBlameYou.UI
 
             // 일시정지나 특성 창(timeScale 0) 중에도 깜빡임이 멈춰 보이지 않게 실제 시간으로 센다.
             if (Event.current.type == EventType.Repaint)
-                pulsePhase += Time.unscaledDeltaTime * Mathf.Lerp(PulseSlowHz, PulseFastHz, severity);
+                pulsePhase = (pulsePhase + Time.unscaledDeltaTime * Mathf.Lerp(PulseSlowHz, PulseFastHz, severity)) % 1f;
 
             float pulse = 0.5f + 0.5f * Mathf.Sin(pulsePhase * 2f * Mathf.PI);
             float alpha = Mathf.Lerp(MinAlpha, MaxAlpha, severity) * Mathf.Lerp(0.45f, 1f, pulse);
