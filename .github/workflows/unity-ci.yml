@@ -42,7 +42,7 @@ jobs:
           restore-keys: |
             Library-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
             Library-
-      - uses: game-ci/unity-test-runner@v4
+      - uses: game-ci/unity-test-runner@v4.3.2  # v4.4+ fails Personal license activation (unity-test-runner issue 336)
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
