@@ -15,6 +15,9 @@ namespace IBlameYou.Systems
 
         public bool IsStunned { get; private set; }
 
+        // 경직에 걸리지 않는 상태 (보스의 슈퍼아머).
+        public bool Immune { get; set; }
+
         public void Configure(float duration, bool invulnerable)
         {
             stunDuration = duration;
@@ -40,10 +43,21 @@ namespace IBlameYou.Systems
 
         private void OnDamaged(float amount)
         {
-            if (health.IsDead) return;
+            if (health.IsDead || Immune) return;
+
+            // 대지 디버프로 더 긴 경직이 남아 있으면 줄이지 않는다.
+            remaining = IsStunned ? Mathf.Max(remaining, stunDuration) : stunDuration;
+            IsStunned = true;
+            if (invulnerableWhileStunned) health.Invulnerable = true;
+        }
+
+        // 피격과 별개로 정해진 시간만큼 경직시킨다 (대지 속성 디버프). 이미 더 긴 경직 중이면 유지.
+        public void Apply(float duration)
+        {
+            if (health.IsDead || Immune || duration <= 0f) return;
 
             IsStunned = true;
-            remaining = stunDuration;
+            remaining = Mathf.Max(remaining, duration);
             if (invulnerableWhileStunned) health.Invulnerable = true;
         }
 

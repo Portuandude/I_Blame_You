@@ -64,10 +64,12 @@ namespace IBlameYou.Systems
 
             var rb = player.GetComponent<Rigidbody2D>();
             var combat = player.GetComponent<PlayerCombat>();
+            var control = player.GetComponent<PlayerControlState>();
 
             // 이동 중에는 조작/물리(피격 포함)를 멈춘다.
             player.enabled = false;
             if (combat != null) combat.enabled = false;
+            if (control != null) control.Locked = true; // 스킬/미니게임/영창도 멈춤
             rb.linearVelocity = Vector2.zero;
             rb.simulated = false;
 
@@ -84,6 +86,7 @@ namespace IBlameYou.Systems
             rb.simulated = true;
             player.enabled = true;
             if (combat != null) combat.enabled = true;
+            if (control != null) control.Locked = false;
 
             nextTravelTime = Time.time + ArrivalCooldown;
             transitioning = false;
@@ -108,6 +111,12 @@ namespace IBlameYou.Systems
             var color = fadeOverlay.color;
             color.a = alpha;
             fadeOverlay.color = color;
+        }
+
+        private void OnDestroy()
+        {
+            // 암전 오버레이는 카메라 자식이라 다시 시작할 때 쌓이지 않도록 같이 치운다.
+            if (fadeOverlay != null) Destroy(fadeOverlay.gameObject);
         }
 
         // 카메라 앞에 붙인 커다란 검은 사각형의 알파로 암전을 표현한다 (UI 캔버스 없이).

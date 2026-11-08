@@ -17,5 +17,33 @@ namespace IBlameYou.Systems
         public RuntimeAnimatorController slimeAnimatorController;
         public Sprite slimeDefaultSprite;
         public GameObject slimePrefab;
+        public GameObject motherSlimePrefab; // 슬라임 아트를 쓰는 정예 변종
+
+        public RuntimeAnimatorController goblinAnimatorController;
+        public Sprite goblinDefaultSprite;
+        public GameObject goblinPrefab;
+
+        public RuntimeAnimatorController goblinArcherAnimatorController;
+        public Sprite goblinArcherDefaultSprite;
+        public GameObject goblinArcherPrefab;
+
+        public RuntimeAnimatorController goblinSoldierAnimatorController;
+        public Sprite goblinSoldierDefaultSprite;
+        public GameObject goblinSoldierPrefab;
+
+        public RuntimeAnimatorController goblinWarriorAnimatorController;
+        public Sprite goblinWarriorDefaultSprite;
+        public GameObject goblinWarriorPrefab;
+
+        // 스킬/투사체 이펙트 프레임 (런타임에 SpriteFrameAnimator로 재생).
+        public Sprite[] fireballFrames;
+        public Sprite[] waterLanceFrames;
+        public Sprite[] windGustFrames;
+        public Sprite[] earthSpikeFrames;
+        public Sprite[] arcaneOrbFrames;
+        public Sprite[] shieldFrames;
+        public Sprite[] teleportFrames;
+        public Sprite[] arrowFrames;
+        public Sprite[] slashFrames;
     }
 }

@@ -80,6 +80,25 @@ namespace IBlameYou.Enemies
             return health;
         }
 
+        // 체력/경직/전투 스탯을 스탯 문서 값으로 붙인다. 컨트롤러(EnemyController)보다 먼저 붙여야 한다.
+        public static CombatStats AddStats(GameObject go, StatBlock stats, float stunDuration)
+        {
+            AddHealthAndStun(go, stats.maxHealth, stunDuration);
+            var combatStats = go.AddComponent<CombatStats>();
+            combatStats.Configure(stats);
+            return combatStats;
+        }
+
+        // 하단 중앙이 발밑인 스프라이트 몸체에 맞춘 박스 콜라이더 (고블린류).
+        public static BoxCollider2D AddBoxBody(GameObject go, Vector2 size)
+        {
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.size = size;
+            collider.offset = new Vector2(0f, size.y / 2f);
+            collider.sharedMaterial = PhysicsMaterialFactory.Frictionless();
+            return collider;
+        }
+
         public static LayerMask GroundMask()
         {
             int layer = LayerMask.NameToLayer("Ground");

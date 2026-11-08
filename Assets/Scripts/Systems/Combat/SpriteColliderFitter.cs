@@ -29,14 +29,15 @@ namespace IBlameYou.Systems
 
         private void LateUpdate()
         {
-            if (source != null && source.sprite != lastSprite) Refit();
+            if (source != null && ElementRecolor.ToOriginal(source.sprite) != lastSprite) Refit();
         }
 
         private void Refit()
         {
             if (source == null || target == null) return;
 
-            var sprite = source.sprite;
+            // 색을 바꾼 회색 스프라이트(ElementRecolor)는 물리 셰이프가 없으니 원본 것을 쓴다.
+            var sprite = ElementRecolor.ToOriginal(source.sprite);
             lastSprite = sprite;
             if (sprite == null) return;
 
