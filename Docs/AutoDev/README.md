@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 실행 주기 | 5시간 | claude.ai 예약 작업에서 변경 |
 | 실행당 작업 수 | 4 | 사용량을 보고 조정 (목표: 5시간 사용량의 약 90%) |
-| 머지 방식 | auto | `auto`: CI 통과 시 develop에 자동 머지 / `manual`: PR만 올림 |
+| 머지 방식 | auto | `auto`: Unity CI(`editmode`)가 성공하면 자동 실행 세션이 직접 develop에 머지 / `manual`: PR만 올림 |
 
 ## 사람이 하는 일
 
