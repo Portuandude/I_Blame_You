@@ -102,7 +102,7 @@ Assets/
       Stats/                  # StatTable(스탯 문서 값), CombatStats, DamageCalculator(비율식 공식), Element
       Combat/                 # HitStun(피격 경직), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # SolidSpriteFactory, PhysicsMaterialFactory
-        Chunks/               # 순수 C# 스테이지 생성기 (Unity 없이 Tools/StageGen에서 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
+        Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 12종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
@@ -114,6 +114,7 @@ Assets/
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/, Data/  # (비어 있음)
   Plugins/, Settings/
+Assets/Tests/EditMode/        # EditMode 테스트 (IBlameYou.Tests.EditMode.asmdef)
 Packages/manifest.json
 ProjectSettings/
 Docs/                         # 기획 문서
@@ -163,6 +164,14 @@ mcs -out:/tmp/StagePreview.exe Tools/StageGen/StagePreview.cs Assets/Scripts/Sys
 mono /tmp/StagePreview.exe 1 /tmp/stage1.txt       # 시드 300개 검증 + 시드 1 지도 텍스트
 python3 Tools/StageGen/render_stage.py /tmp/stage1.txt /tmp/stage1.png
 ```
+
+## 테스트 (EditMode)
+
+`Assets/Tests/EditMode`의 NUnit 테스트를 Unity **Window > General > Test Runner > EditMode**에서 돌릴 수 있고, PR마다 Unity CI(`editmode` 잡)도 같은 테스트를 돌린다.
+
+- 테스트 어셈블리(`IBlameYou.Tests.EditMode.asmdef`)는 `Assembly-CSharp`를 참조할 수 없어서, 테스트할 순수 로직은 별도 asmdef로 분리한다.
+  지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`, UnityEngine 참조 없음)만 분리되어 있다. 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
+- `StageGeneratorTests`: 시드 40개로 모든 청크 검증 통과, 이음새 높이, 시작/보스 청크와 출구, 예상 시간 ±10%, 같은 시드 = 같은 지형.
 
 ## 프리팹 구조
 
