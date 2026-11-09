@@ -110,14 +110,17 @@ namespace IBlameYou.Systems
             foreach (var entry in pool) if (entry.Key != last) total += entry.Value;
 
             double roll = rng.NextDouble() * total;
+            var fallback = ChunkKind.Hills;
             foreach (var entry in pool)
             {
-                if (entry.Key == last) continue;
+                if (entry.Key == last || entry.Value <= 0f) continue;
+                fallback = entry.Key;
                 roll -= entry.Value;
                 if (roll <= 0) return entry.Key;
             }
 
-            return ChunkKind.Plains;
+            // 부동소수 반올림으로 roll이 조금 남은 경우: 마지막 후보 (직전 종류와 겹치지 않게)
+            return fallback;
         }
     }
 }
