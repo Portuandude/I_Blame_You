@@ -3,9 +3,9 @@
 최신 실행이 맨 위.
 
 ## 2026-11-09 04:26 UTC
-- 브랜치/PR: `claude/project-thread-5ne2al` → #10, #11 (CI 통과 후 머지) → #12 (진행 중)
-- 완료: 백로그 새 항목 추가, 스테이지 2 기획 초안(Docs/Stage2Draft.md), 런 사이 성장 기획 초안(Docs/MetaProgressionDraft.md), PickTravel 반올림 경로 테스트 → #10. 유물 기초(정예 구역 유물 상자, 3택1, RelicBook 테스트 6개, 리뷰 2회: MEDIUM 1·LOW 3 반영) → #11 (EditMode 25/25). 런 진행 저장 기초(체크포인트 저장, 시작 화면 이어하기), 유물 HUD·기록, 특수 효과 유물 3종, 일시정지 런 요약, 결과 창 유물 목록, 새로 시작 확인 (리뷰: MEDIUM 2·LOW 2 반영 후 APPROVE) → #12. 적 머리 위 체력 바, 리뷰 LOW 반영 (리뷰 중)
-- 실패/보류: 없음. Unity 런타임 동작(유물 창, 이어하기, 체력 바)은 실행 확인 불가라 플레이테스트 필요
+- 브랜치/PR: `claude/project-thread-5ne2al` → #10, #11 (CI 통과 후 머지) → #12 (CI 통과 후 머지) → #13
+- 완료: 백로그 새 항목 추가, 스테이지 2 기획 초안(Docs/Stage2Draft.md), 런 사이 성장 기획 초안(Docs/MetaProgressionDraft.md), PickTravel 반올림 경로 테스트 → #10. 유물 기초(정예 구역 유물 상자, 3택1, RelicBook 테스트 6개, 리뷰 2회: MEDIUM 1·LOW 3 반영) → #11 (EditMode 25/25). 런 진행 저장 기초(체크포인트 저장, 시작 화면 이어하기), 유물 HUD·기록, 특수 효과 유물 3종, 일시정지 런 요약, 결과 창 유물 목록, 새로 시작 확인 (리뷰: MEDIUM 2·LOW 2 반영 후 APPROVE) → #12. 적 머리 위 체력 바, 데미지 공식 분리·테스트 9개, 유물 효과음 (리뷰 APPROVE) → #12 머지. 사람 지시로 비주얼 우선 전환: 아트 스타일 가이드(Docs/ArtStyle.md, 팔레트 모듈) → #12. 시차 배경 3겹·진행도 색조·반짝이(리뷰 APPROVE, MEDIUM 2·LOW 3 반영), 지형 타일·장식(TerrainDresser), 마법 발사·비행·적중 이펙트와 적중 화면 번쩍임 → #13
+- 실패/보류: pixelfx 저장소 clone·실행은 세션 권한에서 거부되어 같은 원리로 직접 그림. 05:07~08:05 UTC API 오류로 중단 후 재개. Unity 런타임 동작(배경·지형·이펙트 포함)은 실행 확인 불가라 플레이테스트 필요
 - 다음 실행 메모: 사람 결정 대기 — 스테이지 2 테마(Stage2Draft), 메타 진행 후보(MetaProgressionDraft), 중간보스 후보(MidBossDraft), 달리기·대쉬 건너뛰기 정책, 이어하기로 체력을 되돌리는 것을 막을지
 
 ## 2026-11-09 00:35 UTC
