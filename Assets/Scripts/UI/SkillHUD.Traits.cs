@@ -15,7 +15,7 @@ namespace IBlameYou.UI
         {
             OnStageNotice($"레벨 {level}! 특성 포인트 +1 (Tab)");
             SaveData.RecordLevel(level);
-            GameAudio.PlaySfx("Cast_Wind", 0.5f);
+            GameAudio.PlaySfx("LevelUp", 0.6f);
         }
 
         private void OnTraitRaised(Trait trait, int rank)
