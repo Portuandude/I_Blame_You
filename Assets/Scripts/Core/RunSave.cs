@@ -19,7 +19,8 @@ namespace IBlameYou.Core
             public int seed;
             public float targetSeconds;
             public bool devMode;
-            public int checkpointChunk;
+            public int checkpointChunk;     // 방 격자 모드에서는 방 번호
+            public bool roomGrid;           // 방 격자 모드로 저장한 런인지 (모드가 다르면 같은 시드라도 맵이 달라 이어 할 수 없다)
             public float spawnX;
             public float spawnY;
             public float elapsed;           // 런 시작부터 저장까지 걸린 시간(초)

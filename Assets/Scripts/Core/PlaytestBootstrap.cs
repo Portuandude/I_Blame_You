@@ -17,6 +17,8 @@ namespace IBlameYou.Core
         [SerializeField] private float targetMinutes = 30f;
         [SerializeField] private bool randomSeedEachRun = true; // 끄면 아래 seed로 항상 같은 맵
         [SerializeField] private int seed = 0;
+        [Tooltip("방 격자형 스테이지 (Docs/LevelDesign.md). 끄면 예전 외길 청크 스테이지")]
+        [SerializeField] private bool roomGrid = true;
 
         private ChunkStreamer streamer;
         private float currentTargetSeconds; // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
@@ -24,6 +26,7 @@ namespace IBlameYou.Core
         private GameObject player;
         private SkillHUD hud;
         private DevCheats cheats;
+        private MinimapUI minimap;
 
         private void Start()
         {
@@ -39,7 +42,7 @@ namespace IBlameYou.Core
         private void ContinueWorld()
         {
             var data = RunSave.Load();
-            if (data == null)
+            if (data == null || data.roomGrid != roomGrid)
             {
                 BuildWorld(null); // 저장이 깨졌거나 사라졌으면 새 런
                 return;
@@ -64,11 +67,31 @@ namespace IBlameYou.Core
             int runSeed = resume != null ? resume.seed : randomSeedEachRun ? Random.Range(1, 1000000) : seed;
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
-            var stage = StageGenerator.Generate(runSeed, targetSeconds);
-            Debug.Log($"[Stage] 시드 {runSeed}, 청크 {stage.Chunks.Count}개, 예상 {stage.EstimatedSeconds / 60f:0.0}분");
-
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
-            streamer.Initialize(stage, groundTile, (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig));
+            System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
+            if (roomGrid)
+            {
+                var layout = RoomLayout.Generate(runSeed, targetSeconds);
+                var geometries = new System.Collections.Generic.List<RoomGeometry>();
+                int invalid = 0;
+                foreach (var room in layout.Rooms)
+                {
+                    var geometry = RoomShaper.Build(runSeed, room);
+                    if (!geometry.Valid) invalid++;
+                    geometries.Add(geometry);
+                }
+
+                Debug.Log($"[Stage] 시드 {runSeed}, 방 {layout.Rooms.Count}개 (격자 {layout.MaxX - layout.MinX + 1}×{layout.MaxY - layout.MinY + 1}), 검증 실패 {invalid}");
+                streamer.InitializeRooms(layout, geometries, groundTile, spawner);
+                if (resume != null) streamer.SetCurrentRoom(resume.checkpointChunk);
+            }
+            else
+            {
+                var stage = StageGenerator.Generate(runSeed, targetSeconds);
+                Debug.Log($"[Stage] 시드 {runSeed}, 청크 {stage.Chunks.Count}개, 예상 {stage.EstimatedSeconds / 60f:0.0}분");
+                streamer.Initialize(stage, groundTile, spawner);
+            }
+
             if (resume != null) streamer.ImportRecords(resume.records); // 청크를 만들기 전에: 쓰러뜨린 적, 돌파한 구역 등
 
             var start = resume != null ? new Vector3(resume.spawnX, resume.spawnY, 0f) : streamer.PlayerStart;
@@ -86,6 +109,11 @@ namespace IBlameYou.Core
             cheats.Initialize(player);
             hud = gameObject.AddComponent<SkillHUD>();
             hud.Initialize(player, cheats, Restart);
+            if (streamer.IsRoomMode)
+            {
+                minimap = gameObject.AddComponent<MinimapUI>();
+                minimap.Initialize(streamer, player);
+            }
             StageEvents.StageName = "스테이지 1";
             if (resume != null)
             {
@@ -133,10 +161,11 @@ namespace IBlameYou.Core
                 targetSeconds = currentTargetSeconds,
                 devMode = GameSession.DevMode,
                 checkpointChunk = checkpointChunk,
+                roomGrid = streamer.IsRoomMode,
                 spawnX = point.x,
                 spawnY = point.y,
                 elapsed = hud.RunElapsed,
-                progress = Mathf.Clamp01(point.x / streamer.Stage.WidthTiles),
+                progress = streamer.IsRoomMode ? StageEvents.Progress : Mathf.Clamp01(point.x / streamer.Stage.WidthTiles),
                 level = progression != null ? progression.Level : 1,
                 experience = progression != null ? progression.Experience : 0f,
                 totalExperience = progression != null ? progression.TotalExperience : 0f,
@@ -193,6 +222,7 @@ namespace IBlameYou.Core
         {
             if (hud != null) Destroy(hud);
             if (cheats != null) Destroy(cheats);
+            if (minimap != null) Destroy(minimap);
             if (player != null) Destroy(player);
             if (streamer != null) Destroy(streamer.gameObject); // 청크, 적, 함정이 모두 이 아래에 있다
             foreach (var projectile in FindObjectsByType<Projectile>(FindObjectsSortMode.None)) Destroy(projectile.gameObject);
@@ -230,7 +260,7 @@ namespace IBlameYou.Core
             var follow = cam.GetComponent<CameraFollow>();
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
 
-            follow.SetBounds(stageStreamer.WorldBounds);
+            follow.SetBounds(stageStreamer.CameraBounds); // 방 격자 모드에서는 지금 방 (방을 옮길 때마다 스트리머가 바꾼다)
             follow.SetTarget(playerMovement.transform);
         }
     }
