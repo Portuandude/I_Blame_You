@@ -12,7 +12,7 @@
 - DONE (claude/project-thread-8rxr8x): 레벨·스테이지 진행 바 귀엽게 — 캡슐 바(경험치 lilac, 진행도 gold), 레벨업 0.6초 gold 반짝, 진행 바 끝 깃발(`generate_hud.py` Flag)
 - DONE (claude/project-thread-8rxr8x): 머리 위 바·적 체력바 귀엽게 — `UI/CapsuleBar.cs`(런타임 9분할 Sliced 스프라이트 + 흰 잔상, 잔상 계산 `BarTrail` 공용)로 `StatusBarsUI`·`EnemyHealthBar` 교체. 그림 없으면 예전 단색 사각형
 - DONE (claude/project-thread-8rxr8x): HUD 패널 귀엽게 — `panel`·`keyBox` 스타일 배경을 둥근 모서리 + night 반투명 + 크림 테두리 9분할(`generate_hud.py` Panel)로. 피드는 패널이 없어 그대로
-- TODO: 적 경직 연출 — GDD 로드맵 "경직 애니메이션": 경직 동안 머리 위에 별 3개가 빙글빙글 도는 어질어질 이펙트(생성기, 반복 프레임). 적마다 피격 그림을 새로 그리는 대신 모든 적에 공통으로 (그림 교체는 슬라임 회색판·기사 투구판과 겹쳐 복잡)
+- DONE (claude/project-thread-8rxr8x): 적 경직 연출 — `Systems/Effects/StunStars` 경직 동안 머리 위 gold·aqua·berry 별 3개가 도는 12프레임(한 바퀴 0.6초, 최소 0.45초 표시), `EnemyController.Awake`가 모든 적에 붙임. 그림 `generate_skill_fx.py` StunStars
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 

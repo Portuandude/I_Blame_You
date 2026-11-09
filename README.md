@@ -79,6 +79,8 @@ Assets/
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle,ChestOpen,RelicBanner,...}/ # 착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임·열기, 유물 이름 띠 (Tools/ArtGen/generate_vfx.py, Systems/Effects/VfxPlayer)
   Resources/Effects/{Teleport,Shield,Slash}/ # 순간이동·방어막·베기 (Tools/ArtGen/generate_skill_fx.py, 없으면 LevelArtConfig 옛 프레임)
+  Resources/Effects/StunStars/ # 적 경직 어질어질 별 12프레임 (generate_skill_fx.py, Systems/Effects/StunStars)
+  Resources/UI/HUD/           # HUD 캡슐 바·빛 테두리·패널·하트·별·왕관·깃발 (Tools/ArtGen/generate_hud.py, UI/SkillHUD.Bars·UI/CapsuleBar)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
@@ -115,7 +117,7 @@ Assets/
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
                               # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바, SkillHUD.Relics — 유물 고르기 창·가진 유물
-                              # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임)
+                              # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임), CapsuleBar — 머리 위 둥근 캡슐 바 + 흰 잔상 공용
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/                  # ElementGate(속성 마법으로 여는 봉인문)
     Data/                     # (비어 있음)
