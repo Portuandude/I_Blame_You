@@ -3,10 +3,10 @@
 최신 실행이 맨 위.
 
 ## 2026-11-09 00:35 UTC
-- 브랜치/PR: `claude/project-thread-nsj3x2` → #5, #6, #7 (모두 CI 통과 후 자동 머지) → #8
-- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요) → 여기까지 PR #6 자동 머지. 이후 PR #7: 봉인문 보강(문 앞 땅 가시 안내, 리뷰 APPROVE), 컨트롤 퍼즐 MovingBridge(움직이는 발판 청크, 리뷰 UNVERIFIED=Unity 실행 불가로 읽기 검토만, MEDIUM 1건·LOW 2건 반영: 발판이 플레이어를 속도로 실어 나름, 시작 위치 보정, 발판 높이 테스트) → PR #7 자동 머지. 01:13~03:00 UTC 사용량 한도로 중단 후 재개. 백로그가 비어 새 항목 4개 추가. 이후 PR #8: 경직 연출(몸 뒤로 젖힘, 리뷰 HIGH 1건 반영 = 슬라임 스프라이트 판정이 함께 기울던 문제), 두 속성 봉인문(진행도 60% 이후, 리뷰 APPROVE) → 이어서 PR #8에 추가: 스테이지 배치 규칙 테스트 3개(코드 리뷰 APPROVE, MEDIUM 1건 반영), 발판 갈아타기 변형(리뷰 HIGH 반영: 6~7칸은 달리기 점프로 건너뛸 수 있어 9칸으로)
-- 실패/보류: 없음 (진행 중)
-- 다음 실행 메모: 진행 중
+- 브랜치/PR: `claude/project-thread-nsj3x2` → #5~#9 (모두 CI 통과 후 자동 머지) → #10
+- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요) → 여기까지 PR #6 자동 머지. 이후 PR #7: 봉인문 보강(문 앞 땅 가시 안내, 리뷰 APPROVE), 컨트롤 퍼즐 MovingBridge(움직이는 발판 청크, 리뷰 UNVERIFIED=Unity 실행 불가로 읽기 검토만, MEDIUM 1건·LOW 2건 반영: 발판이 플레이어를 속도로 실어 나름, 시작 위치 보정, 발판 높이 테스트) → PR #7 자동 머지. 01:13~03:00 UTC 사용량 한도로 중단 후 재개. 백로그가 비어 새 항목 4개 추가. 이후 PR #8: 경직 연출(몸 뒤로 젖힘, 리뷰 HIGH 1건 반영 = 슬라임 스프라이트 판정이 함께 기울던 문제), 두 속성 봉인문(진행도 60% 이후, 리뷰 APPROVE) → 이어서 PR #8에 추가: 스테이지 배치 규칙 테스트 3개(코드 리뷰 APPROVE, MEDIUM 1건 반영), 발판 갈아타기 변형(리뷰 HIGH 반영: 6~7칸은 달리기 점프로 건너뛸 수 있어 9칸으로) → PR #10: 두 속성 봉인문 진행 기록, 이동 청크 선택 안전장치(둘 다 리뷰 APPROVE). 작업 20개로 안전 상한 도달, 종료
+- 실패/보류: 01:13~03:00 UTC 사용량 한도로 중단(리뷰 1건 재개). 마법사 동작별 그림은 계속 BLOCKED(그림 필요). 중간보스 후보 선택(Docs/MidBossDraft.md)과 달리기·대쉬 건너뛰기 정책은 사람 결정 필요(BACKLOG BLOCKED). Unity 런타임 코드(움직이는 발판, 경직 연출, 봉인문 표시)는 실행 확인 불가라 플레이테스트 필요
+- 다음 실행 메모: 백로그 TODO가 없다. GDD 로드맵에서 새 항목을 뽑을 것 (후보: 런 사이 성장/아이템 기획 초안, 스테이지 2 기획 초안, PickTravel 대체 경로 테스트). 검증기 점프 거리(걷기 기준)와 실제 달리기 점프 차이를 기억할 것
 
 ## 2026-11-08 23:30 UTC
 - 브랜치/PR: `claude/project-thread-ulxu6c` → #3 (develop 대상, GitHub 자동 머지 켬)
