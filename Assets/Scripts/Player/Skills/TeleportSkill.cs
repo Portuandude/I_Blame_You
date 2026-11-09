@@ -116,17 +116,35 @@ namespace IBlameYou.Player
             float feetY = bounds.min.y;
             float killY = FallRecovery.FloorY + FallRecovery.KillY;
 
-            return TeleportRules.PlanDown(distance, CastDistance(Vector2.down, includePlatforms: false), feetY, killY,
+            // 아래 땅(발판 제외)까지의 거리: 몸 Cast는 합쳐진 땅 콜라이더에서 옆 벽 hit 하나만 돌려줄 수 있어,
+            // 발밑의 좁은 상자를 따로 밀어 본다 (구석에 붙어 서 있어도 바닥을 놓치지 않게).
+            float solidHit = FeetCast(new Vector2(center.x, feetY + 0.05f), size.x * 0.9f, distance + 0.1f, solidOnly: true);
+
+            return TeleportRules.PlanDown(distance, solidHit, feetY, killY,
                 t => Physics2D.OverlapBox(center + Vector2.down * t, size, 0f, groundFilter, overlapResults) > 0,
-                t =>
-                {
-                    // 발 밑 얇은 상자를 아래로 밀어 처음 닿는 땅·발판까지의 거리
-                    var feet = new Vector2(center.x, feetY - t + 0.05f);
-                    int count = Physics2D.BoxCast(feet, new Vector2(size.x, 0.05f), 0f, Vector2.down, groundFilter, castResults, TeleportRules.MaxSafeDrop + 0.1f);
-                    float nearest = float.PositiveInfinity;
-                    for (int i = 0; i < count; i++) nearest = Mathf.Min(nearest, Mathf.Max(castResults[i].distance - 0.05f, 0f));
-                    return nearest;
-                });
+                t => FeetCast(new Vector2(center.x, feetY - t + 0.05f), size.x, TeleportRules.MaxSafeDrop + 0.1f, solidOnly: false));
+        }
+
+        // 발 밑 얇은 상자를 아래로 밀어 처음 닿는 디딜 곳까지의 거리 (없으면 PositiveInfinity).
+        // solidOnly: 위에서만 밟히는 발판은 건너뛴다 (뚫고 내려갈 수 있으므로).
+        // 무너지는 발판·움직이는 발판(UnsafeGround)은 내려선 뒤 떨어질 수 있으니 안전한 착지로 치지 않는다.
+        private float FeetCast(Vector2 origin, float width, float maxDistance, bool solidOnly)
+        {
+            int count = Physics2D.BoxCast(origin, new Vector2(width, 0.05f), 0f, Vector2.down, groundFilter, castResults, maxDistance);
+            float nearest = float.PositiveInfinity;
+            bool nearestUnsafe = false;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = castResults[i];
+                if (solidOnly && hit.collider.usedByEffector) continue;
+                float d = Mathf.Max(hit.distance - 0.05f, 0f);
+                if (d >= nearest) continue;
+                nearest = d;
+                nearestUnsafe = hit.collider.GetComponentInParent<UnsafeGround>() != null;
+            }
+
+            if (!solidOnly && nearestUnsafe) return float.PositiveInfinity; // 처음 닿는 곳이 불안한 발판이면 안전하지 않다
+            return nearest;
         }
 
         private void Teleport(Vector2 direction, float travel)
