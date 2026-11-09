@@ -1348,8 +1348,7 @@ def generate_stage_art():
         "Flame": flame_frames(),
         "Smoke": smoke_frames(),
         "ArrowTrap": [arrow_trap_sprite()],
-        "Platform": [plank(rgba("#a07a4e"), 0)],
-        "Crumble": [plank(rgba("#8a6a4a"), 3, h=45)],
+        # Platform / Crumble 은 새 팔레트로 generate_terrain.py 가 그린다.
         "Checkpoint": checkpoint_frames(),
         "Gate": gate_frames(),
         "Exit": exit_frames(),
