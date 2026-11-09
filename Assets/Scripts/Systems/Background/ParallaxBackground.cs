@@ -5,6 +5,8 @@ namespace IBlameYou.Systems
     // 카메라 뒤 시차(패럴랙스) 배경 3겹 + 떠다니는 반짝이 (Docs/ArtStyle.md 배경 규칙).
     // 그림은 Resources/Stage/BgSky, BgMid, BgNear, Sparkle (Tools/ArtGen/generate_background.py). 없으면 아무것도 그리지 않는다.
     // 진행도(카메라가 스테이지 가로의 어디쯤인지)에 따라 하늘 색조가 해질녘 → 밤 → 보스 앞 붉은 빛으로 바뀐다.
+    // 방 격자 모드(SetRoom)에서는 진행도를 주 경로 방 순서(StageEvents.Progress)로 쓰고, 방마다 옅은 색을 조금 섞어
+    // 옆 방으로 옮겼다는 느낌을 준다 (방 번호로 정해져서 같은 방은 늘 같은 색).
     // CameraFollow가 이번 프레임 위치를 정한 뒤에 따라가도록 늦게 돈다 (먼저 돌면 한 프레임 늦어 떨려 보임).
     [DefaultExecutionOrder(1000)]
     public class ParallaxBackground : MonoBehaviour
@@ -30,6 +32,17 @@ namespace IBlameYou.Systems
         };
         private static readonly float[] TintStops = { 0f, 0.5f, 0.8f, 1f };
 
+        // 방마다 섞는 옅은 색 (분홍·민트·라벤더·복숭아·하늘). 진행도 색조 위에 RoomTintMix만큼 섞는다.
+        private static readonly Color[] RoomTints =
+        {
+            new Color(1f, 0.82f, 0.92f),
+            new Color(0.8f, 1f, 0.9f),
+            new Color(0.88f, 0.82f, 1f),
+            new Color(1f, 0.9f, 0.78f),
+            new Color(0.8f, 0.92f, 1f),
+        };
+        private const float RoomTintMix = 0.35f;
+
         private Camera cam;
         private Rect world;
         private Transform root;
@@ -39,6 +52,7 @@ namespace IBlameYou.Systems
         private Sprite[] sparkleFrames;
         private Sparkle[] sparkles;
         private Vector3 lastCameraPosition;
+        private int room = -1; // 방 격자 모드의 지금 방 (-1: 외길 모드)
 
         private class Layer
         {
@@ -107,6 +121,12 @@ namespace IBlameYou.Systems
             lastCameraPosition = cam.transform.position;
         }
 
+        // 방 격자 모드: 방에 들어올 때마다 부른다 (ChunkStreamer.RoomEntered). -1이면 외길 모드처럼 카메라 x로 진행도를 잰다.
+        public void SetRoom(int index)
+        {
+            room = index;
+        }
+
         private static SpriteRenderer CreateRenderer(Transform parent, string name, Sprite sprite, int order)
         {
             var go = new GameObject(name);
@@ -138,7 +158,16 @@ namespace IBlameYou.Systems
             Vector3 camPos = cam.transform.position;
             float halfHeight = cam.orthographicSize;
             float halfWidth = halfHeight * cam.aspect;
-            Color tint = Tint(world.width > 0f ? Mathf.InverseLerp(world.xMin, world.xMax, camPos.x) : 0f) * Dim;
+            Color tint;
+            if (room >= 0)
+            {
+                tint = Color.Lerp(Tint(StageEvents.Progress), RoomTints[(room * 3) % RoomTints.Length], RoomTintMix) * Dim;
+            }
+            else
+            {
+                tint = Tint(world.width > 0f ? Mathf.InverseLerp(world.xMin, world.xMax, camPos.x) : 0f) * Dim;
+            }
+
             tint.a = 1f;
 
             if (sky != null)
