@@ -9,6 +9,7 @@ namespace IBlameYou.UI
     // 체력이 낮으면(LowHealth 경고와 같은 기준) 하트가 두근거린다.
     public partial class SkillHUD
     {
+        // 아래 BarHeight·BarGlow와 9분할 테두리(9, 14) 값은 generate_hud.py의 BAR_H·GLOW와 손으로 맞춘 값이다. 한쪽만 바꾸지 말 것.
         private const float BarHeight = 18f;
         private const float BarIconSize = 24f;
         private const float BarGlow = 5f;            // BarFrame.png 바깥 빛 여백 (generate_hud.py GLOW)
