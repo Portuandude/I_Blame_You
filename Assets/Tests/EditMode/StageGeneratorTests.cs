@@ -173,5 +173,43 @@ namespace IBlameYou.Tests
             }
             Assert.Greater(stagesWithGate, 0, "봉인문이 한 번도 나오지 않음");
         }
+
+        // ---- 움직이는 발판 청크 (컨트롤 퍼즐) ----
+
+        [Test]
+        public void MovingBridgeNeedsThePlatform()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (float difficulty in new[] { 0.3f, 0.9f })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 6, ChunkKind.MovingBridge, difficulty, 7, 0);
+                    Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"seed {seed}: {reason}");
+
+                    int platforms = 0;
+                    var platform = default(ChunkFeature);
+                    foreach (var f in chunk.Features)
+                    {
+                        if (f.Kind != FeatureKind.MovingPlatform) continue;
+                        platform = f;
+                        platforms++;
+                    }
+                    Assert.AreEqual(1, platforms, $"seed {seed}");
+                    // 발판 윗면(Y + 1)은 두 절벽 중 높은 쪽과 같은 높이에서 출발한다.
+                    Assert.AreEqual(System.Math.Max(chunk.EntryHeight, chunk.ExitHeight), platform.Y + 1, $"seed {seed}: 발판 높이");
+
+                    // 발판이 지나는 범위가 낭떠러지를 끝에서 끝까지 덮는다.
+                    int left = platform.X, right = platform.X + platform.Width + platform.Direction - 1;
+                    Assert.IsTrue(chunk.IsSolid(left - 1, platform.Y), $"seed {seed}: 출발 쪽 절벽");
+                    Assert.IsFalse(chunk.IsSolid(left, 0), $"seed {seed}: 낭떠러지 시작");
+                    Assert.IsFalse(chunk.IsSolid(right, 0), $"seed {seed}: 낭떠러지 끝");
+                    Assert.IsTrue(chunk.IsSolid(right + 1, 0), $"seed {seed}: 건너편 절벽");
+
+                    // 발판 없이는 건널 수 없어야 퍼즐이다.
+                    chunk.Features.RemoveAll(f => f.Kind == FeatureKind.MovingPlatform);
+                    Assert.IsFalse(StageValidator.Validate(chunk, out _), $"seed {seed}: 발판 없이도 건널 수 있음");
+                }
+            }
+        }
     }
 }
