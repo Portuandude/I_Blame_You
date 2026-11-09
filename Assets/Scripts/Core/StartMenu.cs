@@ -13,6 +13,7 @@ namespace IBlameYou.Core
         private Action onStart;
         private Action onContinue;
         private RunSave.Data saved; // 이어 할 수 있는 런 (없으면 null)
+        private bool confirmNewRun;  // 저장이 있을 때 "새로 시작"은 한 번 더 눌러야 한다
         private bool devMode;
         private float musicVolume;
         private float sfxVolume;
@@ -75,7 +76,8 @@ namespace IBlameYou.Core
                 if (GUILayout.Button($"이어하기 — 진행도 {saved.progress * 100f:0}% · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
                         button, GUILayout.Height(44f)))
                 {
-                    SaveData.SaveSettings(); // 볼륨은 남기고, 모드는 저장된 런을 따른다 (PlaytestBootstrap.ContinueWorld)
+                    GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
+                    SaveData.SaveSettings();
                     GameSession.Started = true;
                     var callback = onContinue;
                     Destroy(this);
@@ -85,7 +87,14 @@ namespace IBlameYou.Core
                 GUILayout.Space(4f);
             }
 
-            if (GUILayout.Button(saved != null ? "새로 시작 (이어하던 런은 지워짐)" : "로컬 테스트 시작", button, GUILayout.Height(48f)))
+            string startLabel = saved == null ? "로컬 테스트 시작"
+                : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "새로 시작";
+            bool startPressed = GUILayout.Button(startLabel, button, GUILayout.Height(48f));
+            if (startPressed && saved != null && !confirmNewRun)
+            {
+                confirmNewRun = true;
+            }
+            else if (startPressed)
             {
                 GameSession.DevMode = devMode;
                 SaveData.SaveSettings();

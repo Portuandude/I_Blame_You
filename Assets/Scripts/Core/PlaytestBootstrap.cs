@@ -19,7 +19,8 @@ namespace IBlameYou.Core
         [SerializeField] private int seed = 0;
 
         private ChunkStreamer streamer;
-        private float currentTargetSeconds; // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
+        private float currentTargetSeconds;
+        private bool? settingsDevMode; // 이어하기로 모드를 바꿨다면 원래 설정값 // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
         private GameObject player;
         private SkillHUD hud;
         private DevCheats cheats;
@@ -44,6 +45,8 @@ namespace IBlameYou.Core
                 return;
             }
 
+            // 저장된 런의 모드로 바꾸되, 시작 화면으로 돌아오면 원래 설정으로 되돌린다 (설정이 런 모드로 덮이지 않게).
+            if (data.devMode != GameSession.DevMode) settingsDevMode = GameSession.DevMode;
             GameSession.DevMode = data.devMode;
             BuildWorld(data);
         }
@@ -108,6 +111,7 @@ namespace IBlameYou.Core
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
+            if (health != null && data.deathSaves >= 0) health.DeathSaves = data.deathSaves; // 특성 다시 찍기로 되살아난 버티기를 저장값으로
             player.GetComponent<FallRecovery>().SetSafePoint(start);
         }
 
@@ -140,6 +144,7 @@ namespace IBlameYou.Core
                 traitRanks = progression != null ? progression.RanksSnapshot() : new int[0],
                 relics = relicIds.ToArray(),
                 health = health.Current,
+                deathSaves = health.DeathSaves,
                 kills = RunStats.Kills,
                 damageTaken = RunStats.DamageTaken,
                 arenasCleared = RunStats.ArenasCleared,
@@ -182,6 +187,13 @@ namespace IBlameYou.Core
             foreach (var projectile in FindObjectsByType<Projectile>(FindObjectsSortMode.None)) Destroy(projectile.gameObject);
 
             yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
+
+            if (settingsDevMode.HasValue && backToMenu)
+            {
+                GameSession.DevMode = settingsDevMode.Value;
+                SaveData.SaveSettings();
+                settingsDevMode = null;
+            }
 
             if (backToMenu) ShowMenu();
             else BuildWorld(null);
