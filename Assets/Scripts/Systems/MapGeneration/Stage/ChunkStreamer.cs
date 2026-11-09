@@ -138,6 +138,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.ArrowTrap:
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, f.Y + 0.5f), f.Direction);
                         break;
+                    case FeatureKind.MovingPlatform:
+                        MovingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width, f.Direction, index * 0.37f);
+                        break;
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width);
                         break;
