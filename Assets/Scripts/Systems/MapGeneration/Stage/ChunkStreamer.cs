@@ -152,7 +152,11 @@ namespace IBlameYou.Systems
                     case FeatureKind.ElementGate:
                         int gateChunk = index;
                         IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), (Element)f.ElementIndex,
-                            openedGates.Contains(index), () => openedGates.Add(gateChunk));
+                            openedGates.Contains(index), () =>
+                            {
+                                openedGates.Add(gateChunk);
+                                IBlameYou.Core.RunStats.AddGateOpened();
+                            });
                         break;
                     case FeatureKind.Arena:
                         int arenaChunk = index;
@@ -197,6 +201,7 @@ namespace IBlameYou.Systems
         private void OnArenaCleared(int chunkIndex, bool boss)
         {
             clearedArenas.Add(chunkIndex);
+            IBlameYou.Core.RunStats.AddArenaCleared();
             if (!boss) return;
 
             bossCleared = true;
