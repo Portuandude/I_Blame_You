@@ -8,7 +8,7 @@
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
 
 - DONE (claude/project-thread-8rxr8x): HUD 체력·마나 바 귀엽게 — `UI/SkillHUD.Bars.cs` 하트·별 아이콘 + 둥근 캡슐(9분할) + 빛 테두리 + 흰 잔상(0.45초 머문 뒤 줄어듦), 체력 낮으면 하트 두근. 그림 `Tools/ArtGen/generate_hud.py` → `Resources/UI/HUD`
-- TODO: 보스 체력바 귀엽게 — `SkillHUD.Boss.cs`의 회색·보라 사각 바를 HUD 캡슐 그림(`Resources/UI/HUD`)으로, 왕관 아이콘(생성기), 흰 잔상, 큰 피해 때 바가 살짝 흔들림
+- DONE (claude/project-thread-8rxr8x): 보스 체력바 귀엽게 — 왕관 아이콘(`generate_hud.py` Crown) + 캡슐 바(보라, gold 빛) + 흰 잔상, 한 번에 5% 넘게 깎이면 0.25초 흔들림. 보스 교체·분열로 최대 체력이 바뀌면 잔상 초기화
 - TODO: 레벨·스테이지 진행 바 귀엽게 — `DrawLevelBar`·`DrawStageBar`도 캡슐 바로 (경험치 lilac, 진행도 gold), 레벨업 순간 바가 반짝 빛남, 진행도 끝에 깃발 아이콘
 - TODO: 머리 위 바·적 체력바 귀엽게 — `StatusBarsUI`(플레이어)·`EnemyHealthBar`의 단색 사각 스프라이트를 둥근 캡슐 스프라이트 + 흰 잔상으로 (월드 스프라이트라 잘라 그리기 대신 채움 스프라이트 크기 조절)
 - TODO: HUD 패널 귀엽게 — `GUI.skin.box` 기본 회색 패널을 둥근 모서리 + 진한 보라 반투명 + 크림 테두리 9분할 패널 그림으로 (상태 패널·스테이지·레벨·유물 목록·보스 바·피드 공통 `panel` 스타일)
