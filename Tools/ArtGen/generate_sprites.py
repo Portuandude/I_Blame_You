@@ -1245,6 +1245,46 @@ def reward_frames():
     return frames
 
 
+def relic_chest_frames():
+    """정예 구역 유물 상자: 금테 두른 나무 상자, 뚜껑 틈으로 금빛이 새어 나오며 가운데 보석이 맥동한다."""
+    frames = []
+    w, h = 72, 64
+    for i in range(8):
+        t = i / 8 * math.tau
+        pulse = 0.5 + 0.5 * math.sin(t)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        # 뒤쪽 금빛 후광
+        dot(d, 36 * S, 34 * S, (26 + 3 * pulse) * S, (255, 215, 110, int(40 + 50 * pulse)))
+        # 몸통
+        d.rectangle([8 * S, 30 * S, 64 * S, 60 * S], fill=OUTLINE)
+        d.rectangle([11 * S, 33 * S, 61 * S, 57 * S], fill=rgba("#8a5a32"))
+        for y in (40, 48):
+            d.line([(11 * S, y * S), (61 * S, y * S)], fill=rgba("#6e4526"), width=S)
+        # 뚜껑 (둥근 윗면)
+        d.pieslice([8 * S, 10 * S, 64 * S, 46 * S], 180, 360, fill=OUTLINE)
+        d.pieslice([11 * S, 13 * S, 61 * S, 43 * S], 180, 360, fill=rgba("#9c6a3c"))
+        # 뚜껑 틈에서 새는 빛
+        d.rectangle([11 * S, 27 * S, 61 * S, 31 * S], fill=(255, 230, 140, int(170 + 80 * pulse)))
+        # 금테
+        for x in (14, 54):
+            d.rectangle([x * S, 14 * S, (x + 4) * S, 57 * S], fill=rgba("#e8b64a"))
+        d.rectangle([11 * S, 55 * S, 61 * S, 58 * S], fill=rgba("#e8b64a"))
+        # 자물쇠 보석
+        dot(d, 36 * S, 37 * S, 7 * S, OUTLINE)
+        dot(d, 36 * S, 37 * S, 5 * S, rgba("#f2c14e"))
+        dot(d, 36 * S, 37 * S, (2.5 + 1.2 * pulse) * S, (255, 250, 220, 255))
+        # 반짝이
+        for k in range(2):
+            a = t + k * math.pi
+            x = 36 + math.cos(a) * 24
+            y = 22 + math.sin(a) * 8
+            dot(d, x * S, y * S, (1.5 + pulse) * S, (255, 245, 200, 230))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
 def rune_gate_frames():
     """봉인문 마력 벽: 흰빛 기둥에 룬 문자가 흘러내린다. 게임에서 속성 색으로 물들이므로 거의 흰색으로 그린다."""
     frames = []
@@ -1314,6 +1354,7 @@ def generate_stage_art():
         "Gate": gate_frames(),
         "Exit": exit_frames(),
         "Reward": reward_frames(),
+        "RelicChest": relic_chest_frames(),
         "RuneGate": rune_gate_frames(),
         "RuneSigil_Fire": [rune_sigil("Fire")],
         "RuneSigil_Water": [rune_sigil("Water")],
