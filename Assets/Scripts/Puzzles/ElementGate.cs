@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace IBlameYou.Puzzles
     public class ElementGate : MonoBehaviour, IElementReceiver
     {
         private const float HintCooldown = 1.5f;
+        private static readonly List<ElementGate> Active = new List<ElementGate>();
         private const float SigilHeight = 2.2f;
 
         private Element required;
@@ -18,6 +20,23 @@ namespace IBlameYou.Puzzles
         private float nextHintTime;
 
         public Element Required => required;
+
+        private void OnEnable() => Active.Add(this);
+        private void OnDisable() => Active.Remove(this);
+
+        // 벽에 닿지 않는 마법(땅 가시: 바닥에서 솟음)을 문 앞에서 썼을 때 안내한다.
+        // from에서 facing 쪽으로 range 안, 높이 차 6칸 이내에 닫힌 문이 있으면 그 문이 받은 것으로 친다.
+        public static void NotifyNearby(Vector2 from, float facing, float range, Element element)
+        {
+            foreach (var gate in Active)
+            {
+                if (gate == null || gate.opened) continue;
+                float dx = (gate.transform.position.x - from.x) * Mathf.Sign(facing);
+                if (dx < 0f || dx > range || Mathf.Abs(from.y - gate.transform.position.y) > 6f) continue;
+                gate.ReceiveElement(element);
+                return;
+            }
+        }
 
         // bottom: 문이 선 칸의 바닥 가운데 (월드). alreadyOpen이면 아무것도 만들지 않고 null.
         public static ElementGate Create(Transform parent, Vector2 bottom, Element required, bool alreadyOpen, Action onOpened)
