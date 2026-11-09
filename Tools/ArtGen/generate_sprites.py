@@ -989,7 +989,7 @@ def arcane_hit():
     return frames
 
 
-def generate_spell_fx():
+def generate_spell_fx():  # 지금은 쓰지 않음 (generate_magic_fx.py로 대체). 예전 그림을 다시 보고 싶을 때만 직접 호출
     base = os.path.join(ROOT, "Assets", "Resources", "Effects")
     sets = {
         ("Flight", "Fire"): fire_flight(),
