@@ -1,7 +1,7 @@
 # I Blame You!
 
 로그라이크 기반 2D 액션 게임. 시드로 매번 새로 만들어지는 청크식 스테이지를 지나며 패턴 파훼형 전투와 함정 지형을 결합한다.
-기획은 [Docs/GameDesignDocument.md](Docs/GameDesignDocument.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md) 참고.
+기획은 [Docs/GameDesignDocument.md](Docs/GameDesignDocument.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md) 참고. 아트 방향(팔레트·외곽선·비율)은 [Docs/ArtStyle.md](Docs/ArtStyle.md).
 
 ## 개발 환경
 
