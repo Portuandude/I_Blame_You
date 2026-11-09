@@ -10,6 +10,10 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/Star.png      24x24  마나 별
   Assets/Resources/UI/HUD/Crown.png     24x24  보스 체력바 왕관
   Assets/Resources/UI/HUD/Flag.png      22x22  스테이지 진행 바 끝 깃발
+  Assets/Resources/UI/HUD/RoomTile.png  16x16  미니맵 방 칸 (흰 둥근 사각, 코드가 물들임). 9분할 사방 5픽셀
+  Assets/Resources/UI/HUD/MapChest.png  16x16  미니맵 보물 방 상자
+  Assets/Resources/UI/HUD/MapHelmet.png 16x16  미니맵 중간보스 방 투구
+  Assets/Resources/UI/HUD/MapElite.png  16x16  미니맵 정예 방 보라 별
   Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
@@ -181,6 +185,53 @@ def panel():
     return small(img, n, n)
 
 
+def room_tile():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, n * SS - 1, n * SS - 1], radius=4.5 * SS, fill=OUTLINE)
+    d.rounded_rectangle([1 * SS, 1 * SS, (n - 1) * SS - 1, (n - 1) * SS - 1], radius=3.5 * SS, fill=(235, 235, 240, 255))
+    d.rounded_rectangle([2 * SS, 1.8 * SS, (n - 2) * SS - 1, 4.5 * SS], radius=1.5 * SS, fill=WHITE)  # 위쪽 반짝
+    return small(img, n, n)
+
+
+def map_chest():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([1 * SS, 3 * SS, 15 * SS, 14.5 * SS], radius=2 * SS, fill=OUTLINE)
+    d.rounded_rectangle([2.2 * SS, 4.2 * SS, 13.8 * SS, 13.3 * SS], radius=1.4 * SS, fill=COLORS["soil"])
+    d.rectangle([2.2 * SS, 7.2 * SS, 13.8 * SS, 8.6 * SS], fill=COLORS["gold"])   # 뚜껑 띠
+    d.rectangle([2.2 * SS, 4.2 * SS, 13.8 * SS, 5.4 * SS], fill=COLORS["sand"])   # 뚜껑 윗면
+    d.rounded_rectangle([6.6 * SS, 6.4 * SS, 9.4 * SS, 10.4 * SS], radius=0.8 * SS, fill=COLORS["gold"])  # 자물쇠
+    d.ellipse([7.5 * SS, 8 * SS, 8.5 * SS, 9 * SS], fill=OUTLINE)
+    return small(img, n, n)
+
+
+def map_helmet():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.pieslice([1 * SS, 2 * SS, 15 * SS, 20 * SS], 180, 360, fill=OUTLINE)          # 둥근 투구
+    d.rectangle([1 * SS, 10.5 * SS, 15 * SS, 14.5 * SS], fill=OUTLINE)
+    d.pieslice([2.3 * SS, 3.3 * SS, 13.7 * SS, 18.7 * SS], 180, 360, fill=(205, 210, 225, 255))
+    d.rectangle([2.3 * SS, 10.5 * SS, 13.7 * SS, 13.2 * SS], fill=(205, 210, 225, 255))
+    d.rectangle([3.5 * SS, 8 * SS, 12.5 * SS, 9.6 * SS], fill=OUTLINE)              # 눈 틈
+    d.polygon([(8 * SS, 0), (11 * SS, 3 * SS), (8 * SS, 4.5 * SS)], fill=hexrgba("ff7326"))  # 깃털
+    d.ellipse([4 * SS, 4.5 * SS, 6.5 * SS, 7 * SS], fill=WHITE)                      # 반짝
+    return small(img, n, n)
+
+
+def map_elite():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.polygon(star_points(8, 8.6, 7.8, 3.8), fill=OUTLINE)
+    d.polygon(star_points(8, 8.6, 6.2, 3.0), fill=hexrgba("bf73ff"))
+    d.ellipse([6 * SS, 5 * SS, 8 * SS, 7 * SS], fill=CREAM)
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -192,6 +243,10 @@ def generate():
         "Crown": crown(),
         "Flag": flag(),
         "Panel": panel(),
+        "RoomTile": room_tile(),
+        "MapChest": map_chest(),
+        "MapHelmet": map_helmet(),
+        "MapElite": map_elite(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
