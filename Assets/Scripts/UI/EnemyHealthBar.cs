@@ -92,12 +92,20 @@ namespace IBlameYou.UI
             fillRenderer.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha);
         }
 
+        private float topOffset = 1f; // 마지막으로 유효했던 bounds 기준 높이 (물리가 멈춘 동안 바가 튀지 않게)
+        private float xOffset;
+
         private void Follow()
         {
             // 콜라이더가 꺼졌거나 물리가 멈춘 동안(슬라임 합체 등)은 bounds가 갱신되지 않으므로 몸 위치를 쓴다.
             bool useBounds = body != null && body.enabled && (body.attachedRigidbody == null || body.attachedRigidbody.simulated);
-            float top = useBounds ? body.bounds.max.y : health.transform.position.y + 1f;
-            float x = useBounds ? body.bounds.center.x : health.transform.position.x;
+            if (useBounds)
+            {
+                topOffset = body.bounds.max.y - health.transform.position.y;
+                xOffset = body.bounds.center.x - health.transform.position.x;
+            }
+            float top = health.transform.position.y + topOffset;
+            float x = health.transform.position.x + xOffset;
             transform.position = new Vector3(x, top + Gap, 0f);
         }
 
