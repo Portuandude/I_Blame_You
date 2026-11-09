@@ -4,6 +4,7 @@
 generate_sprites.py의 Canvas(굵은 외곽선 + 3단 셀 셰이딩)로 다시 그려 모든 동작을 같은 몸으로 맞춘다.
 파일 이름·프레임 수·캔버스(300x256)·발 위치(y=193, 중앙 피벗)는 예전 그대로라 코드는 바뀌지 않는다.
 Unity에서 Tools > I Blame You > Generate Sprites And Animations 를 다시 실행하면 클립에 반영된다.
+피격 2프레임(Assets/Resources/Player/Hurt)은 런타임에 읽으므로 에디터 툴 재실행이 필요 없다.
 
     python3 Tools/ArtGen/generate_wizard.py [확인용_시트.png]
 """
@@ -18,6 +19,7 @@ from generate_sprites import OUTLINE, SS, Canvas, rgba, shade  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "Assets", "Art", "Sprites", "Characters", "Wizard")
+HURT_OUT = os.path.join(ROOT, "Assets", "Resources", "Player", "Hurt")
 W, H = 300, 256
 FOOT_X, FOOT_Y = 150, 256 - 193  # 발 = 위에서 193px
 
@@ -52,6 +54,7 @@ class Pose:
         self.flash = 0.0        # 공격 순간 수정 번쩍임 0~1
         self.tip = 0.0          # 후드 끝자락 펄럭임 (+ 위로, - 아래로)
         self.blink = False
+        self.squint = False     # 눈 질끈 (> <), 피격 프레임
         self.__dict__.update(kw)
 
 
@@ -110,7 +113,12 @@ def draw_wizard(pose):
 
     # 빛나는 노란 눈
     eye_h = 1.6 if pose.blink else 7.5
-    for ex in (face[0] - 10, face[0] + 13):
+    for side, ex in ((1, face[0] - 10), (-1, face[0] + 13)) if pose.squint else ():
+        # 눈 질끈: 왼눈 ">", 오른눈 "<" 꺾쇠
+        ey = face[1] + 2
+        c.ellipse(ex, ey, 8, 8, EYE_GLOW, outline=False, highlight=False)
+        c.polyline([(ex - 5 * side, ey + 5), (ex + 4 * side, ey), (ex - 5 * side, ey - 5)], 2.4, EYE, outline=False)
+    for ex in (face[0] - 10, face[0] + 13) if not pose.squint else ():
         if not pose.blink:
             c.ellipse(ex, face[1] + 2, 9, 10, EYE_GLOW, outline=False, highlight=False)
         c.ellipse(ex, face[1] + 2, 6.2, eye_h, EYE, outline=False, highlight=False)
@@ -234,6 +242,16 @@ def attack_poses():
                  back_hand=(-30, 34 + (4 if f > 0.5 else 0))) for s, h, l, st, f in keys]
 
 
+def hurt_poses():
+    # 맞은 순간: 뒤로 크게 젖히고 납작, 눈 질끈, 지팡이가 뒤로 기울고 빛이 꺼짐 → 반쯤 돌아옴
+    return [
+        Pose(lean=-16, stretch=0.92, bob=-1, squint=True, staff=118, staff_hand=(32, 52), back_hand=(-40, 56),
+             foot_f=(10, 3), foot_b=(-14, 0), tip=16, glow=0.15),
+        Pose(lean=-8, stretch=0.97, squint=True, staff=100, staff_hand=(36, 50), back_hand=(-36, 46),
+             foot_f=(9, 0), foot_b=(-13, 0), tip=8, glow=0.35),
+    ]
+
+
 def ghost(img, color, alpha):
     """잔상: 모양만 남기고 속성색으로 물들인 반투명 복사본."""
     a = img.getchannel("A").point(lambda v: int(v * alpha))
@@ -275,13 +293,19 @@ def generate():
         save(img, "Dash", f"wizard_dash_{i:02d}.png")
     for i, p in enumerate(attack_poses()):
         save(draw_wizard(p), "Attack", f"wizard_attack_{i:02d}.png")
+    # 피격 2프레임은 애니메이터 클립 대신 PlayerHurtPose가 런타임에 바꿔 끼우므로 Resources에 둔다 (에디터 툴 재실행 불필요)
+    for i, p in enumerate(hurt_poses()):
+        img = draw_wizard(p)
+        path = os.path.join(HURT_OUT, f"wizard_hurt_{i:02d}.png")
+        os.makedirs(HURT_OUT, exist_ok=True)
+        img.save(path)
 
 
 def contact_sheet(path):
     rows = []
     for folder, prefix in (("Idle", "wizard_idle_"), ("Walk", "wizard_walk_"), ("Run", "wizard_run_"),
-                           ("Jump", "wizard_"), ("Dash", "wizard_dash_"), ("Attack", "wizard_attack_")):
-        d = os.path.join(OUT, folder)
+                           ("Jump", "wizard_"), ("Dash", "wizard_dash_"), ("Attack", "wizard_attack_"), ("HURT", "wizard_hurt_")):
+        d = HURT_OUT if folder == "HURT" else os.path.join(OUT, folder)
         files = sorted(f for f in os.listdir(d) if f.startswith(prefix) and f.endswith(".png"))
         rows.append([Image.open(os.path.join(d, f)) for f in files])
     sheet = Image.new("RGBA", (W * 8, H * len(rows)), (70, 80, 95, 255))
