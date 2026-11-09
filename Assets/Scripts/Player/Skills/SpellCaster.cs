@@ -164,6 +164,7 @@ namespace IBlameYou.Player
             charge = EffectLibrary.CreateVisual(transform, "EarthCharge", EffectLibrary.CastFrames(Element.Earth), 10f, true,
                 new Color(0.75f, 0.55f, 0.3f, 0.5f), 0.9f, 6);
             charge.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+            charge.color = new Color(1f, 1f, 1f, 0.75f); // 머리 위를 덮지 않게 반투명
 
             yield return new WaitForSeconds(spell.Windup);
 
