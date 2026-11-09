@@ -47,6 +47,7 @@ namespace IBlameYou.Systems
                 new Color(0.95f, 0.75f, 0.3f), 0.8f, 3);
             visual.transform.localPosition = new Vector3(0f, VisualHeight, 0f);
             visual.transform.localScale = new Vector3(VisualScale, VisualScale, 1f);
+            VfxPlayer.AttachSparkle(go.transform, VisualHeight + 0.3f); // 열기 전까지 반짝임 (Take에서 상자째 사라짐)
 
             if (dropped) EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * VisualHeight, 1.4f);
             return chest;

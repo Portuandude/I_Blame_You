@@ -44,6 +44,10 @@ namespace IBlameYou.Player
         private Animator animator;
         private CombatStats combatStats;
         private bool isGrounded;
+        private bool wasGrounded = true;  // 처음 놓일 때 착지 먼지가 나지 않게
+        private float airMinVelocityY;    // 공중에서 가장 빨리 떨어진 속도 (착지 프레임에는 이미 0이라 따로 기억)
+        private const float DustFallSpeed = 6f;   // 이보다 빨리 떨어져야 착지 먼지 (작은 턱은 먼지 없음)
+        private const float DustFullSpeed = 18f;
         private bool isRunning;
         private bool jumpQueued;
         private bool isDashing;
@@ -54,6 +58,8 @@ namespace IBlameYou.Player
 
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
+        // 발밑 높이 (몸 기준). 발밑에 붙이는 효과(레벨업 빛기둥 등)가 쓴다.
+        public float FeetLocalY => groundCheck != null ? groundCheck.localPosition.y : 0f;
         public bool IsDashing => isDashing;
         public float Facing => Mathf.Sign(transform.localScale.x);
 
@@ -126,6 +132,7 @@ namespace IBlameYou.Player
         {
             isGrounded = groundCheck != null &&
                 Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+            UpdateLandingDust();
 
             bool stunned = hitStun.IsStunned;
 
@@ -140,6 +147,22 @@ namespace IBlameYou.Player
             }
 
             UpdateAnimator();
+        }
+
+        // 순간이동·낭떠러지 복귀처럼 떨어지던 중에 위치를 옮길 때: 옮긴 자리에서 착지 먼지가 나지 않게 낙하 기록을 지운다.
+        public void ResetAirborne()
+        {
+            airMinVelocityY = 0f;
+            wasGrounded = true;
+        }
+
+        private void UpdateLandingDust()
+        {
+            if (!isGrounded) airMinVelocityY = Mathf.Min(airMinVelocityY, rb.linearVelocity.y);
+            else if (!wasGrounded && airMinVelocityY < -DustFallSpeed)
+                VfxPlayer.Dust(groundCheck.position, Mathf.InverseLerp(DustFallSpeed, DustFullSpeed, -airMinVelocityY));
+            if (isGrounded) airMinVelocityY = 0f;
+            wasGrounded = isGrounded;
         }
 
         private void UpdateAnimator()

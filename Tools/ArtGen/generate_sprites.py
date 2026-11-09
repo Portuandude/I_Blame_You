@@ -118,6 +118,7 @@ SKIN = rgba("8fbf3a")
 CLOTH = rgba("7a4a2a")
 STEEL = rgba("b8c0c8")
 WOOD = rgba("8a5a2e")
+RIM = rgba("7ff6ff", 200)  # palette aqua: 테두리 빛
 
 
 class Pose:
@@ -163,17 +164,17 @@ def draw_goblin(spec, pose):
     def leg(angle, knee, color):
         knee_pt = offset(hip, angle, 11 * s)
         foot = offset(knee_pt, angle - knee, 11 * s)
-        c.limb(hip, knee_pt, 8 * s, color)
-        c.limb(knee_pt, foot, 7 * s, color)
-        c.ellipse(foot[0] + 3 * s, foot[1] + 1.5 * s, 6 * s, 3.5 * s, shade(CLOTH, 0.7), highlight=False)
+        c.limb(hip, knee_pt, 10 * s, color)  # 통통한 다리 (ArtStyle: 둥글고 통통한 실루엣)
+        c.limb(knee_pt, foot, 9 * s, color)
+        c.ellipse(foot[0] + 3 * s, foot[1] + 2 * s, 7 * s, 4 * s, shade(CLOTH, 0.7), highlight=False)
 
     def arm(upper, fore, color):
         sh = shoulder_f if color is skin else shoulder_b
         elbow = offset(sh, upper, 9 * s)
         hand = offset(elbow, fore, 9 * s)
-        c.limb(sh, elbow, 7 * s, color)
-        c.limb(elbow, hand, 6.5 * s, color)
-        c.ellipse(hand[0], hand[1], 4.5 * s, 4.5 * s, color, highlight=False)
+        c.limb(sh, elbow, 8 * s, color)
+        c.limb(elbow, hand, 7.5 * s, color)
+        c.ellipse(hand[0], hand[1], 5 * s, 5 * s, color, highlight=False)
         return hand
 
     # 대전사 망토 (몸 뒤)
@@ -198,7 +199,13 @@ def draw_goblin(spec, pose):
         torso_color = rgba("8d939c")
     elif spec.kind == "archer":
         torso_color = rgba("4f6b33")
-    c.ellipse(chest[0], chest[1] - 4 * s, 13 * s, 15 * s, torso_color)
+    # 둥근 배 (예전 13×15 → 17×16): 아래로 볼록한 통통한 몸통
+    belly = (chest[0], chest[1] - 5 * s)
+    c.ellipse(belly[0], belly[1], 17 * s, 16 * s, torso_color)
+    if spec.kind == "goblin":  # 맨몸 고블린은 밝은 배 무늬
+        c.ellipse(belly[0] + 3 * s, belly[1] - 3 * s, 9 * s, 9 * s, shade(torso_color, 1.22), outline=False, highlight=False)
+    # 테두리 빛 (ArtStyle: 오른쪽 아래 가장자리, 속성 없는 적은 aqua)
+    c.polyline(c.arc_points(belly[0], belly[1], 15.5 * s, -75, 5, 10), 1.6 * s, RIM, outline=False)
     if spec.kind == "warrior":
         c.ellipse(chest[0] + 3 * s, chest[1] + 2 * s, 7 * s, 5 * s, shade(torso_color, 1.15), highlight=False)
     c.polygon([(hip[0] - 12 * s, hip[1] + 4 * s), (hip[0] + 12 * s, hip[1] + 4 * s),
@@ -215,7 +222,8 @@ def draw_goblin(spec, pose):
     if spec.kind == "archer":
         hood = rgba("3d5a2a")
         c.ellipse(hx - 3 * s, hy + 2 * s, 23 * s, 22 * s, hood)
-    c.ellipse(hx, hy, 20 * s, 18 * s, skin)
+    c.ellipse(hx, hy, 22 * s, 20 * s, skin)  # 큰 머리 (예전 20×18)
+    c.polyline(c.arc_points(hx, hy, 19 * s, -70, 10, 10), 1.4 * s, RIM, outline=False)
     # 코
     c.ellipse(hx + 19 * s, hy - 2 * s, 6 * s, 4.5 * s, shade(skin, 0.9), highlight=False)
     # 눈
@@ -1372,8 +1380,9 @@ def generate_stage_art():
 
 
 # ---- 보스: 슬라임 킹 (Resources/Bosses/SlimeKing) ----
-def crown_sprite():
-    """슬라임 킹 머리 위에 얹는 금관 (가로 120 × 세로 70, 아래 가운데가 머리에 닿는 자리)."""
+def crown_sprite(glint=None):
+    """슬라임 킹 머리 위에 얹는 금관 (가로 120 × 세로 70, 아래 가운데가 머리에 닿는 자리).
+    glint: (x, y, 크기 0~1) — 그 자리에 4갈래 반짝임 별을 얹는다 (ArtStyle: 최대 3개, 3/5/7px 계열)."""
     w, h = 120, 70
     img = blank(w, h)
     d = ImageDraw.Draw(img)
@@ -1390,7 +1399,19 @@ def crown_sprite():
         dot(d, x * S, 12 * S, 6 * S, OUTLINE)
         dot(d, x * S, 12 * S, 4 * S, rgba("#fff2b0"))
     d.polygon([(18 * S, 36 * S), (30 * S, 46 * S), (18 * S, 48 * S)], fill=rgba("#fff2b0", 160))
-    return finish(img, w, h)
+    if glint:
+        gx, gy, k = glint
+        for r, col in ((11 * k, rgba("#ffd84d", 200)), (7 * k, rgba("#fff4d6"))):
+            x, y = gx * S, gy * S
+            rr = r * S
+            d.polygon([(x, y - rr), (x + rr * 0.22, y - rr * 0.22), (x + rr, y), (x + rr * 0.22, y + rr * 0.22),
+                       (x, y + rr), (x - rr * 0.22, y + rr * 0.22), (x - rr, y), (x - rr * 0.22, y - rr * 0.22)], fill=col)
+    return finish(img, w, h, glow_radius=2)  # 모든 프레임 같은 빛 (빛이 깜빡이지 않게)
+
+
+# 왕관 반짝임 순서: 왼쪽 보석 → 왼쪽 뾰족 → 가운데 보석 → 오른쪽 뾰족 → 오른쪽 보석, 사이사이 빈 프레임
+CROWN_GLINTS = [None, (32, 52, 0.6), (32, 52, 1.0), (44, 14, 0.7), None, (60, 52, 1.0), (60, 52, 0.6),
+                (76, 14, 0.7), None, (88, 52, 1.0), (88, 52, 0.6), None]
 
 
 def shadow_sprite():
@@ -1408,7 +1429,7 @@ def shadow_sprite():
 
 def generate_boss_art():
     base = os.path.join(ROOT, "Assets", "Resources", "Bosses", "SlimeKing")
-    sets = {"Crown": [crown_sprite()], "Shadow": [shadow_sprite()]}
+    sets = {"Crown": [crown_sprite(g) for g in CROWN_GLINTS], "Shadow": [shadow_sprite()]}
     for name, frames in sets.items():
         folder = os.path.join(base, name)
         os.makedirs(folder, exist_ok=True)

@@ -81,6 +81,8 @@ namespace IBlameYou.Systems
             rb.linearVelocity = Vector2.zero;
             rb.position = safePoint;
             transform.position = safePoint;
+            var movement = GetComponent<PlayerMovement>();
+            if (movement != null) movement.ResetAirborne();
             health.Invulnerable = true;
             grantedInvulnerability = true;
             invulnerableUntil = Time.time + InvulnerableTime;

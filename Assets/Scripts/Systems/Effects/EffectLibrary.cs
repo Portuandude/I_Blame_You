@@ -68,12 +68,12 @@ namespace IBlameYou.Systems
 
         // 제자리에서 한 번 재생하고 사라지는 이펙트 (순간이동 연기, 베기 등).
         public static void PlayOneShot(Vector3 position, Sprite[] frames, float fps, Color fallbackColor, float fallbackSize,
-            bool flipX = false, float scale = 1f)
+            bool flipX = false, float scale = 1f, int sortingOrder = 6)
         {
             var root = new GameObject("OneShotEffect");
             root.transform.position = position;
             root.transform.localScale = new Vector3(flipX ? -scale : scale, scale, 1f);
-            CreateVisual(root.transform, "Visual", frames, fps, false, fallbackColor, fallbackSize, 6, destroyAtEnd: true);
+            CreateVisual(root.transform, "Visual", frames, fps, false, fallbackColor, fallbackSize, sortingOrder, destroyAtEnd: true);
             Object.Destroy(root, frames != null && frames.Length > 0 ? frames.Length / fps + 0.05f : 0.45f);
         }
 
