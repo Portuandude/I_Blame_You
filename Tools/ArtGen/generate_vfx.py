@@ -11,6 +11,8 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/ChestOpen/00~11         유물 상자 열기: 뚜껑이 튀어 올라 별로 터지고 gold 빛기둥 + 별 (120x240,
                                                    상자 그림(72x64) 가운데가 캔버스 가운데보다 48px 아래 — VfxPlayer.ChestOpen)
   Assets/Resources/Effects/Shockwave/00~07         무거운 착지 충격파: 납작한 고리 두 겹 + 흙먼지 + 별 (192x64, 아래에서 16px이 바닥)
+  Assets/Resources/Effects/HeartOrb/00~07          회복 구슬 반복: 통통한 berry 하트 + aqua 마나 고리 (80x80)
+  Assets/Resources/Effects/HeartPop/00~07          회복 구슬 주울 때: 하트·별이 위로 톡톡 튐 (128x128)
   Assets/Resources/Effects/RelicBanner/00          유물 이름 띠 (360x80, 가운데에 글자가 올라간다)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
@@ -326,9 +328,79 @@ def shockwave_frames():
     return frames
 
 
+BERRY_DARK = (200, 60, 120, 255)
+
+
+def chubby_heart(fx, x, y, r, fill, rim=None, light=False):
+    """통통한 하트: 원 두 개를 크게 겹치고 아래 꼭짓점을 둥글게."""
+    if rim is not None:
+        chubby_heart(fx, x, y, r + 2.2, rim, light=light)
+    fx.circle(x - r * 0.48, y - r * 0.18, r * 0.62, fill, light)
+    fx.circle(x + r * 0.48, y - r * 0.18, r * 0.62, fill, light)
+    fx.poly([(x - r * 1.08, y - r * 0.02), (x + r * 1.08, y - r * 0.02), (x + r * 0.25, y + r * 0.82),
+             (x, y + r * 0.95), (x - r * 0.25, y + r * 0.82)], fill, light)
+
+
+def heart_orb_frames():
+    """회복 구슬: 통통한 berry 하트가 두근거리고(크기 ±6%), aqua 마나 고리를 반짝이 3개가 돈다. 8프레임 반복."""
+    frames = []
+    w = h = 80
+    cx, cy = w / 2, h / 2
+    for i in range(8):
+        t = i / 8
+        beat = 1 + 0.06 * math.sin(2 * math.pi * t * 2)  # 한 바퀴에 두 번 두근
+        fx = Fx(w, h)
+        fx.ring(cx, cy, 24, 8, alpha(BERRY, 70 + 30 * math.sin(2 * math.pi * t)), light=True)
+        # 마나 고리 뒤쪽 절반 (하트 뒤)
+        fx.arc(cx, cy + 2, 27, 180, 360, 2.5, alpha(AQUA, 200))
+        r = 15 * beat
+        chubby_heart(fx, cx, cy - 1, r, BERRY, rim=BERRY_DARK)
+        fx.circle(cx - r * 0.5, cy - r * 0.45, r * 0.26, alpha(CREAM, 240))
+        fx.circle(cx - r * 0.18, cy - r * 0.62, r * 0.1, CREAM)
+        fx.ellipse(cx + r * 0.4, cy + r * 0.3, r * 0.22, r * 0.12, alpha(CREAM, 90))  # 볼 같은 반사
+        # 마나 고리 앞쪽 절반 (하트 앞)
+        fx.arc(cx, cy + 2, 27, 0, 180, 2.5, alpha(AQUA, 230))
+        for k in range(3):
+            a = 2 * math.pi * (t + k / 3)
+            x, y = cx + math.cos(a) * 27, cy + 2 + math.sin(a) * 27
+            fx.circle(x, y, 4, alpha(AQUA, 180), light=True)
+            fx.star(x, y, 5.5, CREAM)
+        frames.append(fx.finish(glow=3))
+    return frames
+
+
+def heart_pop_frames():
+    """회복 구슬 주울 때: 가운데 번쩍 + 고리, 하트 4개·aqua 별 4개가 위쪽으로 톡톡 튀었다 사라진다. 8프레임."""
+    frames = []
+    w = h = 128
+    cx, cy = w / 2, h / 2 + 10
+    bits = [(-0.5 * math.pi + d, k) for k, d in enumerate((-1.1, -0.6, -0.2, 0.2, 0.6, 1.1, -1.5, 1.5))]
+    for i in range(8):
+        t = i / 7
+        fx = Fx(w, h)
+        if t < 0.45:
+            q = t / 0.45
+            if q < 0.35:
+                fx.circle(cx, cy, 16 * (1 - q), alpha(CREAM, 230 * (1 - q / 0.35)))
+            fx.ring(cx, cy, 10 + 30 * q, 4 * (1 - q) + 1, alpha(BERRY, 240 * (1 - q)))
+        for ang, k in bits:
+            dist = (34 + 8 * (k % 3)) * (1 - (1 - t) ** 2)
+            x = cx + math.cos(ang) * dist
+            y = cy + math.sin(ang) * dist + 14 * t * t
+            a = 255 * (1 - max(0.0, t - 0.55) / 0.45)
+            if k % 2 == 0:
+                chubby_heart(fx, x, y, 6 * (1 - 0.3 * t), alpha(BERRY, a), rim=alpha(BERRY_DARK, a))
+            else:
+                fx.star(x, y, 9 * (1 - 0.3 * t), alpha(AQUA, a * 0.6), light=True)
+                fx.star(x, y, 6 * (1 - 0.3 * t), alpha(CREAM, a))
+        frames.append(fx.finish(glow=3))
+    return frames
+
+
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
         "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames,
-        "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames}
+        "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames,
+        "HeartOrb": heart_orb_frames, "HeartPop": heart_pop_frames}
 
 
 def generate():
