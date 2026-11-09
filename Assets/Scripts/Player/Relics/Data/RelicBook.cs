@@ -14,7 +14,10 @@ namespace IBlameYou.Player
         WrathCharm,  // 분노의 부적: 주는 피해 +12%
         LifeSeed,    // 생명의 씨앗: 최대 체력 +20
         SpringRing,  // 샘물 반지: 마나 재생 +25%
-        HawkEye      // 매의 눈: 치명타 확률 +8%
+        HawkEye,     // 매의 눈: 치명타 확률 +8%
+        Featherfall, // 깃털 부적: 낭떠러지 낙하 피해 15% → 5%
+        VampireFang, // 흡혈 송곳니: 적 처치 시 체력 +3
+        FocusBead    // 집중 구슬: 실패로 날린 마나 25% 돌려받기 (신비 10과 합산)
     }
 
     public static class RelicBook
@@ -29,11 +32,14 @@ namespace IBlameYou.Player
         public const float LifeSeedHealth = 20f;
         public const float SpringRingRegen = 0.25f;
         public const float HawkEyeCrit = 0.08f;
+        public const float FeatherfallDamageRatio = 0.05f;
+        public const float VampireFangHeal = 3f;
+        public const float FocusBeadRefund = 0.25f;
 
         public static readonly RelicId[] All =
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
-            RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye
+            RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead
         };
 
         public static string Name(RelicId id)
@@ -46,7 +52,10 @@ namespace IBlameYou.Player
                 case RelicId.WrathCharm: return "분노의 부적";
                 case RelicId.LifeSeed: return "생명의 씨앗";
                 case RelicId.SpringRing: return "샘물 반지";
-                default: return "매의 눈";
+                case RelicId.HawkEye: return "매의 눈";
+                case RelicId.Featherfall: return "깃털 부적";
+                case RelicId.VampireFang: return "흡혈 송곳니";
+                default: return "집중 구슬";
             }
         }
 
@@ -60,7 +69,10 @@ namespace IBlameYou.Player
                 case RelicId.WrathCharm: return $"주는 피해 +{WrathCharmDamage * 100f:0}%";
                 case RelicId.LifeSeed: return $"최대 체력 +{LifeSeedHealth:0}";
                 case RelicId.SpringRing: return $"마나 재생 +{SpringRingRegen * 100f:0}%";
-                default: return $"치명타 확률 +{HawkEyeCrit * 100f:0}%";
+                case RelicId.HawkEye: return $"치명타 확률 +{HawkEyeCrit * 100f:0}%";
+                case RelicId.Featherfall: return $"낭떠러지 낙하 피해 15% → {FeatherfallDamageRatio * 100f:0}%";
+                case RelicId.VampireFang: return $"적 처치 시 체력 +{VampireFangHeal:0}";
+                default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
 
@@ -70,9 +82,11 @@ namespace IBlameYou.Player
             switch (id)
             {
                 case RelicId.IronCloak:
-                case RelicId.SwiftBoots: return "A";
+                case RelicId.SwiftBoots:
+                case RelicId.Featherfall: return "A";
                 case RelicId.WrathCharm:
-                case RelicId.HawkEye: return "B";
+                case RelicId.HawkEye:
+                case RelicId.VampireFang: return "B";
                 default: return "공용";
             }
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IBlameYou.Enemies;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -14,6 +15,20 @@ namespace IBlameYou.Player
         public event Action<RelicId> Added;
 
         public bool Has(RelicId id) => owned.Contains(id);
+
+        private bool listeningKills;
+
+        private void OnDestroy()
+        {
+            if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
+        }
+
+        // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
+        private void OnEnemyKilled(EnemyController enemy, float xp)
+        {
+            var health = GetComponent<HealthSystem>();
+            if (health != null && !health.IsDead) health.Heal(RelicBook.VampireFangHeal);
+        }
 
         // 플레이어 프리팹이 이 컴포넌트가 생기기 전에 구워졌어도 동작하도록, 없으면 붙여서 돌려준다.
         public static PlayerRelics For(GameObject player)
@@ -60,6 +75,20 @@ namespace IBlameYou.Player
                     break;
                 case RelicId.HawkEye:
                     if (stats != null) stats.Stats.critChance = Mathf.Min(1f, stats.Stats.critChance + RelicBook.HawkEyeCrit);
+                    break;
+                case RelicId.Featherfall:
+                    var fall = GetComponent<FallRecovery>();
+                    if (fall != null) fall.DamageRatio = Mathf.Min(fall.DamageRatio, RelicBook.FeatherfallDamageRatio);
+                    break;
+                case RelicId.VampireFang:
+                    if (!listeningKills)
+                    {
+                        EnemyController.Killed += OnEnemyKilled;
+                        listeningKills = true;
+                    }
+                    break;
+                case RelicId.FocusBead:
+                    if (mana != null) mana.WastedRefundRatio = Mathf.Min(1f, mana.WastedRefundRatio + RelicBook.FocusBeadRefund);
                     break;
             }
         }
