@@ -60,7 +60,7 @@ namespace IBlameYou.Systems
             if (movement == null) return;
 
             bool grounded = movement.IsGrounded;
-            if (!grounded && body != null) fallSpeed = Mathf.Max(fallSpeed, -body.linearVelocity.y);
+            if (!grounded && body != null) fallSpeed = -body.linearVelocity.y; // 공중 마지막 프레임 속도 (낙하 복구 순간이동은 0으로 만든다)
             if (grounded && !wasGrounded)
             {
                 if (fallSpeed >= LandingSpeed) PlayAtFeet(EffectLibrary.LoadRuntimeFrames("Effects/Fx/Dust"), 18f, 1f);
@@ -85,7 +85,9 @@ namespace IBlameYou.Systems
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = bodyRenderer.sprite;
             renderer.flipX = bodyRenderer.flipX;
-            renderer.sortingOrder = bodyRenderer.sortingOrder - 1;
+            renderer.sortingLayerID = bodyRenderer.sortingLayerID;
+            renderer.sortingOrder = bodyRenderer.sortingOrder; // 지형(0)보다 앞, 몸과 같은 순서에서 z로 뒤에
+            go.transform.position += new Vector3(0f, 0f, 0.01f);
             renderer.color = AfterimageColor;
             StartCoroutine(FadeOut(renderer, AfterimageLife));
         }
