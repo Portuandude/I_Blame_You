@@ -41,12 +41,15 @@ namespace IBlameYou.UI
             if (streamer == null || !streamer.IsRoomMode) return;
             // B가 영창을 치는 중에는 글자 입력과 겹치지 않게 무시한다
             if (control != null && control.AKeyboardBlocked) return;
+            // 일시정지 중에는 새로 펼치지 않는다 (펼친 지도는 닫을 수 있게 둔다)
+            if (Time.timeScale == 0f && !expanded) return;
             if (Input.GetKeyDown(KeyCode.BackQuote)) expanded = !expanded;
         }
 
         private void OnGUI()
         {
-            if (streamer == null || !streamer.IsRoomMode || Time.timeScale == 0f && !expanded) return;
+            // 일시정지 창 위에 지도를 덮지 않는다
+            if (streamer == null || !streamer.IsRoomMode || Time.timeScale == 0f) return;
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
 
@@ -83,7 +86,7 @@ namespace IBlameYou.UI
             float link = Mathf.Max(3f, cell * 0.22f);
             float pad = Mathf.Max(2f, cell * 0.14f);
 
-            // 통로 (각 방의 오른쪽·위 문만 그려 두 번 그리지 않는다)
+            // 통로 (각 방의 오른쪽·위 문만 그려 두 번 그리지 않는다. 왼쪽·아래 이웃이 영역 밖이면 그 문도 그린다)
             foreach (var room in layout.Rooms)
             {
                 if (!Inside(room.X, room.Y, left, top, area, cell)) continue;
@@ -92,6 +95,10 @@ namespace IBlameYou.UI
                     Fill(new Rect(r.xMax - pad, r.center.y - link / 2f, pad * 2f, link), Link);
                 if ((room.Doors & DoorDir.Up) != 0)
                     Fill(new Rect(r.center.x - link / 2f, r.y - pad, link, pad * 2f), Link);
+                if ((room.Doors & DoorDir.Left) != 0 && !Inside(room.X - 1, room.Y, left, top, area, cell))
+                    Fill(new Rect(r.x, r.center.y - link / 2f, pad, link), Link);
+                if ((room.Doors & DoorDir.Down) != 0 && !Inside(room.X, room.Y - 1, left, top, area, cell))
+                    Fill(new Rect(r.center.x - link / 2f, r.yMax - pad, link, pad), Link);
             }
 
             foreach (var room in layout.Rooms)
