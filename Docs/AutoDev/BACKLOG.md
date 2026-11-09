@@ -12,7 +12,7 @@
 - DONE (claude/project-thread-5ne2al, TerrainDresser): 지형 타일 — 바닥·벽·발판·낭떠러지 끝을 새 팔레트로 다시 그리고 풀·꽃·버섯 장식을 무작위로 얹기 (외부 타일셋 의존 줄이기)
 - DONE (claude/project-thread-5ne2al, pixelfx 저장소 실행이 세션에서 막혀 같은 방식(색·빛 두 층)을 파이썬으로 구현. 방어막·순간이동·평타 그림은 남음 → 시각 효과 묶음에서): 마법 이펙트 — 불/물/바람/땅/무 공격 스킬과 방어막, 순간이동, 평타에 발사·비행·적중 3단계 이펙트 (pixelfx), 적중 시 화면 살짝 번쩍임
 - DONE (claude/project-thread-5ne2al + claude/project-thread-qoeoof: 슬라임 큰 눈·볼터치 `decorate_slime.py`, 투구 쓴 불·물 슬라임 기사 `Resources/Enemies/SlimeKnight*`, 고블린 4종 큰 눈·볼터치·통통한 몸(굵은 팔다리, 둥근 배, 큰 머리, aqua 테두리 빛), 슬라임 킹 왕관 반짝임 12프레임): 몬스터 스프라이트 — 슬라임(투구 쓴 버전 포함), 어미 슬라임, 고블린 4종, 슬라임 킹을 귀엽고 화려한 톤으로 다시 그림 (Idle/Run/Attack/Die 프레임 수 유지)
-- TODO: 플레이어 스프라이트 — 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임을 Idle 그림 톤에 맞춰 생성 (기존 BLOCKED 항목 대체, Idle도 새로 그려 교체)
+- DONE (claude/project-thread-qoeoof, `Tools/ArtGen/generate_wizard.py`, 예전 Idle은 Trash): 플레이어 스프라이트 — 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임을 Idle 그림 톤에 맞춰 생성 (기존 BLOCKED 항목 대체, Idle도 새로 그려 교체)
 - TODO: 시각 효과 묶음 — 착지 먼지, 대쉬 잔상, 레벨업 빛기둥, 유물 상자 반짝임, 적 사망 시 별·하트 파편, 피격 숫자 폰트 정리
 - TODO: 스테이지 구조 전환 (방 격자형) — 외길 청크 스테이지를 던그리드·세피리아·아이작처럼 **방들이 격자로 이어진 맵**으로 바꾼다. 먼저 `Docs/LevelDesign.md`에 설계(방 종류: 시작/전투/정예/퍼즐/휴식/보물/중간보스/보스, 방 크기 규격과 문 위치, 시드 생성 규칙, 막다른 방 보상, 클리어 전 문 잠금)를 쓰고 구현한다. 예전 방 생성 코드(`RoomGenerator`/`RoomManager`/`RoomDoor`, PR #1 이전 develop 기록)를 참고. 기존 청크(봉인문, 움직이는 발판 등)는 방 안 구성 요소로 재사용. 생성 규칙은 EditMode 테스트로 고정
 - TODO: 세로 플레이 비중 늘리기 — 세로로 긴 방(위로 올라가는 탑, 아래로 떨어지는 굴), 위/아래 문, 여러 층 발판·사다리·벽 점프 지점, 높이 차를 쓰는 전투 배치. 방 생성에서 세로 방 비율을 정해 테스트로 고정
