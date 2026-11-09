@@ -81,6 +81,7 @@ def face(image, mode):
     return out
 
 
+KNIGHT_PAD = 28  # 투구·깃털이 위로 나가므로 캔버스를 사방 이만큼 넓힌다 (SlimeKnightSpawner.ArtPadding과 같아야 함)
 KNIGHTS = {"SlimeKnightFire": (0.04, "fire"), "SlimeKnightWater": (0.58, "water")}  # 몸 색조(0~1), 깃털 속성
 
 
@@ -105,7 +106,7 @@ def helmet(image, plume_element):
     w, h = right - left, bottom - top
     if h < 18:
         return image
-    pad = 12
+    pad = KNIGHT_PAD
     big = Image.new("RGBA", ((image.width + pad * 2) * SS, (image.height + pad * 2) * SS), (0, 0, 0, 0))
     big.paste(image.resize((image.width * SS, image.height * SS), Image.NEAREST), (pad * SS, pad * SS))
     d = ImageDraw.Draw(big)
@@ -156,8 +157,8 @@ def generate_knights():
                 if anim != "Die" or i <= 2:
                     image = helmet(image, plume)
                 else:  # 녹아내리는 프레임은 투구 없이, 크기만 맞춘다
-                    padded = Image.new("RGBA", (image.width + 24, image.height + 24))
-                    padded.paste(image, (12, 12))
+                    padded = Image.new("RGBA", (image.width + KNIGHT_PAD * 2, image.height + KNIGHT_PAD * 2))
+                    padded.paste(image, (KNIGHT_PAD, KNIGHT_PAD))
                     image = padded
                 image.save(os.path.join(folder, os.path.basename(path)))
                 frames.append(image)
@@ -200,9 +201,9 @@ if __name__ == "__main__":
     knights = generate_knights()
     if len(sys.argv) > 1:
         preview(out, sys.argv[1])
-        strip = Image.new("RGBA", (140 * 9, 120 * 2), COLORS["dusk"])
+        strip = Image.new("RGBA", (180 * 9, 130 * 2), COLORS["dusk"])
         for r, frames in enumerate(knights.values()):
             for c, f in enumerate(frames[::4][:9]):
-                strip.alpha_composite(f, (c * 140, r * 120 + 120 - f.height))
+                strip.alpha_composite(f, (c * 180, r * 130 + 130 - f.height))
         strip.save(sys.argv[1].replace(".png", "_knights.png"))
     print("done")
