@@ -63,7 +63,7 @@ namespace IBlameYou.Systems
             float bottom = origin.y + floorY;
             float height = RoomShaper.DoorHeight;
             Add(curtains, sprite, new Vector2(x, bottom + height / 2f), new Vector2(1f, height), CurtainOrder);
-            Add(frames, sprite, new Vector2(x, bottom + height - 0.1f), new Vector2(1.6f, 0.2f), FrameOrder); // 문틀 윗면
+            Add(frames, sprite, new Vector2(x, bottom + height - 0.1f), new Vector2(1f, 0.2f), FrameOrder); // 문틀 윗면 (방 경계 밖으로 나가지 않게 벽 한 칸 폭)
         }
 
         private void Add(List<SpriteRenderer> list, Sprite sprite, Vector2 center, Vector2 size, int order)
