@@ -6,12 +6,13 @@ namespace IBlameYou.Systems
 {
     // 마인크래프트처럼 플레이어 주변 청크만 씬에 만들어 두고, 멀어진 청크는 치운다.
     // 청크 데이터(StageData)는 시드로 미리 다 만들어져 있어서, 다시 다가가면 같은 지형이 그대로 다시 생긴다.
-    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트, 연 봉인문, 보스 돌파 여부.
+    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상과 유물 상자, 켠 체크포인트, 연 봉인문, 보스 돌파 여부.
     public class ChunkStreamer : MonoBehaviour, IEnemyGroup
     {
         public const int LoadRadius = 2;   // 플레이어가 있는 청크 좌우로 몇 청크까지 만들어 둘지
         public const int UnloadRadius = 3; // 이보다 멀어지면 치운다 (경계에서 만들고 치우기를 반복하지 않게 한 칸 여유)
         private const float SweepInterval = 0.5f;
+        private const float RelicChestOffset = 3f; // 유물 상자는 회복 구슬에서 왼쪽으로 이만큼
         public const float SpawnLift = 1.2f; // 서 있는 칸 바닥에서 이만큼 띄워 만들고 떨어뜨린다 (몸이 땅에 박히지 않게)
 
         private struct TrackedEnemy
@@ -26,6 +27,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> killed = new HashSet<int>();
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
+        private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
         private readonly HashSet<int> activatedCheckpoints = new HashSet<int>();
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
@@ -173,16 +175,24 @@ namespace IBlameYou.Systems
                     case FeatureKind.Arena:
                         int arenaChunk = index;
                         bool boss = chunk.Kind == ChunkKind.Boss;
+                        bool elite = chunk.Kind == ChunkKind.EliteArena;
                         var arenaRoot = root;
                         var rewardPosition = new Vector2(ox + f.X + f.Width / 2f, f.Y);
+                        var relicPosition = rewardPosition + Vector2.left * RelicChestOffset; // 구역 가운데 발판(7~11, 20~24칸) 사이 바닥
                         ArenaZone.Create(root, ox + f.X, ox + f.X + f.Width, f.Y, arenaSpawns, clearedArenas.Contains(index), spawnEnemy,
                             () =>
                             {
                                 OnArenaCleared(arenaChunk, boss);
-                                if (!boss && arenaRoot != null) SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
+                                if (boss || arenaRoot == null) return;
+                                SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
+                                if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
-                        if (!boss && clearedArenas.Contains(index)) SpawnReward(root, index, rewardPosition, false);
+                        if (!boss && clearedArenas.Contains(index))
+                        {
+                            SpawnReward(root, index, rewardPosition, false);
+                            if (elite) SpawnRelicChest(root, index, relicPosition, false);
+                        }
                         break;
                     case FeatureKind.Enemy:
                         if (!f.Deferred) SpawnTracked(index, ox, f);
@@ -226,6 +236,13 @@ namespace IBlameYou.Systems
         {
             if (collectedRewards.Contains(chunkIndex)) return;
             ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
+        }
+
+        // 정예 구역 유물 상자. 이미 유물을 골랐으면 만들지 않는다.
+        private void SpawnRelicChest(Transform root, int chunkIndex, Vector2 position, bool dropped)
+        {
+            if (takenRelics.Contains(chunkIndex)) return;
+            RelicChest.Create(root, position, stage.Seed, chunkIndex, dropped, () => takenRelics.Add(chunkIndex));
         }
 
         private void Unload(int index)

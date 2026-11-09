@@ -16,6 +16,7 @@ namespace IBlameYou.UI
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내 (사망 연출: SkillHUD.Death.cs)
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
     // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs), Esc: 일시정지 메뉴 (SkillHUD.Pause.cs)
+    // - 정예 구역 유물 상자: 유물 고르기 창 (SkillHUD.Relics.cs)
     public partial class SkillHUD : MonoBehaviour
     {
         private const int MaxFeed = 7;
@@ -95,6 +96,7 @@ namespace IBlameYou.UI
             RunStats.Reset();
             EnemyController.Killed += OnEnemyKilled;
             health.Damaged += OnPlayerDamaged;
+            InitializeRelics();
         }
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
@@ -122,8 +124,9 @@ namespace IBlameYou.UI
                 progression.LeveledUp -= OnLeveledUp;
                 progression.TraitRaised -= OnTraitRaised;
             }
+            ShutdownRelics();
             if (paused) SaveData.SaveSettings(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || deathSlowMotion) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || deathSlowMotion) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -143,6 +146,7 @@ namespace IBlameYou.UI
             if (stageCleared || deathHandled) return;
             CloseTraitWindow();
             ClosePauseMenu();
+            CloseRelicWindow();
             stageCleared = true;
             RunStats.Ended = true;
             clearTime = Time.time - runStartTime;
@@ -191,6 +195,7 @@ namespace IBlameYou.UI
             {
                 CloseTraitWindow();
                 ClosePauseMenu();
+                CloseRelicWindow();
                 deathHandled = true;
                 RunStats.Ended = true;
                 control.Locked = true;
@@ -199,6 +204,7 @@ namespace IBlameYou.UI
 
             UpdateDeathSequence();
 
+            UpdateRelicWindowInput();
             UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
             UpdateTraitWindowInput();
 
@@ -237,6 +243,7 @@ namespace IBlameYou.UI
             DrawChantInput();
             DrawHelp();
             DrawTraitWindow();
+            DrawRelicWindow();
             DrawPauseMenu();
             DrawDeathFade();
             if (deathHandled) DrawGameOver();
