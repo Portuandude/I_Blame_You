@@ -74,6 +74,79 @@ namespace IBlameYou.Systems
             return true;
         }
 
+        // 방 격자형 스테이지의 방 하나 검사 (Docs/LevelDesign.md). 방은 앞뒤로 오갈 수 있어야 한다:
+        // 1) 모든 도착 칸(문을 지나 들어왔을 때 서는 칸)에서 모든 출발 칸(문으로 나가려고 서는 칸)까지 길이 있어야 하고,
+        // 2) 도착 칸에서 갈 수 있는 모든 칸에서 적어도 한 출발 칸으로 다시 갈 수 있어야 한다 (갇히는 칸 금지).
+        public static bool ValidateRoom(ChunkData chunk, IList<(int x, int y)> arrivals, IList<(int x, int y)> exits, out string reason)
+        {
+            var support = BuildSupport(chunk);
+            foreach (var spot in arrivals)
+                if (!Standable(chunk, support, spot.x, spot.y)) { reason = $"도착 칸({spot.x},{spot.y})에 설 수 없음"; return false; }
+            foreach (var spot in exits)
+                if (!Standable(chunk, support, spot.x, spot.y)) { reason = $"출발 칸({spot.x},{spot.y})에 설 수 없음"; return false; }
+
+            var edges = BuildEdges(chunk, support);
+            var reverse = Reverse(edges);
+            var canLeave = new bool[W * H];
+            foreach (var exit in exits)
+            {
+                var toExit = Search(Id(exit.x, exit.y), reverse);
+                for (int i = 0; i < canLeave.Length; i++) canLeave[i] |= toExit[i];
+            }
+
+            foreach (var arrival in arrivals)
+            {
+                var reachable = Search(Id(arrival.x, arrival.y), edges);
+                foreach (var exit in exits)
+                {
+                    if (!reachable[Id(exit.x, exit.y)])
+                    {
+                        reason = $"({arrival.x},{arrival.y})에서 ({exit.x},{exit.y})로 가는 길이 없음";
+                        return false;
+                    }
+                }
+
+                for (int i = 0; i < reachable.Length; i++)
+                {
+                    if (reachable[i] && !canLeave[i]) { reason = $"갇히는 칸 ({i / H},{i % H})"; return false; }
+                }
+            }
+
+            reason = null;
+            return true;
+        }
+
+        private static List<int>[] BuildEdges(ChunkData chunk, bool[,] support)
+        {
+            var edges = new List<int>[W * H];
+            for (int x = 0; x < W; x++)
+            {
+                for (int y = 0; y < H; y++)
+                {
+                    if (!Standable(chunk, support, x, y)) continue;
+                    edges[Id(x, y)] = Neighbors(chunk, support, x, y);
+                }
+            }
+
+            return edges;
+        }
+
+        private static List<int>[] Reverse(List<int>[] edges)
+        {
+            var reverse = new List<int>[W * H];
+            for (int from = 0; from < edges.Length; from++)
+            {
+                if (edges[from] == null) continue;
+                foreach (int to in edges[from])
+                {
+                    if (reverse[to] == null) reverse[to] = new List<int>();
+                    reverse[to].Add(from);
+                }
+            }
+
+            return reverse;
+        }
+
         private static int Id(int x, int y) => x * H + y;
 
         // 발을 디딜 수 있는 칸: 땅, 발판, 무너지는 발판, 움직이는 발판이 지나는 칸 전부 (기다리면 언젠가 온다).
