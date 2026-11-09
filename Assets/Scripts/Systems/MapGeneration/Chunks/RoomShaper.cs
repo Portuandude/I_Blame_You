@@ -34,9 +34,23 @@ namespace IBlameYou.Systems
         public const int MidBossFireX = 9;
         public const int MidBossWaterX = 22;
 
+        // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
+        public enum ShaftStyle { Zigzag, TwinStairs, Shelves }
+
         public static RoomGeometry Build(int seed, RoomData room)
         {
-            var geometry = room.IsVertical ? BuildShaft(seed, room) : BuildHorizontal(seed, room);
+            RoomGeometry geometry;
+            if (room.IsVertical)
+            {
+                var style = PickShaftStyle(seed, room);
+                geometry = BuildShaft(seed, room, style);
+                if (!geometry.Valid && style != ShaftStyle.Zigzag) geometry = BuildShaft(seed, room, ShaftStyle.Zigzag);
+            }
+            else
+            {
+                geometry = BuildHorizontal(seed, room);
+            }
+
             if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
             return geometry;
         }
@@ -80,7 +94,15 @@ namespace IBlameYou.Systems
 
         // ------------------------------------------------------------------ 세로 방 (탑·굴)
 
-        private static RoomGeometry BuildShaft(int seed, RoomData room)
+        // 위 문이 있는 방만 발판이 있다. 시작 쪽(진행도 15% 전)은 익숙한 지그재그만.
+        public static ShaftStyle PickShaftStyle(int seed, RoomData room)
+        {
+            if ((room.Doors & DoorDir.Up) == 0 || room.Difficulty < 0.15f) return ShaftStyle.Zigzag;
+            var rng = new Random(unchecked(seed * 31 + room.Index * 7919 + 11)); // 지형 난수열과 따로 (지그재그 방 모양이 그대로 남게)
+            return (ShaftStyle)rng.Next(3);
+        }
+
+        internal static RoomGeometry BuildShaft(int seed, RoomData room, ShaftStyle style)
         {
             var rng = new Random(unchecked(seed * 486187739 + room.Index * 16777619 + 7));
             int g = ShaftGround;
@@ -107,7 +129,12 @@ namespace IBlameYou.Systems
             WallWithDoor(chunk, 0, (room.Doors & DoorDir.Left) != 0, g);
             WallWithDoor(chunk, W - 1, (room.Doors & DoorDir.Right) != 0, g);
 
-            if (up) AddStairs(chunk, g, rng);
+            if (up)
+            {
+                if (style == ShaftStyle.TwinStairs) AddTwinStairs(chunk, g);
+                else AddStairs(chunk, g, rng);
+                if (style == ShaftStyle.Shelves) AddShelves(chunk, room, rng);
+            }
 
             var geometry = new RoomGeometry { Chunk = chunk };
             if ((room.Doors & DoorDir.Left) != 0) geometry.Arrivals[DoorDir.Left] = geometry.Exits[DoorDir.Left] = (0, g);
@@ -138,6 +165,46 @@ namespace IBlameYou.Systems
                 else chunk.SetRow(16, 21, row, StageTile.Platform);
                 left = !left;
             }
+        }
+
+        // 양 갈래 계단: 양쪽 벽 가까이(3~7, 24~28)와 안쪽(9~12, 19~22)을 2칸마다 번갈아 두어 왼쪽·오른쪽 어느 길로도 오른다.
+        // 맨 위 판(구멍 아래 13~17)은 안쪽 판에서 한 칸 옆으로 뛰어 닿는다.
+        private static void AddTwinStairs(ChunkData chunk, int g)
+        {
+            bool inner = true; // 맨 위 판 바로 아래 줄은 안쪽
+            for (int row = TopPlatformRow; row > g; row -= 2)
+            {
+                if (row == TopPlatformRow)
+                {
+                    chunk.SetRow(HoleX0 - 1, HoleX1 + 1, row, StageTile.Platform);
+                    continue;
+                }
+
+                if (inner)
+                {
+                    chunk.SetRow(9, 12, row, StageTile.Platform);
+                    chunk.SetRow(19, 22, row, StageTile.Platform);
+                }
+                else
+                {
+                    chunk.SetRow(3, 7, row, StageTile.Platform);
+                    chunk.SetRow(24, 28, row, StageTile.Platform);
+                }
+                inner = !inner;
+            }
+        }
+
+        // 옆 선반: 지그재그 계단 옆 벽 쪽에 선반 두 개(5~8, 23~26). 이동 방이면 높은 선반 하나에 고블린 궁수가 선다.
+        public const int ShelfRowLow = 11;
+        public const int ShelfRowHigh = 15;
+
+        private static void AddShelves(ChunkData chunk, RoomData room, Random rng)
+        {
+            bool leftHigh = rng.Next(2) == 0;
+            chunk.SetRow(5, 8, leftHigh ? ShelfRowHigh : ShelfRowLow, StageTile.Platform);
+            chunk.SetRow(23, 26, leftHigh ? ShelfRowLow : ShelfRowHigh, StageTile.Platform);
+            if (room.Kind == RoomKind.Travel && room.Difficulty >= 0.35f)
+                chunk.AddEnemy(StageEnemy.GoblinArcher, leftHigh ? 6 : 25, ShelfRowHigh + 1);
         }
 
         // 세로 방의 쫄몹: 구멍과 문에서 떨어진 바닥에 1~3마리.
