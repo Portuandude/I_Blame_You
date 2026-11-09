@@ -112,6 +112,7 @@ namespace IBlameYou.Systems
             gates.Clear();
             UnlockCamera();
             StageEvents.PostNotice("구역 돌파!");
+            VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
         }
 
