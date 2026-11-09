@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./Trash/**)",
+      "Read(./Library/**)",
+      "Read(./Temp/**)",
+      "Read(./Logs/**)"
+    ]
+  }
+}

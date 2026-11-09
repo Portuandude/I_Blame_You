@@ -11,8 +11,20 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 
 ## 0. 준비
 
-1. `git fetch origin` 후 `CLAUDE.md`, `README.md`, `Docs/GameDesignDocument.md`, `Docs/AutoDev/README.md`, `Docs/AutoDev/BACKLOG.md`, `Docs/AutoDev/LOG.md`의 최근 3개 기록을 읽는다.
+1. `git fetch origin` 후 `Docs/AutoDev/HANDOFF.md`, `Docs/AutoDev/README.md`, `Docs/AutoDev/BACKLOG.md`, `Docs/AutoDev/CODEMAP.md`, `Docs/AutoDev/LOG.md`의 **맨 위 기록 하나**만 읽는다 (`CLAUDE.md`는 세션이 자동으로 읽는다).
+   `HANDOFF.md`가 "없음"이 아니면 거기 적힌 "바로 다음 할 일"부터 한다 (`handoff` 스킬의 받는 절차).
 2. `master` 브랜치는 절대 건드리지 않는다. release/hotfix 브랜치도 만들지 않는다.
+
+## 토큰 절약 규칙 (2026-11-09 사람 지시)
+
+- **탐색 범위 제한**: 저장소를 넓게 훑지 않는다. `CODEMAP.md`에서 작업에 해당하는 줄의 파일로 바로 가고, 모르는 것은 `grep -rn`으로 찾는다.
+  `README.md`·`Docs/GameDesignDocument.md`는 통째로 읽지 않고, 고칠 부분만 `grep -n`으로 찾아 그 근처만 읽는다. 300줄 넘는 파일도 같은 방식.
+  `Trash/`, 생성된 PNG, `.meta`/`.prefab`/`.unity`, `*_ARCHIVE.md`는 필요할 때만 (CODEMAP "읽지 않는 곳").
+- **리뷰 에이전트**: 작업당 적대적 리뷰 1회 + 수정 확인 1회가 기본. 리뷰어에게는 diff 범위(`git diff A..B`)와 확인할 점만 넘기고 "diff에 나온 파일과 직접 호출하는 곳만 읽어라"라고 적는다.
+  문서·그림만 바뀐 작업은 리뷰를 건너뛴다. 수정 확인은 새 에이전트 대신 같은 리뷰어에게 메시지로 이어서 맡긴다.
+- **반복 작업은 스킬로**: 로컬 테스트 `editmode-tests`, 새 파일 .meta `unity-meta`, 긴 세션 넘기기 `handoff`, 검증 `review-loop`. 같은 손작업을 세 번째 하게 되면 `Tools/Dev/` 스크립트 + `.claude/skills/` 스킬로 만들고 이 목록에 더한다.
+- **긴 세션은 넘긴다**: 컨텍스트 요약이 한 번 일어났거나 작업을 6개 넘게 끝냈으면 `handoff` 스킬대로 `HANDOFF.md`를 쓰고 실행을 끝낸다.
+- **파일을 짧게**: `BACKLOG.md`의 `DONE` 항목은 `BACKLOG_ARCHIVE.md` 맨 위로, `LOG.md`는 최근 3개만 두고 나머지는 `LOG_ARCHIVE.md` 맨 위로 옮긴다 (실행 끝에).
 
 ## 1. 이전 실행 정리 (새 작업보다 먼저)
 
@@ -38,7 +50,8 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 1. **고르기**: `BACKLOG.md`의 `TODO` 중 맨 위 항목. `BLOCKED`나 "사람 필요"가 붙은 항목은 건너뛴다.
 2. **계획**: 파일 3개 이상을 건드리는 작업이면 `planner` 에이전트로 계획을 받는다. 작으면 바로 구현.
 3. **구현**: 기존 구조를 따른다 (스포너 코드가 단일 출처, 프리팹은 직접 수정하지 않음, 에디터 툴은 `Scripts/Editor`).
-   - 새 `.cs` 파일이나 폴더를 `Assets/` 아래 만들면 반드시 `.meta` 파일도 만든다. GUID는 `python3 -c "import uuid;print(uuid.uuid4().hex)"`로 새로 생성한다.
+   - 새 `.cs` 파일이나 폴더를 `Assets/` 아래 만들면 반드시 `.meta` 파일도 만든다: `python3 Tools/Dev/unity_meta.py add <경로>` (`unity-meta` 스킬). 커밋 전 `check`.
+   - 스테이지 생성·공식·유물 코드를 고쳤으면 `bash Tools/Dev/run_editmode_tests.sh`로 로컬 테스트 (`editmode-tests` 스킬).
    - 이 환경에는 Unity가 없다. 컴파일은 CI가 확인하므로, 커밋 전에 using/네임스페이스/타입 이름/메서드 시그니처를 직접 grep으로 대조한다.
    - 서드파티 타일셋(`Assets/2D Platformer Tileset/`)은 저장소에 없으므로 그 파일에 의존하는 코드를 새로 만들지 않는다.
 4. **검증**: `adversarial-reviewer` 에이전트에 목표, diff, 근거를 넘겨 판정을 받는다 (`review-loop` 스킬 절차). `REQUEST_CHANGES`면 고치고 다시 받는다. 최대 3회.
@@ -57,7 +70,7 @@ description: 자동 개발 1회 실행. 백로그에서 작업을 골라 구현�
 
 ## 4. 기록
 
-`Docs/AutoDev/LOG.md` 맨 위에 이번 실행을 추가하고 커밋, 푸시한다:
+`Docs/AutoDev/LOG.md` 맨 위에 이번 실행을 추가하고, 끝난 백로그·오래된 기록을 보관 파일로 옮긴 뒤 커밋, 푸시한다:
 
 ```
 ## YYYY-MM-DD HH:MM UTC
