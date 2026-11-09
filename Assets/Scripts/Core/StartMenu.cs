@@ -11,6 +11,8 @@ namespace IBlameYou.Core
     public class StartMenu : MonoBehaviour
     {
         private Action onStart;
+        private Action onContinue;
+        private RunSave.Data saved; // 이어 할 수 있는 런 (없으면 null)
         private bool devMode;
         private float musicVolume;
         private float sfxVolume;
@@ -19,9 +21,11 @@ namespace IBlameYou.Core
         private GUIStyle button;
         private GUIStyle toggle;
 
-        public void Initialize(Action startCallback)
+        public void Initialize(Action startCallback, Action continueCallback = null)
         {
             onStart = startCallback;
+            onContinue = continueCallback;
+            saved = continueCallback != null ? RunSave.Load() : null;
             SaveData.LoadSettings();
             devMode = GameSession.DevMode;
             musicVolume = GameAudio.MusicVolume;
@@ -65,7 +69,23 @@ namespace IBlameYou.Core
             GUILayout.Label(RecordLine(devMode), body);
             GUILayout.FlexibleSpace();
 
-            if (GUILayout.Button("로컬 테스트 시작", button, GUILayout.Height(48f)))
+            if (saved != null)
+            {
+                string mode = saved.devMode ? "개발자 모드" : "일반 모드";
+                if (GUILayout.Button($"이어하기 — 진행도 {saved.progress * 100f:0}% · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
+                        button, GUILayout.Height(44f)))
+                {
+                    SaveData.SaveSettings(); // 볼륨은 남기고, 모드는 저장된 런을 따른다 (PlaytestBootstrap.ContinueWorld)
+                    GameSession.Started = true;
+                    var callback = onContinue;
+                    Destroy(this);
+                    callback?.Invoke();
+                }
+
+                GUILayout.Space(4f);
+            }
+
+            if (GUILayout.Button(saved != null ? "새로 시작 (이어하던 런은 지워짐)" : "로컬 테스트 시작", button, GUILayout.Height(48f)))
             {
                 GameSession.DevMode = devMode;
                 SaveData.SaveSettings();
