@@ -22,19 +22,19 @@ namespace IBlameYou.Systems
             return root;
         }
 
-        // 전투/휴식/동굴처럼 성격이 다른 청크는 뒤 배경 색을 달리해서 멀리서도 알아보게 한다.
+        // 전투/휴식/동굴처럼 성격이 다른 청크는 시차 배경(ParallaxBackground) 위에 반투명 색을 덮어 멀리서도 알아보게 한다.
         private static void BuildBackground(ChunkData chunk, Transform root)
         {
             Color? tint = null;
             switch (chunk.Kind)
             {
-                case ChunkKind.Arena: tint = new Color(0.24f, 0.13f, 0.16f); break;
-                case ChunkKind.EliteArena: tint = new Color(0.3f, 0.16f, 0.12f); break;
-                case ChunkKind.Boss: tint = new Color(0.34f, 0.09f, 0.09f); break;
-                case ChunkKind.Rest: tint = new Color(0.11f, 0.2f, 0.25f); break;
-                case ChunkKind.ElementGate: tint = new Color(0.17f, 0.12f, 0.24f); break;
-                case ChunkKind.MovingBridge: tint = new Color(0.12f, 0.17f, 0.24f); break;
-                case ChunkKind.Cave: tint = new Color(0.08f, 0.08f, 0.11f); break;
+                case ChunkKind.Arena: tint = new Color(0.55f, 0.12f, 0.2f, 0.28f); break;
+                case ChunkKind.EliteArena: tint = new Color(0.7f, 0.25f, 0.1f, 0.32f); break;
+                case ChunkKind.Boss: tint = new Color(0.6f, 0.06f, 0.08f, 0.4f); break;
+                case ChunkKind.Rest: tint = new Color(0.2f, 0.6f, 0.65f, 0.22f); break;
+                case ChunkKind.ElementGate: tint = new Color(0.5f, 0.3f, 0.8f, 0.25f); break;
+                case ChunkKind.MovingBridge: tint = new Color(0.2f, 0.4f, 0.8f, 0.18f); break;
+                case ChunkKind.Cave: tint = new Color(0.06f, 0.05f, 0.09f, 0.88f); break; // 동굴은 배경을 거의 가린다
             }
 
             if (!tint.HasValue) return;
