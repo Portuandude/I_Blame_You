@@ -14,6 +14,7 @@ namespace IBlameYou.Systems
         public int[] openedGates = new int[0];          // 연 봉인문
         public int[] gateStepChunks = new int[0];       // 두 속성 봉인문: 청크 번호
         public int[] gateStepValues = new int[0];       //   그 청크에서 이미 맞힌 속성 수
+        public int[] visitedRooms = new int[0];         // 방 격자 모드: 가 본 방 (미니맵)
         public bool bossCleared;
     }
 }

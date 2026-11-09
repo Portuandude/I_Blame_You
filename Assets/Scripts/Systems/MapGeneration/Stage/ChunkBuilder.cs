@@ -12,9 +12,15 @@ namespace IBlameYou.Systems
 
         public static Transform Build(ChunkData chunk, Transform parent, Sprite groundTile)
         {
+            return Build(chunk, parent, groundTile, new Vector2(chunk.Index * ChunkData.Width, 0f));
+        }
+
+        // origin: 청크 왼쪽 아래의 월드 위치 (방 격자 모드에서는 방마다 다르다).
+        public static Transform Build(ChunkData chunk, Transform parent, Sprite groundTile, Vector2 origin)
+        {
             var root = new GameObject($"Chunk_{chunk.Index:00}_{chunk.Kind}").transform;
             root.SetParent(parent, false);
-            root.position = new Vector3(chunk.Index * ChunkData.Width, 0f, 0f);
+            root.position = new Vector3(origin.x, origin.y, 0f);
 
             // 새 팔레트 지형 그림이 있으면 그것을 쓰고 외부 타일(groundTile)은 쓰지 않는다.
             var terrain = TerrainDresser.Load();

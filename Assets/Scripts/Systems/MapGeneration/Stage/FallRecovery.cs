@@ -8,7 +8,9 @@ namespace IBlameYou.Systems
     [RequireComponent(typeof(PlayerMovement))]
     public class FallRecovery : MonoBehaviour
     {
-        public const float KillY = -3f;
+        public const float KillY = -3f;    // 지금 바닥(FloorY)에서 이만큼 아래로 떨어지면 복귀
+        // 지금 스테이지(방)의 바닥 월드 높이. 외길 모드는 0, 방 격자 모드는 ChunkStreamer가 방을 옮길 때마다 바꾼다.
+        public static float FloorY;
         public const float DefaultDamageRatio = 0.15f;
         private const float RecordInterval = 0.2f;
         private const float HazardRadius = 1.6f;
@@ -47,7 +49,7 @@ namespace IBlameYou.Systems
 
             if (health.IsDead) return;
 
-            if (transform.position.y < KillY)
+            if (transform.position.y < FloorY + KillY)
             {
                 Recover();
                 return;
