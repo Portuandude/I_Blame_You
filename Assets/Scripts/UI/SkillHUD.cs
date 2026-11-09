@@ -138,7 +138,7 @@ namespace IBlameYou.UI
                 progression.TraitRaised -= OnTraitRaised;
             }
             ShutdownRelics();
-            if (paused) SaveData.SaveSettings(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
+            if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
             if (traitWindowOpen || paused || relicWindowOpen || deathSlowMotion) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }

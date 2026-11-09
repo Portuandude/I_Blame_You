@@ -37,7 +37,7 @@ namespace IBlameYou.UI
             if (!paused) return;
             paused = false;
             Time.timeScale = 1f;
-            SaveData.SaveSettings();
+            SaveData.SaveVolume();
             if (!deathHandled && !stageCleared) control.Locked = false;
         }
 
@@ -81,7 +81,7 @@ namespace IBlameYou.UI
                 restart?.Invoke(true);
             }
 
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 300f, rect.width - 20f, 44f),
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 298f, rect.width - 20f, 50f),
                 "볼륨은 저장된다. 진행은 마지막으로 켠 체크포인트까지 저장되어 시작 화면에서 이어 할 수 있다 (다시 시작하면 지워짐)",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
