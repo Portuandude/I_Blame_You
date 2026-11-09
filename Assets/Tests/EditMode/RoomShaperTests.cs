@@ -67,6 +67,22 @@ namespace IBlameYou.Tests
             }
         }
 
+        // 검증기: 한쪽 발판은 위에서 뚫고 내려갈 수 없다. 벽에서 벽까지 꽉 찬 발판 위에 서면 바닥으로 못 내려간다.
+        [Test]
+        public void ValidatorDoesNotDropThroughPlatforms()
+        {
+            var chunk = new ChunkData();
+            for (int x = 0; x < ChunkData.Width; x++) chunk.FillColumn(x, 5);
+            chunk.FillColumn(0, ChunkData.Height);
+            chunk.FillColumn(ChunkData.Width - 1, ChunkData.Height);
+            chunk.SetRow(1, ChunkData.Width - 2, 9, StageTile.Platform);
+
+            var onPlatform = new System.Collections.Generic.List<(int x, int y)> { (5, 10) };
+            var floor = new System.Collections.Generic.List<(int x, int y)> { (5, 5) };
+            Assert.IsFalse(StageValidator.ValidateRoom(chunk, onPlatform, floor, out _), "발판 위에서 바닥으로 내려가면 안 됨");
+            Assert.IsTrue(StageValidator.ValidateRoom(chunk, floor, floor, out string reason), reason);
+        }
+
         // 세로 방 적은 구멍 위에 서지 않는다.
         [Test]
         public void ShaftEnemiesStandOnFloor()
