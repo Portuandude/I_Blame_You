@@ -10,14 +10,14 @@ namespace IBlameYou.Systems
         private const float DustFootBelowCenter = 0.22f;   // 96x56 캔버스, 발밑 = 아래에서 6px
         private const float PillarFootBelowCenter = 0.6f;  // 120x240 캔버스, 발밑 = 위에서 180px
 
-        // 착지 먼지. strength 0~1 (떨어진 속도)로 크기를 정한다. 정렬 0 = 땅과 같은 층, 캐릭터(1) 뒤.
+        // 착지 먼지. strength 0~1 (떨어진 속도)로 크기를 정한다.
         public static void Dust(Vector3 feet, float strength)
         {
             var frames = EffectLibrary.LoadRuntimeFrames("Effects/Dust");
             if (frames == null) return;
             float scale = Mathf.Lerp(0.7f, 1.2f, Mathf.Clamp01(strength));
             EffectLibrary.PlayOneShot(feet + Vector3.up * (DustFootBelowCenter * scale), frames, 18f, Color.clear, 0f,
-                false, scale, sortingOrder: 0);
+                false, scale, sortingOrder: -1); // 땅 그림(-3 이하) 위, 발판·캐릭터(0 이상) 뒤
         }
 
         // 레벨업 빛기둥. 플레이어를 따라다니도록 자식으로 붙인다 (그림이 좌우 대칭이라 방향 뒤집힘은 상관없다).
