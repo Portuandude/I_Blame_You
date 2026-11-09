@@ -48,7 +48,7 @@ namespace IBlameYou.Player
             float vy = body.linearVelocity.y;
             if (!grounded) airMinVelocityY = Mathf.Min(airMinVelocityY, vy);
 
-            if (wasGrounded && !grounded && vy > JumpMinRise && !movement.IsDashing)
+            if (wasGrounded && !grounded && vy > JumpMinRise && !movement.IsDashing && !(remaining > 0f && amount > 0f))
             {
                 Begin(JumpStretch, JumpTime);
             }
@@ -60,6 +60,13 @@ namespace IBlameYou.Player
             if (grounded) airMinVelocityY = 0f;
             wasGrounded = grounded;
             Apply();
+        }
+
+        // 순간이동·낭떠러지 복귀·방 이동처럼 위치를 바로 옮길 때 낙하 기록을 지운다 (PlayerMovement.ResetAirborne이 부른다).
+        public void ResetAirborne()
+        {
+            airMinVelocityY = 0f;
+            wasGrounded = true;
         }
 
         private void Begin(float strength, float time)

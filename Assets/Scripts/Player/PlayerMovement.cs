@@ -154,6 +154,8 @@ namespace IBlameYou.Player
         {
             airMinVelocityY = 0f;
             wasGrounded = true;
+            var squash = GetComponent<PlayerSquash>();
+            if (squash != null) squash.ResetAirborne(); // 옮긴 자리에서 가짜 착지 찌그러짐이 나지 않게
         }
 
         private void UpdateLandingDust()
