@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 시각 효과 묶음 (Tools/ArtGen/generate_vfx.py → Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle}).
+    // 시각 효과 묶음 (Tools/ArtGen/generate_vfx.py → Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle,CheckpointPillar,ClearBurst}).
     // 그림이 없으면 아무것도 띄우지 않는다 (원형 대체 그림은 발밑·상자 위에서 어색하다).
     public static class VfxPlayer
     {
@@ -45,6 +45,31 @@ namespace IBlameYou.Systems
             if (frames == null || parent == null) return;
             var visual = EffectLibrary.CreateVisual(parent, "Sparkle", frames, 10f, true, Color.clear, 0f, 4);
             visual.transform.localPosition = new Vector3(0f, height, 0f);
+        }
+
+        // 체크포인트를 켤 때: 수정 발밑에서 aqua 빛기둥이 솟고 큰 반짝임 3개가 떠오른다 (그림은 레벨업 기둥과 같은 틀).
+        public static void CheckpointPillar(Vector3 feet)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/CheckpointPillar");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(feet + Vector3.up * (PillarFootBelowCenter * 1.3f), frames, 12f, Color.clear, 0f,
+                false, 1.3f, sortingOrder: 2); // 수정(1) 앞, 기둥이 수정보다 조금 크게
+        }
+
+        // 전투 구역을 깼을 때 구역 가운데에서 별·하트가 크게 터진다.
+        public static void ClearBurst(Vector3 center)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/ClearBurst");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(center, frames, 14f, Color.clear, 0f, false, 1.6f, sortingOrder: 8);
+        }
+
+        // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
+        public static void AimGlint(Vector3 position)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/Sparkle");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(position, frames, 16f, Color.clear, 0f, false, 0.45f, sortingOrder: 7);
         }
     }
 }

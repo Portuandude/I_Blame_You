@@ -34,6 +34,7 @@ namespace IBlameYou.Player
             PlayerRelics.For(go); // 유물 컴포넌트가 생기기 전에 구운 프리팹이어도 유물을 가질 수 있게
             if (go.GetComponent<DashAfterimage>() == null) go.AddComponent<DashAfterimage>(); // 잔상이 생기기 전에 구운 프리팹 대비
             if (go.GetComponent<PlayerSquash>() == null) go.AddComponent<PlayerSquash>();
+            if (go.GetComponent<PlayerHurtPose>() == null) go.AddComponent<PlayerHurtPose>(); // 피격 그림 2장 (Resources/Player/Hurt)
 
             // 상태 바는 플레이어 자식이 아니라 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 붙인다.
             var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();

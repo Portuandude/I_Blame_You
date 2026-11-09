@@ -6,6 +6,7 @@ namespace IBlameYou.Systems
     // 방 격자 모드: 방의 문 자리를 빛으로 표시해 출구가 한눈에 보이게 한다 (Docs/LevelDesign.md).
     // 좌우 문: 문 구멍을 채우는 옅은 빛 커튼 + 위쪽 문틀 띠. 위/아래 문: 구멍 가장자리를 따라 빛 띠.
     // 평소엔 aqua로 천천히 숨 쉬듯 깜빡이고, 이 방의 전투 구역이 잠겨 있는 동안은 붉게 바뀐다 (ArenaZone.IsLocked).
+    // 잠김이 풀리는 순간(구역 돌파) 흰빛으로 한 번 번쩍였다가 aqua로 돌아온다.
     public class RoomDoorMarkers : MonoBehaviour
     {
         private const int CurtainOrder = -5; // 배경(-25 이하)보다 앞, 지형(-10)보다 앞, 캐릭터(1)보다 뒤
@@ -17,7 +18,11 @@ namespace IBlameYou.Systems
 
         private readonly List<SpriteRenderer> curtains = new List<SpriteRenderer>();
         private readonly List<SpriteRenderer> frames = new List<SpriteRenderer>();
+        private const float UnlockFlashTime = 0.45f;
+
         private ArenaZone[] arenas;
+        private bool wasLocked;
+        private float flashUntil = -1f;
 
         // root: 방 지형 루트 (방을 치우면 함께 사라진다). origin: 방 왼쪽 아래 월드 좌표. geometry: 문 자리.
         public static RoomDoorMarkers Create(Transform root, Vector2 origin, RoomData room, RoomGeometry geometry)
@@ -86,10 +91,24 @@ namespace IBlameYou.Systems
             if (arenas != null)
                 foreach (var arena in arenas) if (arena != null && arena.IsLocked) { locked = true; break; }
 
+            if (wasLocked && !locked) flashUntil = Time.time + UnlockFlashTime;
+            wasLocked = locked;
+
             var color = locked ? Locked : Open;
             float pulse = 0.75f + 0.25f * Mathf.Sin(Time.time * (locked ? 6f : 2.5f)); // 잠기면 빠르게 깜빡임
-            foreach (var r in curtains) r.color = new Color(color.r, color.g, color.b, CurtainAlpha * pulse);
-            foreach (var r in frames) r.color = new Color(color.r, color.g, color.b, FrameAlpha * pulse);
+            float curtainAlpha = CurtainAlpha * pulse;
+            float frameAlpha = FrameAlpha * pulse;
+            if (Time.time < flashUntil)
+            {
+                // 번쩍임: 처음엔 거의 흰빛·진하게, 끝에 원래 aqua로
+                float k = (flashUntil - Time.time) / UnlockFlashTime; // 1 → 0
+                color = Color.Lerp(color, Color.white, 0.8f * k);
+                curtainAlpha = Mathf.Lerp(curtainAlpha, 0.75f, k);
+                frameAlpha = Mathf.Lerp(frameAlpha, 1f, k);
+            }
+
+            foreach (var r in curtains) r.color = new Color(color.r, color.g, color.b, curtainAlpha);
+            foreach (var r in frames) r.color = new Color(color.r, color.g, color.b, frameAlpha);
         }
     }
 }

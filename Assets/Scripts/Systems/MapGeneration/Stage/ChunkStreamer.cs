@@ -252,6 +252,10 @@ namespace IBlameYou.Systems
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width);
                         break;
+                    case FeatureKind.Reward:
+                        // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
+                        SpawnReward(root, index, new Vector2(ox + f.X + 0.5f, oy + f.Y), false);
+                        break;
                     case FeatureKind.Checkpoint:
                         int checkpointChunk = index;
                         var checkpointPoint = new Vector3(ox + f.X + 0.5f, oy + f.Y + SpawnLift, 0f);

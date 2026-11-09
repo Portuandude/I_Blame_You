@@ -69,6 +69,8 @@ namespace IBlameYou.Enemies
                 drawing = true;
                 moveDirection = 0f;
                 phaseTimeRemaining = DrawTime;
+                EnemySquash.For(gameObject).Windup(DrawTime); // 시위를 당기며 웅크림
+                VfxPlayer.AimGlint(ArrowOrigin()); // 화살 끝 반짝 (곧 쏜다는 예고)
                 if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             }
         }
@@ -82,6 +84,7 @@ namespace IBlameYou.Enemies
 
         protected override void OnDied()
         {
+            if (drawing) EnemySquash.For(gameObject).Cancel();
             drawing = recovering = false;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }
@@ -101,6 +104,7 @@ namespace IBlameYou.Enemies
             {
                 drawing = false;
                 Release(target);
+                EnemySquash.For(gameObject).Release(); // 쏘는 순간 늘어남
                 recovering = true;
                 phaseTimeRemaining = RecoverTime;
             }
@@ -110,9 +114,11 @@ namespace IBlameYou.Enemies
             }
         }
 
+        private Vector2 ArrowOrigin() => (Vector2)transform.position + new Vector2(facing * 0.4f, arrowHeight);
+
         private void Release(Transform target)
         {
-            Vector2 origin = (Vector2)transform.position + new Vector2(facing * 0.4f, arrowHeight);
+            Vector2 origin = ArrowOrigin();
             Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
             var direction = aimAt - origin;
             if (direction.sqrMagnitude < 0.01f) direction = Vector2.right * facing;
@@ -126,6 +132,7 @@ namespace IBlameYou.Enemies
 
         private void EndShot()
         {
+            if (drawing) EnemySquash.For(gameObject).Cancel(); // 당기다 끊기면 바로 펴기
             drawing = recovering = false;
             nextShotTime = Time.time + Stats.AttackInterval;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);

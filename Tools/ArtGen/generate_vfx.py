@@ -6,6 +6,8 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/LevelUp/00~09   레벨업 빛기둥 (120x240, 아래쪽 1/4 지점이 발밑)
   Assets/Resources/Effects/DeathPop/00~07  적 사망 별·하트 파편 (128x128)
   Assets/Resources/Effects/Sparkle/00~05   유물 상자 반짝임 반복 (96x96)
+  Assets/Resources/Effects/CheckpointPillar/00~09  체크포인트 켤 때 aqua 빛기둥 + 큰 반짝임 3개 (120x240, 아래쪽 1/4 지점이 수정 발밑)
+  Assets/Resources/Effects/ClearBurst/00~09        전투 구역 돌파 축하: 별·하트가 크게 터짐 (192x192)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
 """
@@ -62,13 +64,14 @@ def dust_frames():
     return frames
 
 
-def levelup_frames():
+def levelup_frames(color=GOLD, stars=None):
     """금빛 기둥이 솟았다가 가늘어지며 사라지고, 별이 위로 떠오른다. 10프레임."""
     frames = []
     w, h = 120, 240
     foot = h * 0.75
     rng = random.Random(7)
-    stars = [(rng.uniform(-40, 40), rng.uniform(0, 1), rng.choice((5, 7, 9))) for _ in range(9)]
+    if stars is None:
+        stars = [(rng.uniform(-40, 40), rng.uniform(0, 1), rng.choice((5, 7, 9))) for _ in range(9)]
     for i in range(10):
         t = i / 9
         fx = Fx(w, h)
@@ -77,17 +80,17 @@ def levelup_frames():
         width = 26 * (1.2 - 0.7 * t)
         top = foot - (h * 0.72) * grow
         fx.poly([(w / 2 - width, foot), (w / 2 + width, foot), (w / 2 + width * 0.5, top), (w / 2 - width * 0.5, top)],
-                alpha(GOLD, 140), light=True)
+                alpha(color, 140), light=True)
         fx.poly([(w / 2 - width * 0.45, foot), (w / 2 + width * 0.45, foot), (w / 2 + width * 0.2, top), (w / 2 - width * 0.2, top)],
                 alpha(CREAM, 230))
         # 발밑 고리
-        fx.ellipse(w / 2, foot, 34 + 18 * t, 8 + 3 * t, alpha(GOLD, 220), light=True)
+        fx.ellipse(w / 2, foot, 34 + 18 * t, 8 + 3 * t, alpha(color, 220), light=True)
         fx.ellipse(w / 2, foot, 24 + 18 * t, 4 + 2 * t, alpha(CREAM, 220))
         for sx, phase, r in stars:
             p = (t * 1.3 + phase) % 1.0
             y = foot - p * h * 0.7
             a = 255 * math.sin(math.pi * p)
-            fx.star(w / 2 + sx, y, r, alpha(GOLD, a), light=True)
+            fx.star(w / 2 + sx, y, r, alpha(color, a), light=True)
             fx.star(w / 2 + sx, y, r * 0.6, alpha(CREAM, a))
         frames.append(faded(fx.finish(glow=4), fade))
     return frames
@@ -146,7 +149,49 @@ def sparkle_frames():
     return frames
 
 
-SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames}
+def checkpoint_frames():
+    """체크포인트를 켤 때: aqua 기둥 + 큰 반짝임 3개가 엇갈려 떠오른다 (레벨업 기둥과 같은 모양, 색만 다름)."""
+    return levelup_frames(AQUA, stars=[(-26, 0.0, 11), (24, 0.33, 9), (-4, 0.66, 12)])
+
+
+def clearburst_frames():
+    """전투 구역 돌파: 가운데에서 큰 고리 두 겹 + 별·하트 14개가 크게 퍼져 반짝이다 사라진다. 10프레임."""
+    frames = []
+    w, h = 192, 192
+    cx, cy = w / 2, h / 2
+    rng = random.Random(23)
+    bits = []
+    for k in range(14):
+        ang = 2 * math.pi * k / 14 + rng.uniform(-0.2, 0.2)
+        bits.append((ang, rng.uniform(56, 84), "heart" if k % 3 == 1 else "star", (GOLD, AQUA, BERRY, CREAM)[k % 4],
+                     rng.uniform(0, 1)))
+    for i in range(10):
+        t = i / 9
+        fx = Fx(w, h)
+        if t < 0.5:
+            q = t / 0.5
+            fx.ring(cx, cy, 14 + 80 * q, 8 * (1 - q) + 1, alpha(GOLD, 220 * (1 - q)))
+            fx.ring(cx, cy, 8 + 56 * q, 5 * (1 - q) + 1, alpha(AQUA, 230 * (1 - q)))
+            fx.circle(cx, cy, 22 * (1 - q), alpha(CREAM, 220), light=True)
+        for ang, dist, kind, col, phase in bits:
+            d = dist * (1 - (1 - t) ** 2.2)
+            x = cx + math.cos(ang) * d
+            y = cy - math.sin(ang) * d + 10 * t * t
+            twinkle = 0.75 + 0.25 * math.sin(2 * math.pi * (t * 2 + phase))
+            size = 9 * (1.0 - 0.35 * t) * twinkle
+            if kind == "heart":
+                heart(fx, x, y, size + 3, alpha(col, 130), light=True)
+                heart(fx, x, y, size + 1, alpha(col, 255))
+            else:
+                fx.star(x, y, size + 5, alpha(col, 130), light=True)
+                fx.star(x, y, size + 2, alpha(col, 255))
+                fx.circle(x, y, 1.8, alpha(CREAM, 255))
+        frames.append(faded(fx.finish(glow=4), 1.0 if t < 0.55 else 1 - (t - 0.55) / 0.5))
+    return frames
+
+
+SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
+        "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames}
 
 
 def generate():
