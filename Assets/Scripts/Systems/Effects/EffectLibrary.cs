@@ -37,10 +37,12 @@ namespace IBlameYou.Systems
             }
         }
 
-        public static Sprite[] ShieldFrames => Config != null ? NullIfEmpty(Config.shieldFrames) : null;
-        public static Sprite[] TeleportFrames => Config != null ? NullIfEmpty(Config.teleportFrames) : null;
+        // 방어막·순간이동·베기는 Resources/Effects 아래 새 그림(Tools/ArtGen/generate_skill_fx.py)을 먼저 쓰고, 없으면 LevelArtConfig의 옛 프레임.
+        // 크기·프레임 수·중심 피벗·100px=1유닛이 옛 프레임과 같아서 재생 속도와 크기는 그대로다.
+        public static Sprite[] ShieldFrames => LoadRuntimeFrames("Effects/Shield") ?? (Config != null ? NullIfEmpty(Config.shieldFrames) : null);
+        public static Sprite[] TeleportFrames => LoadRuntimeFrames("Effects/Teleport") ?? (Config != null ? NullIfEmpty(Config.teleportFrames) : null);
         public static Sprite[] ArrowFrames => Config != null ? NullIfEmpty(Config.arrowFrames) : null;
-        public static Sprite[] SlashFrames => Config != null ? NullIfEmpty(Config.slashFrames) : null;
+        public static Sprite[] SlashFrames => LoadRuntimeFrames("Effects/Slash") ?? (Config != null ? NullIfEmpty(Config.slashFrames) : null);
 
         // frames가 있으면 프레임 애니메이션을, 없으면 원형 스프라이트에 색을 입혀 보여준다.
         public static SpriteRenderer CreateVisual(Transform parent, string name, Sprite[] frames, float fps, bool loop,

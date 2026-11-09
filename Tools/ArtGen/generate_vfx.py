@@ -8,6 +8,10 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/Sparkle/00~05   유물 상자 반짝임 반복 (96x96)
   Assets/Resources/Effects/CheckpointPillar/00~09  체크포인트 켤 때 aqua 빛기둥 + 큰 반짝임 3개 (120x240, 아래쪽 1/4 지점이 수정 발밑)
   Assets/Resources/Effects/ClearBurst/00~09        전투 구역 돌파 축하: 별·하트가 크게 터짐 (192x192)
+  Assets/Resources/Effects/ChestOpen/00~11         유물 상자 열기: 뚜껑이 튀어 올라 별로 터지고 gold 빛기둥 + 별 (120x240,
+                                                   상자 그림(72x64) 가운데가 캔버스 가운데보다 48px 아래 — VfxPlayer.ChestOpen)
+  Assets/Resources/Effects/Shockwave/00~07         무거운 착지 충격파: 납작한 고리 두 겹 + 흙먼지 + 별 (192x64, 아래에서 16px이 바닥)
+  Assets/Resources/Effects/RelicBanner/00          유물 이름 띠 (360x80, 가운데에 글자가 올라간다)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
 """
@@ -190,8 +194,141 @@ def clearburst_frames():
     return frames
 
 
+WOOD, WOOD_LIGHT, WOOD_LINE, BAND = (138, 90, 50, 255), (156, 106, 60, 255), (110, 69, 38, 255), (232, 182, 74, 255)
+OUTLINE = (24, 20, 26, 255)
+
+
+def chest_open_frames():
+    """유물 상자 열기 (generate_sprites.relic_chest_frames 와 같은 상자): 살짝 웅크렸다가 뚜껑이 빙글 돌며 튀어 올라 별로 터지고,
+    열린 상자에서 gold 빛기둥과 별이 솟는다. 마지막엔 상자째 옅어진다 (게임에서는 상자 오브젝트가 이미 사라졌다). 12프레임."""
+    frames = []
+    w, h = 120, 240
+    ox, oy = w / 2 - 36, h / 2 + 48 - 32   # 상자 그림 좌표(72x64) → 캔버스
+    pillar = levelup_frames(GOLD)
+    rng = random.Random(41)
+    bits = [(rng.uniform(-2.6, -0.5), rng.uniform(40, 80), (GOLD, CREAM, BERRY, AQUA)[k % 4], k % 3 == 1) for k in range(10)]
+    lid_path = [(8 + 56 * u, 28 - 18 * math.sin(math.pi * u)) for u in [k / 16 for k in range(17)]]
+
+    def P(x, y):
+        return ox + x, oy + y
+
+    for i in range(12):
+        t = i / 11
+        fx = Fx(w, h)
+        squash = 0.9 if i == 0 else 1.0
+        # 몸통 (발밑 기준 세로 squash)
+        top = 60 - (60 - 30) * squash
+        fx.poly([P(8, top), P(64, top), P(64, 60), P(8, 60)], OUTLINE)
+        fx.poly([P(11, top + 3), P(61, top + 3), P(61, 57), P(11, 57)], WOOD)
+        for y in (40, 48):
+            fx.poly([P(11, y), P(61, y), P(61, y + 1), P(11, y + 1)], WOOD_LINE)
+        for x in (14, 54):
+            fx.poly([P(x, top), P(x + 4, top), P(x + 4, 57), P(x, 57)], BAND)
+        fx.poly([P(11, 55), P(61, 55), P(61, 58), P(11, 58)], BAND)
+        fx.circle(*P(36, 37), 7, OUTLINE)
+        fx.circle(*P(36, 37), 5, (242, 193, 78, 255))
+        fx.circle(*P(36, 37), 3, CREAM)
+        # 열린 입구에서 빛 (뚜껑이 뜬 뒤)
+        if i >= 1:
+            glow = 1.0 if t < 0.6 else 1 - (t - 0.6) / 0.4
+            fx.ellipse(*P(36, top + 1), 26, 6, alpha(CREAM, 255 * glow))
+            fx.ellipse(*P(36, top - 2), 32, 12, alpha(GOLD, 230 * glow), light=True)
+        # 뚜껑: 0은 닫힘(틈으로 빛), 1~4 빙글 돌며 위로, 5에서 별로 터짐
+        if i <= 4:
+            dy = [0, -16, -34, -48, -56][i]
+            rot = math.radians([0, -14, -40, -75, -115][i])
+            cx, cy = 36, 22
+            def L(x, y):
+                x, y = x - cx, y - cy
+                return P(cx + x * math.cos(rot) - y * math.sin(rot), cy + dy + x * math.sin(rot) + y * math.cos(rot))
+            fx.poly([L(x, y) for x, y in lid_path], OUTLINE)
+            fx.poly([L(11 + (x - 8) * 50 / 56, 28 - (28 - y) * 0.85) for x, y in lid_path], WOOD_LIGHT)
+            for x in (14, 54):
+                fx.poly([L(x, 15 if x == 14 else 15), L(x + 4, 13), L(x + 4, 28), L(x, 28)], BAND)
+            if i == 0:
+                fx.poly([P(11, 27), P(61, 27), P(61, 31), P(11, 31)], alpha(CREAM, 240))
+        elif i <= 6:
+            q = (i - 5) / 1
+            sx, sy = P(36 + 10, 22 - 62)
+            fx.star(sx, sy, 16 * (1 - q * 0.5), alpha(CREAM, 255 * (1 - q * 0.6)))
+            fx.circle(sx, sy, 14 * (1 - q * 0.4), alpha(GOLD, 200 * (1 - q)), light=True)
+            fx.ring(sx, sy, 10 + 12 * q, 3 * (1 - q) + 1, alpha(GOLD, 255 * (1 - q)))
+        # 열린 입구에서 솟는 별·하트
+        if i >= 1:
+            for ang, dist, col, is_heart in bits:
+                q = min(1.0, (t - 0.08) / 0.7)
+                d = dist * (1 - (1 - q) ** 2)
+                x, y = P(36 + math.cos(ang) * d * 0.7, 30 + math.sin(ang) * d)
+                a = 255 * (1 - max(0.0, q - 0.6) / 0.4)
+                size = 6 * (1 - 0.3 * q)
+                if is_heart:
+                    heart(fx, x, y, size + 1, alpha(col, a))
+                else:
+                    fx.star(x, y, size + 4, alpha(col, a * 0.5), light=True)
+                    fx.star(x, y, size + 1, alpha(col, a))
+        img = fx.finish(glow=4)
+        # 빛기둥은 상자 입구(캔버스 아래쪽 1/4 지점 근처)에서 솟도록 레벨업 기둥을 뒤에 깐다
+        if i >= 1:
+            beam = pillar[min(i - 1, len(pillar) - 1)].copy()
+            back = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            back.alpha_composite(beam, (0, int(oy + 30 - h * 0.75)) if oy + 30 - h * 0.75 >= 0 else (0, 0))
+            img = Image.alpha_composite(back, img)
+        frames.append(faded(img, 1.0 if t < 0.7 else 1 - (t - 0.7) / 0.35))
+    return frames
+
+
+def relic_banner_frames():
+    """유물 이름 띠: cream 띠 + gold 테두리 + 양끝 berry 꼬리, 가운데 위에 별. 글자는 게임에서 TextMesh로 올린다."""
+    w, h = 360, 80
+    fx = Fx(w, h)
+    cy = 44
+    for side in (-1, 1):  # 접힌 꼬리
+        x0 = w / 2 + side * 150
+        fx.poly([(x0, cy - 16), (x0 + side * 28, cy - 16), (x0 + side * 18, cy), (x0 + side * 28, cy + 16), (x0, cy + 16)],
+                alpha(BERRY, 255))
+        fx.poly([(x0, cy + 16), (x0 - side * 10, cy + 22), (x0 - side * 10, cy + 12)], (200, 60, 120, 255))
+    fx.poly([(w / 2 - 160, cy - 20), (w / 2 + 160, cy - 20), (w / 2 + 160, cy + 20), (w / 2 - 160, cy + 20)], GOLD)
+    fx.poly([(w / 2 - 156, cy - 16), (w / 2 + 156, cy - 16), (w / 2 + 156, cy + 16), (w / 2 - 156, cy + 16)], CREAM)
+    fx.poly([(w / 2 - 160, cy - 24), (w / 2 + 160, cy - 24), (w / 2 + 160, cy + 24), (w / 2 - 160, cy + 24)],
+            alpha(GOLD, 150), light=True)
+    fx.star(w / 2, cy - 24, 13, GOLD)
+    fx.star(w / 2, cy - 24, 7, CREAM)
+    for x in (w / 2 - 120, w / 2 + 120):
+        fx.star(x, cy - 22, 6, alpha(CREAM, 255))
+    return [fx.finish(glow=3)]
+
+
+def shockwave_frames():
+    """중간보스 착지 충격파: 바닥을 따라 납작한 gold·cream 고리 두 겹이 퍼지고, 양옆으로 흙먼지 덩이와 별이 튄다. 8프레임."""
+    frames = []
+    w, h = 192, 64
+    cx, floor = w / 2, h - 16
+    for i in range(8):
+        t = i / 7
+        fx = Fx(w, h)
+        q = 1 - (1 - t) ** 2
+        fx.ellipse(cx, floor, 20 + 72 * q, 5 + 8 * q, alpha(GOLD, 200 * (1 - t)), light=True)
+        fx.c.ellipse([(cx - 16 - 72 * q) * 4, (floor - 4 - 7 * q) * 4, (cx + 16 + 72 * q) * 4, (floor + 4 + 7 * q) * 4],
+                     outline=alpha(CREAM, 255 * (1 - t)), width=max(1, int((6 * (1 - t) + 1) * 4)))
+        fx.c.ellipse([(cx - 8 - 44 * q) * 4, (floor - 2 - 4 * q) * 4, (cx + 8 + 44 * q) * 4, (floor + 2 + 4 * q) * 4],
+                     outline=alpha(GOLD, 255 * (1 - t)), width=max(1, int((4 * (1 - t) + 1) * 4)))
+        for side in (-1, 1):
+            for k, (dx, r) in enumerate(((18, 8), (34, 6.5), (50, 5))):
+                x = cx + side * (dx + 26 * q * (1 + k * 0.2))
+                y = floor - 4 - 18 * math.sin(math.pi * min(1.0, t * 1.2)) * (1 - k * 0.25)
+                rr = r * (1 - 0.5 * t)
+                fx.circle(x, y, rr + 1.5, alpha(SAND, 230 * (1 - t)))
+                fx.circle(x - rr * 0.3, y - rr * 0.3, rr * 0.55, alpha(CREAM, 200 * (1 - t)))
+            sx = cx + side * (26 + 52 * q)
+            sy = floor - 14 - 22 * math.sin(math.pi * t)
+            fx.star(sx, sy, 7 * (1 - 0.4 * t), alpha(GOLD if side < 0 else AQUA, 255 * (1 - t * 0.8)))
+        frames.append(fx.finish(glow=3))
+    return frames
+
+
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
-        "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames}
+        "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames,
+        "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames}
 
 
 def generate():

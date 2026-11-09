@@ -18,7 +18,9 @@ namespace IBlameYou.Enemies
 
         public static SlimeController Spawn(Vector3 position, Element element, LevelArtConfig artConfig = null)
         {
-            return EnemySpawner.Spawn<SlimeController>(null, () => Build(artConfig, element), position, NameOf(element));
+            var knight = EnemySpawner.Spawn<SlimeController>(null, () => Build(artConfig, element), position, NameOf(element));
+            if (knight != null) KnightEntrance.Play(knight.gameObject); // 위에서 떨어져 쿵 착지 (그동안 기사는 꺼져 있다)
+            return knight;
         }
 
         private static string NameOf(Element element) => element == Element.Fire ? "SlimeKnightFire" : "SlimeKnightWater";

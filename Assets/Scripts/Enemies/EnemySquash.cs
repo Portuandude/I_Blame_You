@@ -45,6 +45,13 @@ namespace IBlameYou.Enemies
             Begin(ReleaseStretch, 0f, ReleaseTime, false);
         }
 
+        // 무겁게 착지한 순간 (중간보스 등장): 납작하게 눌렸다가 돌아온다.
+        public void Land()
+        {
+            if (!Capture()) return;
+            Begin(-WindupSquash * 1.4f, 0f, 0.25f, false);
+        }
+
         // 공격이 끊겼을 때 (경직·사망) 바로 원래 모양으로.
         public void Cancel()
         {

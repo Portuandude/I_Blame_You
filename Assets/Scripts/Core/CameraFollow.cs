@@ -71,6 +71,13 @@ namespace IBlameYou.Core
             shakeTimeRemaining = duration;
         }
 
+        // 메인 카메라에 CameraFollow가 있으면 흔든다 (연출용 짧은 흔들림).
+        public static void ShakeMain(float duration, float magnitude)
+        {
+            var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+            if (follow != null) follow.Shake(duration, magnitude);
+        }
+
         private void OnTargetDamaged(float amount)
         {
             Shake(shakeDuration, shakeMagnitude);

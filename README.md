@@ -77,7 +77,8 @@ Assets/
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
   Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
-  Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle}/ # 착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임 (Tools/ArtGen/generate_vfx.py, Systems/Effects/VfxPlayer)
+  Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle,ChestOpen,RelicBanner,...}/ # 착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임·열기, 유물 이름 띠 (Tools/ArtGen/generate_vfx.py, Systems/Effects/VfxPlayer)
+  Resources/Effects/{Teleport,Shield,Slash}/ # 순간이동·방어막·베기 (Tools/ArtGen/generate_skill_fx.py, 없으면 LevelArtConfig 옛 프레임)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
@@ -158,7 +159,7 @@ Tab으로 특성 창을 열면 게임이 멈추고, 다섯 갈래 중 하나에 
 
 ## 스테이지 1 중간보스: 쌍둥이 슬라임 기사
 
-방 격자 모드에서 주 경로 55% 지점의 중간보스 방(정예 전투 구역 지형)에 들어가면 투구 쓴 불 기사·물 기사 둘이 나온다 (`Enemies/Bosses/SlimeKnights`, [Docs/MidBossDraft.md](Docs/MidBossDraft.md) 후보 C). 체력 각 200, 화면 위 보스 체력바에 합쳐 보인다.
+방 격자 모드에서 주 경로 55% 지점의 중간보스 방(정예 전투 구역 지형)에 들어가면 투구 쓴 불 기사·물 기사 둘이 0.3초 간격으로 위에서 떨어져 쿵 착지하며 나온다(충격파 고리·흙먼지·투구 반짝임·화면 흔들림, 떨어지는 동안은 기사가 꺼져 있어 맞거나 공격하지 않는다 — `KnightEntrance`) (`Enemies/Bosses/SlimeKnights`, [Docs/MidBossDraft.md](Docs/MidBossDraft.md) 후보 C). 체력 각 200, 화면 위 보스 체력바에 합쳐 보인다. 둘 다 쓰러뜨리면(슬라임 킹도 마지막 몸을 쓰러뜨리면) 0.35초 슬로모션(0.3배) + 화면 흰 번쩍임 + 큰 별·하트 폭발 + "이름 격파!" 띠 (`Systems/Effects/BossDefeatFx`, 그사이 일시정지·특성 창이 시간을 바꾸면 그쪽을 따른다).
 
 - **불 기사**: 슬라임 도약 + **돌진** (주황으로 깜빡이며 0.6초 예고 후 바닥을 빠르게 미끄러짐, 불 피해 + 화상). 불 몸이라 물 마법에 약하다.
 - **물 기사**: 슬라임 도약 + **물방울 방패** (가까이 가면 3초 동안 멈춰 서서 받는 피해 75% 감소·경직 안 됨). **바람·땅 마법**을 맞히면 방패가 깨진다.
