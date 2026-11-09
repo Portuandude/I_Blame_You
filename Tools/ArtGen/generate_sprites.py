@@ -1419,7 +1419,7 @@ if __name__ == "__main__":
     generate_goblins()
     generate_effects()
     generate_status_icons()
-    generate_spell_fx()
+    # 마법 비행/적중(+발사) 이펙트는 새 팔레트로 generate_magic_fx.py 가 그린다.
     generate_slime_gray()
     generate_stage_art()
     generate_boss_art()
