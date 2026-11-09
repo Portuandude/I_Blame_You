@@ -6,7 +6,9 @@
     python3 Tools/Dev/unity_meta.py add <경로>...    → 그 파일/폴더(와 .meta 없는 상위 폴더)에 .meta 생성 (이미 있으면 건너뜀)
     python3 Tools/Dev/unity_meta.py add --missing    → check(이번 작업분)에 나온 것 전부 생성
 
-Resources 아래 런타임 로드 PNG는 .meta 없이 두는 것이 이 저장소의 관례라 검사하지 않는다.
+Resources 아래 런타임 로드 PNG는 검사하지 않는다. 새로 만든 런타임 PNG는 `add`로 .meta를 붙인다
+(스프라이트·NPOT 그대로·압축/밉맵 끔 — PNG_META_TEMPLATE을 복사하고 guid만 바꾼다. 안 붙이면 NPOT 그림이 2의 거듭제곱으로 줄어 찌그러진다).
+예전부터 있던 PNG(사람 PC에만 .meta가 있을 수 있음)에는 붙이지 않는다.
 """
 import os
 import subprocess
@@ -15,6 +17,7 @@ import uuid
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CHECKED = (".cs", ".asmdef")
+PNG_META_TEMPLATE = os.path.join(ROOT, "Assets", "Resources", "Effects", "ClearBurst", "09.png.meta")
 
 SCRIPT_META = """fileFormatVersion: 2
 guid: {guid}
@@ -93,8 +96,13 @@ def write_meta(rel):
         text = ASMDEF_META
     elif rel.endswith(".cs"):
         text = SCRIPT_META
+    elif rel.endswith(".png"):
+        with open(PNG_META_TEMPLATE, encoding="utf-8") as fh:
+            lines = fh.read().split("\n")
+        text = "\n".join("guid: {guid}" if line.startswith("guid: ") else line.replace("{", "{{").replace("}", "}}")
+                         for line in lines)
     else:
-        print(f"건너뜀 (.cs·.asmdef·폴더만 지원): {rel}")
+        print(f"건너뜀 (.cs·.asmdef·.png·폴더만 지원): {rel}")
         return False
     with open(meta, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text.format(guid=uuid.uuid4().hex))
