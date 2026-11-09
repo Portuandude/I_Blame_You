@@ -15,6 +15,8 @@ namespace IBlameYou.Enemies
         private const float RaiseTime = 3f;
         private const float Range = 9f;
         private const float BlockRatio = 0.25f;
+        private const float BubbleSize = 1.6f;   // 그림이 없을 때 대체 원형 크기 (그림이 있으면 그림 크기 그대로, 깨짐 그림도 같은 1배)
+        private const float BubbleHeight = 0.45f;
         private static readonly Color BubbleColor = new Color(0.55f, 0.9f, 1f, 0.7f);
         private static readonly Color WarnColor = new Color(0.5f, 0.95f, 1f);
 
@@ -94,8 +96,8 @@ namespace IBlameYou.Enemies
 
             if (bubble == null)
             {
-                bubble = EffectLibrary.CreateVisual(transform, "KnightShield", EffectLibrary.ShieldFrames, 10f, true, BubbleColor, 1.6f, 3);
-                bubble.transform.localPosition = new Vector3(0f, 0.45f, 0f);
+                bubble = EffectLibrary.CreateVisual(transform, "KnightShield", EffectLibrary.ShieldFrames, 10f, true, BubbleColor, BubbleSize, 3);
+                bubble.transform.localPosition = new Vector3(0f, BubbleHeight, 0f);
             }
 
             bubble.color = BubbleColor;
@@ -112,7 +114,14 @@ namespace IBlameYou.Enemies
             if (broken)
             {
                 DamageNumbers.ShowText(transform.position + Vector3.up * 1.5f, "방패 깨짐!", new Color(1f, 0.85f, 0.3f), 0.9f);
-                EffectLibrary.PlayHit(Element.Water, transform.position + Vector3.up * 0.45f, 1.2f);
+                // 거품이 유리처럼 조각나 흩어진다 (방패 그림과 같은 중심·크기), 기사는 잠깐 움찔
+                var shatter = EffectLibrary.LoadRuntimeFrames("Effects/ShieldShatter");
+                var center = transform.position + Vector3.up * BubbleHeight;
+                if (shatter != null) EffectLibrary.PlayOneShot(center, shatter, 20f, Color.clear, 0f, false, 1f, sortingOrder: 6);
+                else EffectLibrary.PlayHit(Element.Water, center, 1.2f);
+                if (knight != null) knight.Flash(WarnColor, 0.15f);
+                EnemySquash.For(gameObject).Land();
+                GameAudio.PlaySfx("Hit_Wind", 0.7f);
             }
         }
 

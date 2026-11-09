@@ -32,7 +32,9 @@ namespace IBlameYou.Systems
             var reward = go.AddComponent<ArenaReward>();
             reward.onCollected = onCollected;
             reward.phase = position.x;
-            var renderer = EffectLibrary.CreateVisual(go.transform, "Orb", TrapCommon.Frames("Reward"), 10f, true,
+            // 통통한 하트 구슬 (Tools/ArtGen/generate_vfx.py HeartOrb), 없으면 예전 구슬 그림
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/HeartOrb") ?? TrapCommon.Frames("Reward");
+            var renderer = EffectLibrary.CreateVisual(go.transform, "Orb", frames, 10f, true,
                 new Color(1f, 0.45f, 0.55f), 0.7f, 3);
             reward.visual = renderer.transform;
             reward.visual.localPosition = new Vector3(0f, FloatHeight, 0f);
@@ -67,7 +69,10 @@ namespace IBlameYou.Systems
             var mana = player.GetComponent<ManaSystem>();
             if (mana != null) mana.Restore(mana.Max * ManaRatio);
 
-            EffectLibrary.PlayHit(Element.Water, transform.position + Vector3.up * FloatHeight, 1.2f);
+            var orbCenter = transform.position + Vector3.up * FloatHeight;
+            var pop = EffectLibrary.LoadRuntimeFrames("Effects/HeartPop");
+            if (pop != null) EffectLibrary.PlayOneShot(orbCenter, pop, 18f, Color.clear, 0f, false, 1.1f, sortingOrder: 7); // 하트·별이 톡톡
+            else EffectLibrary.PlayHit(Element.Water, orbCenter, 1.2f);
             GameAudio.PlaySfx("Hit_Water", 0.6f);
             StageEvents.PostNotice($"보상: 체력 {HealRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복");
             onCollected?.Invoke();

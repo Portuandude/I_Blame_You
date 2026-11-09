@@ -9,14 +9,22 @@ namespace IBlameYou.Enemies
     {
         private const float VisualScale = 3.2f;
         private const float CrownSize = 1.4f;
+        private const float KingEntranceWeight = 1.7f; // 등장 충격파·흔들림 배율 (기사 1)
         private const float StunDuration = 0f; // 보스는 경직되지 않는다 (SlimeKingController가 HitStun.Immune을 켠다)
         private const float ContactDamageMultiplier = 0.3f;
         private const float ContactDamageCooldown = 1f;
         private static readonly Color Tint = new Color(0.6f, 0.35f, 0.95f);
 
-        public static SlimeKingController Spawn(Vector3 position, LevelArtConfig artConfig = null)
+        // entrance: 위에서 떨어지는 등장 연출. 분열로 생기는 두 번째 몸은 false (BecomeTwin이 바로 코루틴·속도를 줘야 해서 꺼지면 안 된다).
+        public static SlimeKingController Spawn(Vector3 position, LevelArtConfig artConfig = null, bool entrance = true)
         {
             var king = EnemySpawner.Spawn<SlimeKingController>(null, () => Build(artConfig), position, "SlimeKing");
+            if (king != null && entrance)
+            {
+                var crown = king.GetComponentInChildren<SlimeKingCrown>();
+                if (crown != null) crown.Place(); // 대역이 왕관을 제자리에서 복사하도록
+                BossEntrance.Play(king.gameObject, KingEntranceWeight, SlimeKingController.DisplayName); // 위에서 떨어져 쿵 + 이름 띠
+            }
             return king;
         }
 

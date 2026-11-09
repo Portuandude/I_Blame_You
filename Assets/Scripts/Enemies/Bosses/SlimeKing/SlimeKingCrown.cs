@@ -50,6 +50,12 @@ namespace IBlameYou.Enemies
                 glintTime += Time.deltaTime;
                 crown.sprite = frames[(int)(glintTime * GlintFps) % frames.Length];
             }
+            Place();
+        }
+
+        // 왕관을 몸 그림 꼭대기에 얹는다. 첫 LateUpdate 전에도 제자리에 있어야 할 때(BossEntrance 대역 복사) 직접 부른다.
+        public void Place()
+        {
             if (body == null || body.sprite == null) return;
             var bounds = body.bounds;
             float half = halfHeight >= 0f ? halfHeight : crown.bounds.extents.y;

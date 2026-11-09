@@ -555,7 +555,8 @@ namespace IBlameYou.Enemies
             SetFacing(facing);
 
             float away = -facing;
-            var twin = SlimeKingSpawner.Spawn(transform.position + new Vector3(away * 1.5f, 0.5f, 0f), EffectLibrary.Config);
+            var twin = SlimeKingSpawner.Spawn(transform.position + new Vector3(away * 1.5f, 0.5f, 0f), EffectLibrary.Config,
+                entrance: false);
             if (twin != null)
             {
                 twin.transform.SetParent(transform.parent, true);

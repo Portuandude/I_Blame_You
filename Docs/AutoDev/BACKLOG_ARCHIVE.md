@@ -2,6 +2,13 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-iz8mmy): 순간이동·방어막·평타 이펙트 다시 그리기 — `LevelArtConfig`의 옛 teleport/shield/slash 프레임 대신 `generate_magic_fx.py` 방식(색·빛 두 층)으로 귀엽고 화려하게, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`에서 읽고 없으면 옛 프레임 (`EffectLibrary`)
+- DONE (claude/project-thread-iz8mmy): 유물 상자 열 때 연출 — 뚜껑이 튀어 오르며 gold 빛기둥(레벨업 기둥 재사용) + 별 반짝임 터짐, 유물 이름 띠
+- DONE (claude/project-thread-iz8mmy): 중간보스(슬라임 기사) 등장 연출 — 두 기사가 위에서 떨어져 착지할 때 충격파 고리 + 투구 반짝임, 화면 살짝 흔들림
+- DONE (claude/project-thread-iz8mmy): 보스·중간보스 처치 연출 — 마지막 한 방에 0.35초 슬로모션(Time.timeScale 0.3, 실제 시간 기준으로 복구) + 화면 흰 번쩍임 + 큰 별·하트 폭발(`ClearBurst` 크게) + 보스 이름 띠 "격파!"(`RelicBannerView` 재사용). 일시정지·유물 창의 timeScale과 겹치지 않게
+- DONE (claude/project-thread-iz8mmy): 슬라임 왕 등장 연출 — 보스 방에 들어가면 왕이 위에서 떨어져 쿵(`KnightEntrance` 방식 일반화) + 왕관 반짝임 + 이름 띠 "슬라임 왕"
+- DONE (claude/project-thread-iz8mmy): 회복 구슬 다시 그리기 — 지금 구슬을 통통한 하트 구슬(berry + cream 하이라이트 + 반짝임 반복)로, 주울 때 하트가 튀는 작은 터짐
+- DONE (claude/project-thread-iz8mmy): 물 기사 방패가 깨질 때 연출 — 방패 거품이 유리처럼 조각나 흩어지고(조각 6~8개 프레임) aqua 반짝임, 깨진 순간 기사가 잠깐 움찔(`EnemySquash`)
 - DONE (claude/project-thread-d1pgr2): 순간이동 지름길 보상 선반 — 세로 방(탑) 일부에 걷기·점프로는 닿지 않고 위 순간이동(4칸, 발판 아래면에서 멈춤)으로만 오를 수 있는 **선택** 선반을 두고 회복 구슬·경험치 반짝이를 놓기. 필수 경로는 그대로 걷기·점프로 통과(`StageValidator`는 바꾸지 않음, `Docs/LevelDesign.md` "순간이동은 지름길"). `RoomShaper`에 선반 배치 + 테스트(선반이 필수 경로에 없고, 순간이동 위로 닿는 높이인지)
 - DONE (claude/project-thread-d1pgr2): 고블린 궁수 공격 예고 — 시위를 당길 때 `EnemySquash` 웅크림 + 화살 끝 작은 반짝임, 쏘는 순간 늘어나기
 - DONE (claude/project-thread-d1pgr2): **(최우선, 2026-11-09 사람 지시)** 순간이동 상하좌우 — 벽 점프는 넣지 않는다(결정). 대신 세로 이동 수단으로 `TeleportSkill`을 상/하/좌/우 4방향으로 정리: 방향키 입력을 가장 큰 축 하나로 고정(대각선 없음), 위로 갈 때 천장·발판 아래면에 막히면 그 앞에서 멈춤, 아래로 갈 때는 발판을 뚫고 내려갈 수 있되 **낙사 방지**: 도착 지점 아래에 일정 거리(예: 점프 높이 이내) 안에 디딜 바닥이 없거나, 낙사 구역(낭떠러지 아래 킬존·방 밖)으로 떨어지는 경로면 순간이동 거리를 바닥이 있는 지점까지 줄이고, 그런 지점이 없으면 발동하지 않음(마나 소모 없음 + 짧은 실패 표시). 세로 방 레벨 디자인에서 순간이동으로 오르는 구간을 고려하도록 `StageValidator`/방 생성 규칙에 반영. 판정 로직은 순수 함수로 분리해 EditMode 테스트(위 막힘, 아래 안전 착지, 아래 낙사 경로 거부, 좌우 기존 동작 유지)
