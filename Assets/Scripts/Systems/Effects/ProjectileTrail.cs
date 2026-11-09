@@ -36,7 +36,7 @@ namespace IBlameYou.Systems
             lastPosition = transform.position;
             var child = transform.Find("Visual");
             visual = child != null ? child.GetComponent<SpriteRenderer>() : null;
-            ghostColor = ElementInfo.Color(element);
+            ghostColor = Color.Lerp(ElementInfo.Color(element), Color.white, 0.6f); // 비행 그림이 이미 속성색이라 밝게 해서 곱한다
             ghostTimer = GhostInterval;
         }
 
