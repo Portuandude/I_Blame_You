@@ -213,6 +213,8 @@ namespace IBlameYou.Player
             var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
             Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
 
+            IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Earth); // 봉인문 앞이면 "땅은 통하지 않는다" 안내
+
             var go = new GameObject("Spell_Earth");
             go.transform.position = point;
             go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.CastDelay, target,
