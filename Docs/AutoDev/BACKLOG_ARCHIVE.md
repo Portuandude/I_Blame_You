@@ -2,6 +2,14 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-j06mzc): 레벨 재설계 검증 — PR #15 마지막 커밋(방 리듬 `RoomLayout.PickMidBossIndex`·중간보스 뒤 휴식, `RoomShaper` 양 갈래·선반 모양, 테스트)을 `adversarial-reviewer`로 리뷰하고 지적 사항 수정 (리뷰 전에 자동 머지됨)
+- DONE (claude/project-thread-j06mzc): 방 전환 연출 — 문을 지날 때 짧은 페이드(0.15초 어둡게 → 밝게), 방마다 배경 색조를 조금씩 바꿔 이동감 주기 (`ChunkStreamer.EnterRoom`, 시차 배경)
+- DONE (claude/project-thread-j06mzc): 세로 방 함정 — 탑 방에 가시·불기둥 (벽 점프는 아래 BLOCKED 항목으로 분리)
+- DONE (claude/project-thread-j06mzc): 대쉬 잔상 — `Docs/ArtStyle.md` "잔상" 규칙대로 대쉬 중 플레이어 직전 위치 2~3개에 반투명(60% → 30% → 10%) 복사본, 지금 고른 속성색으로 물들임
+- DONE (claude/project-thread-j06mzc): 방 문 표시 — 방 격자 스테이지의 좌우 문 자리에 빛나는 문틀(아치)·위아래 구멍 가장자리에 반짝임을 놓아 출구가 한눈에 보이게. 전투 구역이 잠기면 문틀이 붉게
+- DONE (claude/project-thread-j06mzc): 빠른 투사체 잔상 — 마법 비행 단계에 꼬리 잔상 2~3개 (`Systems/Effects`, 속성색)
+- DONE (claude/project-thread-j06mzc): 플레이어 점프·착지 squash & stretch — `ArtStyle.md` 포즈 규칙
+- DONE (claude/project-thread-j06mzc): 보스 등장 이름 띠 — 보스·중간보스가 처음 나오면 화면 가운데에 gold 이름 띠 2초
 - DONE (claude/project-thread-5ne2al, [ArtStyle.md](../ArtStyle.md)): 아트 스타일 가이드 — `Docs/ArtStyle.md`에 팔레트(메인 8~12색 + 속성별 불/물/바람/땅/무 색), 외곽선 규칙, 빛·반짝임 규칙, 캐릭터 비율을 정하고 이후 작업이 모두 따른다
 - DONE (claude/project-thread-5ne2al): 맵 배경 — 시차(패럴랙스) 배경 3겹(먼 하늘/중간 산·숲/가까운 풀숲), 진행도에 따라 색조 변화, 떠다니는 반짝이 입자
 - DONE (claude/project-thread-5ne2al, TerrainDresser): 지형 타일 — 바닥·벽·발판·낭떠러지 끝을 새 팔레트로 다시 그리고 풀·꽃·버섯 장식을 무작위로 얹기 (외부 타일셋 의존 줄이기)

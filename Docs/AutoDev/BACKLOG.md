@@ -7,15 +7,11 @@
 
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
 
-- DONE (claude/project-thread-j06mzc): 레벨 재설계 검증 — PR #15 마지막 커밋(방 리듬 `RoomLayout.PickMidBossIndex`·중간보스 뒤 휴식, `RoomShaper` 양 갈래·선반 모양, 테스트)을 `adversarial-reviewer`로 리뷰하고 지적 사항 수정 (리뷰 전에 자동 머지됨)
-- DONE (claude/project-thread-j06mzc): 방 전환 연출 — 문을 지날 때 짧은 페이드(0.15초 어둡게 → 밝게), 방마다 배경 색조를 조금씩 바꿔 이동감 주기 (`ChunkStreamer.EnterRoom`, 시차 배경)
-- DONE (claude/project-thread-j06mzc): 세로 방 함정 — 탑 방에 가시·불기둥 (벽 점프는 아래 BLOCKED 항목으로 분리)
+- TODO: 적 공격 예고 squash — 슬라임·고블린이 공격 직전 웅크렸다(세로 -15%) 공격 순간 늘어나기 (`ArtStyle.md` 포즈 규칙). 슬라임은 SpriteColliderFitter가 Visual 크기를 쓰므로 판정이 같이 줄지 않게 주의
+- TODO: 체크포인트 켤 때 연출 — 수정 위로 aqua 빛 기둥 + 반짝임 3개 (지금은 물 적중 효과만)
+- TODO: 구역 돌파 축하 — 전투 구역을 깨면 구역 가운데에서 별·하트 반짝임이 터지고 문 빛 표시가 aqua로 돌아올 때 한 번 번쩍임
+- TODO: 마법사 피격 프레임 — `generate_wizard.py`에 Hurt 2프레임(눈 질끈, 몸 젖힘)을 그려 HitStun 회전 대체 연출과 함께 쓰기 (에디터 툴 재실행 필요)
 - BLOCKED (사람 결정: 벽 점프 조작을 넣을지): 세로 방 벽 점프 지점
-- DONE (claude/project-thread-j06mzc): 대쉬 잔상 — `Docs/ArtStyle.md` "잔상" 규칙대로 대쉬 중 플레이어 직전 위치 2~3개에 반투명(60% → 30% → 10%) 복사본, 지금 고른 속성색으로 물들임
-- DONE (claude/project-thread-j06mzc): 방 문 표시 — 방 격자 스테이지의 좌우 문 자리에 빛나는 문틀(아치)·위아래 구멍 가장자리에 반짝임을 놓아 출구가 한눈에 보이게. 전투 구역이 잠기면 문틀이 붉게
-- DONE (claude/project-thread-j06mzc): 빠른 투사체 잔상 — 마법 비행 단계에 꼬리 잔상 2~3개 (`Systems/Effects`, 속성색)
-- DONE (claude/project-thread-j06mzc): 플레이어 점프·착지 squash & stretch — `ArtStyle.md` 포즈 규칙
-- DONE (claude/project-thread-j06mzc): 보스 등장 이름 띠 — 보스·중간보스가 처음 나오면 화면 가운데에 gold 이름 띠 2초
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
 - BLOCKED (사람 결정: 달리기·대쉬로 건너뛰기를 허용할지): 낭떠러지 건너뛰기 정리 — 검증기 점프 거리는 걷기 기준(최대 4~5칸)인데 실제 달리기 점프는 약 7.3칸, 걷기 점프+공중 대쉬 약 8.1칸, 달리기 점프+대쉬 약 11칸. 그래서 단일 움직이는 발판(7~8칸)·낭떠러지 일부는 발판 없이 건널 수 있다. 막으려면 폭을 늘리거나 검증기를 달리기 기준으로, 허용하려면 문서에 명시
