@@ -3,6 +3,20 @@
 맨 위 `TODO`부터 처리한다. 상태: `TODO` / `DOING` / `DONE (브랜치)` / `BLOCKED (이유)`.
 사람이 순서를 바꾸거나 항목을 추가해도 된다.
 
+## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
+
+아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 준비한 그림(마법사 Idle, 슬라임 원본)은 덮어쓰지 말고 같은 톤의 새 파일을 만든 뒤 설정에서 바꿔 끼운다 (원본은 Trash 규칙대로 보존).
+
+- TODO: 아트 스타일 가이드 — `Docs/ArtStyle.md`에 팔레트(메인 8~12색 + 속성별 불/물/바람/땅/무 색), 외곽선 규칙, 빛·반짝임 규칙, 캐릭터 비율을 정하고 이후 작업이 모두 따른다
+- TODO: 맵 배경 — 시차(패럴랙스) 배경 3겹(먼 하늘/중간 산·숲/가까운 풀숲), 진행도에 따라 색조 변화, 떠다니는 반짝이 입자
+- TODO: 지형 타일 — 바닥·벽·발판·낭떠러지 끝을 새 팔레트로 다시 그리고 풀·꽃·버섯 장식을 무작위로 얹기 (외부 타일셋 의존 줄이기)
+- TODO: 마법 이펙트 — 불/물/바람/땅/무 공격 스킬과 방어막, 순간이동, 평타에 발사·비행·적중 3단계 이펙트 (pixelfx), 적중 시 화면 살짝 번쩍임
+- TODO: 몬스터 스프라이트 — 슬라임(투구 쓴 버전 포함), 어미 슬라임, 고블린 4종, 슬라임 킹을 귀엽고 화려한 톤으로 다시 그림 (Idle/Run/Attack/Die 프레임 수 유지)
+- TODO: 플레이어 스프라이트 — 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임을 Idle 그림 톤에 맞춰 생성 (기존 BLOCKED 항목 대체, Idle 원본은 유지)
+- TODO: 시각 효과 묶음 — 착지 먼지, 대쉬 잔상, 레벨업 빛기둥, 유물 상자 반짝임, 적 사망 시 별·하트 파편, 피격 숫자 폰트 정리
+- TODO: 중간보스 C 쌍둥이 슬라임 기사 — `Docs/MidBossDraft.md` 후보 C 구현 (불 기사 돌진 + 물 기사 방패, 한쪽이 쓰러지면 남은 쪽 광폭화, 투구 쓴 슬라임 그림). 스테이지 1 중반 배치, 테스트
+- TODO: 레벨 디자인 재설계 — 새 지형·배경에 맞춰 스테이지 1 청크 구성 다시 짜기: 구간별 리듬(전투→탐색→퍼즐→휴식), 시야에 보이는 목표물, 중간보스 위치, 난이도 곡선을 `Docs/LevelDesign.md`로 정리한 뒤 `ChunkGenerator`·`StageValidator`에 반영하고 테스트
+
 - DONE (claude/project-thread-ulxu6c): 백로그 재점검 — develop의 현재 코드와 README/GDD를 대조해, 아래 항목 중 이미 구현된 것은 `DONE (기존)`으로 바꾸고 GDD "구현 로드맵"에서 빠진 항목을 추가
 - DONE (claude/project-thread-ulxu6c): HP 화면 경고등 — 체력 30% 이하일 때 화면 가장자리가 붉게 맥동 (GDD UI/UX)
 - DONE (기존): 상태이상 시스템 기반 — `Systems/StatusEffects`(화상/젖음/경직, `TryApply` API, 확률식)와 머리 위 `StatusIconBar`가 이미 있음. 플레이어도 화염 분출구로 화상을 받는다
@@ -16,7 +30,7 @@
 - DONE (claude/project-thread-nsj3x2): 피격 이펙트 — GDD "경직 전용 애니메이션/피격 이펙트는 미구현". 피격 시 스프라이트 흰색 번쩍임(0.08초)과 작은 파편 이펙트
 - DONE (claude/project-thread-nsj3x2): 사운드 보강 — 점프/대쉬/피격/적 사망/레벨업 효과음을 `Tools/AudioGen`으로 합성해 `GameAudio`로 재생, 볼륨 설정 연동
 - DONE (claude/project-thread-nsj3x2, 봉인문): 맵 퍼즐 기초 — GDD의 컨트롤 퍼즐/스킬 퍼즐 중 하나(예: 속성 스킬로 여는 문)를 청크 1종으로 추가 (`ChunkGenerator` + `StageValidator` 규칙 지키기)
-- BLOCKED (사람 필요: 동작별 그림): 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임 교체
+- BLOCKED → 위 "플레이어 스프라이트" 항목으로 대체: 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임 교체
 - DONE (claude/project-thread-nsj3x2): 새 Input System 이전 검토 — 레거시 Input Manager 사용처 목록과 이전 계획만 문서로 (코드 변경은 사람 확인 후) → [InputSystemMigration.md](../InputSystemMigration.md)
 - DONE (claude/project-thread-nsj3x2): 일시정지 메뉴 볼륨 조절 — Esc 메뉴에 배경음악/효과음 슬라이더 (시작 화면과 같은 SaveData 저장)
 - DONE (claude/project-thread-nsj3x2): 런 결과 통계 — 처치 수, 도달 레벨, 받은 피해, 연 봉인문/돌파 구역 수를 게임오버·클리어 창에 표시
