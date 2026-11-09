@@ -66,7 +66,7 @@ namespace IBlameYou.Systems
         public StageEnemy Enemy;
         public bool Deferred;   // 전투 구역 적: 처음부터 두지 않고 구역에 들어가면 나온다
         public int Id;          // 스테이지 전체에서 유일 (적 처치 기록용)
-        public int ElementIndex; // ElementGate: 여는 속성 (Element 순서: 0 불, 1 물, 2 바람. 이 어셈블리는 UnityEngine을 안 써서 int로 둔다)
+        public int ElementIndex; // ElementGate: 여는 속성 (Element 순서: 0 불, 1 물, 2 바람. 저장·생성 데이터라 int로 둔다. ChunkStreamer에서 Element로 바꾼다)
         public bool HasSecondElement;  // ElementGate: 두 속성 봉인문 (ElementIndex → SecondElementIndex 순서로 맞혀야 열림)
         public int SecondElementIndex; // ElementGate: 둘째 속성 (HasSecondElement일 때만, ElementIndex와 다름)
     }
