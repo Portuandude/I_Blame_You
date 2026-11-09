@@ -75,12 +75,20 @@ namespace IBlameYou.Player
             if (amount <= 0f) return;
             Experience += amount;
             TotalExperience += amount;
+            int levelBefore = Level;
             while (Experience >= XpToNext)
             {
                 Experience -= XpToNext;
                 Level++;
                 Points++;
                 LeveledUp?.Invoke(Level);
+            }
+
+            // 한 번에 여러 레벨이 올라도 빛기둥은 하나만 (RestoreProgress는 여기를 지나지 않아 이어하기에는 안 뜬다)
+            if (Level > levelBefore)
+            {
+                var movement = GetComponent<PlayerMovement>();
+                VfxPlayer.LevelUp(transform, movement != null ? movement.FeetLocalY : 0f);
             }
         }
 
