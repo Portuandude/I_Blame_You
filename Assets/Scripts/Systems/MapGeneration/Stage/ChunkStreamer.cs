@@ -6,7 +6,7 @@ namespace IBlameYou.Systems
 {
     // 마인크래프트처럼 플레이어 주변 청크만 씬에 만들어 두고, 멀어진 청크는 치운다.
     // 청크 데이터(StageData)는 시드로 미리 다 만들어져 있어서, 다시 다가가면 같은 지형이 그대로 다시 생긴다.
-    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 켠 체크포인트, 보스 돌파 여부.
+    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트, 보스 돌파 여부.
     public class ChunkStreamer : MonoBehaviour, IEnemyGroup
     {
         public const int LoadRadius = 2;   // 플레이어가 있는 청크 좌우로 몇 청크까지 만들어 둘지
@@ -25,6 +25,7 @@ namespace IBlameYou.Systems
         private readonly List<HealthSystem> extras = new List<HealthSystem>(); // 분열 등으로 생긴 적
         private readonly HashSet<int> killed = new HashSet<int>();
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
+        private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> activatedCheckpoints = new HashSet<int>();
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
 
@@ -150,8 +151,16 @@ namespace IBlameYou.Systems
                     case FeatureKind.Arena:
                         int arenaChunk = index;
                         bool boss = chunk.Kind == ChunkKind.Boss;
+                        var arenaRoot = root;
+                        var rewardPosition = new Vector2(ox + f.X + f.Width / 2f, f.Y);
                         ArenaZone.Create(root, ox + f.X, ox + f.X + f.Width, f.Y, arenaSpawns, clearedArenas.Contains(index), spawnEnemy,
-                            () => OnArenaCleared(arenaChunk, boss));
+                            () =>
+                            {
+                                OnArenaCleared(arenaChunk, boss);
+                                if (!boss && arenaRoot != null) SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
+                            });
+                        // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
+                        if (!boss && clearedArenas.Contains(index)) SpawnReward(root, index, rewardPosition, false);
                         break;
                     case FeatureKind.Enemy:
                         if (!f.Deferred) SpawnTracked(index, ox, f);
@@ -187,6 +196,13 @@ namespace IBlameYou.Systems
             bossCleared = true;
             foreach (var exit in exits.Values) if (exit != null) exit.SetOpen(true);
             StageEvents.PostNotice("출구가 열렸다!");
+        }
+
+        // 일반 전투 구역 보상 (보스 구역은 출구가 보상이라 없음). 이미 주웠으면 만들지 않는다.
+        private void SpawnReward(Transform root, int chunkIndex, Vector2 position, bool dropped)
+        {
+            if (collectedRewards.Contains(chunkIndex)) return;
+            ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
         }
 
         private void Unload(int index)
