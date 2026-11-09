@@ -32,6 +32,7 @@ namespace IBlameYou.Player
 
             go.name = "Player";
             PlayerRelics.For(go); // 유물 컴포넌트가 생기기 전에 구운 프리팹이어도 유물을 가질 수 있게
+            PlayerJuice.For(go);  // 손맛 이펙트도 같은 이유로
 
             // 상태 바는 플레이어 자식이 아니라 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 붙인다.
             var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
