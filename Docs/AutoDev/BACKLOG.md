@@ -8,7 +8,7 @@
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
 
 - DONE (claude/project-thread-iz8mmy): 순간이동·방어막·평타 이펙트 다시 그리기 — `LevelArtConfig`의 옛 teleport/shield/slash 프레임 대신 `generate_magic_fx.py` 방식(색·빛 두 층)으로 귀엽고 화려하게, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`에서 읽고 없으면 옛 프레임 (`EffectLibrary`)
-- TODO: 유물 상자 열 때 연출 — 뚜껑이 튀어 오르며 gold 빛기둥(레벨업 기둥 재사용) + 별 반짝임 터짐, 유물 이름 띠
+- DONE (claude/project-thread-iz8mmy): 유물 상자 열 때 연출 — 뚜껑이 튀어 오르며 gold 빛기둥(레벨업 기둥 재사용) + 별 반짝임 터짐, 유물 이름 띠
 - TODO: 중간보스(슬라임 기사) 등장 연출 — 두 기사가 위에서 떨어져 착지할 때 충격파 고리 + 투구 반짝임, 화면 살짝 흔들림
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
