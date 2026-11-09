@@ -221,7 +221,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 세로 방 함정: 이동 방 바닥에만 가시 줄(2~3칸)과 불기둥(어려운 방). 도착·출발 칸, 바닥 확인 칸, 구멍 옆,
+        // 세로 방 함정: 이동 방 바닥에만 가시 줄(2~3칸)과 불기둥(어려운 방). 도착·출발 칸, 구멍 옆,
         // 바닥에서 뛰어오르는 맨 아래 발판 밑, 적이 선 칸에서는 두 칸씩 떨어뜨린다. 계단 판·선반 위에는 놓지 않는다.
         // 지형 난수열과 따로 굴려서 함정이 없는 방의 모양·적 자리는 그대로다. 가시·불기둥은 길을 막지 않아 검증 결과는 같다.
         public const float TrapMinDifficulty = 0.25f;
@@ -272,7 +272,7 @@ namespace IBlameYou.Systems
             Block(safe, W - 2, W - 1);
             foreach (var spot in geometry.Arrivals.Values) if (spot.y == g) Block(safe, spot.x, spot.x);
             foreach (var spot in geometry.Exits.Values) if (spot.y == g) Block(safe, spot.x, spot.x);
-            if (geometry.Floor.HasValue) Block(safe, geometry.Floor.Value.x, geometry.Floor.Value.x);
+            // Floor(6, g)는 검증용 칸이라 막지 않는다 (막으면 왼쪽에 자리가 남지 않아 가시가 늘 오른쪽 통로에 몰림)
             Block(safe, HoleX0 - 1, HoleX1 + 1); // 구멍 옆과 위 문으로 내려올 때 떨어지는 자리
 
             // 바닥에서 바로 뛰어오르는 발판(서는 칸에서 3칸 위까지) 밑
