@@ -111,7 +111,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 함정·문·체크포인트·출구 칸에는 장식을 두지 않는다 (위험 신호와 목표물이 가려지지 않게).
+        // 함정·문·체크포인트·출구·회복 구슬 칸에는 장식을 두지 않는다 (위험 신호와 목표물이 가려지지 않게).
         private static HashSet<Vector2Int> BlockedTiles(ChunkData chunk)
         {
             var blocked = new HashSet<Vector2Int>();
@@ -124,6 +124,7 @@ namespace IBlameYou.Systems
                     case FeatureKind.ArrowTrap:
                     case FeatureKind.Checkpoint:
                     case FeatureKind.Exit:
+                    case FeatureKind.Reward:
                         int width = Mathf.Max(1, feature.Width);
                         for (int dx = -1; dx <= width; dx++) blocked.Add(new Vector2Int(feature.X + dx, feature.Y));
                         break;
