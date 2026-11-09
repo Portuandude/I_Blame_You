@@ -63,3 +63,6 @@ Thumbs.db
 # Placed after the "!*.meta" negation above so it actually takes effect.
 /Assets/2D Platformer Tileset/
 /Assets/2D Platformer Tileset.meta
+
+# 파이썬 캐시 (Tools/*)
+__pycache__/
