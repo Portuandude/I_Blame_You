@@ -145,6 +145,9 @@ namespace IBlameYou.Enemies
         // 체력이 0이 되어 사망 처리에 들어간 직후 한 번 호출.
         protected virtual void OnDied() { }
 
+        // 쓰러질 때 별·하트 펑을 띄울지. 보스는 자체 연출이 있어 끈다.
+        protected virtual bool PlaysDeathPop => true;
+
         private void Update()
         {
             if (IsDead) return;
@@ -190,6 +193,9 @@ namespace IBlameYou.Enemies
             IsDead = true;
             if (Animator != null) Animator.SetBool(IsDeadParam, true);
             GameAudio.PlaySfx("EnemyDie", 0.6f);
+            // 어미 슬라임은 분열 연출(SplitOnDeath)이 따로 있어 펑을 띄우지 않는다
+            if (PlaysDeathPop && GetComponent<SplitOnDeath>() == null)
+                VfxPlayer.DeathPop(transform.position + Vector3.up * 0.4f, Mathf.Abs(transform.localScale.y));
             OnDied();
             Killed?.Invoke(this, Stats != null ? Stats.Stats.experience : 0f);
             Destroy(gameObject, destroyDelayAfterDeath);

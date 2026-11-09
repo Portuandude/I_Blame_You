@@ -635,6 +635,8 @@ namespace IBlameYou.Enemies
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }
 
+        protected override bool PlaysDeathPop => false;
+
         protected override void OnDied()
         {
             Interrupt();
