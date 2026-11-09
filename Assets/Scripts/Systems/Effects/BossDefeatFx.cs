@@ -1,0 +1,73 @@
+using UnityEngine;
+
+namespace IBlameYou.Systems
+{
+    // 보스·중간보스를 마지막으로 쓰러뜨린 순간의 연출: 짧은 슬로모션 + 화면 흰 번쩍임 + 큰 별·하트 폭발 + "이름 격파!" 띠.
+    // 슬로모션은 실제 시간으로 재고, 끝날 때 timeScale이 아직 이 연출의 값일 때만 1로 되돌린다
+    // (그사이 일시정지·특성 창·유물 창·플레이어 사망 연출이 timeScale을 바꿨으면 그쪽이 되돌리게 둔다).
+    public class BossDefeatFx : MonoBehaviour
+    {
+        public const float SlowScale = 0.3f;
+        private const float SlowDuration = 0.35f;   // 실제 시간(초)
+        private const float FlashDuration = 0.3f;   // 실제 시간(초)
+        private const float FlashAlpha = 0.55f;
+        private const float Lifetime = 1f;          // 실제 시간. 이 뒤에 오브젝트를 치운다
+        private const float BurstScale = 2.4f;
+        private const float BannerHeight = 2.6f;
+
+        private float startTime;
+        private bool slowing;
+
+        // position: 보스가 쓰러진 자리 (몸 가운데쯤).
+        public static void Play(Vector3 position, string bossName)
+        {
+            var go = new GameObject("BossDefeatFx");
+            var fx = go.AddComponent<BossDefeatFx>();
+            fx.startTime = Time.unscaledTime;
+
+            if (Mathf.Approximately(Time.timeScale, 1f))
+            {
+                Time.timeScale = SlowScale;
+                fx.slowing = true;
+            }
+
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/ClearBurst");
+            if (frames != null)
+                EffectLibrary.PlayOneShot(position, frames, 14f, Color.clear, 0f, false, BurstScale, sortingOrder: 8);
+            VfxPlayer.DeathPop(position, 2f);
+            if (!string.IsNullOrEmpty(bossName)) VfxPlayer.RelicBanner(position + Vector3.up * BannerHeight, $"{bossName} 격파!");
+            GameAudio.PlaySfx("LevelUp", 0.8f);
+        }
+
+        private float Elapsed => Time.unscaledTime - startTime;
+
+        private void Update()
+        {
+            if (slowing && Elapsed >= SlowDuration) EndSlow();
+            if (Elapsed >= Lifetime) Destroy(gameObject);
+        }
+
+        private void EndSlow()
+        {
+            if (!slowing) return;
+            slowing = false;
+            if (Mathf.Approximately(Time.timeScale, SlowScale)) Time.timeScale = 1f;
+        }
+
+        private void OnDestroy()
+        {
+            EndSlow(); // 씬 정리·재시작으로 먼저 사라져도 느린 시간이 남지 않게
+        }
+
+        private void OnGUI()
+        {
+            float alpha = FlashAlpha * (1f - Mathf.Clamp01(Elapsed / FlashDuration));
+            if (alpha <= 0f) return;
+            GUI.depth = -100; // HUD 위에
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+    }
+}
