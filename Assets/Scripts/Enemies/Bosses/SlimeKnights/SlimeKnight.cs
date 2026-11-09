@@ -61,15 +61,18 @@ namespace IBlameYou.Enemies
             if (recolor != null) recolor.Tint = Color.white;
 
             bool enraged = false;
+            bool partnerAlive = false;
             foreach (var other in knights)
             {
                 if (other == this || other.fallen || other.transform.parent != transform.parent) continue;
+                partnerAlive = true;
                 if (other.enrage == null || other.enrage.Active) continue;
                 other.enrage.Trigger();
                 enraged = true;
             }
 
             if (enraged) StageEvents.PostNotice("짝을 잃은 기사가 광폭화했다!");
+            if (!partnerAlive) BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
         }
 
         private void Update()

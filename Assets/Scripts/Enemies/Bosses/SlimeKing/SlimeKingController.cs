@@ -646,6 +646,7 @@ namespace IBlameYou.Enemies
             BossEvents.Notice = null;
             StageEvents.PostNotice($"{DisplayName}을(를) 쓰러뜨렸다!");
             Shake(0.4f, 0.4f);
+            BossDefeatFx.Play(BodyBounds.center, DisplayName);
         }
 
         protected override void OnDestroy()
