@@ -3,10 +3,10 @@
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
 ## 2026-11-09 17:40 UTC
-- 브랜치/PR: `claude/project-thread-iz8mmy` → #19 (머지됨), #20 (진행 중)
-- 완료: 순간이동·방어막·베기 이펙트 다시 그리기(`generate_skill_fx.py`, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`, 없으면 옛 프레임 — APPROVE), `unity_meta.py add`가 런타임 PNG .meta도 생성, 유물 상자 열기(뚜껑 튀어 오름·gold 빛기둥·별 + 유물 이름 띠 `RelicBannerView` — APPROVE·LOW 1 반영), 중간보스 등장(위에서 떨어져 충격파·흙먼지·투구 반짝임·흔들림 — APPROVE·LOW 2 반영), 백로그 비주얼 5개 추가, 보스 격파 연출(`BossDefeatFx` 슬로모션 0.3배 0.35초·흰 번쩍임·큰 폭발·"격파!" 띠), 등장 연출 일반화(`BossEntrance`) + 슬라임 킹 등장
-- 실패/보류: 17:51~18:00 UTC 5시간 사용량 한도로 잠깐 멈춤. 보스 격파 연출은 리뷰가 끊긴 사이 #19로 머지됨 → 리뷰 결과는 #20에서 반영
-- 다음 실행 메모: 플레이테스트 필요: 새 스킬 이펙트 크기(베기가 조금 커 보일 수 있음), 방어막 거품 투명도, 유물 이름 띠의 한글 표시(LegacyRuntime 글꼴), 보스 등장 낙하가 천장 낮은 방에서 어색하지 않은지, 격파 슬로모션 느낌
+- 브랜치/PR: `claude/project-thread-iz8mmy` → #19 (CI 통과 후 머지), #20 (CI 대기, 자동 머지 켜 둠)
+- 완료 (7개, 전부 적대적 리뷰 APPROVE): 순간이동·방어막·베기 이펙트 다시 그리기(`generate_skill_fx.py`, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`), `unity_meta.py add`가 런타임 PNG .meta도 생성, 유물 상자 열기(뚜껑·gold 빛기둥·별 + 이름 띠 `RelicBannerView`), 중간보스 등장(위에서 떨어져 충격파·흙먼지·투구 반짝임·흔들림), 보스 격파(`BossDefeatFx` 0.3배 슬로모션 0.35초·흰 번쩍임·큰 폭발·"격파!" 띠), 슬라임 킹 등장(`BossEntrance`로 일반화, 분열 몸은 제외 — 리뷰 HIGH 수정), 회복 하트 구슬(`HeartOrb`·`HeartPop`), 물 기사 방패 깨짐(`ShieldShatter` + 움찔). 백로그가 비어 비주얼 5개 추가
+- 실패/보류: 17:51~18:00 UTC 사용량 한도로 잠깐 멈춤. 작업 6개를 넘겨 `handoff` 규칙대로 여기서 끝냄 (남은 TODO: HUD 체력·마나 바)
+- 다음 실행 메모: 플레이테스트 필요: 새 스킬 이펙트 크기(베기·하트 구슬이 예전보다 조금 큼), 방어막 거품 투명도, 이름 띠의 한글 표시(LegacyRuntime 글꼴), 보스 낙하가 천장 낮은 방에서 어색하지 않은지, 격파 슬로모션 느낌, 슬라임 킹 분열이 예전처럼 동작하는지
 
 ## 2026-11-09 14:15 UTC
 - 브랜치/PR: `claude/project-thread-d1pgr2` → #18 (develop 대상, CI 통과 후 머지)
@@ -19,8 +19,3 @@
 - 완료: 레벨 재설계 검증(리뷰 APPROVE, 중간보스 자리를 최종 경로 진행도 기준으로 — 짧은 스테이지 편차 MEDIUM 수정, 테스트 추가), 방 전환 연출(문 지날 때 어둡게→0.15초 밝게, 방마다 배경 색조 — APPROVE·LOW 1 반영), 세로 방 함정(이동 탑 방 바닥 가시·불기둥, 문 앞·구멍 옆·맨 아래 발판 밑 제외 — APPROVE·LOW 2 반영), 대쉬·순간이동 잔상(APPROVE), 마법 투사체 잔상·방 문 빛 표시(APPROVE·LOW 2 반영), 플레이어 점프·착지 squash & stretch, 보스 등장 이름 띠. 로컬 EditMode 54/54
 - 실패/보류: 벽 점프는 사람 결정 대기로 분리(BLOCKED). `Assets/Scripts/Systems/MapGeneration/Stage` 폴더 .meta가 저장소에 없음(기존 상태, Unity가 로컬에서 만듦 — 추가하면 사람 PC의 로컬 .meta와 충돌할 수 있어 그대로 둠)
 - 다음 실행 메모: 비주얼 작업 4개를 백로그에 새로 추가함. 로컬 mono(mcs)는 지역 함수·다른 어셈블리 튜플 이름을 못 읽으니 Chunks·테스트에선 피할 것. 플레이테스트 필요: 방 전환 페이드 길이, 문 빛 표시 밝기, 잔상·squash 과하지 않은지, 탑 방 가시 위치
-## 2026-11-09 08:41 UTC
-- 브랜치/PR: `claude/project-thread-qoeoof` → #14 (09:03 UTC CI 통과 후 자동 머지) → #15 (09:32 UTC CI 통과 후 자동 머지)
-- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영), 중간보스 쌍둥이 슬라임 기사(불 돌진·물 방패·짝 잃으면 광폭화, 중간보스 방 배치 테스트 — 로컬 35/35, 리뷰 HIGH 1·MEDIUM 1·LOW 4 반영 후 APPROVE), 레벨 디자인 1차 재설계(방 리듬 규칙: 전투 방 연달아 금지·중간보스 뒤 휴식·중간보스 55%±1방, 세로 방 지그재그/양 갈래/선반 — 로컬 37/37) → #15
-- 실패/보류: 레벨 재설계 커밋은 적대적 리뷰 전에 #15와 함께 자동 머지됨 → 백로그 맨 위 "레벨 재설계 검증"으로. 세션이 09:25~13:05 UTC 동안 API 오류로 멈춰 안전 상한(13:11)에 닿아 종료
-- 다음 실행 메모: Unity 플레이테스트 필요(방 격자 이동·탑 방·미니맵·중간보스·마법사/고블린 새 그림·시각 효과). 사람 결정 대기: 미니맵에 안 가 본 방 표시 여부, 중간보스 보상, 스테이지 2 테마, 메타 진행, 달리기·대쉬 건너뛰기 허용. 로컬 테스트는 `stage-tests` 스킬(아래 토큰 절감 작업에서 추가)
