@@ -13,7 +13,7 @@
 - DONE (claude/project-thread-iz8mmy): 보스·중간보스 처치 연출 — 마지막 한 방에 0.35초 슬로모션(Time.timeScale 0.3, 실제 시간 기준으로 복구) + 화면 흰 번쩍임 + 큰 별·하트 폭발(`ClearBurst` 크게) + 보스 이름 띠 "격파!"(`RelicBannerView` 재사용). 일시정지·유물 창의 timeScale과 겹치지 않게
 - DONE (claude/project-thread-iz8mmy): 슬라임 왕 등장 연출 — 보스 방에 들어가면 왕이 위에서 떨어져 쿵(`KnightEntrance` 방식 일반화) + 왕관 반짝임 + 이름 띠 "슬라임 왕"
 - DONE (claude/project-thread-iz8mmy): 회복 구슬 다시 그리기 — 지금 구슬을 통통한 하트 구슬(berry + cream 하이라이트 + 반짝임 반복)로, 주울 때 하트가 튀는 작은 터짐
-- TODO: 물 기사 방패가 깨질 때 연출 — 방패 거품이 유리처럼 조각나 흩어지고(조각 6~8개 프레임) aqua 반짝임, 깨진 순간 기사가 잠깐 움찔(`EnemySquash`)
+- DONE (claude/project-thread-iz8mmy): 물 기사 방패가 깨질 때 연출 — 방패 거품이 유리처럼 조각나 흩어지고(조각 6~8개 프레임) aqua 반짝임, 깨진 순간 기사가 잠깐 움찔(`EnemySquash`)
 - TODO: HUD 체력·마나 바 귀엽게 — IMGUI 바를 둥근 캡슐 + 빛나는 테두리 + 체력 하트 아이콘·마나 별 아이콘 텍스처(생성기)로, 피해 받을 때 줄어드는 부분이 흰색으로 잠깐 남는 잔상
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
