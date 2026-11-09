@@ -234,11 +234,23 @@ namespace IBlameYou.UI
         {
             if (panel != null) return;
             panel = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, padding = new RectOffset(10, 10, 8, 8) };
+            // 귀엽게: 둥근 모서리 + 진한 보라 반투명 + 크림 테두리 (generate_hud.py Panel, 9분할 사방 10픽셀). 없으면 기본 상자
+            var panelTexture = Resources.Load<Texture2D>("UI/HUD/Panel");
+            if (panelTexture != null)
+            {
+                panel.normal.background = panelTexture;
+                panel.border = new RectOffset(10, 10, 10, 10);
+            }
             label = new GUIStyle(GUI.skin.label) { fontSize = 16, richText = true };
             label.normal.textColor = Color.white;
             small = new GUIStyle(label) { fontSize = 13, wordWrap = true };
             big = new GUIStyle(label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             keyBox = new GUIStyle(GUI.skin.box) { fontSize = 34, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            if (panelTexture != null)
+            {
+                keyBox.normal.background = panelTexture; // 방어막 미니게임 화살표 칸도 같은 둥근 패널
+                keyBox.border = new RectOffset(10, 10, 10, 10);
+            }
             input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
         }
 
