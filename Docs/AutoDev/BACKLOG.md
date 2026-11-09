@@ -23,3 +23,7 @@
 - DONE (claude/project-thread-nsj3x2): 컨트롤 퍼즐 1종 — 일정 주기로 움직이는 발판을 타고 건너는 청크 (`ChunkGenerator` + `StageValidator`는 발판이 없을 때도 막히지 않게, 낭떠러지 복귀 규칙 활용)
 - DONE (claude/project-thread-nsj3x2): 봉인문 보강 — 땅 속성 가시를 문 앞에서 쓰면 안내, 문 근처에서는 유도 마법이 적보다 문을 우선하지 않도록 안내 문구 정리
 - DONE (claude/project-thread-nsj3x2): 중간보스 기획 초안 — GDD에 스테이지 1 중간보스 후보 2~3개(패턴, 위치)를 문서로만 (구현은 사람 확인 후) → [MidBossDraft.md](../MidBossDraft.md). 후보 선택은 사람 필요
+- DONE (claude/project-thread-nsj3x2): 경직 연출 — 경직 전용 애니메이션 대체로 피격 순간 몸 그림을 뒤로 젖혔다가 되돌림 (회전만, Animator·보스 찌그러짐과 겹치지 않게)
+- DONE (claude/project-thread-nsj3x2): 두 속성 봉인문 — 진행도 60% 이후 봉인문 중 일부는 두 속성을 순서대로 맞혀야 열림 (문양 2개, 첫 속성을 맞히면 첫 문양이 꺼짐). 청크 데이터에 둘째 속성 추가, 테스트
+- TODO: 발판 퍼즐 변형 — 난이도 0.7 이상에서 발판 두 개를 갈아타는 넓은 낭떠러지 (가운데 작은 기둥, 발판 위상 엇갈림), 검증기·테스트
+- TODO: 스테이지 배치 규칙 테스트 — 정예 전투 40%/72%, 마지막 휴식+보스, 퍼즐 청크 진행도 범위, 예상 시간 30분 ±를 EditMode 테스트로 고정

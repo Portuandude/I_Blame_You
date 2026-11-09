@@ -8,18 +8,24 @@ namespace IBlameYou.Puzzles
     // 맵 퍼즐: 봉인문. 바닥부터 천장 위까지 길을 막는 마력 벽이고, 문 색(가운데 문양)과 같은 속성의 B 마법을 맞혀야 열린다.
     // 다른 속성이나 평타는 튕겨 나가며 안내 문구만 띄운다. 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
     // 마나는 계속 재생되므로 잘못 쏘거나 영창을 틀려도 기다리면 다시 시도할 수 있다 (갇히지 않는다).
+    // 두 속성 봉인문: 문양이 위아래로 둘이고 아래 문양부터 순서대로 맞힌다. 하나를 맞히면 그 문양이 꺼지고 벽 색이 다음 속성으로 바뀐다.
+    // 틀려도 진행은 초기화되지 않는다 (청크를 치웠다 다시 만들면 처음부터).
     public class ElementGate : MonoBehaviour, IElementReceiver
     {
         private const float HintCooldown = 1.5f;
         private static readonly List<ElementGate> Active = new List<ElementGate>();
         private const float SigilHeight = 2.2f;
+        private const float SigilSpacing = 1f;
 
-        private Element required;
+        private Element[] sequence;
+        private int step;
+        private SpriteRenderer barrier;
+        private SpriteRenderer[] sigils;
         private Action onOpened;
         private bool opened;
         private float nextHintTime;
 
-        public Element Required => required;
+        public Element Required => sequence[step];
 
         private void OnEnable() => Active.Add(this);
         private void OnDisable() => Active.Remove(this);
@@ -39,9 +45,11 @@ namespace IBlameYou.Puzzles
         }
 
         // bottom: 문이 선 칸의 바닥 가운데 (월드). alreadyOpen이면 아무것도 만들지 않고 null.
-        public static ElementGate Create(Transform parent, Vector2 bottom, Element required, bool alreadyOpen, Action onOpened)
+        // elements: 맞혀야 하는 속성 순서 (1~2개).
+        public static ElementGate Create(Transform parent, Vector2 bottom, Element[] elements, bool alreadyOpen, Action onOpened)
         {
-            if (alreadyOpen) return null;
+            if (alreadyOpen || elements == null || elements.Length == 0) return null;
+            var required = elements[0];
 
             float height = ChunkData.Height - bottom.y + 2f; // 천장 위까지 막아서 점프로 넘지 못하게
             var go = new GameObject("ElementGate");
@@ -54,12 +62,12 @@ namespace IBlameYou.Puzzles
             collider.offset = new Vector2(0f, height / 2f);
 
             var gate = go.AddComponent<ElementGate>();
-            gate.required = required;
+            gate.sequence = elements;
             gate.onOpened = onOpened;
 
             var color = ElementInfo.Color(required);
             var frames = TrapCommon.Frames("RuneGate");
-            var barrier = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(color.r, color.g, color.b, 0.6f), 1f, 2);
+            var barrier = gate.barrier = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(color.r, color.g, color.b, 0.6f), 1f, 2);
             barrier.transform.localPosition = new Vector3(0f, height / 2f, 0f);
             if (frames == null) barrier.transform.localScale = new Vector3(0.8f, height, 1f);
             else
@@ -68,26 +76,55 @@ namespace IBlameYou.Puzzles
                 barrier.transform.localScale = new Vector3(1f, height / 3f, 1f); // 그림은 1 × 3유닛
             }
 
-            // 문양 그림이 없으면 속성 색 사각형으로 대신한다.
-            TrapCommon.AddSprite(go.transform, "Sigil", TrapCommon.Frame($"RuneSigil_{required}"),
-                new Vector2(0f, SigilHeight), new Vector2(0.7f, 0.7f), color, 3);
+            // 문양 그림이 없으면 속성 색 사각형으로 대신한다. 순서대로 아래에서 위로.
+            gate.sigils = new SpriteRenderer[elements.Length];
+            for (int i = 0; i < elements.Length; i++)
+            {
+                gate.sigils[i] = TrapCommon.AddSprite(go.transform, $"Sigil_{i}", TrapCommon.Frame($"RuneSigil_{elements[i]}"),
+                    new Vector2(0f, SigilHeight + i * SigilSpacing), new Vector2(0.7f, 0.7f), ElementInfo.Color(elements[i]), 3);
+            }
             return gate;
+        }
+
+        private static string Names(Element[] elements, int from)
+        {
+            var names = new string[elements.Length - from];
+            for (int i = from; i < elements.Length; i++) names[i - from] = ElementInfo.KoreanName(elements[i]);
+            return string.Join(" → ", names);
         }
 
         public void ReceiveElement(Element element)
         {
             if (opened) return;
 
+            var required = sequence[step];
             if (element != required)
             {
                 PostHint($"봉인이 튕겨냈다! {ElementInfo.KoreanName(required)} 속성 마법만 통한다");
                 return;
             }
 
-            opened = true;
-            var center = transform.position + Vector3.up * SigilHeight;
+            var center = transform.position + Vector3.up * (SigilHeight + step * SigilSpacing);
             EffectLibrary.PlayHit(required, center, 2f);
             GameAudio.PlaySfx($"Hit_{required}", 0.9f);
+
+            step++;
+            if (step < sequence.Length)
+            {
+                // 맞힌 문양은 꺼지고, 벽 색이 다음 속성으로 바뀐다.
+                var dim = sigils[step - 1];
+                if (dim != null) dim.color = new Color(dim.color.r * 0.4f, dim.color.g * 0.4f, dim.color.b * 0.4f, 0.5f);
+                if (barrier != null)
+                {
+                    var next = ElementInfo.Color(sequence[step]);
+                    barrier.color = new Color(next.r, next.g, next.b, barrier.color.a);
+                }
+                nextHintTime = 0f;
+                PostHint($"봉인 하나가 풀렸다! 다음은 {ElementInfo.KoreanName(sequence[step])} 속성");
+                return;
+            }
+
+            opened = true;
             StageEvents.PostNotice("봉인이 풀렸다!");
             onOpened?.Invoke();
             Destroy(gameObject);
@@ -97,7 +134,8 @@ namespace IBlameYou.Puzzles
         private void OnCollisionEnter2D(Collision2D collision)
         {
             if (opened || TrapCommon.PlayerFrom(collision.collider) == null) return;
-            PostHint($"{ElementInfo.KoreanName(required)} 속성 마법(B)으로 봉인을 풀어라");
+            string order = sequence.Length - step > 1 ? $"{Names(sequence, step)} 순서로" : $"{ElementInfo.KoreanName(sequence[step])} 속성";
+            PostHint($"{order} 마법(B)을 맞혀 봉인을 풀어라");
         }
 
         private void PostHint(string text)

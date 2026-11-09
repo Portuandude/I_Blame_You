@@ -154,7 +154,10 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.ElementGate:
                         int gateChunk = index;
-                        IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), (Element)f.ElementIndex,
+                        var gateElements = f.HasSecondElement
+                            ? new[] { (Element)f.ElementIndex, (Element)f.SecondElementIndex }
+                            : new[] { (Element)f.ElementIndex };
+                        IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), gateElements,
                             openedGates.Contains(index), () =>
                             {
                                 openedGates.Add(gateChunk);

@@ -65,12 +65,16 @@ namespace IBlameYou.Systems
 
         // 스프라이트 로컬 좌표 → 콜라이더가 붙은 오브젝트의 로컬 좌표.
         // 월드를 거쳐 변환하므로 비주얼의 위치/스케일 오프셋과 좌우 반전(음수 스케일)이 모두 반영된다.
+        // 비주얼 자체의 회전(HitStun 경직 연출의 젖힘)은 빼서, 연출이 몸 판정을 기울여 바닥에 박히지 않게 한다.
         private List<Vector2> ToTargetSpace(List<Vector2> spritePoints)
         {
             converted.Clear();
+            var visual = source.transform;
+            var unrotated = Matrix4x4.TRS(visual.localPosition, Quaternion.identity, visual.localScale);
             foreach (var point in spritePoints)
             {
-                var world = source.transform.TransformPoint(point);
+                var local = unrotated.MultiplyPoint3x4(point);
+                var world = visual.parent != null ? visual.parent.TransformPoint(local) : local;
                 converted.Add(target.transform.InverseTransformPoint(world));
             }
 
