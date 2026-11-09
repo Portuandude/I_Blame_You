@@ -105,7 +105,7 @@ namespace IBlameYou.Systems
         // ------------------------------------------------------------------ 적
 
         // 진행도가 오를수록 슬라임 대신 고블린/궁수/병사가 섞인다.
-        private static StageEnemy PickEnemy(Random rng, float difficulty)
+        internal static StageEnemy PickEnemy(Random rng, float difficulty)
         {
             double r = rng.NextDouble();
             if (difficulty < 0.2f) return StageEnemy.Slime;

@@ -72,6 +72,16 @@ namespace IBlameYou.Enemies
 
         protected override bool ContactDamageActive => phase == AttackPhase.None;
 
+        // 다른 컴포넌트(슬라임 기사의 돌진·방패)가 잠시 몸을 직접 다룰 때 true. 이 동안 판단과 이동을 멈춘다.
+        public bool Suspended { get; set; }
+
+        // false면 맞았을 때 머리 위 체력 바를 띄우지 않는다 (보스 체력바를 쓰는 중간보스 기사).
+        public bool ShowsOwnHealthBar { get; set; } = true;
+        protected override bool ShowsHealthBar => ShowsOwnHealthBar;
+
+        // 도약 공격 중이면 true (그 사이에는 기사 기술을 시작하지 않는다).
+        public bool Attacking => phase != AttackPhase.None;
+
         // 스포너가 적의 수치를 지정할 때 사용.
         public void Configure(IdleBehaviour idle, float idleSpeed, float idleRadius, float chase, float detection)
         {
@@ -111,6 +121,7 @@ namespace IBlameYou.Enemies
 
         protected override void OnAliveUpdate()
         {
+            if (Suspended) return;
             var target = FindTarget();
             UpdateChaseState(target);
 
@@ -155,6 +166,7 @@ namespace IBlameYou.Enemies
 
         protected override void Move()
         {
+            if (Suspended) return;
             switch (phase)
             {
                 case AttackPhase.Windup:

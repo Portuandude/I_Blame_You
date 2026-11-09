@@ -13,11 +13,15 @@ namespace IBlameYou.Systems
         // 폴더별: 원본 스프라이트 → 회색 스프라이트 (원본마다 피벗/PPU를 맞춰 한 번만 만든다).
         private static readonly Dictionary<string, Dictionary<string, Texture2D>> TexturesByFolder =
             new Dictionary<string, Dictionary<string, Texture2D>>();
-        private static readonly Dictionary<Sprite, Sprite> GrayByOriginal = new Dictionary<Sprite, Sprite>();
+        // 같은 원본 스프라이트라도 폴더마다 다른 그림으로 바꾼다 (속성 슬라임 회색판 / 슬라임 기사 투구판).
+        private static readonly Dictionary<string, Dictionary<Sprite, Sprite>> GrayByFolder =
+            new Dictionary<string, Dictionary<Sprite, Sprite>>();
         private static readonly Dictionary<Sprite, Sprite> OriginalByGray = new Dictionary<Sprite, Sprite>();
 
         private SpriteRenderer spriteRenderer;
         private Dictionary<string, Texture2D> textures;
+        private Dictionary<Sprite, Sprite> grayByOriginal;
+        private float padding;
         private Color tint = Color.white;
 
         // 곱할 색 (보스의 발광처럼 잠깐 색을 바꿀 때).
@@ -27,12 +31,16 @@ namespace IBlameYou.Systems
             set => tint = value;
         }
 
-        public static ElementRecolor Attach(SpriteRenderer renderer, string resourcesFolder, Color color)
+        // padding: 바꿔 끼울 그림이 원본보다 사방으로 몇 px 넓은지 (슬라임 기사는 투구 때문에 넓힌 캔버스). 0이면 원본과 같은 크기.
+        public static ElementRecolor Attach(SpriteRenderer renderer, string resourcesFolder, Color color, float padding = 0f)
         {
             var recolor = renderer.GetComponent<ElementRecolor>();
             if (recolor == null) recolor = renderer.gameObject.AddComponent<ElementRecolor>();
             recolor.spriteRenderer = renderer;
             recolor.textures = LoadFolder(resourcesFolder);
+            recolor.padding = padding;
+            if (!GrayByFolder.TryGetValue(resourcesFolder, out recolor.grayByOriginal))
+                GrayByFolder[resourcesFolder] = recolor.grayByOriginal = new Dictionary<Sprite, Sprite>();
             recolor.tint = color;
             recolor.Apply();
             return recolor;
@@ -63,15 +71,21 @@ namespace IBlameYou.Systems
 
         private Sprite GrayFor(Sprite original)
         {
-            if (GrayByOriginal.TryGetValue(original, out var cached)) return cached;
+            if (grayByOriginal == null) return null;
+            if (grayByOriginal.TryGetValue(original, out var cached)) return cached;
             if (textures == null || !textures.TryGetValue(original.name, out var texture)) return null;
 
             var rect = original.rect;
-            var pivot = new Vector2(original.pivot.x / rect.width, original.pivot.y / rect.height);
-            var gray = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), pivot, original.pixelsPerUnit);
+            // 피벗은 원본 그림 크기 기준으로 계산한다 (임포트가 텍스처를 2의 거듭제곱으로 늘려도 비율은 그대로).
+            // 넓힌 그림(padding > 0)이면 피벗을 그만큼 옮기고, 텍스처 실제 높이에 맞춰 PPU를 고쳐 원본과 같은 크기로 그린다.
+            float fullWidth = rect.width + padding * 2f;
+            float fullHeight = rect.height + padding * 2f;
+            var pivot = new Vector2((original.pivot.x + padding) / fullWidth, (original.pivot.y + padding) / fullHeight);
+            float ppu = padding > 0f ? original.pixelsPerUnit * texture.height / fullHeight : original.pixelsPerUnit;
+            var gray = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), pivot, ppu);
             gray.name = original.name + "_Gray";
 
-            GrayByOriginal[original] = gray;
+            grayByOriginal[original] = gray;
             OriginalByGray[gray] = original;
             return gray;
         }

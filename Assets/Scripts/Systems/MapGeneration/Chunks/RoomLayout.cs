@@ -96,9 +96,12 @@ namespace IBlameYou.Systems
             var path = new List<(RoomKind kind, ChunkKind chunk, float difficulty)>();
             foreach (var entry in plan) path.Add((KindOf(entry.Key), entry.Key, entry.Value));
 
-            int midIndex = MidBossIndex(path.Count + 1);
+            int midIndex = PickMidBossIndex(path);
             float midDifficulty = path[Math.Min(midIndex, path.Count - 1)].difficulty;
             path.Insert(midIndex, (RoomKind.MidBoss, ChunkKind.EliteArena, midDifficulty));
+            // 방 리듬: 중간보스 바로 뒤는 휴식 방 (체크포인트 + 숨 고르기). 이미 휴식이면 그대로
+            if (path[midIndex + 1].kind != RoomKind.Rest)
+                path.Insert(midIndex + 1, (RoomKind.Rest, ChunkKind.Rest, midDifficulty));
 
             var layout = new RoomLayoutData { Seed = seed, MidBossPathIndex = midIndex };
             var rng = new Random(seed);
@@ -110,6 +113,28 @@ namespace IBlameYou.Systems
 
         // 방 count개짜리 주 경로에서 중간보스가 설 순번.
         public static int MidBossIndex(int count) => (int)Math.Round(MidBossProgress * (count - 1), MidpointRounding.AwayFromZero);
+
+        public const int MidBossSlack = 1; // 리듬을 맞추려고 55% 자리에서 앞뒤로 옮길 수 있는 방 수
+
+        // 중간보스를 끼울 자리 (path[index] 앞). 55% 자리에서 가까운 순으로 보며, 앞뒤 방이 문 잠기는 전투 방이 아닌 곳을 고른다
+        // (정예 → 중간보스 → 전투처럼 쉬지 않고 이어지는 싸움을 막는다). 마땅한 곳이 없으면 55% 자리.
+        internal static int PickMidBossIndex(List<(RoomKind kind, ChunkKind chunk, float difficulty)> path)
+        {
+            int ideal = MidBossIndex(path.Count + 2); // 중간보스 + 뒤 휴식 방까지 넣은 길이 기준
+            for (int d = 0; d <= MidBossSlack; d++)
+            {
+                foreach (int k in d == 0 ? new[] { ideal } : new[] { ideal - d, ideal + d })
+                {
+                    if (k < 2 || k > path.Count - 2) continue;
+                    if (IsFight(path[k - 1].kind) || IsFight(path[k].kind)) continue;
+                    return k;
+                }
+            }
+            return ideal;
+        }
+
+        private static bool IsFight(RoomKind kind) =>
+            kind == RoomKind.Combat || kind == RoomKind.Elite || kind == RoomKind.MidBoss || kind == RoomKind.Boss;
 
         public static RoomKind KindOf(ChunkKind chunk)
         {

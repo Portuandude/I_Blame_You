@@ -134,7 +134,7 @@ namespace IBlameYou.Systems
             var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
             if (follow == null) return;
             previousCameraBounds = follow.Bounds;
-            follow.SetBounds(new Rect(area.xMin, -1f, area.width, ChunkData.Height + 1f));
+            follow.SetBounds(new Rect(area.xMin, FallRecovery.FloorY - 1f, area.width, ChunkData.Height + 1f)); // 방 격자 모드에서는 지금 방 바닥 기준
         }
 
         private void UnlockCamera()
