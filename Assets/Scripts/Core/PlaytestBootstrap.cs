@@ -19,8 +19,8 @@ namespace IBlameYou.Core
         [SerializeField] private int seed = 0;
 
         private ChunkStreamer streamer;
-        private float currentTargetSeconds;
-        private bool? settingsDevMode; // 이어하기로 모드를 바꿨다면 원래 설정값 // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
+        private float currentTargetSeconds; // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
+        private bool? settingsDevMode;      // 이어하기로 모드를 바꿨다면 원래 설정값
         private GameObject player;
         private SkillHUD hud;
         private DevCheats cheats;
@@ -151,6 +151,17 @@ namespace IBlameYou.Core
                 gatesOpened = RunStats.GatesOpened,
                 records = streamer.ExportRecords()
             });
+        }
+
+        // 런 도중 앱을 꺼도: 이어 할 때 시간이 체크포인트 시점으로 되감기지 않게 하고, 모드 설정은 원래대로 남긴다.
+        private void OnApplicationQuit()
+        {
+            if (hud != null && !RunStats.Ended) RunSave.UpdateElapsed(hud.RunElapsed);
+            if (settingsDevMode.HasValue)
+            {
+                GameSession.DevMode = settingsDevMode.Value;
+                SaveData.SaveSettings();
+            }
         }
 
         private static HealthSystem SpawnEnemy(StageEnemy kind, Vector3 position, Transform parent, LevelArtConfig artConfig)
