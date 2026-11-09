@@ -37,7 +37,7 @@ namespace IBlameYou.Systems
                 var ribbonGo = new GameObject("Ribbon");
                 ribbonGo.transform.SetParent(go.transform, false);
                 // 이름이 길면 띠를 가로로 늘린다 (꼬리도 같이 늘어나지만 짧은 이름이 대부분이라 괜찮다)
-                float stretch = Mathf.Max(1f, (text.Length * GlyphWidth + 0.4f) / TextRoom);
+                float stretch = Mathf.Clamp((text.Length * GlyphWidth + 0.4f) / TextRoom, 1f, 1.6f); // 너무 늘이면 꼬리가 찌그러진다
                 ribbonGo.transform.localScale = new Vector3(stretch, 1f, 1f);
                 view.ribbon = ribbonGo.AddComponent<SpriteRenderer>();
                 view.ribbon.sprite = ribbonSprite;
