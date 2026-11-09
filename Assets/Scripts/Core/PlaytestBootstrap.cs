@@ -224,7 +224,8 @@ namespace IBlameYou.Core
 
             cam.orthographic = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.13f, 0.15f, 0.2f);
+            cam.backgroundColor = new Color(0.165f, 0.13f, 0.31f); // 팔레트 night (배경 그림이 없을 때)
+            ParallaxBackground.Attach(cam, stageStreamer.WorldBounds);
 
             var follow = cam.GetComponent<CameraFollow>();
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
