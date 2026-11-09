@@ -28,6 +28,7 @@ namespace IBlameYou.Systems
         {
             health = GetComponent<HealthSystem>();
             health.Damaged += OnDamaged;
+            if (GetComponent<HitFlash>() == null) gameObject.AddComponent<HitFlash>(); // 피격 번쩍임 + 파편 (프리팹 재생성 없이 적용)
         }
 
         private void Update()
