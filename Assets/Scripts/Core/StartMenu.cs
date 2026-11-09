@@ -1,15 +1,19 @@
 using System;
+using IBlameYou.Systems;
 using UnityEngine;
 
 namespace IBlameYou.Core
 {
-    // 게임 시작 전 화면 (기획서 2.8/2.9). 개발자 모드를 켜고 끄고, 로컬 테스트를 시작한다.
+    // 게임 시작 전 화면 (기획서 2.8/2.9). 개발자 모드를 켜고 끄고, 볼륨을 맞추고, 로컬 테스트를 시작한다.
+    // 설정과 최고 기록은 SaveData(PlayerPrefs)에 남는다.
     // 온라인(데디케이티드 서버)은 아직 없어 버튼만 자리를 잡아 둔다.
     // 테스트 단계라 UI 에셋 없이 IMGUI로 그린다.
     public class StartMenu : MonoBehaviour
     {
         private Action onStart;
         private bool devMode;
+        private float musicVolume;
+        private float sfxVolume;
         private GUIStyle title;
         private GUIStyle body;
         private GUIStyle button;
@@ -18,7 +22,10 @@ namespace IBlameYou.Core
         public void Initialize(Action startCallback)
         {
             onStart = startCallback;
+            SaveData.LoadSettings();
             devMode = GameSession.DevMode;
+            musicVolume = GameAudio.MusicVolume;
+            sfxVolume = GameAudio.SfxVolume;
         }
 
         private void EnsureStyles()
@@ -37,7 +44,7 @@ namespace IBlameYou.Core
             EnsureStyles();
 
             const float width = 640f;
-            const float height = 520f;
+            float height = Mathf.Min(640f, Screen.height - 20f); // 낮은 창에서도 버튼이 잘리지 않게
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             GUI.Box(area, GUIContent.none);
 
@@ -49,11 +56,19 @@ namespace IBlameYou.Core
             devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
             GUILayout.Space(8f);
             GUILayout.Label(devMode ? DevModeHelp : NormalModeHelp, body);
+            GUILayout.Space(12f);
+            musicVolume = VolumeSlider("배경음악", musicVolume);
+            sfxVolume = VolumeSlider("효과음", sfxVolume);
+            GameAudio.MusicVolume = musicVolume; // 메뉴 음악에 바로 반영
+            GameAudio.SfxVolume = sfxVolume;
+            GUILayout.Space(8f);
+            GUILayout.Label(RecordLine(devMode), body);
             GUILayout.FlexibleSpace();
 
             if (GUILayout.Button("로컬 테스트 시작", button, GUILayout.Height(48f)))
             {
                 GameSession.DevMode = devMode;
+                SaveData.SaveSettings();
                 GameSession.Started = true;
                 var callback = onStart;
                 Destroy(this);
@@ -64,6 +79,29 @@ namespace IBlameYou.Core
             GUILayout.Button("온라인 (데디케이티드 서버) — 준비 중", button, GUILayout.Height(40f));
             GUI.enabled = true;
             GUILayout.EndArea();
+        }
+
+        // 시작하지 않고 메뉴에서 바로 끄더라도 바꾼 설정은 남긴다.
+        private void OnApplicationQuit()
+        {
+            GameSession.DevMode = devMode;
+            SaveData.SaveSettings();
+        }
+
+        private float VolumeSlider(string name, float value)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{name} {value * 100f:0}%", body, GUILayout.Width(150f));
+            value = GUILayout.HorizontalSlider(value, 0f, 1f, GUILayout.Height(24f));
+            GUILayout.EndHorizontal();
+            return value;
+        }
+
+        private static string RecordLine(bool dev)
+        {
+            int level = SaveData.BestLevel(dev);
+            string mode = dev ? "개발자 모드" : "일반 모드";
+            return $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
         }
 
         private const string DevModeHelp =
