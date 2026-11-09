@@ -17,8 +17,13 @@ namespace IBlameYou.UI
         private int relicOpenedFrame;
         private int relicUnlockFrame = -1; // 고른 키가 같은 프레임에 스킬 입력으로 새지 않게, 이 프레임부터 조작 잠금을 푼다
 
+        private PlayerRelics relics;
+
+        private int RelicCount => relics != null ? relics.Owned.Count : 0;
+
         private void InitializeRelics()
         {
+            relics = health != null ? health.GetComponent<PlayerRelics>() : null;
             RelicChest.OpenRequested = OpenRelicWindow;
             RelicChest.CanOpen = CanOpenRelicWindow;
         }
@@ -91,6 +96,20 @@ namespace IBlameYou.UI
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) ChooseRelic(0);
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) ChooseRelic(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
+        }
+
+        // 레벨 막대 아래: 가진 유물 이름 (특성 포인트 안내가 뜨는 줄 아래).
+        private void DrawRelicList()
+        {
+            if (relics == null || relics.Owned.Count == 0) return;
+            var names = new System.Text.StringBuilder("<color=#ffd84d>유물</color> ");
+            for (int i = 0; i < relics.Owned.Count; i++)
+            {
+                if (i > 0) names.Append(" · ");
+                names.Append(RelicBook.Name(relics.Owned[i]));
+            }
+
+            GUI.Label(new Rect(12f, 256f, 520f, 22f), names.ToString(), small);
         }
 
         private void DrawRelicWindow()

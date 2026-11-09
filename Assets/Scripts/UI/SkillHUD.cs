@@ -111,6 +111,19 @@ namespace IBlameYou.UI
 
         private int RunLevel => progression != null ? progression.Level : 1;
 
+        // 런 시작부터 지금까지 (런 진행 저장용).
+        public float RunElapsed => Time.time - runStartTime;
+
+        // 저장된 런을 이어 할 때: Initialize 뒤에 불러 걸린 시간과 런 기록을 되살린다.
+        public void ResumeRun(float elapsed, int kills, float damageTaken, int arenasCleared, int gatesOpened)
+        {
+            runStartTime = Time.time - Mathf.Max(0f, elapsed);
+            RunStats.Kills = kills;
+            RunStats.DamageTaken = damageTaken;
+            RunStats.ArenasCleared = arenasCleared;
+            RunStats.GatesOpened = gatesOpened;
+        }
+
         private void OnDestroy()
         {
             if (mana != null) mana.ManaSpent -= OnManaSpent;
@@ -149,6 +162,7 @@ namespace IBlameYou.UI
             CloseRelicWindow();
             stageCleared = true;
             RunStats.Ended = true;
+            RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
             if (progression != null) SaveData.RecordLevel(progression.Level);
@@ -198,6 +212,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 RunStats.Ended = true;
+                RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (체크포인트로 되돌려 무르기 방지)
                 control.Locked = true;
                 BeginDeathSequence(); // 슬로모션, 회색으로 바래기, 화면 어두워짐 (SkillHUD.Death.cs)
             }
@@ -236,6 +251,7 @@ namespace IBlameYou.UI
             DrawStatusPanel();
             DrawStageBar();
             DrawLevelBar();
+            DrawRelicList();
             DrawBossBar();
             DrawNotice();
             DrawFeed();
@@ -393,7 +409,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel),
+            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
@@ -433,7 +449,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel),
+            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
