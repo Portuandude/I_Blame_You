@@ -4,7 +4,7 @@
 
 ## 2026-11-09 08:41 UTC
 - 브랜치/PR: `claude/project-thread-qoeoof` → #14 (09:03 UTC CI 통과 후 자동 머지) → #15 (진행 중, 자동 머지 켬)
-- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영) → #15
+- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영), 중간보스 쌍둥이 슬라임 기사(불 돌진·물 방패·짝 잃으면 광폭화, 중간보스 방 배치 테스트 — 로컬 35/35, 리뷰 HIGH 1·MEDIUM 1·LOW 4 반영 후 APPROVE) → #15
 - 실패/보류: 없음 (진행 중)
 - 다음 실행 메모: (진행 중)
 
