@@ -173,7 +173,7 @@ namespace IBlameYou.Tests
         [Test]
         public void ShaftTrapsStayOffArrivalsAndStairs()
         {
-            int spikes = 0, jets = 0;
+            int spikes = 0, jets = 0, leftSpikes = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
                 foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
@@ -188,12 +188,18 @@ namespace IBlameYou.Tests
                         Assert.AreEqual(RoomKind.Travel, room.Kind, $"seed {seed} room {room.Index} 이동 방에만 함정");
                         Assert.AreEqual(RoomShaper.ShaftGround, f.Y, "함정은 바닥에만");
                         if (f.Kind == FeatureKind.Spikes) spikes++; else jets++;
+                        if (f.Kind == FeatureKind.Spikes && f.X < RoomShaper.HoleX0) leftSpikes++;
                         for (int x = f.X; x < f.X + f.Width; x++)
                         {
                             Assert.IsTrue(x >= 4 && x <= ChunkData.Width - 5, $"seed {seed} room {room.Index} 좌우 문 앞 {x}");
                             Assert.IsFalse(x >= RoomShaper.HoleX0 - 3 && x <= RoomShaper.HoleX1 + 3, $"seed {seed} room {room.Index} 구멍 옆 {x}");
                             foreach (var spot in geometry.Arrivals.Values)
                                 Assert.IsFalse(spot.Item2 == f.Y && System.Math.Abs(spot.Item1 - x) <= 2, $"seed {seed} room {room.Index} 도착 칸 옆 {x}");
+                            foreach (var spot in geometry.Exits.Values)
+                                Assert.IsFalse(spot.Item2 == f.Y && System.Math.Abs(spot.Item1 - x) <= 2, $"seed {seed} room {room.Index} 출발 칸 옆 {x}");
+                            foreach (var other in chunk.Features)
+                                if ((other.Kind == FeatureKind.Enemy || other.Kind == FeatureKind.Checkpoint) && other.Y == f.Y)
+                                    Assert.Greater(System.Math.Abs(other.X - x), 2, $"seed {seed} room {room.Index} {other.Kind} 옆 {x}");
                             for (int y = f.Y + 1; y <= f.Y + 3; y++)
                                 Assert.AreNotEqual(StageTile.Platform, chunk.Get(x, y), $"seed {seed} room {room.Index} 맨 아래 발판 밑 {x}");
                         }
@@ -201,6 +207,7 @@ namespace IBlameYou.Tests
                 }
             }
 
+            Assert.Greater(leftSpikes, 0, "가시가 왼쪽(구멍 왼쪽)에도 나와야 함");
             Assert.Greater(spikes, 0, "가시가 한 번은 나와야 함");
             Assert.Greater(jets, 0, "불기둥이 한 번은 나와야 함");
         }
