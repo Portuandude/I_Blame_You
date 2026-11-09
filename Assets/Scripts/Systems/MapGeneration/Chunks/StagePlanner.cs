@@ -72,7 +72,10 @@ namespace IBlameYou.Systems
 
                 if (elapsed >= targetSeconds - reserve) break;
 
-                bool elite = elitesPlaced < EliteAt.Length && elapsed / targetSeconds >= EliteAt[elitesPlaced];
+                // (float) 변환으로 반올림을 고정한다: 런타임에 따라 나눗셈이 더 높은 정밀도로 남아 있으면
+                // 진행도가 정확히 0.4일 때 Mono에서는 정예, Unity에서는 일반 구역이 되는 식으로 결과가 갈렸다.
+                float progressNow = (float)(elapsed / targetSeconds);
+                bool elite = elitesPlaced < EliteAt.Length && progressNow >= EliteAt[elitesPlaced];
                 add(elite ? ChunkKind.EliteArena : ChunkKind.Arena);
                 if (elite) elitesPlaced++;
 
