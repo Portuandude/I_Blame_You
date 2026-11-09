@@ -240,6 +240,7 @@ namespace IBlameYou.Tests
                         string reason;
                         Assert.IsFalse(StageValidator.ValidateRoom(geometry.Chunk, arrivals, new[] { (f.X, f.Y) }, out reason),
                             $"{where}: 선반이 걷기·점프로 닿는 필수 경로에 있다");
+                        StringAssert.Contains("가는 길이 없음", reason, $"{where}: 선반 칸에 설 수는 있어야 한다");
                     }
                 }
             }
