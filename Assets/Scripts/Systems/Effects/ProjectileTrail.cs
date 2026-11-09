@@ -4,6 +4,7 @@ namespace IBlameYou.Systems
 {
     // 마법 투사체 뒤로 속성별 작은 입자를 흘려 비행감을 준다.
     // 불: 위로 날리는 불씨 / 물: 아래로 떨어지는 물방울 / 바람: 짧게 흩어지는 바람 조각 / 무: 반짝이는 마력 가루.
+    // 비행 그림("Visual" 자식)이 있으면 GhostInterval마다 속성색 잔상도 남긴다 (Docs/ArtStyle.md "잔상": 꼬리 2~3개).
     public class ProjectileTrail : MonoBehaviour
     {
         private struct Settings
@@ -18,14 +19,25 @@ namespace IBlameYou.Systems
             public Color End;
         }
 
+        private const float GhostInterval = 0.04f;
+        private const float GhostAlpha = 0.5f;
+        private const float GhostLife = 0.12f;
+
         private Settings settings;
         private float timer;
         private Vector3 lastPosition;
+        private SpriteRenderer visual;
+        private Color ghostColor;
+        private float ghostTimer;
 
         public void Begin(Element element)
         {
             settings = For(element);
             lastPosition = transform.position;
+            var child = transform.Find("Visual");
+            visual = child != null ? child.GetComponent<SpriteRenderer>() : null;
+            ghostColor = ElementInfo.Color(element);
+            ghostTimer = GhostInterval;
         }
 
         private static Settings For(Element element)
@@ -61,6 +73,16 @@ namespace IBlameYou.Systems
             }
 
             lastPosition = transform.position;
+
+            if (visual != null)
+            {
+                ghostTimer -= Time.deltaTime;
+                if (ghostTimer <= 0f)
+                {
+                    ghostTimer += GhostInterval;
+                    Afterimage.Spawn(visual, ghostColor, GhostAlpha, GhostLife);
+                }
+            }
         }
 
         private void Spawn(Vector3 position)
