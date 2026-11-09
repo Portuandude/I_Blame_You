@@ -11,8 +11,8 @@
 - DONE (claude/project-thread-8rxr8x): 보스 체력바 귀엽게 — 왕관 아이콘(`generate_hud.py` Crown) + 캡슐 바(보라, gold 빛) + 흰 잔상, 한 번에 5% 넘게 깎이면 0.25초 흔들림. 보스 교체·분열로 최대 체력이 바뀌면 잔상 초기화
 - DONE (claude/project-thread-8rxr8x): 레벨·스테이지 진행 바 귀엽게 — 캡슐 바(경험치 lilac, 진행도 gold), 레벨업 0.6초 gold 반짝, 진행 바 끝 깃발(`generate_hud.py` Flag)
 - DONE (claude/project-thread-8rxr8x): 머리 위 바·적 체력바 귀엽게 — `UI/CapsuleBar.cs`(런타임 9분할 Sliced 스프라이트 + 흰 잔상, 잔상 계산 `BarTrail` 공용)로 `StatusBarsUI`·`EnemyHealthBar` 교체. 그림 없으면 예전 단색 사각형
-- TODO: HUD 패널 귀엽게 — `GUI.skin.box` 기본 회색 패널을 둥근 모서리 + 진한 보라 반투명 + 크림 테두리 9분할 패널 그림으로 (상태 패널·스테이지·레벨·유물 목록·보스 바·피드 공통 `panel` 스타일)
-- TODO: 적 경직 프레임 — GDD 로드맵 "경직 애니메이션": 슬라임·고블린 피격 때 찌그러진 1~2프레임 그림(생성기)을 0.2초 보여 주기 (`PlayerHurtPose` 방식 참고)
+- DONE (claude/project-thread-8rxr8x): HUD 패널 귀엽게 — `panel`·`keyBox` 스타일 배경을 둥근 모서리 + night 반투명 + 크림 테두리 9분할(`generate_hud.py` Panel)로. 피드는 패널이 없어 그대로
+- TODO: 적 경직 연출 — GDD 로드맵 "경직 애니메이션": 경직 동안 머리 위에 별 3개가 빙글빙글 도는 어질어질 이펙트(생성기, 반복 프레임). 적마다 피격 그림을 새로 그리는 대신 모든 적에 공통으로 (그림 교체는 슬라임 회색판·기사 투구판과 겹쳐 복잡)
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
