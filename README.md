@@ -100,7 +100,7 @@ Assets/
       Stamina/                # StaminaSystem (소모/재생)
       Mana/                   # ManaSystem (소모/자동 재생, A/B가 쓴·날린 마나 기록)
       Stats/                  # StatTable(스탯 문서 값), CombatStats, DamageCalculator(비율식 공식), Element
-      Combat/                 # HitStun(피격 경직), HitFlash/HitDebris(피격 시 0.08초 흰색 번쩍임 + 파편, HitStun이 자동으로 붙임), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
+      Combat/                 # HitStun(피격 경직, 몸이 뒤로 젖혀지는 경직 연출), HitFlash/HitDebris(피격 시 0.08초 흰색 번쩍임 + 파편, HitStun이 자동으로 붙임), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # SolidSpriteFactory, PhysicsMaterialFactory
         Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
