@@ -93,7 +93,8 @@ namespace IBlameYou.Systems
 
             foreach (var spawn in spawns)
             {
-                bool dropsIn = spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater; // 중간보스는 위에서 떨어진다 (KnightEntrance)
+                bool dropsIn = spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater
+                               || spawn.Kind == StageEnemy.SlimeKing; // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
                 if (!dropsIn)
                     EffectLibrary.PlayOneShot(spawn.Position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.4f, 0.4f, 0.7f), 1.2f);
                 RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
