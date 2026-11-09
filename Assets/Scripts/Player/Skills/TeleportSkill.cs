@@ -138,9 +138,10 @@ namespace IBlameYou.Player
                 var hit = castResults[i];
                 if (solidOnly && hit.collider.usedByEffector) continue;
                 float d = Mathf.Max(hit.distance - 0.05f, 0f);
-                if (d >= nearest) continue;
+                if (d > nearest) continue;
+                bool unsafeHere = hit.collider.GetComponentInParent<UnsafeGround>() != null;
+                nearestUnsafe = d < nearest ? unsafeHere : nearestUnsafe || unsafeHere; // 같은 거리면 불안한 쪽을 따른다
                 nearest = d;
-                nearestUnsafe = hit.collider.GetComponentInParent<UnsafeGround>() != null;
             }
 
             if (!solidOnly && nearestUnsafe) return float.PositiveInfinity; // 처음 닿는 곳이 불안한 발판이면 안전하지 않다
