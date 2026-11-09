@@ -580,6 +580,7 @@ namespace IBlameYou.Systems
                 follow.SnapToTarget();
             }
 
+            StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }
 
