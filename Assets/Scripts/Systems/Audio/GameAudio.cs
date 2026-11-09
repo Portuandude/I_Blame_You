@@ -111,7 +111,7 @@ namespace IBlameYou.Systems
         private void Update()
         {
             // 지금 곡은 MusicVolume까지 올리고, 이전 곡은 줄여서 끈다.
-            float step = Time.unscaledDeltaTime / MusicFadeTime * MusicVolume;
+            float step = Time.unscaledDeltaTime / MusicFadeTime * Mathf.Max(MusicVolume, 0.1f); // 볼륨이 0이어도 이전 곡은 꺼지게
             Fade(musicA, step);
             Fade(musicB, step);
         }

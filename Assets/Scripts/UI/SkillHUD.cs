@@ -52,6 +52,7 @@ namespace IBlameYou.UI
         private bool stageCleared;
         private float runStartTime;
         private float clearTime;
+        private bool newBestTime;
         private string notice;
         private float noticeTime;
 
@@ -125,6 +126,8 @@ namespace IBlameYou.UI
             ClosePauseMenu();
             stageCleared = true;
             clearTime = Time.time - runStartTime;
+            newBestTime = SaveData.RecordClearTime(clearTime);
+            if (progression != null) SaveData.RecordLevel(progression.Level);
             control.Locked = true;
         }
 
@@ -393,13 +396,12 @@ namespace IBlameYou.UI
 
         private void DrawStageClear()
         {
-            var rect = new Rect((Screen.width - 520f) / 2f, Screen.height * 0.35f, 520f, 130f);
+            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 130f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
-            int minutes = Mathf.FloorToInt(clearTime / 60f);
-            int seconds = Mathf.FloorToInt(clearTime % 60f);
+            string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
-                $"걸린 시간 {minutes}분 {seconds:00}초 · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
+                $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
