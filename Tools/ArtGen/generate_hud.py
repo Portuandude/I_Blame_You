@@ -9,6 +9,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/Heart.png     24x24  체력 하트
   Assets/Resources/UI/HUD/Star.png      24x24  마나 별
   Assets/Resources/UI/HUD/Crown.png     24x24  보스 체력바 왕관
+  Assets/Resources/UI/HUD/Flag.png      22x22  스테이지 진행 바 끝 깃발
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
 """
@@ -146,6 +147,26 @@ def crown():
     return small(img, n, n)
 
 
+def flag():
+    n = 22
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    # 깃대 (외곽선 → 크림)
+    d.rectangle([4 * SS, 2 * SS, 7 * SS, 21 * SS], fill=OUTLINE)
+    d.rectangle([5 * SS, 3 * SS, 6 * SS, 20 * SS], fill=CREAM)
+    d.ellipse([3 * SS, 0.5 * SS, 8 * SS, 5.5 * SS], fill=OUTLINE)
+    d.ellipse([4 * SS, 1.5 * SS, 7 * SS, 4.5 * SS], fill=COLORS["gold"])
+    # 물결 깃발 (berry)
+    top = [(6.5, 4), (11, 3), (15, 5), (20, 4)]
+    bottom = [(20, 12), (15, 13), (11, 11), (6.5, 12.5)]
+    d.polygon([(x * SS, y * SS) for x, y in [(6.5, 3)] + [(x, y - 1) for x, y in top[1:]] + [(21, 4), (21, 12.5)]
+               + [(x, y + 1) for x, y in bottom] + [(6.5, 13.5)]], fill=OUTLINE)
+    d.polygon([(x * SS, y * SS) for x, y in top + bottom], fill=COLORS["berry"])
+    d.polygon([(x * SS, y * SS) for x, y in [(7, 4.5), (11, 3.8), (15, 5.8), (19.5, 4.8), (19.5, 6.5), (15, 7.5), (11, 5.8), (7, 6.5)]],
+              fill=hexrgba("ffb3d4"))
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -155,6 +176,7 @@ def generate():
         "Heart": heart(),
         "Star": star(),
         "Crown": crown(),
+        "Flag": flag(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
@@ -201,6 +223,7 @@ def preview(result, path):
         fill_img = tint(nine(result["BarFill"], bw, BAR_H, 9, 0), fill_col).crop((0, 0, int(bw * ratio), BAR_H))
         canvas.alpha_composite(fill_img, (bx, y))
     canvas.alpha_composite(result["Crown"], (350, 18))
+    canvas.alpha_composite(result["Flag"], (350, 40))
     canvas = canvas.resize((canvas.width * scale, canvas.height * scale), Image.NEAREST)
     canvas.save(path)
 
