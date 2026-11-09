@@ -100,6 +100,7 @@ namespace IBlameYou.Player
             go.AddComponent<TeleportSkill>();      // A: 순간이동
             go.AddComponent<FallRecovery>();       // 낭떠러지에 떨어지면 마지막 안전한 땅으로
             go.AddComponent<PlayerProgression>();  // 경험치·레벨·특성 (A·B 공용)
+            PlayerJuice.For(go);                    // 착지 먼지, 대쉬 잔상, 레벨업 빛기둥, 적 쓰러짐 파편
             go.AddComponent<PlayerRelics>();       // 런 동안 얻은 유물 (A·B 공용)
             CharacterLayers.Assign(go, CharacterLayers.PlayerLayerName);
 

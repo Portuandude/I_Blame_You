@@ -76,6 +76,7 @@ namespace IBlameYou.Core
             player = movement.gameObject;
             if (player.GetComponent<FallRecovery>() == null) player.AddComponent<FallRecovery>(); // 프리팹을 다시 굽기 전 대비
             if (player.GetComponent<PlayerProgression>() == null) player.AddComponent<PlayerProgression>();
+            PlayerJuice.For(player);
             if (resume != null) RestorePlayer(resume, start); // HUD를 붙이기 전에 (특성 다시 찍기가 HUD 알림으로 쏟아지지 않게)
             streamer.SetPlayer(player.transform);
             streamer.CheckpointActivated += SaveRun;
