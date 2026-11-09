@@ -1,3 +1,4 @@
+using IBlameYou.Core;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace IBlameYou.UI
         private void OnLeveledUp(int level)
         {
             OnStageNotice($"레벨 {level}! 특성 포인트 +1 (Tab)");
+            SaveData.RecordLevel(level);
             GameAudio.PlaySfx("Cast_Wind", 0.5f);
         }
 
