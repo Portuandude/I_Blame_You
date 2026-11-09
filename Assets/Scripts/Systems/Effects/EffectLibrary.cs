@@ -94,6 +94,16 @@ namespace IBlameYou.Systems
             PlayOneShot(position, HitFrames(element), 20f, ElementInfo.Color(element), 0.8f * scale, false, scale);
         }
 
+        // 마법을 쏠 때 손 앞에 빛이 모였다 터지는 프레임 (Tools/ArtGen/generate_magic_fx.py).
+        public static Sprite[] CastFrames(Element element) => LoadRuntimeFrames($"Effects/Cast/{ElementFolder(element)}");
+
+        public static void PlayCast(Element element, Vector3 position, bool flipX = false, float scale = 0.8f)
+        {
+            var frames = CastFrames(element);
+            if (frames == null) return; // 발사 그림이 없으면 예전처럼 바로 날아간다
+            PlayOneShot(position, frames, 24f, ElementInfo.Color(element), 0.5f, flipX, scale);
+        }
+
         private static string ElementFolder(Element element) => element.ToString();
 
         // Resources/<path>/ 의 PNG를 이름순으로 읽어 중심 피벗 스프라이트로 만든다 (100px = 1유닛).
