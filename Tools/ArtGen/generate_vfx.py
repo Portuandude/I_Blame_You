@@ -13,6 +13,7 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/Shockwave/00~07         무거운 착지 충격파: 납작한 고리 두 겹 + 흙먼지 + 별 (192x64, 아래에서 16px이 바닥)
   Assets/Resources/Effects/HeartOrb/00~07          회복 구슬 반복: 통통한 berry 하트 + aqua 마나 고리 (80x80)
   Assets/Resources/Effects/HeartPop/00~07          회복 구슬 주울 때: 하트·별이 위로 톡톡 튐 (128x128)
+  Assets/Resources/Effects/ShieldShatter/00~07     방어막 깨짐: 거품이 유리 조각 10개로 흩어지고 aqua 반짝임 (192x192, 방어막 그림과 같은 중심)
   Assets/Resources/Effects/RelicBanner/00          유물 이름 띠 (360x80, 가운데에 글자가 올라간다)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
@@ -397,10 +398,49 @@ def heart_pop_frames():
     return frames
 
 
+def shield_shatter_frames():
+    """방어막 깨짐: 테두리(반지름 62px, generate_skill_fx 방어막과 같음)에서 유리 조각 10개가 돌며 바깥으로 튀고,
+    깨진 테두리 고리가 번쩍 퍼지며 aqua 별이 반짝인다. 흰·aqua만 (색을 입히지 않고 그대로 쓴다). 8프레임."""
+    frames = []
+    w = h = 192
+    cx, cy = w / 2, h / 2
+    rng = random.Random(77)
+    shards = []
+    for k in range(10):
+        ang = 2 * math.pi * k / 10 + rng.uniform(-0.2, 0.2)
+        shards.append((ang, rng.uniform(26, 40), rng.uniform(10, 15), rng.uniform(-2.5, 2.5), rng.uniform(0, math.pi)))
+    for i in range(8):
+        t = i / 7
+        fx = Fx(w, h)
+        if t < 0.4:
+            q = t / 0.4
+            fx.ring(cx, cy, 62 + 14 * q, 6 * (1 - q) + 1, alpha(CREAM, 255 * (1 - q)))
+        for ang, speed, size, spin, rot0 in shards:
+            d = 60 + speed * (1 - (1 - t) ** 2) * 1.2
+            x = cx + math.cos(ang) * d
+            y = cy + math.sin(ang) * d + 18 * t * t  # 살짝 떨어진다
+            rot = rot0 + spin * t * 2
+            sz = size * (1 - 0.35 * t)
+            pts = [(x + math.cos(rot + a) * sz * r, y + math.sin(rot + a) * sz * r)
+                   for a, r in ((0, 1.0), (2.3, 0.7), (4.0, 0.85))]
+            a = 255 * (1 - max(0.0, t - 0.5) / 0.5)
+            fx.poly(pts, alpha(AQUA, a * 0.6), light=True)
+            fx.poly(pts, alpha(CREAM, a))
+            fx.poly([pts[0], pts[1], ((pts[0][0] + pts[2][0]) / 2, (pts[0][1] + pts[2][1]) / 2)], alpha((255, 255, 255, 255), a))
+        for k in range(4):
+            ang = 2 * math.pi * (k / 4 + 0.125)
+            d = 50 + 30 * t
+            tw = math.sin(math.pi * min(1.0, t * 1.4))
+            fx.star(cx + math.cos(ang) * d, cy + math.sin(ang) * d, 9 * tw + 1, alpha(AQUA, 255 * tw))
+        frames.append(fx.finish(glow=3))
+    return frames
+
+
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
         "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames,
         "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames,
-        "HeartOrb": heart_orb_frames, "HeartPop": heart_pop_frames}
+        "HeartOrb": heart_orb_frames, "HeartPop": heart_pop_frames,
+        "ShieldShatter": shield_shatter_frames}
 
 
 def generate():
