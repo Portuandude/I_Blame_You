@@ -10,6 +10,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/Star.png      24x24  마나 별
   Assets/Resources/UI/HUD/Crown.png     24x24  보스 체력바 왕관
   Assets/Resources/UI/HUD/Flag.png      22x22  스테이지 진행 바 끝 깃발
+  Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
 """
@@ -167,6 +168,19 @@ def flag():
     return small(img, n, n)
 
 
+def panel():
+    n = 32
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, n * SS - 1, n * SS - 1], radius=8 * SS, fill=hexrgba("120e24", 230))   # 바깥 외곽선
+    d.rounded_rectangle([1 * SS, 1 * SS, (n - 1) * SS - 1, (n - 1) * SS - 1], radius=7 * SS, fill=CREAM)  # 크림 테두리
+    d.rounded_rectangle([2.5 * SS, 2.5 * SS, (n - 2.5) * SS - 1, (n - 2.5) * SS - 1], radius=5.5 * SS,
+                        fill=hexrgba("2a2150", 215))  # night 반투명 안쪽
+    # 위쪽 안쪽에 옅은 lilac 띠 (유리 같은 반짝)
+    d.rounded_rectangle([4 * SS, 3.5 * SS, (n - 4) * SS - 1, 6 * SS], radius=1.2 * SS, fill=hexrgba("a68cf0", 70))
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -177,6 +191,7 @@ def generate():
         "Star": star(),
         "Crown": crown(),
         "Flag": flag(),
+        "Panel": panel(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
