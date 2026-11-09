@@ -1,4 +1,5 @@
 using System;
+using IBlameYou.Core;
 using IBlameYou.Player;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace IBlameYou.Systems
 
         private const float VisualScale = 1.3f;
         private const float VisualHeight = 0.45f;
+        private const float BannerHeight = 2.3f; // 이름 띠는 빛기둥 중간쯤
 
         private int seed;
         private int chunkIndex;
@@ -111,6 +113,7 @@ namespace IBlameYou.Systems
                 if (taken || relics == null || !relics.Add(chosen)) return;
                 GameAudio.PlaySfx("RelicOpen", 0.7f);
                 StageEvents.PostNotice($"유물: {RelicBook.Name(chosen)} ({RelicBook.Description(chosen)})");
+                VfxPlayer.RelicBanner(transform.position + Vector3.up * BannerHeight, RelicBook.Name(chosen));
                 Take();
             }, () => waiting = false);
 
@@ -120,7 +123,9 @@ namespace IBlameYou.Systems
         private void Take()
         {
             taken = true;
-            EffectLibrary.PlayHit(Element.Neutral, transform.position + Vector3.up * VisualHeight, 1.4f);
+            var center = transform.position + Vector3.up * VisualHeight;
+            if (!VfxPlayer.ChestOpen(center, VisualScale)) EffectLibrary.PlayHit(Element.Neutral, center, 1.4f); // 열기 그림이 없으면 예전 터짐
+            CameraFollow.ShakeMain(0.12f, 0.08f);
             onTaken?.Invoke();
             Destroy(gameObject);
         }
