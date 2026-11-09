@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using IBlameYou.Core;
+using IBlameYou.Enemies;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -91,7 +92,22 @@ namespace IBlameYou.UI
                 progression.TraitRaised += OnTraitRaised;
             }
             runStartTime = Time.time;
+            RunStats.Reset();
+            EnemyController.Killed += OnEnemyKilled;
+            health.Damaged += OnPlayerDamaged;
         }
+
+        private void OnEnemyKilled(EnemyController enemy, float xp)
+        {
+            if (!RunStats.Ended) RunStats.Kills++;
+        }
+
+        private void OnPlayerDamaged(float amount)
+        {
+            if (!RunStats.Ended) RunStats.DamageTaken += amount;
+        }
+
+        private int RunLevel => progression != null ? progression.Level : 1;
 
         private void OnDestroy()
         {
@@ -99,11 +115,14 @@ namespace IBlameYou.UI
             SkillMessages.Posted -= OnSkillMessage;
             StageEvents.Notice -= OnStageNotice;
             StageEvents.Cleared -= OnStageCleared;
+            EnemyController.Killed -= OnEnemyKilled;
+            if (health != null) health.Damaged -= OnPlayerDamaged;
             if (progression != null)
             {
                 progression.LeveledUp -= OnLeveledUp;
                 progression.TraitRaised -= OnTraitRaised;
             }
+            if (paused) SaveData.SaveSettings(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
             if (traitWindowOpen || paused || deathSlowMotion) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
@@ -125,6 +144,7 @@ namespace IBlameYou.UI
             CloseTraitWindow();
             ClosePauseMenu();
             stageCleared = true;
+            RunStats.Ended = true;
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
             if (progression != null) SaveData.RecordLevel(progression.Level);
@@ -172,6 +192,7 @@ namespace IBlameYou.UI
                 CloseTraitWindow();
                 ClosePauseMenu();
                 deathHandled = true;
+                RunStats.Ended = true;
                 control.Locked = true;
                 BeginDeathSequence(); // 슬로모션, 회색으로 바래기, 화면 어두워짐 (SkillHUD.Death.cs)
             }
@@ -359,13 +380,15 @@ namespace IBlameYou.UI
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
-            var rect = new Rect((Screen.width - 520f) / 2f, Screen.height * 0.35f, 520f, 130f);
+            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 160f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", big);
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
+            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel),
+                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
         }
@@ -396,14 +419,16 @@ namespace IBlameYou.UI
 
         private void DrawStageClear()
         {
-            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 130f);
+            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 160f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
             string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 92f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
+            GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel),
+                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
         }
     }

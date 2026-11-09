@@ -46,7 +46,7 @@ Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)�
 | B | 상단 1~5 | 불/물/바람/땅/무 공격 스킬 → 영창문 타이핑 후 Enter (오타면 마나만 소모, Esc 취소) |
 | 개발자 모드 | 상단 1~5 / 6~9·0 | A 방어막 / B 공격 스킬 즉시 발동 |
 | 개발자 모드 | F1 / F2 / F3 / F4 | 무적 / 마나 무한 / 주변 적 처치 / 체력 회복 |
-| 공통 | Esc | 일시정지 메뉴 (계속하기/다시 시작/시작 화면). B의 영창 중에는 영창 취소, Tab 특성 창이 열려 있으면 창 닫기 |
+| 공통 | Esc | 일시정지 메뉴 (배경음악/효과음 볼륨, 계속하기/다시 시작/시작 화면). B의 영창 중에는 영창 취소, Tab 특성 창이 열려 있으면 창 닫기 |
 | 공통 | R / M (쓰러졌을 때) | 다시 시작 / 시작 화면 (사망 연출이 끝나고 게임오버 창이 뜬 뒤) |
 
 수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
@@ -76,7 +76,7 @@ Assets/
   Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
-  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/출구 그림 (런타임 로드, Tools/ArtGen)
+  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
@@ -103,16 +103,17 @@ Assets/
       Combat/                 # HitStun(피격 경직), HitFlash/HitDebris(피격 시 0.08초 흰색 번쩍임 + 파편, HitStun이 자동으로 붙임), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # SolidSpriteFactory, PhysicsMaterialFactory
         Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
-                              # ChunkGenerator(청크 12종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
+                              # ChunkGenerator(청크 13종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
-                              # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지, SkillHUD.Death — 사망 연출
+                              # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
                               # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
-    Puzzles/, Data/  # (비어 있음)
+    Puzzles/                  # ElementGate(속성 마법으로 여는 봉인문)
+    Data/                     # (비어 있음)
   Plugins/, Settings/
 Assets/Tests/EditMode/        # EditMode 테스트 (IBlameYou.Tests.EditMode.asmdef)
 Packages/manifest.json
@@ -125,11 +126,12 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 
 맵은 손으로 만들지 않고 시드 하나로 매번 새로 만든다 (기본은 실행할 때마다 무작위 시드, `PlaytestBootstrap`의 `randomSeedEachRun`을 끄면 `seed` 고정).
 
-- 스테이지 = 32×24 타일(1타일 = 1유닛) 청크를 가로로 이어 붙인 것. 청크 종류: 시작, 평지, 언덕, 낭떠러지, 가시밭, 절벽, 동굴, 무너지는 다리, 전투, 정예 전투, 휴식(체크포인트), 보스.
+- 스테이지 = 32×24 타일(1타일 = 1유닛) 청크를 가로로 이어 붙인 것. 청크 종류: 시작, 평지, 언덕, 낭떠러지, 가시밭, 절벽, 동굴, 무너지는 다리, 봉인문(맵 퍼즐), 전투, 정예 전투, 휴식(체크포인트), 보스.
 - `StagePlanner`가 청크 종류별 예상 시간(가안)을 더해 목표 30분이 될 때까지 이동 구간 2~3개 + 전투 구역을 번갈아 놓는다. 진행도가 오를수록 어려운 지형·함정·적이 늘고, 40%/72% 지점에 정예 전투, 마지막에 휴식 + 보스.
 - 지형 규칙은 점프 능력에서 나왔다 (최대 2칸 오르기, 최대 3칸 낭떠러지). `StageValidator`가 청크마다 통과 가능 여부와 빠지면 못 나오는 구덩이를 검사하고, 실패하면 다시 만든다.
 - 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트는 기록해 둔다.
 - 일반·정예 전투 구역을 돌파하면 가운데에 회복 구슬(`ArenaReward`)이 떨어진다. 닿으면 최대 체력 30%, 최대 마나 50% 회복. 줍지 않고 떠나도 다시 오면 그대로 있다 (보스 구역은 출구가 보상이라 없음).
+- **봉인문 (맵 퍼즐)**: 진행도 25~85% 구간에 스테이지당 최대 2개. 가운데 마력 벽이 천장까지 길을 막고, 문 색·문양과 같은 속성(불/물/바람)의 B 공격 마법을 맞히면 열린다. 다른 속성이나 평타는 튕겨 나가며 필요한 속성을 알려 준다. 연 문은 청크를 다시 만들어도 열린 채로 남는다 (`Puzzles/ElementGate`, 투사체는 `IElementReceiver`로 속성을 전달).
 - 낭떠러지에 떨어지면 체력 15%를 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다. 보스 구역을 돌파하면 출구가 열리고, 들어가면 클리어.
 
 ## 레벨업 특성 (던그리드식)
@@ -171,7 +173,7 @@ python3 Tools/StageGen/render_stage.py /tmp/stage1.txt /tmp/stage1.png
 
 - 테스트 어셈블리(`IBlameYou.Tests.EditMode.asmdef`)는 `Assembly-CSharp`를 참조할 수 없어서, 테스트할 순수 로직은 별도 asmdef로 분리한다.
   지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`, UnityEngine 참조 없음)만 분리되어 있다. 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
-- `StageGeneratorTests`: 시드 40개로 모든 청크 검증 통과, 이음새 높이, 시작/보스 청크와 출구, 예상 시간 ±10%, 같은 시드 = 같은 지형.
+- `StageGeneratorTests`: 시드 40개로 모든 청크·대체 청크 검증 통과, 이음새 높이, 시작/보스 청크와 출구, 예상 시간 ±10%, 같은 시드 = 같은 지형, 봉인문 배치 규칙(진행도 구간, 최대 2개)과 우회 불가.
 
 ## 프리팹 구조
 

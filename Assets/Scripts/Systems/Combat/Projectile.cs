@@ -71,6 +71,12 @@ namespace IBlameYou.Systems
             var wall = groundMask != 0 ? Physics2D.Raycast(position, step.normalized, step.magnitude, groundMask) : default;
             if (wall.collider != null)
             {
+                // 플레이어 마법이 봉인문 같은 속성 장치에 맞으면 속성을 전달한다 (적이 쏜 화살은 제외).
+                if (hitsEnemies)
+                {
+                    var receiver = wall.collider.GetComponentInParent<IElementReceiver>();
+                    if (receiver != null) receiver.ReceiveElement(element);
+                }
                 Impact?.Invoke(wall.point);
                 Destroy(gameObject);
                 return;

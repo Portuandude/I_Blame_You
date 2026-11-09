@@ -101,5 +101,77 @@ namespace IBlameYou.Tests
                 }
             }
         }
+
+        // ---- 봉인문 퍼즐 청크 ----
+
+        private static ChunkFeature GateOf(ChunkData chunk)
+        {
+            ChunkFeature gate = default(ChunkFeature);
+            int count = 0;
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind != FeatureKind.ElementGate) continue;
+                gate = f;
+                count++;
+            }
+            Assert.AreEqual(1, count, $"chunk {chunk.Index}: 봉인문 개수");
+            return gate;
+        }
+
+        [Test]
+        public void ElementGateChunkHasOneGateWithStandingRoomOnBothSides()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (int entry in new[] { 4, 7, 10 })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 5, ChunkKind.ElementGate, 0.5f, entry, 0);
+                    Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"seed {seed} entry {entry}: {reason}");
+                    var gate = GateOf(chunk);
+                    Assert.That(gate.ElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1));
+                    Assert.IsFalse(chunk.HasFeature(FeatureKind.Enemy), $"seed {seed}: 퍼즐 청크에 적");
+                    for (int y = gate.Y; y < ChunkData.Height; y++)
+                        Assert.AreEqual(StageTile.Empty, chunk.Tiles[gate.X, y], $"seed {seed}: 봉인문 열 ({gate.X},{y})가 비어 있지 않음");
+                    foreach (int x in new[] { gate.X - 1, gate.X + 1 })
+                    {
+                        Assert.IsTrue(chunk.IsSolid(x, gate.Y - 1), $"seed {seed}: ({x}) 발밑");
+                        Assert.IsFalse(chunk.IsSolid(x, gate.Y) || chunk.IsSolid(x, gate.Y + 1), $"seed {seed}: ({x}) 설 자리");
+                    }
+                }
+            }
+        }
+
+        // 봉인문 열을 땅으로 메우면 지나갈 수 없어야 한다 = 문을 열지 않고 돌아갈 길이 없다.
+        [Test]
+        public void ElementGateCannotBeBypassed()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var chunk = ChunkGenerator.Generate(seed, 5, ChunkKind.ElementGate, 0.5f, 7, 0);
+                var gate = GateOf(chunk);
+                for (int y = gate.Y; y < ChunkData.Height; y++) chunk.Tiles[gate.X, y] = StageTile.Solid;
+                Assert.IsFalse(StageValidator.Validate(chunk, out _), $"seed {seed}: 봉인문을 우회할 수 있음");
+            }
+        }
+
+        [Test]
+        public void ElementGatePlacementRules()
+        {
+            int stagesWithGate = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var stage = StageGenerator.Generate(seed, TargetSeconds);
+                int gates = 0;
+                foreach (var chunk in stage.Chunks)
+                {
+                    if (chunk.Kind != ChunkKind.ElementGate) continue;
+                    gates++;
+                    Assert.That(chunk.Difficulty, Is.InRange(StagePlanner.GateMinProgress, StagePlanner.GateMaxProgress), $"seed {seed}");
+                }
+                Assert.That(gates, Is.InRange(0, 2), $"seed {seed}: 봉인문 개수");
+                if (gates > 0) stagesWithGate++;
+            }
+            Assert.Greater(stagesWithGate, 0, "봉인문이 한 번도 나오지 않음");
+        }
     }
 }

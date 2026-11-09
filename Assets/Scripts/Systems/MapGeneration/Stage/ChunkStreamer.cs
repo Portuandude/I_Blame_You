@@ -6,7 +6,7 @@ namespace IBlameYou.Systems
 {
     // 마인크래프트처럼 플레이어 주변 청크만 씬에 만들어 두고, 멀어진 청크는 치운다.
     // 청크 데이터(StageData)는 시드로 미리 다 만들어져 있어서, 다시 다가가면 같은 지형이 그대로 다시 생긴다.
-    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트, 보스 돌파 여부.
+    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트, 연 봉인문, 보스 돌파 여부.
     public class ChunkStreamer : MonoBehaviour, IEnemyGroup
     {
         public const int LoadRadius = 2;   // 플레이어가 있는 청크 좌우로 몇 청크까지 만들어 둘지
@@ -27,6 +27,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> activatedCheckpoints = new HashSet<int>();
+        private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
 
         private StageData stage;
@@ -148,6 +149,15 @@ namespace IBlameYou.Systems
                     case FeatureKind.Exit:
                         exits[index] = StageExit.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), bossCleared);
                         break;
+                    case FeatureKind.ElementGate:
+                        int gateChunk = index;
+                        IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), (Element)f.ElementIndex,
+                            openedGates.Contains(index), () =>
+                            {
+                                openedGates.Add(gateChunk);
+                                IBlameYou.Core.RunStats.AddGateOpened();
+                            });
+                        break;
                     case FeatureKind.Arena:
                         int arenaChunk = index;
                         bool boss = chunk.Kind == ChunkKind.Boss;
@@ -191,6 +201,7 @@ namespace IBlameYou.Systems
         private void OnArenaCleared(int chunkIndex, bool boss)
         {
             clearedArenas.Add(chunkIndex);
+            IBlameYou.Core.RunStats.AddArenaCleared();
             if (!boss) return;
 
             bossCleared = true;

@@ -86,6 +86,7 @@ public static class StagePreview
                     case FeatureKind.Checkpoint: grid[ox + f.X, f.Y] = 'C'; break;
                     case FeatureKind.PlayerStart: grid[ox + f.X, f.Y] = 'P'; break;
                     case FeatureKind.Exit: grid[ox + f.X, f.Y] = 'X'; break;
+                    case FeatureKind.ElementGate: for (int y = f.Y; y < ChunkData.Height; y++) grid[ox + f.X, y] = 'G'; break;
                     case FeatureKind.Enemy: grid[ox + f.X, f.Y] = EnemyChar(f.Enemy, f.Deferred); break;
                 }
             }

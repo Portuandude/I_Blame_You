@@ -1245,6 +1245,61 @@ def reward_frames():
     return frames
 
 
+def rune_gate_frames():
+    """봉인문 마력 벽: 흰빛 기둥에 룬 문자가 흘러내린다. 게임에서 속성 색으로 물들이므로 거의 흰색으로 그린다."""
+    frames = []
+    w, h = 100, 300
+    for i in range(6):
+        rnd = random.Random(900 + i)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        d.rectangle([22 * S, 0, 78 * S, h * S], fill=(255, 255, 255, 70))
+        d.rectangle([36 * S, 0, 64 * S, h * S], fill=(255, 255, 255, 140))
+        d.line([(24 * S, 0), (24 * S, h * S)], fill=(255, 255, 255, 220), width=2 * S)
+        d.line([(76 * S, 0), (76 * S, h * S)], fill=(255, 255, 255, 220), width=2 * S)
+        for k in range(7):
+            y = (k * 44 + i * 7) % h
+            x = 50 + rnd.uniform(-6, 6)
+            kind = (k + i) % 3
+            if kind == 0:
+                d.line([(x * S, y * S), (x * S, (y + 18) * S)], fill=(255, 255, 255, 255), width=3 * S)
+                d.line([((x - 7) * S, (y + 6) * S), ((x + 7) * S, (y + 12) * S)], fill=(255, 255, 255, 255), width=3 * S)
+            elif kind == 1:
+                d.polygon([(x * S, y * S), ((x + 8) * S, (y + 9) * S), (x * S, (y + 18) * S), ((x - 8) * S, (y + 9) * S)],
+                          outline=(255, 255, 255, 255), width=3 * S)
+            else:
+                d.line([((x - 7) * S, y * S), ((x + 7) * S, (y + 18) * S)], fill=(255, 255, 255, 255), width=3 * S)
+                d.line([((x + 7) * S, y * S), ((x - 7) * S, (y + 18) * S)], fill=(255, 255, 255, 255), width=3 * S)
+        frames.append(finish(img, w, h, 5))
+    return frames
+
+
+def rune_sigil(kind):
+    """봉인문 가운데 문양: 어떤 속성 마법이 필요한지 보여 준다 (불꽃/물방울/소용돌이)."""
+    w, h = 64, 64
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    cols = {"Fire": ("#ff7a26", "#ffd27a"), "Water": ("#3f9cff", "#bfe2ff"), "Wind": ("#62e6a4", "#d8ffe9")}
+    main, light = (rgba(c) for c in cols[kind])
+    dot(d, 32 * S, 32 * S, 29 * S, OUTLINE)
+    dot(d, 32 * S, 32 * S, 26 * S, rgba("#2a2238"))
+    ring(d, 32 * S, 32 * S, 26 * S, 3 * S, main)
+    if kind == "Fire":
+        d.polygon([(32 * S, 10 * S), (45 * S, 32 * S), (42 * S, 48 * S), (32 * S, 54 * S), (22 * S, 48 * S), (19 * S, 32 * S)], fill=main)
+        d.polygon([(32 * S, 26 * S), (39 * S, 40 * S), (32 * S, 50 * S), (25 * S, 40 * S)], fill=light)
+    elif kind == "Water":
+        d.polygon([(32 * S, 10 * S), (44 * S, 34 * S), (20 * S, 34 * S)], fill=main)
+        dot(d, 32 * S, 38 * S, 13 * S, main)
+        dot(d, 27 * S, 38 * S, 4 * S, light)
+    else:
+        for k, r in enumerate((18, 12, 6)):
+            d.arc([(32 - r) * S, (32 - r) * S, (32 + r) * S, (32 + r) * S], 40 + k * 90, 330 + k * 90, fill=main if k != 1 else light,
+                  width=4 * S)
+    return finish(img, w, h, 3)
+
+
 def generate_stage_art():
     base = os.path.join(ROOT, "Assets", "Resources", "Stage")
     sets = {
@@ -1259,6 +1314,10 @@ def generate_stage_art():
         "Gate": gate_frames(),
         "Exit": exit_frames(),
         "Reward": reward_frames(),
+        "RuneGate": rune_gate_frames(),
+        "RuneSigil_Fire": [rune_sigil("Fire")],
+        "RuneSigil_Water": [rune_sigil("Water")],
+        "RuneSigil_Wind": [rune_sigil("Wind")],
     }
     for name, frames in sets.items():
         folder = os.path.join(base, name)

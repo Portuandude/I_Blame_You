@@ -42,6 +42,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Climb: BuildClimb(chunk, heights, occupied, rng); break;
                 case ChunkKind.Cave: BuildCave(chunk, heights, occupied, rng); break;
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
+                case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.Arena: BuildArena(chunk, heights, rng, false); break;
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
@@ -412,6 +413,27 @@ namespace IBlameYou.Systems
                 int x = 8 + (int)Math.Round(i * (18.0 / Math.Max(1, count - 1)));
                 chunk.AddEnemy(PickEnemy(rng, chunk.Difficulty), x, ground, true);
             }
+        }
+
+        public const int GateX = 16;        // 봉인문 열
+        public const int GateElementCount = 3; // 불/물/바람 (투사체 마법만. 땅은 바닥에서 솟는 가시, 무는 평타라 제외)
+
+        // 맵 퍼즐: 가운데 봉인문이 길을 막는다. B가 문 색과 같은 속성 마법을 맞혀야 열린다.
+        // 문 앞(왼쪽)은 평평한 사격장으로 비워 두고(함정/적 없음), 높은 곳에서도 쏠 수 있게 발판 하나를 둔다.
+        private static void BuildElementGate(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            Flat(heights, ground);
+            int step = PickDelta(rng, -1, 0, 1);
+            int stepAt = rng.Next(22, W - 3);
+            for (int x = stepAt; x < W; x++) heights[x] = Clamp(ground + step);
+            ApplyHeights(chunk, heights);
+            chunk.SetRow(8, 10, ground + 1, StageTile.Platform);
+
+            chunk.Features.Add(new ChunkFeature
+            {
+                Kind = FeatureKind.ElementGate, X = GateX, Y = ground, Width = 1, ElementIndex = rng.Next(GateElementCount)
+            });
         }
 
         private static void BuildRest(ChunkData chunk, int[] heights)

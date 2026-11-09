@@ -15,6 +15,11 @@
 - DONE (claude/project-thread-nsj3x2): GDD 현행화 — `Docs/GameDesignDocument.md`가 방(Room) 구조·슬라임 1종 시점에 멈춰 있음. README 기준으로 청크식 스테이지, 2인 A/B 조작, 마나 스킬, 적/정예/보스, 특성 트리, 상태이상 현황을 반영
 - DONE (claude/project-thread-nsj3x2): 피격 이펙트 — GDD "경직 전용 애니메이션/피격 이펙트는 미구현". 피격 시 스프라이트 흰색 번쩍임(0.08초)과 작은 파편 이펙트
 - DONE (claude/project-thread-nsj3x2): 사운드 보강 — 점프/대쉬/피격/적 사망/레벨업 효과음을 `Tools/AudioGen`으로 합성해 `GameAudio`로 재생, 볼륨 설정 연동
-- TODO: 맵 퍼즐 기초 — GDD의 컨트롤 퍼즐/스킬 퍼즐 중 하나(예: 속성 스킬로 여는 문)를 청크 1종으로 추가 (`ChunkGenerator` + `StageValidator` 규칙 지키기)
+- DONE (claude/project-thread-nsj3x2, 봉인문): 맵 퍼즐 기초 — GDD의 컨트롤 퍼즐/스킬 퍼즐 중 하나(예: 속성 스킬로 여는 문)를 청크 1종으로 추가 (`ChunkGenerator` + `StageValidator` 규칙 지키기)
 - BLOCKED (사람 필요: 동작별 그림): 마법사 Walk/Run/Jump/Dash/Attack 정식 프레임 교체
 - DONE (claude/project-thread-nsj3x2): 새 Input System 이전 검토 — 레거시 Input Manager 사용처 목록과 이전 계획만 문서로 (코드 변경은 사람 확인 후) → [InputSystemMigration.md](../InputSystemMigration.md)
+- DONE (claude/project-thread-nsj3x2): 일시정지 메뉴 볼륨 조절 — Esc 메뉴에 배경음악/효과음 슬라이더 (시작 화면과 같은 SaveData 저장)
+- DONE (claude/project-thread-nsj3x2): 런 결과 통계 — 처치 수, 도달 레벨, 받은 피해, 연 봉인문/돌파 구역 수를 게임오버·클리어 창에 표시
+- TODO: 컨트롤 퍼즐 1종 — 일정 주기로 움직이는 발판을 타고 건너는 청크 (`ChunkGenerator` + `StageValidator`는 발판이 없을 때도 막히지 않게, 낭떠러지 복귀 규칙 활용)
+- TODO: 봉인문 보강 — 땅 속성 가시를 문 앞에서 쓰면 안내, 문 근처에서는 유도 마법이 적보다 문을 우선하지 않도록 안내 문구 정리
+- DONE (claude/project-thread-nsj3x2): 중간보스 기획 초안 — GDD에 스테이지 1 중간보스 후보 2~3개(패턴, 위치)를 문서로만 (구현은 사람 확인 후) → [MidBossDraft.md](../MidBossDraft.md). 후보 선택은 사람 필요
