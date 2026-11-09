@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace IBlameYou.Systems
@@ -127,11 +128,12 @@ namespace IBlameYou.Systems
 
         public void AddEnemy(StageEnemy enemy, int x, int y, bool deferred = false)
         {
-            int count = 0;
-            foreach (var feature in Features) if (feature.Kind == FeatureKind.Enemy) count++;
+            // 지금 있는 적 번호 다음 번호 (중간보스 방처럼 적을 뺐다가 다시 넣어도 겹치지 않게)
+            int id = Index * 100;
+            foreach (var feature in Features) if (feature.Kind == FeatureKind.Enemy) id = Math.Max(id, feature.Id + 1);
             Features.Add(new ChunkFeature
             {
-                Kind = FeatureKind.Enemy, X = x, Y = y, Width = 1, Enemy = enemy, Deferred = deferred, Id = Index * 100 + count
+                Kind = FeatureKind.Enemy, X = x, Y = y, Width = 1, Enemy = enemy, Deferred = deferred, Id = id
             });
         }
 
