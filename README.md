@@ -52,7 +52,7 @@ Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)�
 수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
 고블린 4종과 스킬 이펙트 그림은 `Tools/ArtGen/generate_sprites.py`로 만든 임시 아트다 (`python3 Tools/ArtGen/generate_sprites.py`로 다시 생성).
 함정/발판/체크포인트/출구 그림도 같은 스크립트가 `Assets/Resources/Stage/`에 만든다.
-배경음악(메뉴/던전)과 마법 발동·적중 효과음은 `Tools/AudioGen/generate_audio.py`로 합성한 임시 사운드다 (`python3 Tools/AudioGen/generate_audio.py`로 다시 생성).
+배경음악(메뉴/던전), 마법 발동·적중 효과음, 동작 효과음(점프/대쉬/플레이어 피격/적 사망/레벨업)은 `Tools/AudioGen/generate_audio.py`로 합성한 임시 사운드다 (`python3 Tools/AudioGen/generate_audio.py`로 다시 생성).
 
 ## 폴더 구조
 
@@ -75,7 +75,7 @@ Assets/
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
   Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
-  Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성> 효과음 (런타임 로드, Tools/AudioGen)
+  Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
@@ -100,7 +100,7 @@ Assets/
       Stamina/                # StaminaSystem (소모/재생)
       Mana/                   # ManaSystem (소모/자동 재생, A/B가 쓴·날린 마나 기록)
       Stats/                  # StatTable(스탯 문서 값), CombatStats, DamageCalculator(비율식 공식), Element
-      Combat/                 # HitStun(피격 경직), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
+      Combat/                 # HitStun(피격 경직), HitFlash/HitDebris(피격 시 0.08초 흰색 번쩍임 + 파편, HitStun이 자동으로 붙임), CharacterLayers(레이어/몸체 충돌 규칙), SpriteColliderFitter(스프라이트 프레임에 맞춰 폴리곤 콜라이더 갱신)
       MapGeneration/          # SolidSpriteFactory, PhysicsMaterialFactory
         Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 12종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
