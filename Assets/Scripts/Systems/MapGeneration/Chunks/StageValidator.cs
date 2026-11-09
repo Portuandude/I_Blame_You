@@ -76,7 +76,7 @@ namespace IBlameYou.Systems
 
         private static int Id(int x, int y) => x * H + y;
 
-        // 발을 디딜 수 있는 칸: 땅, 발판, 무너지는 발판.
+        // 발을 디딜 수 있는 칸: 땅, 발판, 무너지는 발판, 움직이는 발판이 지나는 칸 전부 (기다리면 언젠가 온다).
         private static bool[,] BuildSupport(ChunkData chunk)
         {
             var support = new bool[W, H];
@@ -86,8 +86,9 @@ namespace IBlameYou.Systems
 
             foreach (var feature in chunk.Features)
             {
-                if (feature.Kind != FeatureKind.Crumble) continue;
-                for (int i = 0; i < feature.Width; i++)
+                if (feature.Kind != FeatureKind.Crumble && feature.Kind != FeatureKind.MovingPlatform) continue;
+                int span = feature.Width + (feature.Kind == FeatureKind.MovingPlatform ? Math.Max(0, feature.Direction) : 0);
+                for (int i = 0; i < span; i++)
                 {
                     int x = feature.X + i;
                     if (x >= 0 && x < W && feature.Y >= 0 && feature.Y < H) support[x, feature.Y] = true;

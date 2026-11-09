@@ -43,6 +43,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Cave: BuildCave(chunk, heights, occupied, rng); break;
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
+                case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
                 case ChunkKind.Arena: BuildArena(chunk, heights, rng, false); break;
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
@@ -434,6 +435,24 @@ namespace IBlameYou.Systems
             {
                 Kind = FeatureKind.ElementGate, X = GateX, Y = ground, Width = 1, ElementIndex = rng.Next(GateElementCount)
             });
+        }
+
+        public const int MovingPlatformWidth = 3;
+        public const int MovingBridgeLeft = 8; // 낭떠러지가 시작되는 열
+
+        // 컨트롤 퍼즐: 점프(최대 4~5칸)로는 못 건너는 7~10칸 낭떠러지. 3칸짜리 발판이 양쪽 절벽 끝을 오가므로
+        // 발판이 가까이 왔을 때 올라타고, 건너편에 닿을 때 내린다. 떨어지면 낭떠러지 복귀 규칙대로 체력 15%를 잃고 돌아온다.
+        private static void BuildMovingBridge(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            int gap = rng.Next(7, chunk.Difficulty > 0.6f ? 11 : 9);
+            int right = MovingBridgeLeft + gap; // 건너편 절벽이 시작되는 열
+            int far = Clamp(ground + PickDelta(rng, -1, 0, 0));
+            for (int x = 0; x < W; x++) heights[x] = x < MovingBridgeLeft ? ground : x < right ? 0 : far;
+            ApplyHeights(chunk, heights);
+
+            int row = Math.Max(ground, far) - 1; // 발판 윗면 = 더 높은 쪽 절벽 높이 (낮은 쪽에서는 한 칸 올라탄다)
+            chunk.AddFeature(FeatureKind.MovingPlatform, MovingBridgeLeft, row, MovingPlatformWidth, gap - MovingPlatformWidth);
         }
 
         private static void BuildRest(ChunkData chunk, int[] heights)
