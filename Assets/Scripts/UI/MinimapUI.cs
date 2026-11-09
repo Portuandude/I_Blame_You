@@ -237,7 +237,7 @@ namespace IBlameYou.UI
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
                 (art.Treasure, "보물"), (art.Rest, "휴식·샘"), (art.Start, "시작")
             };
-            const float itemWidth = 92f;
+            float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
             foreach (var (icon, name) in items)
             {
