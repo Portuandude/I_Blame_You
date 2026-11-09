@@ -16,9 +16,12 @@ namespace IBlameYou.Systems
             root.SetParent(parent, false);
             root.position = new Vector3(chunk.Index * ChunkData.Width, 0f, 0f);
 
+            // 새 팔레트 지형 그림이 있으면 그것을 쓰고 외부 타일(groundTile)은 쓰지 않는다.
+            var terrain = TerrainDresser.Load();
             BuildBackground(chunk, root);
-            BuildSolids(chunk, root, groundTile);
+            BuildSolids(chunk, root, terrain != null ? null : groundTile, terrain != null);
             BuildPlatforms(chunk, root, groundTile);
+            terrain?.Dress(chunk, root);
             return root;
         }
 
@@ -50,7 +53,7 @@ namespace IBlameYou.Systems
         }
 
         // 땅 타일을 큰 직사각형으로 묶는다 (가로로 최대한 늘린 뒤 같은 폭으로 위로 늘림).
-        private static void BuildSolids(ChunkData chunk, Transform root, Sprite groundTile)
+        private static void BuildSolids(ChunkData chunk, Transform root, Sprite groundTile, bool dressed)
         {
             var solids = new GameObject("Ground");
             solids.transform.SetParent(root, false);
@@ -79,7 +82,7 @@ namespace IBlameYou.Systems
                         for (int dx = 0; dx < width; dx++)
                             used[x + dx, y + dy] = true;
 
-                    CreateBlock(solids.transform, new Vector2(x, y), new Vector2(width, height), groundTile);
+                    CreateBlock(solids.transform, new Vector2(x, y), new Vector2(width, height), groundTile, dressed);
                 }
             }
         }
@@ -94,7 +97,7 @@ namespace IBlameYou.Systems
             return true;
         }
 
-        private static void CreateBlock(Transform parent, Vector2 bottomLeft, Vector2 size, Sprite groundTile)
+        private static void CreateBlock(Transform parent, Vector2 bottomLeft, Vector2 size, Sprite groundTile, bool dressed)
         {
             var go = new GameObject("Block");
             go.transform.SetParent(parent, false);
@@ -104,6 +107,12 @@ namespace IBlameYou.Systems
             var collider = go.AddComponent<BoxCollider2D>();
             collider.size = size;
             collider.compositeOperation = Collider2D.CompositeOperation.Merge;
+
+            if (dressed)
+            {
+                TerrainDresser.Fill(go.transform, size);
+                return;
+            }
 
             if (groundTile != null)
             {
