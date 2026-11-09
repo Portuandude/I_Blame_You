@@ -7,9 +7,13 @@ namespace IBlameYou.Enemies
     public class SlimeKingCrown : MonoBehaviour
     {
         private const float Sink = 0.18f; // 머리에 살짝 박히게
+        private const float GlintFps = 10f; // 반짝임이 보석을 따라 도는 속도 (Tools/ArtGen CROWN_GLINTS)
 
         private SpriteRenderer body;
         private SpriteRenderer crown;
+        private Sprite[] frames;
+        private float glintTime;
+        private float halfHeight = -1f; // 반짝임 프레임마다 보이는 영역이 달라도 높이는 첫 프레임 기준으로 고정
 
         public static SlimeKingCrown Attach(GameObject king, SpriteRenderer bodyRenderer, float size)
         {
@@ -34,14 +38,21 @@ namespace IBlameYou.Enemies
             var crown = go.AddComponent<SlimeKingCrown>();
             crown.body = bodyRenderer;
             crown.crown = renderer;
+            crown.frames = frames;
+            if (frames != null) crown.halfHeight = frames[0].bounds.extents.y * size;
             return crown;
         }
 
         private void LateUpdate()
         {
+            if (frames != null && frames.Length > 1)
+            {
+                glintTime += Time.deltaTime;
+                crown.sprite = frames[(int)(glintTime * GlintFps) % frames.Length];
+            }
             if (body == null || body.sprite == null) return;
             var bounds = body.bounds;
-            float half = crown.bounds.extents.y;
+            float half = halfHeight >= 0f ? halfHeight : crown.bounds.extents.y;
             transform.position = new Vector3(bounds.center.x, bounds.max.y + half - Sink, transform.position.z);
         }
     }
