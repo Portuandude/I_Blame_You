@@ -10,7 +10,7 @@ namespace IBlameYou.UI
     {
         private const float VisibleTime = 3f;
         private const float FadeTime = 0.6f;
-        private const float Height = 0.12f;
+        private const float Height = 0.14f;
         private const float MinWidth = 0.8f;
         private const float MaxWidth = 1.8f;
         private const float Gap = 0.25f; // 몸 윗면에서 이만큼 위
@@ -19,11 +19,7 @@ namespace IBlameYou.UI
         private Collider2D body;
         private float width;
         private float lastHitTime;
-        private Transform fill;
-        private SpriteRenderer backRenderer;
-        private SpriteRenderer fillRenderer;
-        private Color backColor;
-        private Color fillColor;
+        private CapsuleBar bar;
 
         // 적이 피해를 받을 때 부른다: 바가 없으면 만들고, 있으면 다시 보이게 한다.
         public static EnemyHealthBar Ping(EnemyHealthBar existing, HealthSystem health, Collider2D body)
@@ -46,24 +42,10 @@ namespace IBlameYou.UI
             body = targetBody;
             width = body != null ? Mathf.Clamp(body.bounds.size.x * 1.1f, MinWidth, MaxWidth) : 1f;
 
-            backColor = new Color(0.1f, 0.02f, 0.02f, 0.85f);
-            fillColor = new Color(0.9f, 0.2f, 0.2f);
-
-            var back = new GameObject("Background");
-            back.transform.SetParent(transform, false);
-            back.transform.localScale = new Vector3(width + 0.06f, Height + 0.06f, 1f);
-            backRenderer = back.AddComponent<SpriteRenderer>();
-            backRenderer.sprite = SolidSpriteFactory.CreateSquare();
-            backRenderer.sortingOrder = 8; // 플레이어 상태 바(10/11)보다 아래
-
-            var fillObject = new GameObject("Fill");
-            fillObject.transform.SetParent(transform, false);
-            fillObject.transform.localPosition = new Vector3(-width / 2f, 0f, 0f);
-            fillObject.transform.localScale = new Vector3(width, Height, 1f);
-            fillRenderer = fillObject.AddComponent<SpriteRenderer>();
-            fillRenderer.sprite = SolidSpriteFactory.CreateLeftPivotSquare();
-            fillRenderer.sortingOrder = 9;
-            fill = fillObject.transform;
+            // 둥근 캡슐 + 흰 잔상 (CapsuleBar). 플레이어 상태 바(정렬 10~12)보다 아래(7~9)
+            bar = new CapsuleBar(transform, "Bar", Vector3.zero, width, Height,
+                new Color(0.1f, 0.02f, 0.02f, 0.85f), new Color(0.95f, 0.25f, 0.3f), 7);
+            bar.Tick(Time.time, 0f); // 잔상을 가득 찬 상태로 시작해, 바를 만든 첫 피해도 흰 잔상으로 보이게
 
             health.HealthChanged += Refresh;
             Follow();
@@ -71,10 +53,8 @@ namespace IBlameYou.UI
 
         private void Refresh(float current, float max)
         {
-            if (fill == null) return;
-            var scale = fill.localScale;
-            scale.x = width * Mathf.Clamp01(max > 0f ? current / max : 0f);
-            fill.localScale = scale;
+            if (bar == null) return;
+            bar.SetRatio(max > 0f ? current / max : 0f);
         }
 
         private void LateUpdate()
@@ -88,8 +68,8 @@ namespace IBlameYou.UI
             Follow();
             float since = Time.time - lastHitTime;
             float alpha = since <= VisibleTime ? 1f : Mathf.Clamp01(1f - (since - VisibleTime) / FadeTime);
-            backRenderer.color = new Color(backColor.r, backColor.g, backColor.b, backColor.a * alpha);
-            fillRenderer.color = new Color(fillColor.r, fillColor.g, fillColor.b, alpha);
+            bar.SetAlpha(alpha);
+            bar.Tick(Time.time, Time.deltaTime);
         }
 
         private float topOffset = 1f; // 마지막으로 유효했던 bounds 기준 높이 (물리가 멈춘 동안 바가 튀지 않게)

@@ -13,8 +13,6 @@ namespace IBlameYou.UI
         private const float BarHeight = 18f;
         private const float BarIconSize = 24f;
         private const float BarGlow = 5f;            // BarFrame.png 바깥 빛 여백 (generate_hud.py GLOW)
-        private const float TrailHold = 0.45f;       // 잔상이 그대로 머무는 시간
-        private const float TrailSpeed = 0.9f;       // 그 뒤 초당 줄어드는 비율
 
         private static readonly Color HealthFillColor = new Color(1f, 0.37f, 0.59f);   // berry보다 조금 진하게
         private static readonly Color HealthGlowColor = new Color(1f, 0.55f, 0.75f);
@@ -32,31 +30,7 @@ namespace IBlameYou.UI
         private Texture2D flagIcon;
         private GUIStyle barText;
 
-        private struct BarTrail
-        {
-            public float Shown;      // 잔상 비율
-            public float Last;       // 지난 프레임 비율
-            public float DropTime;   // 마지막으로 줄어든 시각
-            public bool Started;
-
-            public void Step(float ratio, float now, float deltaTime)
-            {
-                if (!Started)
-                {
-                    Started = true;
-                    Shown = Last = ratio;
-                    return;
-                }
-
-                if (ratio < Last - 0.0001f) DropTime = now;
-                Last = ratio;
-
-                if (ratio >= Shown) Shown = ratio;
-                else if (now - DropTime > TrailHold) Shown = Mathf.Max(ratio, Shown - TrailSpeed * deltaTime);
-            }
-        }
-
-        private BarTrail healthTrail;
+        private BarTrail healthTrail; // 잔상 계산은 CapsuleBar.cs의 BarTrail (머리 위 바와 공용)
         private BarTrail manaTrail;
 
         private void EnsureBarArt()
