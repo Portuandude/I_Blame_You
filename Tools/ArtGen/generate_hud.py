@@ -8,6 +8,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/BarFrame.png  46x28  외곽선 + 크림 테두리 + 바깥 흰 빛. 코드가 바마다 빛 색으로 물들인다. 9분할 좌우 14, 위아래 14
   Assets/Resources/UI/HUD/Heart.png     24x24  체력 하트
   Assets/Resources/UI/HUD/Star.png      24x24  마나 별
+  Assets/Resources/UI/HUD/Crown.png     24x24  보스 체력바 왕관
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
 """
@@ -122,6 +123,29 @@ def star():
     return small(img, n, n)
 
 
+def crown():
+    n = 24
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+
+    def body(grow, col):
+        pts = [(2.5 - grow, 19 + grow), (2.5 - grow, 7.5 - grow), (7.5, 12.5 - grow), (12, 4 - grow * 1.3),
+               (16.5, 12.5 - grow), (21.5 + grow, 7.5 - grow), (21.5 + grow, 19 + grow)]
+        d.polygon([(x * SS, y * SS) for x, y in pts], fill=col)
+
+    body(1.6, OUTLINE)
+    for x, y in ((2.5, 7), (12, 3.5), (21.5, 7)):  # 뾰족한 끝의 동그란 장식 (외곽선)
+        d.ellipse([(x - 2.4) * SS, (y - 2.4) * SS, (x + 2.4) * SS, (y + 2.4) * SS], fill=OUTLINE)
+    body(0, COLORS["gold"])
+    d.rectangle([2.5 * SS, 15.5 * SS, 21.5 * SS, 19 * SS], fill=hexrgba("e0a92e"))  # 아래 띠 그림자
+    for x, y in ((2.5, 7), (12, 3.5), (21.5, 7)):
+        d.ellipse([(x - 1.4) * SS, (y - 1.4) * SS, (x + 1.4) * SS, (y + 1.4) * SS], fill=CREAM)
+    d.ellipse([9.5 * SS, 13 * SS, 14.5 * SS, 18 * SS], fill=COLORS["berry"])  # 가운데 보석
+    d.ellipse([10.5 * SS, 13.8 * SS, 12.3 * SS, 15.6 * SS], fill=CREAM)
+    d.ellipse([4.5 * SS, 9.5 * SS, 6.5 * SS, 12.5 * SS], fill=CREAM)  # 반짝
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -130,6 +154,7 @@ def generate():
         "BarFrame": bar_frame(),
         "Heart": heart(),
         "Star": star(),
+        "Crown": crown(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
@@ -175,6 +200,7 @@ def preview(result, path):
         canvas.alpha_composite(trail_img, (bx, y))
         fill_img = tint(nine(result["BarFill"], bw, BAR_H, 9, 0), fill_col).crop((0, 0, int(bw * ratio), BAR_H))
         canvas.alpha_composite(fill_img, (bx, y))
+    canvas.alpha_composite(result["Crown"], (350, 18))
     canvas = canvas.resize((canvas.width * scale, canvas.height * scale), Image.NEAREST)
     canvas.save(path)
 
