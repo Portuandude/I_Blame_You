@@ -14,6 +14,7 @@ namespace IBlameYou.Systems
         public readonly Dictionary<DoorDir, (int x, int y)> Exits = new Dictionary<DoorDir, (int x, int y)>();    // 그 문으로 나가려고 서는 칸
         public bool Valid;
         public string Reason;
+        public (int x, int y)? Floor; // 세로 방: 문이 아니어도 오갈 수 있어야 하는 바닥 칸
     }
 
     public static class RoomShaper
@@ -21,8 +22,9 @@ namespace IBlameYou.Systems
         public const int DoorHeight = 4;        // 좌우 문 구멍 높이 (몸 2칸 + 점프 여유)
         public const int HoleX0 = 14;           // 위/아래 문 구멍 (가로 3칸: 4칸이면 걸어서 못 건너 좌우 문끼리 끊긴다)
         public const int HoleX1 = 16;
-        public const int ShaftGround = 4;       // 세로 방 바닥 높이 (서는 칸 y). 발판 계단(21, 19, …, 5행)과 짝이 맞는 값
-        public const int TopPlatformRow = ChunkData.Height - 3; // 위 문 바로 아래 발판 행 (서는 칸 = Height - 2)
+        public const int ShaftGround = 5;       // 세로 방 바닥 높이 (서는 칸 y). 발판 계단(20, 18, …, 6행)과 짝이 맞는 값
+        // 위 문 아래 발판 행. 천장(Height-1)과 2칸 띄워(서는 칸 = Height - 3) 키 1.08인 몸이 발판 위에서 좌우로 걸어 내려갈 수 있게 한다.
+        public const int TopPlatformRow = ChunkData.Height - 4;
         private const int MaxAttempts = 24;
 
         private const int W = ChunkData.Width;
@@ -93,7 +95,9 @@ namespace IBlameYou.Systems
             var geometry = new RoomGeometry { Chunk = chunk };
             if ((room.Doors & DoorDir.Left) != 0) geometry.Arrivals[DoorDir.Left] = geometry.Exits[DoorDir.Left] = (0, g);
             if ((room.Doors & DoorDir.Right) != 0) geometry.Arrivals[DoorDir.Right] = geometry.Exits[DoorDir.Right] = (W - 1, g);
-            if (up) geometry.Arrivals[DoorDir.Up] = geometry.Exits[DoorDir.Up] = ((HoleX0 + HoleX1 + 1) / 2, H - 2);
+            if (up) geometry.Arrivals[DoorDir.Up] = geometry.Exits[DoorDir.Up] = ((HoleX0 + HoleX1 + 1) / 2, TopPlatformRow + 1);
+            // 바닥도 어느 문에서든 오갈 수 있어야 한다 (위 문 하나뿐인 곁방도 바닥까지 내려갔다 돌아올 수 있게)
+            geometry.Floor = (6, g);
             if (down)
             {
                 geometry.Arrivals[DoorDir.Down] = (HoleX0 - 3, g); // 아래 방에서 올라오면 구멍 옆 바닥에 선다
@@ -105,7 +109,7 @@ namespace IBlameYou.Systems
             return Check(geometry);
         }
 
-        // 바닥(서는 칸 g)에서 천장 구멍 아래(서는 칸 H-2)까지 2칸씩 오르는 지그재그 발판.
+        // 바닥(서는 칸 g)에서 천장 구멍 아래(서는 칸 TopPlatformRow+1)까지 2칸씩 오르는 지그재그 발판.
         // 왼쪽 판(10~15)과 오른쪽 판(16~21)을 번갈아 두어 한 칸 옆으로 비스듬히 뛰어오른다. 맨 위 판은 구멍 아래(13~18).
         private static void AddStairs(ChunkData chunk, int g, Random rng)
         {
@@ -151,6 +155,11 @@ namespace IBlameYou.Systems
             var exits = new List<(int x, int y)>(geometry.Exits.Values);
             foreach (var feature in geometry.Chunk.Features)
                 if (feature.Kind == FeatureKind.PlayerStart) arrivals.Add((feature.X, feature.Y));
+            if (geometry.Floor.HasValue)
+            {
+                arrivals.Add(geometry.Floor.Value);
+                exits.Add(geometry.Floor.Value);
+            }
 
             if (exits.Count == 0)
             {

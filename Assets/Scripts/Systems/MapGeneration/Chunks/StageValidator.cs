@@ -215,6 +215,8 @@ namespace IBlameYou.Systems
                         if (dx > JumpReach(dy)) continue;
                         if (!Standable(chunk, support, tx, ty)) continue;
                         if (!ArcClear(chunk, x, y, dir, dx, ty)) continue;
+                        // 내려가는 점프는 그 열에서 처음 닿는 발판·땅에 선다 (발판은 위에서 뚫고 내려갈 수 없다)
+                        if (ty < y && FallLanding(chunk, support, tx, y) != ty) continue;
                         result.Add(Id(tx, ty));
                     }
                 }
