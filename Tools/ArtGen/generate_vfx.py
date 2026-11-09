@@ -10,6 +10,7 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/ClearBurst/00~09        전투 구역 돌파 축하: 별·하트가 크게 터짐 (192x192)
   Assets/Resources/Effects/ChestOpen/00~11         유물 상자 열기: 뚜껑이 튀어 올라 별로 터지고 gold 빛기둥 + 별 (120x240,
                                                    상자 그림(72x64) 가운데가 캔버스 가운데보다 48px 아래 — VfxPlayer.ChestOpen)
+  Assets/Resources/Effects/Shockwave/00~07         무거운 착지 충격파: 납작한 고리 두 겹 + 흙먼지 + 별 (192x64, 아래에서 16px이 바닥)
   Assets/Resources/Effects/RelicBanner/00          유물 이름 띠 (360x80, 가운데에 글자가 올라간다)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
@@ -297,9 +298,37 @@ def relic_banner_frames():
     return [fx.finish(glow=3)]
 
 
+def shockwave_frames():
+    """중간보스 착지 충격파: 바닥을 따라 납작한 gold·cream 고리 두 겹이 퍼지고, 양옆으로 흙먼지 덩이와 별이 튄다. 8프레임."""
+    frames = []
+    w, h = 192, 64
+    cx, floor = w / 2, h - 16
+    for i in range(8):
+        t = i / 7
+        fx = Fx(w, h)
+        q = 1 - (1 - t) ** 2
+        fx.ellipse(cx, floor, 20 + 72 * q, 5 + 8 * q, alpha(GOLD, 200 * (1 - t)), light=True)
+        fx.c.ellipse([(cx - 16 - 72 * q) * 4, (floor - 4 - 7 * q) * 4, (cx + 16 + 72 * q) * 4, (floor + 4 + 7 * q) * 4],
+                     outline=alpha(CREAM, 255 * (1 - t)), width=max(1, int((6 * (1 - t) + 1) * 4)))
+        fx.c.ellipse([(cx - 8 - 44 * q) * 4, (floor - 2 - 4 * q) * 4, (cx + 8 + 44 * q) * 4, (floor + 2 + 4 * q) * 4],
+                     outline=alpha(GOLD, 255 * (1 - t)), width=max(1, int((4 * (1 - t) + 1) * 4)))
+        for side in (-1, 1):
+            for k, (dx, r) in enumerate(((18, 8), (34, 6.5), (50, 5))):
+                x = cx + side * (dx + 26 * q * (1 + k * 0.2))
+                y = floor - 4 - 18 * math.sin(math.pi * min(1.0, t * 1.2)) * (1 - k * 0.25)
+                rr = r * (1 - 0.5 * t)
+                fx.circle(x, y, rr + 1.5, alpha(SAND, 230 * (1 - t)))
+                fx.circle(x - rr * 0.3, y - rr * 0.3, rr * 0.55, alpha(CREAM, 200 * (1 - t)))
+            sx = cx + side * (26 + 52 * q)
+            sy = floor - 14 - 22 * math.sin(math.pi * t)
+            fx.star(sx, sy, 7 * (1 - 0.4 * t), alpha(GOLD if side < 0 else AQUA, 255 * (1 - t * 0.8)))
+        frames.append(fx.finish(glow=3))
+    return frames
+
+
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
         "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames,
-        "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames}
+        "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames}
 
 
 def generate():
