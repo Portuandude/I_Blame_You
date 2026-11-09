@@ -4,7 +4,7 @@
 
 ## 2026-11-09 08:41 UTC
 - 브랜치/PR: `claude/project-thread-qoeoof` → #14 (진행 중, GitHub 자동 머지 켬)
-- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영)
+- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영)
 - 실패/보류: 없음 (진행 중)
 - 다음 실행 메모: (진행 중)
 
