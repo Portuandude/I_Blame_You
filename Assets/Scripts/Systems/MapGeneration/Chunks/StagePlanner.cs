@@ -31,11 +31,12 @@ namespace IBlameYou.Systems
             }
         }
 
-        private const int ArenasPerRest = 3;
+        public const int ArenasPerRest = 3;            // 전투 구역 이만큼마다 휴식 (정예 뒤에는 항상)
         private const int MaxGates = 2;                 // 스테이지당 봉인문 퍼즐 최대 개수
         public const float GateMinProgress = 0.25f;     // 이 진행도 구간에서만 봉인문이 나온다 (초반 조작 연습 뒤, 보스 앞 휴식 전)
         public const float GateMaxProgress = 0.85f;
         private static readonly float[] EliteAt = { 0.4f, 0.72f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예
+        public static readonly IReadOnlyList<float> EliteProgress = Array.AsReadOnly(EliteAt);
 
         // 반환: (청크 종류, 그 청크가 시작될 때의 진행도 0~1) 목록.
         public static List<KeyValuePair<ChunkKind, float>> Plan(int seed, float targetSeconds)
@@ -71,7 +72,10 @@ namespace IBlameYou.Systems
 
                 if (elapsed >= targetSeconds - reserve) break;
 
-                bool elite = elitesPlaced < EliteAt.Length && elapsed / targetSeconds >= EliteAt[elitesPlaced];
+                // (float) 변환으로 반올림을 고정한다: 런타임에 따라 나눗셈이 더 높은 정밀도로 남아 있으면
+                // 진행도가 정확히 0.4일 때 Mono에서는 정예, Unity에서는 일반 구역이 되는 식으로 결과가 갈렸다.
+                float progressNow = (float)(elapsed / targetSeconds);
+                bool elite = elitesPlaced < EliteAt.Length && progressNow >= EliteAt[elitesPlaced];
                 add(elite ? ChunkKind.EliteArena : ChunkKind.Arena);
                 if (elite) elitesPlaced++;
 
@@ -109,14 +113,17 @@ namespace IBlameYou.Systems
             foreach (var entry in pool) if (entry.Key != last) total += entry.Value;
 
             double roll = rng.NextDouble() * total;
+            var fallback = ChunkKind.Hills;
             foreach (var entry in pool)
             {
-                if (entry.Key == last) continue;
+                if (entry.Key == last || entry.Value <= 0f) continue;
+                fallback = entry.Key;
                 roll -= entry.Value;
                 if (roll <= 0) return entry.Key;
             }
 
-            return ChunkKind.Plains;
+            // 부동소수 반올림으로 roll이 조금 남은 경우: 마지막 후보 (직전 종류와 겹치지 않게)
+            return fallback;
         }
     }
 }

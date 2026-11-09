@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using NUnit.Framework;
 
@@ -192,42 +193,129 @@ namespace IBlameYou.Tests
             }
         }
 
+        // ---- 스테이지 배치 규칙 (StagePlanner) ----
+
+        // 정예 전투는 정해진 진행도를 넘은 뒤 첫 전투 구역에 하나씩, 그 뒤에는 바로 휴식이 온다.
+        // (정예 2개는 목표 30분 기준. 목표 시간을 크게 줄이면 둘째 정예 전에 보스 구간이 시작될 수 있다.)
+        [Test]
+        public void ElitesAppearAtTheirProgressAndAreFollowedByRest()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                int elites = 0;
+                for (int i = 0; i < plan.Count; i++)
+                {
+                    bool due = elites < StagePlanner.EliteProgress.Count && plan[i].Value >= StagePlanner.EliteProgress[elites];
+                    Assert.IsFalse(plan[i].Key == ChunkKind.Arena && due, $"seed {seed}: 정예 차례인데 일반 전투 구역 ({i})");
+                    if (plan[i].Key != ChunkKind.EliteArena) continue;
+                    Assert.Less(elites, StagePlanner.EliteProgress.Count, $"seed {seed}: 정예가 너무 많음");
+                    Assert.That(plan[i].Value, Is.InRange(StagePlanner.EliteProgress[elites], 1.0), $"seed {seed}: {elites + 1}번째 정예 위치");
+                    Assert.AreEqual(ChunkKind.Rest, plan[i + 1].Key, $"seed {seed}: 정예 뒤 휴식");
+                    elites++;
+                }
+                Assert.AreEqual(StagePlanner.EliteProgress.Count, elites, $"seed {seed}: 정예 개수");
+            }
+        }
+
+        // 시작 → 평지로 열고, 휴식 → 보스로 닫는다. 전투 구역이 휴식 없이 너무 이어지지 않는다.
+        [Test]
+        public void PlanOpensAndClosesAndRestsRegularly()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                Assert.AreEqual(ChunkKind.Start, plan[0].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Plains, plan[1].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Rest, plan[plan.Count - 2].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Boss, plan[plan.Count - 1].Key, $"seed {seed}");
+
+                int arenasSinceRest = 0;
+                foreach (var entry in plan)
+                {
+                    if (entry.Key == ChunkKind.Rest) arenasSinceRest = 0;
+                    else if (entry.Key == ChunkKind.Arena || entry.Key == ChunkKind.EliteArena) arenasSinceRest++;
+                    Assert.That(arenasSinceRest, Is.InRange(0, StagePlanner.ArenasPerRest), $"seed {seed}: 휴식 없이 전투 구역 연속");
+                }
+            }
+        }
+
+        // 이동 청크는 같은 종류가 연달아 나오지 않고, 어려운 지형은 진행도 문턱을 넘은 뒤에만 나온다.
+        [Test]
+        public void TravelChunksRespectProgressFloorsAndDontRepeat()
+        {
+            var floors = new Dictionary<ChunkKind, float>
+            {
+                { ChunkKind.Cave, 0.15f }, { ChunkKind.Climb, 0.2f }, { ChunkKind.MovingBridge, 0.2f },
+                { ChunkKind.CrumbleBridge, 0.3f }, { ChunkKind.ElementGate, StagePlanner.GateMinProgress },
+            };
+            var travel = new HashSet<ChunkKind>
+            {
+                ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave, ChunkKind.Climb,
+                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate,
+            };
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                for (int i = 2; i < plan.Count; i++) // 0, 1은 고정된 시작·평지
+                {
+                    var kind = plan[i].Key;
+                    if (!travel.Contains(kind)) continue;
+                    Assert.AreNotEqual(plan[i - 1].Key, kind, $"seed {seed}: {kind} 연속 ({i})");
+                    if (floors.TryGetValue(kind, out float floor))
+                        Assert.That(plan[i].Value, Is.InRange(floor, 1.0), $"seed {seed}: {kind}가 진행도 {plan[i].Value:0.00}에 나옴");
+                }
+            }
+        }
+
         // ---- 움직이는 발판 청크 (컨트롤 퍼즐) ----
 
         [Test]
         public void MovingBridgeNeedsThePlatform()
         {
+            int doubles = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
-                foreach (float difficulty in new[] { 0.3f, 0.9f })
+                foreach (float difficulty in new[] { 0.3f, 0.69f, 0.7f, 0.9f })
                 {
                     var chunk = ChunkGenerator.Generate(seed, 6, ChunkKind.MovingBridge, difficulty, 7, 0);
                     Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"seed {seed}: {reason}");
 
-                    int platforms = 0;
-                    var platform = default(ChunkFeature);
-                    foreach (var f in chunk.Features)
+                    var platforms = chunk.Features.FindAll(f => f.Kind == FeatureKind.MovingPlatform);
+                    bool canBeDouble = difficulty >= ChunkGenerator.DoubleBridgeMinDifficulty;
+                    Assert.That(platforms.Count, Is.InRange(1, canBeDouble ? 2 : 1), $"seed {seed}");
+                    if (platforms.Count == 2)
                     {
-                        if (f.Kind != FeatureKind.MovingPlatform) continue;
-                        platform = f;
-                        platforms++;
+                        doubles++;
+                        // 갈아타기 변형의 낭떠러지는 달리기 점프(약 7.3칸)로 못 건너는 폭이어야 한다 (검증기는 걷기 점프 기준).
+                        foreach (var p in platforms)
+                            Assert.That(p.Width + p.Direction, Is.InRange(8, ChunkData.Width), $"seed {seed}: 갈아타기 낭떠러지 폭");
                     }
-                    Assert.AreEqual(1, platforms, $"seed {seed}");
-                    // 발판 윗면(Y + 1)은 두 절벽 중 높은 쪽과 같은 높이에서 출발한다.
-                    Assert.AreEqual(System.Math.Max(chunk.EntryHeight, chunk.ExitHeight), platform.Y + 1, $"seed {seed}: 발판 높이");
 
-                    // 발판이 지나는 범위가 낭떠러지를 끝에서 끝까지 덮는다.
-                    int left = platform.X, right = platform.X + platform.Width + platform.Direction - 1;
-                    Assert.IsTrue(chunk.IsSolid(left - 1, platform.Y), $"seed {seed}: 출발 쪽 절벽");
-                    Assert.IsFalse(chunk.IsSolid(left, 0), $"seed {seed}: 낭떠러지 시작");
-                    Assert.IsFalse(chunk.IsSolid(right, 0), $"seed {seed}: 낭떠러지 끝");
-                    Assert.IsTrue(chunk.IsSolid(right + 1, 0), $"seed {seed}: 건너편 절벽");
+                    foreach (var platform in platforms)
+                    {
+                        // 발판 윗면(Y + 1)은 두 절벽 중 높은 쪽과 같은 높이에서 출발한다.
+                        Assert.AreEqual(System.Math.Max(chunk.EntryHeight, chunk.ExitHeight), platform.Y + 1, $"seed {seed}: 발판 높이");
 
-                    // 발판 없이는 건널 수 없어야 퍼즐이다.
-                    chunk.Features.RemoveAll(f => f.Kind == FeatureKind.MovingPlatform);
-                    Assert.IsFalse(StageValidator.Validate(chunk, out _), $"seed {seed}: 발판 없이도 건널 수 있음");
+                        // 발판이 지나는 범위가 낭떠러지를 끝에서 끝까지 덮는다.
+                        int left = platform.X, right = platform.X + platform.Width + platform.Direction - 1;
+                        Assert.IsTrue(chunk.IsSolid(left - 1, platform.Y), $"seed {seed}: 출발 쪽 절벽");
+                        Assert.IsFalse(chunk.IsSolid(left, 0), $"seed {seed}: 낭떠러지 시작");
+                        Assert.IsFalse(chunk.IsSolid(right, 0), $"seed {seed}: 낭떠러지 끝");
+                        Assert.IsTrue(chunk.IsSolid(right + 1, 0), $"seed {seed}: 건너편 절벽");
+                    }
+
+                    // 발판이 하나라도 없으면 건널 수 없어야 퍼즐이다 (갈아타기 변형은 각 발판마다).
+                    for (int skip = 0; skip < platforms.Count; skip++)
+                    {
+                        var without = ChunkGenerator.Generate(seed, 6, ChunkKind.MovingBridge, difficulty, 7, 0);
+                        var removed = platforms[skip];
+                        without.Features.RemoveAll(f => f.Kind == FeatureKind.MovingPlatform && f.X == removed.X);
+                        Assert.IsFalse(StageValidator.Validate(without, out _), $"seed {seed}: {skip + 1}번째 발판 없이도 건널 수 있음");
+                    }
                 }
             }
+            Assert.Greater(doubles, 0, "갈아타기 변형이 한 번도 나오지 않음");
         }
     }
 }

@@ -28,6 +28,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> activatedCheckpoints = new HashSet<int>();
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
+        private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
 
         private StageData stage;
@@ -125,6 +126,7 @@ namespace IBlameYou.Systems
                     arenaSpawns.Add(new ArenaZone.Spawn { Kind = f.Enemy, Position = EnemyPosition(ox, f) });
             }
 
+            int platformOrdinal = 0;
             foreach (var f in chunk.Features)
             {
                 switch (f.Kind)
@@ -139,7 +141,8 @@ namespace IBlameYou.Systems
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, f.Y + 0.5f), f.Direction);
                         break;
                     case FeatureKind.MovingPlatform:
-                        MovingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width, f.Direction, index * 0.37f);
+                        // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다.
+                        MovingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width, f.Direction, index * 0.37f + platformOrdinal++ * 0.5f);
                         break;
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width);
@@ -161,8 +164,11 @@ namespace IBlameYou.Systems
                             openedGates.Contains(index), () =>
                             {
                                 openedGates.Add(gateChunk);
+                                gateSteps.Remove(gateChunk);
                                 IBlameYou.Core.RunStats.AddGateOpened();
-                            });
+                            },
+                            gateSteps.TryGetValue(index, out int gateStep) ? gateStep : 0,
+                            step => gateSteps[gateChunk] = step);
                         break;
                     case FeatureKind.Arena:
                         int arenaChunk = index;

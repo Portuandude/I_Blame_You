@@ -9,7 +9,7 @@ namespace IBlameYou.Puzzles
     // 다른 속성이나 평타는 튕겨 나가며 안내 문구만 띄운다. 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
     // 마나는 계속 재생되므로 잘못 쏘거나 영창을 틀려도 기다리면 다시 시도할 수 있다 (갇히지 않는다).
     // 두 속성 봉인문: 문양이 위아래로 둘이고 아래 문양부터 순서대로 맞힌다. 하나를 맞히면 그 문양이 꺼지고 벽 색이 다음 속성으로 바뀐다.
-    // 틀려도 진행은 초기화되지 않는다 (청크를 치웠다 다시 만들면 처음부터).
+    // 틀려도 진행은 초기화되지 않는다. 맞힌 개수는 ChunkStreamer가 기록해서 청크를 다시 만들어도 이어진다.
     public class ElementGate : MonoBehaviour, IElementReceiver
     {
         private const float HintCooldown = 1.5f;
@@ -22,6 +22,7 @@ namespace IBlameYou.Puzzles
         private SpriteRenderer barrier;
         private SpriteRenderer[] sigils;
         private Action onOpened;
+        private Action<int> onStep;
         private bool opened;
         private float nextHintTime;
 
@@ -45,11 +46,13 @@ namespace IBlameYou.Puzzles
         }
 
         // bottom: 문이 선 칸의 바닥 가운데 (월드). alreadyOpen이면 아무것도 만들지 않고 null.
-        // elements: 맞혀야 하는 속성 순서 (1~2개).
-        public static ElementGate Create(Transform parent, Vector2 bottom, Element[] elements, bool alreadyOpen, Action onOpened)
+        // elements: 맞혀야 하는 속성 순서 (1~2개). startStep: 이미 맞힌 개수 (청크를 다시 만들 때), onStep: 하나 맞힐 때마다 새 개수.
+        public static ElementGate Create(Transform parent, Vector2 bottom, Element[] elements, bool alreadyOpen, Action onOpened,
+            int startStep = 0, Action<int> onStep = null)
         {
             if (alreadyOpen || elements == null || elements.Length == 0) return null;
-            var required = elements[0];
+            startStep = Mathf.Clamp(startStep, 0, elements.Length - 1);
+            var required = elements[startStep];
 
             float height = ChunkData.Height - bottom.y + 2f; // 천장 위까지 막아서 점프로 넘지 못하게
             var go = new GameObject("ElementGate");
@@ -63,7 +66,9 @@ namespace IBlameYou.Puzzles
 
             var gate = go.AddComponent<ElementGate>();
             gate.sequence = elements;
+            gate.step = startStep;
             gate.onOpened = onOpened;
+            gate.onStep = onStep;
 
             var color = ElementInfo.Color(required);
             var frames = TrapCommon.Frames("RuneGate");
@@ -82,8 +87,15 @@ namespace IBlameYou.Puzzles
             {
                 gate.sigils[i] = TrapCommon.AddSprite(go.transform, $"Sigil_{i}", TrapCommon.Frame($"RuneSigil_{elements[i]}"),
                     new Vector2(0f, SigilHeight + i * SigilSpacing), new Vector2(0.7f, 0.7f), ElementInfo.Color(elements[i]), 3);
+                if (i < startStep) Dim(gate.sigils[i]);
             }
             return gate;
+        }
+
+        // 맞힌 문양은 어둡게 꺼진다.
+        private static void Dim(SpriteRenderer sigil)
+        {
+            if (sigil != null) sigil.color = new Color(sigil.color.r * 0.4f, sigil.color.g * 0.4f, sigil.color.b * 0.4f, 0.5f);
         }
 
         private static string Names(Element[] elements, int from)
@@ -112,8 +124,8 @@ namespace IBlameYou.Puzzles
             if (step < sequence.Length)
             {
                 // 맞힌 문양은 꺼지고, 벽 색이 다음 속성으로 바뀐다.
-                var dim = sigils[step - 1];
-                if (dim != null) dim.color = new Color(dim.color.r * 0.4f, dim.color.g * 0.4f, dim.color.b * 0.4f, 0.5f);
+                Dim(sigils[step - 1]);
+                onStep?.Invoke(step);
                 if (barrier != null)
                 {
                     var next = ElementInfo.Color(sequence[step]);

@@ -453,6 +453,12 @@ namespace IBlameYou.Systems
         // 발판이 가까이 왔을 때 올라타고, 건너편에 닿을 때 내린다. 떨어지면 낭떠러지 복귀 규칙대로 체력 15%를 잃고 돌아온다.
         private static void BuildMovingBridge(ChunkData chunk, int[] heights, Random rng)
         {
+            if (chunk.Difficulty >= DoubleBridgeMinDifficulty && rng.Next(2) == 0)
+            {
+                BuildDoubleMovingBridge(chunk, heights, rng);
+                return;
+            }
+
             int ground = chunk.EntryHeight;
             int gap = rng.Next(7, chunk.Difficulty > 0.6f ? 11 : 9);
             int right = MovingBridgeLeft + gap; // 건너편 절벽이 시작되는 열
@@ -462,6 +468,38 @@ namespace IBlameYou.Systems
 
             int row = Math.Max(ground, far) - 1; // 발판 윗면 = 더 높은 쪽 절벽 높이 (낮은 쪽에서는 한 칸 올라탄다)
             chunk.AddFeature(FeatureKind.MovingPlatform, MovingBridgeLeft, row, MovingPlatformWidth, gap - MovingPlatformWidth);
+        }
+
+        public const float DoubleBridgeMinDifficulty = 0.7f;
+        public const int DoubleBridgePillarWidth = 2;
+        public const int DoubleBridgeGap = 9; // 8 + 9 + 2 + 9 = 28열, 건너편 절벽 4칸
+
+        // 변형: 낭떠러지 두 개 사이에 좁은 기둥(2칸). 발판 두 개가 반 박자 엇갈려 오가므로, 첫 발판이 기둥에 닿아 멈춘 동안
+        // 둘째 발판이 기둥 반대편에서 기다리고 있다 (놓치면 기둥에서 한 바퀴 기다린다).
+        // 두 낭떠러지 폭이 같아 두 발판의 주기가 같다 (엇갈림이 유지된다). 폭 9칸 = 달리기 점프(약 7.3칸)·걷기 점프+공중 대쉬(약 8.1칸)로도
+        // 못 건너는 폭 (검증기는 걷기 점프 기준이라 이 여유는 여기서 따로 잡는다). 달리기 점프+대쉬(약 11칸)는 막지 못한다.
+        private static void BuildDoubleMovingBridge(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            int gap = DoubleBridgeGap;
+            int pillar = MovingBridgeLeft + gap;               // 기둥이 시작되는 열
+            int secondLeft = pillar + DoubleBridgePillarWidth; // 둘째 낭떠러지가 시작되는 열
+            int right = secondLeft + gap;                      // 건너편 절벽이 시작되는 열
+            int far = Clamp(ground + PickDelta(rng, -1, 0, 0));
+            int top = Math.Max(ground, far);                   // 기둥과 발판 윗면 높이
+            for (int x = 0; x < W; x++)
+            {
+                if (x < MovingBridgeLeft) heights[x] = ground;
+                else if (x < pillar) heights[x] = 0;
+                else if (x < secondLeft) heights[x] = top;
+                else if (x < right) heights[x] = 0;
+                else heights[x] = far;
+            }
+            ApplyHeights(chunk, heights);
+
+            int travel = gap - MovingPlatformWidth;
+            chunk.AddFeature(FeatureKind.MovingPlatform, MovingBridgeLeft, top - 1, MovingPlatformWidth, travel);
+            chunk.AddFeature(FeatureKind.MovingPlatform, secondLeft, top - 1, MovingPlatformWidth, travel);
         }
 
         private static void BuildRest(ChunkData chunk, int[] heights)
