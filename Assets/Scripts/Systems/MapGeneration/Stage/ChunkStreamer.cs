@@ -42,6 +42,9 @@ namespace IBlameYou.Systems
         private float nextSweep;
 
         public StageData Stage => stage;
+
+        // 체크포인트를 처음 켰을 때 (청크 번호, 복귀 위치). 런 진행 저장이 듣는다.
+        public event Action<int, Vector3> CheckpointActivated;
         public Rect WorldBounds => new Rect(0f, -1f, stage.WidthTiles, ChunkData.Height + 1f);
 
         // 시작 청크의 PlayerStart 칸 (서 있는 칸의 바닥 가운데).
@@ -151,8 +154,12 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.Checkpoint:
                         int checkpointChunk = index;
-                        Checkpoint.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), activatedCheckpoints.Contains(index),
-                            () => activatedCheckpoints.Add(checkpointChunk));
+                        var checkpointPoint = new Vector3(ox + f.X + 0.5f, f.Y + SpawnLift, 0f);
+                        Checkpoint.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), activatedCheckpoints.Contains(index), () =>
+                        {
+                            activatedCheckpoints.Add(checkpointChunk);
+                            CheckpointActivated?.Invoke(checkpointChunk, checkpointPoint);
+                        });
                         break;
                     case FeatureKind.Exit:
                         exits[index] = StageExit.Create(root, new Vector2(ox + f.X + 0.5f, f.Y), bossCleared);
@@ -243,6 +250,65 @@ namespace IBlameYou.Systems
         {
             if (takenRelics.Contains(chunkIndex)) return;
             RelicChest.Create(root, position, stage.Seed, chunkIndex, dropped, () => takenRelics.Add(chunkIndex));
+        }
+
+        // 런 진행 저장용: 지금까지의 기록을 꺼내거나(Export), 저장된 기록으로 되돌린다(Import, 청크를 만들기 전에 부를 것).
+        public StageRecords ExportRecords()
+        {
+            var records = new StageRecords
+            {
+                killed = ToArray(killed),
+                clearedArenas = ToArray(clearedArenas),
+                collectedRewards = ToArray(collectedRewards),
+                takenRelics = ToArray(takenRelics),
+                activatedCheckpoints = ToArray(activatedCheckpoints),
+                openedGates = ToArray(openedGates),
+                gateStepChunks = new int[gateSteps.Count],
+                gateStepValues = new int[gateSteps.Count],
+                bossCleared = bossCleared
+            };
+
+            int i = 0;
+            foreach (var pair in gateSteps)
+            {
+                records.gateStepChunks[i] = pair.Key;
+                records.gateStepValues[i] = pair.Value;
+                i++;
+            }
+
+            return records;
+        }
+
+        public void ImportRecords(StageRecords records)
+        {
+            if (records == null) return;
+            Fill(killed, records.killed);
+            Fill(clearedArenas, records.clearedArenas);
+            Fill(collectedRewards, records.collectedRewards);
+            Fill(takenRelics, records.takenRelics);
+            Fill(activatedCheckpoints, records.activatedCheckpoints);
+            Fill(openedGates, records.openedGates);
+            gateSteps.Clear();
+            if (records.gateStepChunks != null && records.gateStepValues != null)
+            {
+                int count = Mathf.Min(records.gateStepChunks.Length, records.gateStepValues.Length);
+                for (int i = 0; i < count; i++) gateSteps[records.gateStepChunks[i]] = records.gateStepValues[i];
+            }
+
+            bossCleared = records.bossCleared;
+        }
+
+        private static int[] ToArray(HashSet<int> set)
+        {
+            var array = new int[set.Count];
+            set.CopyTo(array);
+            return array;
+        }
+
+        private static void Fill(HashSet<int> set, int[] values)
+        {
+            set.Clear();
+            if (values != null) foreach (int value in values) set.Add(value);
         }
 
         private void Unload(int index)
