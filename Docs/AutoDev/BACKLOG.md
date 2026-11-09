@@ -40,3 +40,4 @@
 - DONE (claude/project-thread-5ne2al): 일시정지 메뉴 런 요약 — Esc 메뉴에 이번 런의 특성 단계와 가진 유물 효과를 한눈에 (A/B가 서로 뭘 골랐는지 확인용)
 - DONE (claude/project-thread-5ne2al): 결과 창 유물 목록 — 게임오버·클리어 창에 고른 유물 이름
 - DONE (claude/project-thread-5ne2al): 이어하기 확인 — 저장된 런이 있을 때 "새로 시작"은 한 번 더 눌러야 시작 (따로 버리는 버튼은 새로 시작이 대신함)
+- DONE (claude/project-thread-5ne2al): 적 머리 위 체력 바 — 맞으면 3초 동안 보이고 서서히 사라짐 (보스 제외)

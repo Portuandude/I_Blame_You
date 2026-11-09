@@ -87,7 +87,7 @@ Assets/
       Input/                  # RoleInput(A/B 역할별 키), PlayerControlState(미니게임 정지/영창 중 입력 잠금)
       Skills/                 # A: TeleportSkill, ElementShieldSkill/ElementShield · B: SpellCaster/SpellBook, GroundSpike
       Progression/            # PlayerProgression(경험치/레벨/특성 포인트), TraitTree(던그리드식 특성 5갈래), LastStandGuard
-    Core/ (추가)              # StartMenu(개발자 모드 선택, 볼륨, 최고 기록), GameSession, SaveData(PlayerPrefs 설정·최고 기록), DevCheats
+    Core/ (추가)              # StartMenu(개발자 모드 선택, 볼륨, 최고 기록, 이어하기), GameSession, SaveData(PlayerPrefs 설정·최고 기록), RunSave(런 진행 저장), DevCheats
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
@@ -106,12 +106,13 @@ Assets/
         Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
-                              # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
+                              # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
-                              # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바
+                              # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바, SkillHUD.Relics — 유물 고르기 창·가진 유물
+                              # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임)
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/                  # ElementGate(속성 마법으로 여는 봉인문)
     Data/                     # (비어 있음)
