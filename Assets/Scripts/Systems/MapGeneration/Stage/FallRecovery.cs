@@ -9,7 +9,7 @@ namespace IBlameYou.Systems
     public class FallRecovery : MonoBehaviour
     {
         public const float KillY = -3f;
-        private const float DamageRatio = 0.15f;
+        public const float DefaultDamageRatio = 0.15f;
         private const float RecordInterval = 0.2f;
         private const float HazardRadius = 1.6f;
         private const float InvulnerableTime = 1f;
@@ -22,6 +22,9 @@ namespace IBlameYou.Systems
         private float invulnerableUntil;
         private bool grantedInvulnerability;
         private int groundMask;
+
+        // 떨어졌을 때 잃는 체력 비율 (최대 체력 기준). 유물 깃털 부적이 낮춘다.
+        public float DamageRatio { get; set; } = DefaultDamageRatio;
 
         private void Awake()
         {

@@ -7,7 +7,7 @@
 
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 준비한 그림(마법사 Idle, 슬라임 원본)은 덮어쓰지 말고 같은 톤의 새 파일을 만든 뒤 설정에서 바꿔 끼운다 (원본은 Trash 규칙대로 보존).
 
-- TODO: 아트 스타일 가이드 — `Docs/ArtStyle.md`에 팔레트(메인 8~12색 + 속성별 불/물/바람/땅/무 색), 외곽선 규칙, 빛·반짝임 규칙, 캐릭터 비율을 정하고 이후 작업이 모두 따른다
+- DONE (claude/project-thread-5ne2al, [ArtStyle.md](../ArtStyle.md)): 아트 스타일 가이드 — `Docs/ArtStyle.md`에 팔레트(메인 8~12색 + 속성별 불/물/바람/땅/무 색), 외곽선 규칙, 빛·반짝임 규칙, 캐릭터 비율을 정하고 이후 작업이 모두 따른다
 - TODO: 맵 배경 — 시차(패럴랙스) 배경 3겹(먼 하늘/중간 산·숲/가까운 풀숲), 진행도에 따라 색조 변화, 떠다니는 반짝이 입자
 - TODO: 지형 타일 — 바닥·벽·발판·낭떠러지 끝을 새 팔레트로 다시 그리고 풀·꽃·버섯 장식을 무작위로 얹기 (외부 타일셋 의존 줄이기)
 - TODO: 마법 이펙트 — 불/물/바람/땅/무 공격 스킬과 방어막, 순간이동, 평타에 발사·비행·적중 3단계 이펙트 (pixelfx), 적중 시 화면 살짝 번쩍임
@@ -45,8 +45,14 @@
 - DONE (claude/project-thread-nsj3x2): 두 속성 봉인문 진행 기록 — 첫 속성을 맞힌 뒤 청크를 치웠다 다시 만들어도 맞힌 개수가 이어지게 (ChunkStreamer 기록)
 - DONE (claude/project-thread-nsj3x2): 이동 청크 선택 안전장치 — `PickTravel`의 반올림 대비 기본값이 직전 종류(평지)와 겹칠 수 있던 문제 정리
 - DONE (claude/project-thread-5ne2al): 유물(런 중 아이템) 기초 — 정예 전투 구역을 돌파하면 회복 구슬 옆에 유물 상자. 닿으면 게임이 멈추고 유물 3개 중 1개를 고른다 (A/B 공용, 한 런에 같은 유물은 한 번). 효과는 기존 수치 훅(최대 체력/마나, 방어, 이동속도, 주는 피해, 마나 재생, 치명타)만 쓴다. 고르는 후보는 시드로 결정, 순수 로직은 EditMode 테스트
-- TODO: 유물 HUD·기록 — 가진 유물을 레벨 막대 아래에 표시, 게임오버·클리어 창 런 기록에 유물 수
-- TODO: 런 진행 저장 기초 — 휴식 체크포인트를 켜면 시드·체크포인트 위치·레벨·특성·유물·런 기록을 PlayerPrefs에 저장, 시작 화면에 "이어하기". 쓰러지거나 클리어하면 지운다
+- DONE (claude/project-thread-5ne2al): 유물 HUD·기록 — 가진 유물을 레벨 막대 아래에 표시, 게임오버·클리어 창 런 기록에 유물 수
+- DONE (claude/project-thread-5ne2al): 런 진행 저장 기초 — 휴식 체크포인트를 켜면 시드·체크포인트 위치·레벨·특성·유물·런 기록을 PlayerPrefs에 저장, 시작 화면에 "이어하기". 쓰러지거나 클리어하면 지운다
 - DONE (claude/project-thread-5ne2al): 스테이지 2 기획 초안 — 테마, 새 쫄몹 2~3종, 새 함정·퍼즐, 보스 후보를 문서로만 (구현은 사람 확인 후) → [Stage2Draft.md](../Stage2Draft.md). 테마 선택은 사람 필요
 - DONE (claude/project-thread-5ne2al): 런 사이 성장 기획 초안 — 메타 진행(런이 끝나도 남는 해금/재화) 후보 2~3개를 문서로만 → [MetaProgressionDraft.md](../MetaProgressionDraft.md). 후보 선택은 사람 필요
 - DONE (claude/project-thread-5ne2al): `PickTravel` 반올림 대비 경로 테스트 — 기본값이 직전 종류와 겹치지 않음을 테스트로 고정
+- DONE (claude/project-thread-5ne2al): 특수 효과 유물 3종 — 깃털 부적(낙하 피해 15% → 5%), 흡혈 송곳니(처치 시 체력 +3), 집중 구슬(날린 마나 25% 환급, 신비 10과 합산)
+- DONE (claude/project-thread-5ne2al): 일시정지 메뉴 런 요약 — Esc 메뉴에 이번 런의 특성 단계와 가진 유물 효과를 한눈에 (A/B가 서로 뭘 골랐는지 확인용)
+- DONE (claude/project-thread-5ne2al): 결과 창 유물 목록 — 게임오버·클리어 창에 고른 유물 이름
+- DONE (claude/project-thread-5ne2al): 이어하기 확인 — 저장된 런이 있을 때 "새로 시작"은 한 번 더 눌러야 시작 (따로 버리는 버튼은 새로 시작이 대신함)
+- DONE (claude/project-thread-5ne2al): 적 머리 위 체력 바 — 맞으면 3초 동안 보이고 서서히 사라짐 (보스 제외)
+- DONE (claude/project-thread-5ne2al): 데미지 공식 테스트 — 비율식 공식과 속성 상성을 엔진 없는 어셈블리(IBlameYou.Formula)로 분리하고 EditMode 테스트

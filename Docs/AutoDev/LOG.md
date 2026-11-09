@@ -3,11 +3,10 @@
 최신 실행이 맨 위.
 
 ## 2026-11-09 04:26 UTC
-- 브랜치/PR: `claude/project-thread-5ne2al` → #10 (develop 대상, GitHub 자동 머지 켬)
-- 완료: 백로그에 새 항목 6개 추가, 스테이지 2 기획 초안(Docs/Stage2Draft.md, 테마 선택은 사람 필요), 런 사이 성장 기획 초안(Docs/MetaProgressionDraft.md, 후보 선택은 사람 필요)
-- 진행 중: 유물(런 중 아이템) 기초
-- 실패/보류: 없음
-- 다음 실행 메모: (실행 중 갱신)
+- 브랜치/PR: `claude/project-thread-5ne2al` → #10, #11 (CI 통과 후 머지) → #12 (진행 중)
+- 완료: 백로그 새 항목 추가, 스테이지 2 기획 초안(Docs/Stage2Draft.md), 런 사이 성장 기획 초안(Docs/MetaProgressionDraft.md), PickTravel 반올림 경로 테스트 → #10. 유물 기초(정예 구역 유물 상자, 3택1, RelicBook 테스트 6개, 리뷰 2회: MEDIUM 1·LOW 3 반영) → #11 (EditMode 25/25). 런 진행 저장 기초(체크포인트 저장, 시작 화면 이어하기), 유물 HUD·기록, 특수 효과 유물 3종, 일시정지 런 요약, 결과 창 유물 목록, 새로 시작 확인 (리뷰: MEDIUM 2·LOW 2 반영 후 APPROVE) → #12. 적 머리 위 체력 바, 리뷰 LOW 반영 (리뷰 중)
+- 실패/보류: 없음. Unity 런타임 동작(유물 창, 이어하기, 체력 바)은 실행 확인 불가라 플레이테스트 필요
+- 다음 실행 메모: 사람 결정 대기 — 스테이지 2 테마(Stage2Draft), 메타 진행 후보(MetaProgressionDraft), 중간보스 후보(MidBossDraft), 달리기·대쉬 건너뛰기 정책, 이어하기로 체력을 되돌리는 것을 막을지
 
 ## 2026-11-09 00:35 UTC
 - 브랜치/PR: `claude/project-thread-nsj3x2` → #5~#8 (모두 CI 통과 후 자동 머지) → #9

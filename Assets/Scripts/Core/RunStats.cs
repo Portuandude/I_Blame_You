@@ -28,7 +28,7 @@ namespace IBlameYou.Core
             if (!Ended) GatesOpened++;
         }
 
-        public static string Summary(int level) =>
-            $"레벨 {level} · 처치 {Kills} · 받은 피해 {DamageTaken:0}(넘친 피해 포함) · 돌파 구역 {ArenasCleared} · 연 봉인문 {GatesOpened}";
+        public static string Summary(int level, int relics = 0) =>
+            $"레벨 {level} · 처치 {Kills} · 받은 피해 {DamageTaken:0}(넘친 피해 포함) · 돌파 구역 {ArenasCleared} · 연 봉인문 {GatesOpened} · 유물 {relics}";
     }
 }

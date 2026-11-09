@@ -33,6 +33,14 @@ namespace IBlameYou.Core
             PlayerPrefs.Save();
         }
 
+        // 볼륨만 저장한다 (게임 중 일시정지 메뉴용: 이어하기로 바뀐 런 모드가 설정에 덮이지 않게).
+        public static void SaveVolume()
+        {
+            PlayerPrefs.SetFloat(KeyMusicVolume, GameAudio.MusicVolume);
+            PlayerPrefs.SetFloat(KeySfxVolume, GameAudio.SfxVolume);
+            PlayerPrefs.Save();
+        }
+
         private static string ModeKey(string key, bool devMode) => key + (devMode ? ".Dev" : ".Normal");
 
         // 가장 빠른 클리어 시간(초). 기록이 없으면 0.

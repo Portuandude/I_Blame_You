@@ -84,6 +84,29 @@ namespace IBlameYou.Player
             }
         }
 
+        // 런 진행 저장에서 되살릴 때: 레벨·경험치를 그대로 두고, 찍었던 특성은 처음부터 다시 찍어 효과를 다시 적용한다.
+        // LeveledUp은 부르지 않는다 (TraitRaised는 부르므로 HUD를 붙이기 전에 부를 것). 새로 만든 플레이어에만 한 번 쓴다.
+        public void RestoreProgress(int level, float experience, float totalExperience, int unspentPoints, int[] savedRanks)
+        {
+            Level = Mathf.Max(1, level);
+            Experience = Mathf.Max(0f, experience);
+            TotalExperience = Mathf.Max(0f, totalExperience);
+            int spent = 0;
+            if (savedRanks != null)
+                for (int i = 0; i < savedRanks.Length && i < ranks.Length; i++) spent += Mathf.Clamp(savedRanks[i], 0, TraitTree.MaxRank);
+            Points = Mathf.Max(0, unspentPoints) + spent;
+
+            if (savedRanks == null) return;
+            for (int i = 0; i < savedRanks.Length && i < ranks.Length; i++)
+            {
+                int target = Mathf.Clamp(savedRanks[i], 0, TraitTree.MaxRank);
+                while (ranks[i] < target && Raise(TraitTree.All[i])) { }
+            }
+        }
+
+        // 저장용: 특성별 찍은 단계 (TraitTree.All 순서).
+        public int[] RanksSnapshot() => (int[])ranks.Clone();
+
         public bool CanRaise(Trait trait) => Points > 0 && Rank(trait) < TraitTree.MaxRank;
 
         // 포인트 하나를 찍는다. 포인트당 효과는 매번, 5/10/20 효과는 그 단계에 닿을 때 한 번 적용한다.
@@ -141,7 +164,7 @@ namespace IBlameYou.Player
                     break;
                 case Trait.Mystic:
                     if (rank == 5 && mana != null) mana.RegenMultiplier += 0.3f;
-                    if (rank == 10 && mana != null) mana.WastedRefundRatio = 0.5f;
+                    if (rank == 10 && mana != null) mana.WastedRefundRatio = Mathf.Min(1f, mana.WastedRefundRatio + 0.5f); // 유물 집중 구슬과 합산
                     if (rank == 20 && mana != null) mana.CostMultiplier *= 0.8f;
                     break;
                 case Trait.Vitality:

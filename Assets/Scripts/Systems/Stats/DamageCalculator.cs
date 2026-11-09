@@ -24,12 +24,12 @@ namespace IBlameYou.Systems
     {
         public static float Physical(float attack, float defense)
         {
-            return attack * 100f / (100f + Mathf.Max(defense, -50f));
+            return DamageFormula.Ratio(attack, defense);
         }
 
         public static float Magic(float elementDamage, float elementDefense)
         {
-            return elementDamage * 100f / (100f + Mathf.Max(elementDefense, -50f));
+            return DamageFormula.Ratio(elementDamage, elementDefense);
         }
 
         // 공격자 스탯으로 대상에게 한 번 피해를 준다. multiplier는 스킬 계수.

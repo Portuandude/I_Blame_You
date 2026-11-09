@@ -60,6 +60,18 @@ namespace IBlameYou.Enemies
             Stats = GetComponent<CombatStats>();
 
             Health.HealthChanged += OnHealthChanged;
+            Health.Damaged += OnDamagedShowHealthBar;
+        }
+
+        // 머리 위 체력 바 (맞았을 때 잠깐 보임). 보스는 화면 위 보스 체력바가 있으므로 끈다.
+        protected virtual bool ShowsHealthBar => true;
+
+        private IBlameYou.UI.EnemyHealthBar healthBar;
+
+        private void OnDamagedShowHealthBar(float amount)
+        {
+            if (!ShowsHealthBar || Health.IsDead) return;
+            healthBar = IBlameYou.UI.EnemyHealthBar.Ping(healthBar, Health, bodyCollider);
         }
 
         // 스포너가 적마다 다른 접촉 데미지를 지정할 때 사용.

@@ -1,7 +1,7 @@
 # I Blame You!
 
 로그라이크 기반 2D 액션 게임. 시드로 매번 새로 만들어지는 청크식 스테이지를 지나며 패턴 파훼형 전투와 함정 지형을 결합한다.
-기획은 [Docs/GameDesignDocument.md](Docs/GameDesignDocument.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md) 참고.
+기획은 [Docs/GameDesignDocument.md](Docs/GameDesignDocument.md), 작업 규칙은 [CLAUDE.md](CLAUDE.md) 참고. 아트 방향(팔레트·외곽선·비율)은 [Docs/ArtStyle.md](Docs/ArtStyle.md).
 
 ## 개발 환경
 
@@ -33,6 +33,7 @@ Unity.exe -batchmode -nographics -projectPath "<프로젝트 경로>" -executeMe
 Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)는 한 사람이 A/B를 동시에 조작하고 스킬 미니게임을 숫자키 즉시 발동으로 대체한다.
 한 캐릭터를 플레이어 A(이동·방어)와 B(공격)가 나눠 조작하며, 마나는 하나를 같이 쓴다.
 시작 화면에서 배경음악/효과음 볼륨을 맞출 수 있고, 개발자 모드·볼륨 설정과 최고 기록(가장 빠른 클리어 시간, 최고 레벨 — 개발자 모드/일반 모드 따로)은 `Core/SaveData`가 PlayerPrefs에 저장해 시작 화면에 보여준다.
+런 진행 저장(`Core/RunSave`): 휴식 체크포인트를 처음 켜면 시드·체크포인트 위치·걸린 시간·레벨/경험치/특성·유물·체력·런 기록·청크 기록(쓰러뜨린 적, 돌파 구역, 주운 보상, 연 봉인문 등)을 PlayerPrefs(JSON)에 저장한다. 시작 화면에 **이어하기** 버튼이 생기고, 누르면 같은 시드의 맵을 다시 만들어 그 체크포인트에서 시작한다(모드는 저장한 런을 따름). 쓰러지거나 클리어하거나 새로 시작하면 저장은 지워진다.
 
 | 역할 | 입력 | 동작 |
 | --- | --- | --- |
@@ -86,7 +87,7 @@ Assets/
       Input/                  # RoleInput(A/B 역할별 키), PlayerControlState(미니게임 정지/영창 중 입력 잠금)
       Skills/                 # A: TeleportSkill, ElementShieldSkill/ElementShield · B: SpellCaster/SpellBook, GroundSpike
       Progression/            # PlayerProgression(경험치/레벨/특성 포인트), TraitTree(던그리드식 특성 5갈래), LastStandGuard
-    Core/ (추가)              # StartMenu(개발자 모드 선택, 볼륨, 최고 기록), GameSession, SaveData(PlayerPrefs 설정·최고 기록), DevCheats
+    Core/ (추가)              # StartMenu(개발자 모드 선택, 볼륨, 최고 기록, 이어하기), GameSession, SaveData(PlayerPrefs 설정·최고 기록), RunSave(런 진행 저장), DevCheats
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
@@ -105,12 +106,13 @@ Assets/
         Chunks/               # 순수 C# 스테이지 생성기 (별도 어셈블리 IBlameYou.StageGeneration, Unity 없이 Tools/StageGen에서도 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
-                              # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
+                              # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
-                              # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바
+                              # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바, SkillHUD.Relics — 유물 고르기 창·가진 유물
+                              # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임)
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
     Puzzles/                  # ElementGate(속성 마법으로 여는 봉인문)
     Data/                     # (비어 있음)
@@ -131,6 +133,8 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 - 지형 규칙은 점프 능력에서 나왔다 (최대 2칸 오르기, 최대 3칸 낭떠러지). `StageValidator`가 청크마다 통과 가능 여부와 빠지면 못 나오는 구덩이를 검사하고, 실패하면 다시 만든다.
 - 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트는 기록해 둔다.
 - 일반·정예 전투 구역을 돌파하면 가운데에 회복 구슬(`ArenaReward`)이 떨어진다. 닿으면 최대 체력 30%, 최대 마나 50% 회복. 줍지 않고 떠나도 다시 오면 그대로 있다 (보스 구역은 출구가 보상이라 없음).
+- 정예 전투 구역은 구슬 왼쪽에 **유물 상자**(`RelicChest`)도 남긴다. 닿으면 게임이 멈추고 유물 3개 중 하나를 1/2/3 키나 클릭으로 고른다 (A/B 공용, 한 런에 같은 유물은 한 번). 후보는 시드와 청크 번호로 정해진다(`RelicBook.Offer`). 영창·방어막 미니게임·특성 창·일시정지 중에는 열리지 않고 끝난 뒤 열린다.
+  유물 10종(`Player/Relics`): 마력 수정(최대 마나 +20), 무쇠 망토(방어 +8), 바람 장화(이동속도 +8%), 분노의 부적(주는 피해 +12%), 생명의 씨앗(최대 체력 +20), 샘물 반지(마나 재생 +25%), 매의 눈(치명타 +8%) — 특성 약 4포인트 분량 — 과 특수 효과 3종: 깃털 부적(낭떠러지 낙하 피해 15% → 5%), 흡혈 송곳니(적 처치 시 체력 +3), 집중 구슬(실패로 날린 마나 25% 돌려받기, 신비 10과 합산).
 - **봉인문 (맵 퍼즐)**: 진행도 25~85% 구간에 스테이지당 최대 2개. 가운데 마력 벽이 천장까지 길을 막고, 문 색·문양과 같은 속성(불/물/바람)의 B 공격 마법을 맞히면 열린다. 다른 속성이나 평타는 튕겨 나가며 필요한 속성을 알려 준다. 진행도 60% 이후의 봉인문은 문양이 둘이라 서로 다른 두 속성을 아래 문양부터 순서대로 맞혀야 한다 (맞힌 개수도 기록된다). 연 문은 청크를 다시 만들어도 열린 채로 남는다 (`Puzzles/ElementGate`, 투사체는 `IElementReceiver`로 속성을 전달).
 - **움직이는 발판 (컨트롤 퍼즐)**: 진행도 20% 이후. 점프로 못 건너는 7~10칸 낭떠러지를 3칸짜리 발판이 오간다 (초당 2.2유닛, 양 끝에서 0.8초 멈춤). 위에 선 캐릭터를 실어 나르며, 검증기는 발판이 지나는 칸을 모두 발판으로 본다 (`Traps/MovingPlatform`). 진행도 70% 이후에는 절반 확률로 갈아타기 변형: 9칸 낭떠러지 두 개 사이에 2칸 기둥이 있고, 발판 두 개가 반 박자 엇갈려 오간다 (첫 발판이 기둥에 닿으면 둘째 발판이 반대편에서 기다리는 이어달리기, 놓치면 기둥에서 한 바퀴 대기).
 - 낭떠러지에 떨어지면 체력 15%를 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다. 보스 구역을 돌파하면 출구가 열리고, 들어가면 클리어.
@@ -173,8 +177,11 @@ python3 Tools/StageGen/render_stage.py /tmp/stage1.txt /tmp/stage1.png
 `Assets/Tests/EditMode`의 NUnit 테스트를 Unity **Window > General > Test Runner > EditMode**에서 돌릴 수 있고, PR마다 Unity CI(`editmode` 잡)도 같은 테스트를 돌린다.
 
 - 테스트 어셈블리(`IBlameYou.Tests.EditMode.asmdef`)는 `Assembly-CSharp`를 참조할 수 없어서, 테스트할 순수 로직은 별도 asmdef로 분리한다.
-  지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`, UnityEngine 참조 없음)만 분리되어 있다. 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
+  지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`), 유물 데이터(`Player/Relics/Data`, `IBlameYou.Relics.asmdef`), 데미지 공식·속성 상성(`Systems/Stats/Formula`, `IBlameYou.Formula.asmdef`, `Element` enum 포함)이 분리되어 있다 (셋 다 UnityEngine 참조 없음). 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
 - `StageGeneratorTests`: 시드 40개로 모든 청크·대체 청크 검증 통과, 이음새 높이, 시작/보스 청크와 출구, 예상 시간 ±10%, 같은 시드 = 같은 지형, 봉인문 배치 규칙(진행도 구간, 최대 2개)과 우회 불가, 후반 봉인문은 서로 다른 두 속성, 움직이는 발판 없이는 못 건넘(갈아타기는 발판마다), 배치 규칙(정예 40%/72%와 그 뒤 휴식, 휴식 간격, 지형별 진행도 문턱, 같은 이동 청크 연속 금지).
+- `StagePlannerPickTests`: 이동 청크 뽑기의 반올림 대비 경로도 직전 종류와 겹치지 않고 진행도 문턱을 지킨다.
+- `DamageFormulaTests`: 비율식 공식 값(방어 -50 하한 포함), 방어가 오르면 피해가 줄기만 함, 속성 상성이 한 바퀴 순환(각 속성은 하나를 이기고 하나에 짐).
+- `RelicBookTests`: 유물 후보 3개가 서로 다름, 같은 시드·청크 = 같은 후보, 가진 유물 제외, 남은 게 적으면 줄어듦, 정예 구역 두 곳의 후보가 다름.
 
 ## 프리팹 구조
 

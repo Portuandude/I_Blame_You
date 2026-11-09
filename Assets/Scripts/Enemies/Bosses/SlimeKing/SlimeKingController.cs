@@ -110,6 +110,7 @@ namespace IBlameYou.Enemies
         public float Stamina => stamina;
 
         protected override bool ContactDamageActive => contact;
+        protected override bool ShowsHealthBar => false; // 화면 위 보스 체력바를 쓴다
 
         public static SlimeKingController Nearest(Vector3 position)
         {
