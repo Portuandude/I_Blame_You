@@ -112,7 +112,7 @@ Assets/
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
-    UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
+    UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
                               # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바, SkillHUD.Relics — 유물 고르기 창·가진 유물
                               # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임)
