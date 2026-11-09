@@ -41,3 +41,4 @@
 - DONE (claude/project-thread-5ne2al): 결과 창 유물 목록 — 게임오버·클리어 창에 고른 유물 이름
 - DONE (claude/project-thread-5ne2al): 이어하기 확인 — 저장된 런이 있을 때 "새로 시작"은 한 번 더 눌러야 시작 (따로 버리는 버튼은 새로 시작이 대신함)
 - DONE (claude/project-thread-5ne2al): 적 머리 위 체력 바 — 맞으면 3초 동안 보이고 서서히 사라짐 (보스 제외)
+- DONE (claude/project-thread-5ne2al): 데미지 공식 테스트 — 비율식 공식과 속성 상성을 엔진 없는 어셈블리(IBlameYou.Formula)로 분리하고 EditMode 테스트

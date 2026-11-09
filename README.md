@@ -177,9 +177,10 @@ python3 Tools/StageGen/render_stage.py /tmp/stage1.txt /tmp/stage1.png
 `Assets/Tests/EditMode`의 NUnit 테스트를 Unity **Window > General > Test Runner > EditMode**에서 돌릴 수 있고, PR마다 Unity CI(`editmode` 잡)도 같은 테스트를 돌린다.
 
 - 테스트 어셈블리(`IBlameYou.Tests.EditMode.asmdef`)는 `Assembly-CSharp`를 참조할 수 없어서, 테스트할 순수 로직은 별도 asmdef로 분리한다.
-  지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`)와 유물 데이터(`Player/Relics/Data`, `IBlameYou.Relics.asmdef`)가 분리되어 있다 (둘 다 UnityEngine 참조 없음). 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
+  지금은 청크 생성기(`Systems/MapGeneration/Chunks`, `IBlameYou.StageGeneration.asmdef`), 유물 데이터(`Player/Relics/Data`, `IBlameYou.Relics.asmdef`), 데미지 공식·속성 상성(`Systems/Stats/Formula`, `IBlameYou.Formula.asmdef`, `Element` enum 포함)이 분리되어 있다 (둘 다 UnityEngine 참조 없음). 이 폴더 코드는 바깥 게임 코드(MonoBehaviour 등)를 참조하면 안 된다.
 - `StageGeneratorTests`: 시드 40개로 모든 청크·대체 청크 검증 통과, 이음새 높이, 시작/보스 청크와 출구, 예상 시간 ±10%, 같은 시드 = 같은 지형, 봉인문 배치 규칙(진행도 구간, 최대 2개)과 우회 불가, 후반 봉인문은 서로 다른 두 속성, 움직이는 발판 없이는 못 건넘(갈아타기는 발판마다), 배치 규칙(정예 40%/72%와 그 뒤 휴식, 휴식 간격, 지형별 진행도 문턱, 같은 이동 청크 연속 금지).
 - `StagePlannerPickTests`: 이동 청크 뽑기의 반올림 대비 경로도 직전 종류와 겹치지 않고 진행도 문턱을 지킨다.
+- `DamageFormulaTests`: 비율식 공식 값(방어 -50 하한 포함), 방어가 오르면 피해가 줄기만 함, 속성 상성이 한 바퀴 순환(각 속성은 하나를 이기고 하나에 짐).
 - `RelicBookTests`: 유물 후보 3개가 서로 다름, 같은 시드·청크 = 같은 후보, 가진 유물 제외, 남은 게 적으면 줄어듦, 정예 구역 두 곳의 후보가 다름.
 
 ## 프리팹 구조
