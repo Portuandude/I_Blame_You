@@ -207,6 +207,7 @@ namespace IBlameYou.Enemies
             moveDirection = 0f;
             attackedThisLeap.Clear();
             EnterPhase(AttackPhase.Windup, WindupTime);
+            EnemySquash.For(gameObject).Windup(WindupTime); // 웅크렸다가
             if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             return true;
         }
@@ -227,6 +228,7 @@ namespace IBlameYou.Enemies
             {
                 case AttackPhase.Windup:
                     BeginLeap(target);
+                    EnemySquash.For(gameObject).Release(); // 뛰어오르며 늘어난다
                     EnterPhase(AttackPhase.Air, AirTime);
                     break;
                 case AttackPhase.Air:
@@ -274,6 +276,7 @@ namespace IBlameYou.Enemies
 
         private void EndAttack(bool startCooldown)
         {
+            if (phase == AttackPhase.Windup) EnemySquash.For(gameObject).Cancel(); // 웅크리다 끊기면 바로 펴기
             phase = AttackPhase.None;
             leapPending = false;
             if (startCooldown) nextAttackTime = Time.time + attackCooldown;

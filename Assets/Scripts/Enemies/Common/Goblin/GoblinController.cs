@@ -136,6 +136,7 @@ namespace IBlameYou.Enemies
             moveDirection = 0f;
             phase = AttackPhase.Windup;
             phaseTimeRemaining = WindupTime / Stats.AttackSpeedMultiplier;
+            EnemySquash.For(gameObject).Windup(phaseTimeRemaining); // 웅크렸다가
             if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             return true;
         }
@@ -154,6 +155,7 @@ namespace IBlameYou.Enemies
             if (phase == AttackPhase.Windup)
             {
                 Swing();
+                EnemySquash.For(gameObject).Release(); // 휘두르는 순간 늘어난다
                 phase = AttackPhase.Recover;
                 phaseTimeRemaining = RecoverTime / Stats.AttackSpeedMultiplier;
             }
@@ -179,6 +181,7 @@ namespace IBlameYou.Enemies
 
         private void EndAttack(bool startCooldown)
         {
+            if (phase == AttackPhase.Windup) EnemySquash.For(gameObject).Cancel(); // 웅크리다 끊기면 바로 펴기
             phase = AttackPhase.None;
             if (startCooldown) nextAttackTime = Time.time + Stats.AttackInterval;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
