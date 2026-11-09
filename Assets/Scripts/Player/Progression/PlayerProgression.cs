@@ -164,7 +164,7 @@ namespace IBlameYou.Player
                     break;
                 case Trait.Mystic:
                     if (rank == 5 && mana != null) mana.RegenMultiplier += 0.3f;
-                    if (rank == 10 && mana != null) mana.WastedRefundRatio = 0.5f;
+                    if (rank == 10 && mana != null) mana.WastedRefundRatio = Mathf.Min(1f, mana.WastedRefundRatio + 0.5f); // 유물 집중 구슬과 합산
                     if (rank == 20 && mana != null) mana.CostMultiplier *= 0.8f;
                     break;
                 case Trait.Vitality:
