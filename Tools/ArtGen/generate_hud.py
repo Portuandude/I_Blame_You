@@ -25,7 +25,7 @@ OUT = os.path.join(ROOT, "Assets", "Resources", "UI", "HUD")
 
 SS = 8  # 크게 그린 뒤 줄여서 둥근 끝을 부드럽게
 BAR_W, BAR_H = 36, 18
-GLOW = 5  # 테두리 바깥 빛 여백 (BarFrame 크기 = 바 + 2*GLOW)
+GLOW = 5  # 테두리 바깥 빛 여백 (BarFrame 크기 = 바 + 2*GLOW). BAR_H·GLOW를 바꾸면 SkillHUD.Bars.cs 상수·9분할 값도 함께
 CREAM = COLORS["cream"]
 NIGHT = COLORS["night"]
 WHITE = (255, 255, 255, 255)
