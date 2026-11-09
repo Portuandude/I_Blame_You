@@ -174,6 +174,24 @@ namespace IBlameYou.Tests
             Assert.Greater(stagesWithGate, 0, "봉인문이 한 번도 나오지 않음");
         }
 
+        // 진행도 후반의 봉인문은 서로 다른 두 속성을 순서대로 요구한다.
+        [Test]
+        public void LateElementGatesNeedTwoDifferentElements()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (float difficulty in new[] { 0.3f, 0.59f, 0.6f, 0.85f })
+                {
+                    var gate = GateOf(ChunkGenerator.Generate(seed, 5, ChunkKind.ElementGate, difficulty, 7, 0));
+                    bool late = difficulty >= ChunkGenerator.TwoElementGateMinDifficulty;
+                    Assert.AreEqual(late, gate.HasSecondElement, $"seed {seed} difficulty {difficulty}");
+                    if (!late) continue;
+                    Assert.That(gate.SecondElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1));
+                    Assert.IsFalse(gate.SecondElementIndex == gate.ElementIndex, $"seed {seed}: 같은 속성 두 번");
+                }
+            }
+        }
+
         // ---- 움직이는 발판 청크 (컨트롤 퍼즐) ----
 
         [Test]
