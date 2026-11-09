@@ -1,11 +1,13 @@
 """I Blame You! 임시 사운드 생성기 (numpy만 사용하는 간단한 합성).
 
 배경음악 2곡(메뉴/던전, 끊김 없이 반복되는 루프)과
-마법 발동음 5종(Cast_<속성>), 적중음 5종(Hit_<속성>)을 WAV로 만들어
+마법 발동음 5종(Cast_<속성>), 적중음 5종(Hit_<속성>), 동작음(Jump, Dash, Hurt, EnemyDie, LevelUp)을 WAV로 만들어
 Assets/Resources/Audio/{Music,SFX} 에 저장한다. 게임은 런타임에 Resources에서 바로 읽는다.
 진짜 사운드가 생기면 같은 이름의 파일(wav/ogg/mp3)로 바꾸면 된다.
 
     python3 Tools/AudioGen/generate_audio.py
+
+주의: Hit_Neutral.wav는 저장소에 이전 버전을 일부러 남겨 두었다. 전체를 다시 만들면 바뀌므로, 새 소리만 필요하면 다시 만든 뒤 `git checkout Assets/Resources/Audio/SFX/Hit_Neutral.wav`로 되돌릴 것.
 """
 import os
 import wave
@@ -257,6 +259,56 @@ def hit_neutral():
     return normalize(fade_edges(zap + bell + burst))
 
 
+# ---- 동작 효과음 (점프/대쉬/피격/적 사망/레벨업) ----
+
+def jump():
+    n = int(0.18 * SR)
+    t = np.arange(n) / SR
+    chirp = osc("square", 260 + 900 * t / t[-1], n, duty=0.25) * env_adsr(n, 0.005, 0.05, 0.5, 0.08) * 0.5
+    puff = lowpass(noise(n), 1500) * env_exp(n, 0.03) * 0.4
+    return normalize(fade_edges(lowpass(chirp, 4000) + puff))
+
+
+def dash():
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    center = 900 + 3200 * np.exp(-((t - 0.07) / 0.06) ** 2)
+    swoosh = bandpass(noise(n), center * 0.5, center) * env_adsr(n, 0.02, 0.08, 0.5, 0.15) * 1.5
+    return normalize(fade_edges(swoosh))
+
+
+def hurt():
+    n = int(0.28 * SR)
+    t = np.arange(n) / SR
+    thump = osc("sine", 180 * np.exp(-t * 12) + 70, n) * env_exp(n, 0.08) * 1.0
+    grit = lowpass(osc("saw", 220 * np.exp(-t * 4), n), 2500) * env_exp(n, 0.06) * 0.5
+    snap = highpass(noise(n), 2000) * env_exp(n, 0.015) * 0.5
+    return normalize(fade_edges(thump + grit + snap))
+
+
+def enemy_die():
+    n = int(0.55 * SR)
+    t = np.arange(n) / SR
+    fall = osc("square", 520 * np.exp(-t * 4) + 60, n, duty=0.4) * env_adsr(n, 0.005, 0.15, 0.4, 0.3) * 0.35
+    splat = lowpass(noise(n), 900) * env_exp(n, 0.12) * 0.9
+    return normalize(fade_edges(lowpass(fall, 3000) + splat))
+
+
+def level_up():
+    notes = ["C5", "E5", "G5", "C6"]
+    step = 0.085
+    n = int((step * len(notes) + 0.45) * SR)
+    out = np.zeros(n)
+    for k, name in enumerate(notes):
+        m = int(0.5 * SR)
+        f = note_hz(name)
+        tone_ = (osc("square", f, m, duty=0.5) * 0.25 + osc("sine", f * 2, m) * 0.3) * env_adsr(m, 0.005, 0.1, 0.35, 0.3)
+        start = int(k * step * SR)
+        end = min(n, start + m)
+        out[start:end] += tone_[: end - start]
+    return normalize(fade_edges(lowpass(out, 6000)))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -392,9 +444,10 @@ def main():
         "Cast_Neutral": cast_neutral,
         "Hit_Fire": hit_fire, "Hit_Water": hit_water, "Hit_Wind": hit_wind, "Hit_Earth": hit_earth,
         "Hit_Neutral": hit_neutral,
+        "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
