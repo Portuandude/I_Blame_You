@@ -92,3 +92,4 @@
 - 적중 순간 화면 살짝 번쩍임: 흰색 알파 0.08 정도, 0.05초. 너무 자주 쓰지 않게 같은 프레임에 여러 번 겹치지 않는다.
 - 숫자(피해량)는 굵은 외곽선 글꼴, 치명타는 gold + 크게, 속성 피해는 속성 기본색.
 - 진행 축하 연출 (`Tools/ArtGen/generate_vfx.py`, `VfxPlayer`): 레벨업은 gold 빛기둥, 체크포인트를 켜면 aqua 빛기둥 + 큰 반짝임 3개(`CheckpointPillar`), 전투 구역을 깨면 구역 가운데에서 gold·aqua 고리와 별·하트 14개가 터지고(`ClearBurst`) 방 문 빛 표시가 붉은색에서 흰빛으로 한 번 번쩍인 뒤 aqua로 돌아온다(`RoomDoorMarkers`).
+- 스킬 이펙트 (`Tools/ArtGen/generate_skill_fx.py`, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`, 없으면 `LevelArtConfig`의 옛 프레임): 순간이동은 보라 고리가 가운데 빛기둥으로 빨려 들었다가 별·하트로 터지고(8프레임), 방어막은 흰 거품 테두리 + 왼쪽 위 반사광 + 테두리를 도는 별 3개(6프레임 반복, 코드가 속성색으로 물들이므로 흰·회색만), 베기는 흰 초승달 + 분홍 빛 + 끝의 gold 별(5프레임). 크기·프레임 수는 옛 프레임과 같다.
