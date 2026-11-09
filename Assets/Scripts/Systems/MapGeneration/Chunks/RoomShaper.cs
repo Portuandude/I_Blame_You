@@ -151,6 +151,7 @@ namespace IBlameYou.Systems
             if (room.Kind == RoomKind.Rest) chunk.AddFeature(FeatureKind.Checkpoint, 6, g);
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
+            if (!up && room.Kind == RoomKind.Travel) AddTeleportShelf(seed, room, chunk);
             return Check(geometry);
         }
 
@@ -206,6 +207,24 @@ namespace IBlameYou.Systems
             chunk.SetRow(23, 26, leftHigh ? ShelfRowLow : ShelfRowHigh, StageTile.Platform);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= 0.35f)
                 chunk.AddEnemy(StageEnemy.GoblinArcher, leftHigh ? 6 : 25, ShelfRowHigh + 1);
+        }
+
+        // 순간이동 지름길 선반 (Docs/LevelDesign.md "순간이동은 지름길"): 위 문이 없는 세로 방(바닥만 있는 굴) 벽 쪽 높은 곳에
+        // 회복 구슬을 올린 선반. 바닥에서 서는 칸 기준 5칸 위라 점프(약 2.5칸)만으로는 못 오르고, 점프 + 위 순간이동(4칸)으로 오른다.
+        // 선반 바로 아래에서 위로 순간이동하면 발판 아래면에 막히므로 옆(문 쪽 안쪽)에서 솟아 옆으로 내려앉는다.
+        // 필수 경로가 아니라서 검증기에는 닿지 않는 칸으로 남는다 (갇히는 칸 검사는 닿을 수 있는 칸만 본다). 지형 난수열과 따로 굴린다.
+        public const int TeleportShelfRise = 5;
+        public const float TeleportShelfChance = 0.5f;
+
+        private static void AddTeleportShelf(int seed, RoomData room, ChunkData chunk)
+        {
+            var rng = new Random(unchecked(seed * 92821 + room.Index * 68917 + 29));
+            if (rng.NextDouble() >= TeleportShelfChance) return;
+            bool left = rng.Next(2) == 0;
+            int row = ShaftGround + TeleportShelfRise - 1; // 발판 행 (윗면에 서는 칸 = row + 1)
+            int x0 = left ? 2 : W - 6;
+            chunk.SetRow(x0, x0 + 3, row, StageTile.Platform);
+            chunk.AddFeature(FeatureKind.Reward, x0 + 1, row + 1);
         }
 
         // 세로 방의 쫄몹: 구멍과 문에서 떨어진 바닥에 1~3마리.
