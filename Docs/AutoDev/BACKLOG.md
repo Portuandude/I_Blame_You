@@ -35,4 +35,4 @@
 - TODO: 런 진행 저장 기초 — 휴식 체크포인트를 켜면 시드·체크포인트 위치·레벨·특성·유물·런 기록을 PlayerPrefs에 저장, 시작 화면에 "이어하기". 쓰러지거나 클리어하면 지운다
 - DONE (claude/project-thread-5ne2al): 스테이지 2 기획 초안 — 테마, 새 쫄몹 2~3종, 새 함정·퍼즐, 보스 후보를 문서로만 (구현은 사람 확인 후) → [Stage2Draft.md](../Stage2Draft.md). 테마 선택은 사람 필요
 - DONE (claude/project-thread-5ne2al): 런 사이 성장 기획 초안 — 메타 진행(런이 끝나도 남는 해금/재화) 후보 2~3개를 문서로만 → [MetaProgressionDraft.md](../MetaProgressionDraft.md). 후보 선택은 사람 필요
-- TODO: `PickTravel` 반올림 대비 경로 테스트 — 기본값이 직전 종류와 겹치지 않음을 테스트로 고정
+- DONE (claude/project-thread-5ne2al): `PickTravel` 반올림 대비 경로 테스트 — 기본값이 직전 종류와 겹치지 않음을 테스트로 고정
