@@ -12,7 +12,9 @@ namespace IBlameYou.Systems
 
         public static float Ratio(float attack, float defense)
         {
-            return attack * 100f / (100f + Math.Max(defense, MinDefense));
+            // NaN 방어는 하한(-50)으로 본다 (예전 Mathf.Max와 같은 동작).
+            float clamped = defense > MinDefense ? defense : MinDefense;
+            return attack * 100f / (100f + clamped);
         }
     }
 }
