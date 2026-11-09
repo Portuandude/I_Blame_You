@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using NUnit.Framework;
 
@@ -211,5 +212,39 @@ namespace IBlameYou.Tests
             Assert.Greater(spikes, 0, "가시가 한 번은 나와야 함");
             Assert.Greater(jets, 0, "불기둥이 한 번은 나와야 함");
         }
-}
+
+        // 순간이동 지름길 선반: 위 문 없는 이동 세로 방에만, 바닥보다 5칸 위(점프로는 안 닿고 점프 + 순간이동 4칸으로 닿음),
+        // 걷기·점프만으로는 갈 수 없는 칸이며(필수 경로 아님) 선반 위에 회복 구슬이 있다.
+        [Test]
+        public void TeleportShelvesAreOptionalAndNeedTeleport()
+        {
+            int shelves = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    var geometry = RoomShaper.Build(seed, room);
+                    foreach (var f in geometry.Chunk.Features)
+                    {
+                        if (f.Kind != FeatureKind.Reward) continue;
+                        shelves++;
+                        string where = $"seed {seed} room {room.Index}";
+                        Assert.AreEqual(RoomKind.Travel, room.Kind, where);
+                        Assert.AreEqual(DoorDir.None, room.Doors & DoorDir.Up, where);
+                        Assert.AreEqual(StageTile.Platform, geometry.Chunk.Tiles[f.X, f.Y - 1], where);
+                        Assert.AreEqual(RoomShaper.ShaftGround + RoomShaper.TeleportShelfRise, f.Y, where);
+                        Assert.Greater(RoomShaper.TeleportShelfRise, 2, "점프만으로 닿으면 지름길이 아니다");
+                        Assert.LessOrEqual(RoomShaper.TeleportShelfRise, 6, "점프 2.5 + 순간이동 4 안이어야 한다");
+
+                        var arrivals = new List<(int x, int y)>(geometry.Arrivals.Values);
+                        string reason;
+                        Assert.IsFalse(StageValidator.ValidateRoom(geometry.Chunk, arrivals, new[] { (f.X, f.Y) }, out reason),
+                            $"{where}: 선반이 걷기·점프로 닿는 필수 경로에 있다");
+                    }
+                }
+            }
+
+            Assert.Greater(shelves, 0, "지름길 선반이 한 번도 안 나옴");
+        }
+    }
 }
