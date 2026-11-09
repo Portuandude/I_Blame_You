@@ -77,11 +77,41 @@ namespace IBlameYou.UI
             else if (GUI.Button(new Rect(x, rect.y + 248f, buttonWidth, 44f), "시작 화면", button))
             {
                 ClosePauseMenu();
+                RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 체크포인트 시점으로 되감기지 않게
                 restart?.Invoke(true);
             }
 
-            GUI.Label(new Rect(rect.x, rect.y + 308f, rect.width, 24f), "볼륨은 저장되고, 진행 상황은 저장되지 않는다",
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 300f, rect.width - 20f, 44f),
+                "볼륨은 저장된다. 진행은 마지막으로 켠 체크포인트까지 저장되어 시작 화면에서 이어 할 수 있다 (다시 시작하면 지워짐)",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+
+            DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, 320f, height));
+        }
+
+        // 일시정지 메뉴 옆: 이번 런에서 A/B가 찍은 특성과 고른 유물 (서로 뭘 골랐는지 확인용).
+        private void DrawRunSummary(Rect rect)
+        {
+            if (rect.xMax > Screen.width - 4f) return; // 화면이 좁으면 생략
+            GUI.Box(rect, GUIContent.none, panel);
+            GUI.Box(rect, GUIContent.none, panel);
+
+            var text = new System.Text.StringBuilder();
+            text.Append($"<b>이번 런</b>  레벨 {RunLevel} · {SaveData.FormatTime(RunElapsed)}\n\n<b>특성</b>\n");
+            if (progression != null)
+            {
+                foreach (var trait in IBlameYou.Player.TraitTree.All)
+                {
+                    int rank = progression.Rank(trait);
+                    string color = rank > 0 ? "#ffd84d" : "#8a8a8a";
+                    text.Append($"<color={color}>{IBlameYou.Player.TraitTree.Name(trait)} {rank}</color> ({IBlameYou.Player.TraitTree.Owner(trait)})  ");
+                }
+
+                if (progression.Points > 0) text.Append($"\n<color=#ffd84d>남은 포인트 {progression.Points} (Tab)</color>");
+            }
+
+            text.Append("\n\n<b>유물</b>\n");
+            text.Append(RelicCount > 0 ? RelicLines() : "<color=#8a8a8a>없음 (정예 구역 돌파 보상)</color>");
+            GUI.Label(new Rect(rect.x + 12f, rect.y + 10f, rect.width - 24f, rect.height - 20f), text.ToString(), small);
         }
 
         private float PauseVolumeSlider(Rect rect, string name, float value)

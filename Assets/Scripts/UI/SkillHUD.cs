@@ -403,7 +403,7 @@ namespace IBlameYou.UI
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
-            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 160f);
+            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 186f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", big);
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
@@ -411,7 +411,8 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
+            GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
         }
@@ -442,7 +443,7 @@ namespace IBlameYou.UI
 
         private void DrawStageClear()
         {
-            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 160f);
+            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 186f);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
             string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
@@ -451,7 +452,8 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 122f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
+            GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
         }
     }

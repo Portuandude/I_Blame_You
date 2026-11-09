@@ -98,6 +98,34 @@ namespace IBlameYou.UI
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
         }
 
+        // 유물 한 줄에 하나: "이름 — 효과".
+        private string RelicLines()
+        {
+            var lines = new System.Text.StringBuilder();
+            for (int i = 0; i < RelicCount; i++)
+            {
+                if (i > 0) lines.Append('\n');
+                var id = relics.Owned[i];
+                lines.Append($"{RelicBook.Name(id)} — {RelicBook.Description(id)}");
+            }
+
+            return lines.ToString();
+        }
+
+        // 결과 창용: 이름만 쉼표로.
+        private string RelicNames()
+        {
+            if (RelicCount == 0) return "유물 없음";
+            var names = new System.Text.StringBuilder("유물: ");
+            for (int i = 0; i < RelicCount; i++)
+            {
+                if (i > 0) names.Append(", ");
+                names.Append(RelicBook.Name(relics.Owned[i]));
+            }
+
+            return names.ToString();
+        }
+
         // 레벨 막대 아래: 가진 유물 이름 (특성 포인트 안내가 뜨는 줄 아래).
         private void DrawRelicList()
         {
