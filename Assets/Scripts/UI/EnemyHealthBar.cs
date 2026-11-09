@@ -54,7 +54,7 @@ namespace IBlameYou.UI
             back.transform.localScale = new Vector3(width + 0.06f, Height + 0.06f, 1f);
             backRenderer = back.AddComponent<SpriteRenderer>();
             backRenderer.sprite = SolidSpriteFactory.CreateSquare();
-            backRenderer.sortingOrder = 10;
+            backRenderer.sortingOrder = 8; // 플레이어 상태 바(10/11)보다 아래
 
             var fillObject = new GameObject("Fill");
             fillObject.transform.SetParent(transform, false);
@@ -62,7 +62,7 @@ namespace IBlameYou.UI
             fillObject.transform.localScale = new Vector3(width, Height, 1f);
             fillRenderer = fillObject.AddComponent<SpriteRenderer>();
             fillRenderer.sprite = SolidSpriteFactory.CreateLeftPivotSquare();
-            fillRenderer.sortingOrder = 11;
+            fillRenderer.sortingOrder = 9;
             fill = fillObject.transform;
 
             health.HealthChanged += Refresh;
@@ -94,8 +94,10 @@ namespace IBlameYou.UI
 
         private void Follow()
         {
-            float top = body != null ? body.bounds.max.y : health.transform.position.y + 1f;
-            float x = body != null ? body.bounds.center.x : health.transform.position.x;
+            // 콜라이더가 꺼졌거나 물리가 멈춘 동안(슬라임 합체 등)은 bounds가 갱신되지 않으므로 몸 위치를 쓴다.
+            bool useBounds = body != null && body.enabled && (body.attachedRigidbody == null || body.attachedRigidbody.simulated);
+            float top = useBounds ? body.bounds.max.y : health.transform.position.y + 1f;
+            float x = useBounds ? body.bounds.center.x : health.transform.position.x;
             transform.position = new Vector3(x, top + Gap, 0f);
         }
 
