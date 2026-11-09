@@ -31,11 +31,12 @@ namespace IBlameYou.Systems
             }
         }
 
-        private const int ArenasPerRest = 3;
+        public const int ArenasPerRest = 3;            // 전투 구역 이만큼마다 휴식 (정예 뒤에는 항상)
         private const int MaxGates = 2;                 // 스테이지당 봉인문 퍼즐 최대 개수
         public const float GateMinProgress = 0.25f;     // 이 진행도 구간에서만 봉인문이 나온다 (초반 조작 연습 뒤, 보스 앞 휴식 전)
         public const float GateMaxProgress = 0.85f;
         private static readonly float[] EliteAt = { 0.4f, 0.72f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예
+        public static IReadOnlyList<float> EliteProgress => EliteAt;
 
         // 반환: (청크 종류, 그 청크가 시작될 때의 진행도 0~1) 목록.
         public static List<KeyValuePair<ChunkKind, float>> Plan(int seed, float targetSeconds)
