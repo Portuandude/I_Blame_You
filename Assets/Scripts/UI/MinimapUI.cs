@@ -7,6 +7,8 @@ namespace IBlameYou.UI
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
     // 방 칸 + 문 연결 통로를 그리고, 지금 방은 깜빡이는 흰 테두리, 가 본 방은 밝게, 안 가 본 방은 어둡게 둔다.
     // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 휴식·샘 하늘색, 시작 초록.
+    // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
+    // 보물 상자, 휴식·샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
     public class MinimapUI : MonoBehaviour
     {
         private const int SmallCols = 9;   // 작은 지도에 보이는 칸 수 (지금 방이 가운데)
@@ -29,6 +31,7 @@ namespace IBlameYou.UI
         private PlayerControlState control;
         private bool expanded;
         private GUIStyle legend;
+        private GUIStyle legendLeft;
 
         public void Initialize(ChunkStreamer stageStreamer, GameObject player)
         {
@@ -60,19 +63,17 @@ namespace IBlameYou.UI
                 float cell = Mathf.Min(Screen.width * 0.86f / cols, Screen.height * 0.6f / rows, 40f);
                 float width = cols * cell, height = rows * cell;
                 var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
-                Fill(new Rect(area.x - 16f, area.y - 36f, area.width + 32f, area.height + 72f), new Color(0.05f, 0.04f, 0.1f, 0.85f));
+                Background(new Rect(area.x - 16f, area.y - 36f, area.width + 32f, area.height + 72f), new Color(0.05f, 0.04f, 0.1f, 0.85f));
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
                 EnsureStyle();
                 GUI.Label(new Rect(area.x, area.y - 30f, area.width, 24f), "지도 (` 키로 닫기)", legend);
-                GUI.Label(new Rect(area.x, area.yMax + 8f, area.width, 24f),
-                    "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 휴식·샘  <color=#99ff73>■</color> 시작", legend);
+                DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
             }
             else
             {
                 float width = SmallCols * SmallCell, height = SmallRows * SmallCell;
                 var area = new Rect(Screen.width - width - Margin, Screen.height - height - Margin, width, height);
-                Fill(new Rect(area.x - 4f, area.y - 4f, width + 8f, height + 8f), new Color(0.05f, 0.04f, 0.1f, 0.6f));
+                Background(new Rect(area.x - 6f, area.y - 6f, width + 12f, height + 12f), new Color(0.05f, 0.04f, 0.1f, 0.6f));
                 GUI.BeginGroup(area);
                 DrawRooms(layout, current, new Rect(0f, 0f, width, height), SmallCell,
                     current.X - SmallCols / 2, current.Y + SmallRows / 2);
@@ -107,11 +108,34 @@ namespace IBlameYou.UI
                 var r = CellRect(room.X, room.Y, left, top, area, cell);
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
                 bool seen = streamer.HasVisited(room.Index);
-                Fill(new Rect(body.x - 1f, body.y - 1f, body.width + 2f, body.height + 2f), Frame);
-                Fill(body, seen ? Visited : Unvisited);
+                bool blink = room == current && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.55f;
+                if (art.Tile != null)
+                {
+                    // 지금 방: 흰 둥근 칸을 한 겹 크게 깔아 빛나는 테두리처럼
+                    if (blink)
+                    {
+                        float g = Mathf.Max(2f, cell * 0.12f);
+                        DrawTile(new Rect(body.x - g, body.y - g, body.width + g * 2f, body.height + g * 2f), Color.white);
+                    }
+                    DrawTile(body, seen ? Visited : Unvisited);
+                }
+                else
+                {
+                    Fill(new Rect(body.x - 1f, body.y - 1f, body.width + 2f, body.height + 2f), Frame);
+                    Fill(body, seen ? Visited : Unvisited);
+                }
 
                 var mark = KindColor(room.Kind);
-                if (mark.HasValue)
+                var icon = KindIcon(room.Kind);
+                if (icon != null)
+                {
+                    float s = body.width * 0.82f;
+                    var previous = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, seen ? 1f : 0.6f);
+                    GUI.DrawTexture(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), icon, ScaleMode.ScaleToFit, true);
+                    GUI.color = previous;
+                }
+                else if (mark.HasValue)
                 {
                     var c = mark.Value;
                     if (!seen) c.a = 0.55f;
@@ -119,11 +143,107 @@ namespace IBlameYou.UI
                     Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
                 }
 
-                if (room == current && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.55f)
+                if (blink && art.Tile == null)
                 {
                     float t = Mathf.Max(2f, cell * 0.1f);
                     Outline(new Rect(body.x - t, body.y - t, body.width + t * 2f, body.height + t * 2f), t, Color.white);
                 }
+            }
+        }
+
+        // 지도 그림 (한 번만 읽는다). 없는 그림은 null → 예전 색 네모로 그린다.
+        private struct MapArt
+        {
+            public bool Loaded;
+            public GUIStyle Tile;
+            public GUIStyle Panel;
+            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start;
+        }
+
+        private static MapArt art;
+
+        private static void LoadArt()
+        {
+            if (art.Loaded) return;
+            art.Loaded = true;
+            art.Tile = NineSlice("UI/HUD/RoomTile", 5);
+            art.Panel = NineSlice("UI/HUD/Panel", 10);
+            art.Boss = Resources.Load<Texture2D>("UI/HUD/Crown");
+            art.MidBoss = Resources.Load<Texture2D>("UI/HUD/MapHelmet");
+            art.Elite = Resources.Load<Texture2D>("UI/HUD/MapElite");
+            art.Treasure = Resources.Load<Texture2D>("UI/HUD/MapChest");
+            art.Rest = Resources.Load<Texture2D>("UI/HUD/Heart");
+            art.Start = Resources.Load<Texture2D>("UI/HUD/Flag");
+        }
+
+        private static GUIStyle NineSlice(string path, int border)
+        {
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null) return null;
+            var style = new GUIStyle { border = new RectOffset(border, border, border, border) };
+            style.normal.background = texture;
+            return style;
+        }
+
+        private static Texture2D KindIcon(RoomKind kind)
+        {
+            switch (kind)
+            {
+                case RoomKind.Boss: return art.Boss;
+                case RoomKind.MidBoss: return art.MidBoss;
+                case RoomKind.Elite: return art.Elite;
+                case RoomKind.Treasure: return art.Treasure;
+                case RoomKind.Rest:
+                case RoomKind.Spring: return art.Rest;
+                case RoomKind.Start: return art.Start;
+                default: return null;
+            }
+        }
+
+        private static void DrawTile(Rect rect, Color color)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            var previous = GUI.color;
+            GUI.color = color;
+            art.Tile.Draw(rect, false, false, false, false);
+            GUI.color = previous;
+        }
+
+        private static void Background(Rect rect, Color fallback)
+        {
+            LoadArt();
+            if (art.Panel == null)
+            {
+                Fill(rect, fallback);
+                return;
+            }
+
+            if (Event.current.type == EventType.Repaint) art.Panel.Draw(rect, false, false, false, false);
+        }
+
+        // 범례: 아이콘이 있으면 아이콘 + 이름, 없으면 예전 색 네모 글자.
+        private void DrawLegend(Rect rect)
+        {
+            if (art.Boss == null)
+            {
+                GUI.Label(rect,
+                    "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 휴식·샘  <color=#99ff73>■</color> 시작", legend);
+                return;
+            }
+
+            var items = new[]
+            {
+                (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
+                (art.Treasure, "보물"), (art.Rest, "휴식·샘"), (art.Start, "시작")
+            };
+            const float itemWidth = 92f;
+            float x = rect.center.x - itemWidth * items.Length / 2f;
+            foreach (var (icon, name) in items)
+            {
+                if (icon != null) GUI.DrawTexture(new Rect(x, rect.y + 2f, 20f, 20f), icon, ScaleMode.ScaleToFit, true);
+                GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), name, legendLeft);
+                x += itemWidth;
             }
         }
 
@@ -172,6 +292,7 @@ namespace IBlameYou.UI
             if (legend != null) return;
             legend = new GUIStyle(GUI.skin.label) { fontSize = 15, richText = true, alignment = TextAnchor.MiddleCenter };
             legend.normal.textColor = Color.white;
+            legendLeft = new GUIStyle(legend) { alignment = TextAnchor.MiddleLeft };
         }
     }
 }
