@@ -53,6 +53,7 @@ namespace IBlameYou.Enemies
             entrance.standIn.sprite = source.sprite;
             entrance.standIn.flipX = source.flipX;
             entrance.standIn.color = source.color;
+            entrance.standIn.sortingLayerID = source.sortingLayerID;
             entrance.standIn.sortingOrder = source.sortingOrder;
 
             knightObject.SetActive(false);
@@ -89,7 +90,7 @@ namespace IBlameYou.Enemies
             var bounds = standIn != null ? standIn.bounds : new Bounds(feet + Vector3.up, Vector3.one);
             VfxPlayer.HelmetGlint(new Vector3(bounds.center.x, bounds.max.y - 0.25f, 0f));
             CameraFollow.ShakeMain(ShakeDuration, ShakeMagnitude);
-            GameAudio.PlaySfx("Land", 0.8f);
+            GameAudio.PlaySfx("Hit_Earth", 0.9f); // 쿵 (전용 착지음이 없어 땅 적중음)
             Destroy(gameObject);
         }
     }
