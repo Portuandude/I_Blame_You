@@ -14,6 +14,7 @@ namespace IBlameYou.UI
         private void OnLeveledUp(int level)
         {
             OnStageNotice($"레벨 {level}! 특성 포인트 +1 (Tab)");
+            levelFlashStart = Time.unscaledTime;
             SaveData.RecordLevel(level);
             GameAudio.PlaySfx("LevelUp", 0.6f);
         }
@@ -52,6 +53,11 @@ namespace IBlameYou.UI
             if (!deathHandled && !stageCleared) control.Locked = false;
         }
 
+        private const float LevelFlashTime = 0.6f;
+        private static readonly Color LevelFillColor = new Color(0.75f, 0.62f, 1f);   // lilac
+        private static readonly Color LevelGlowColor = new Color(0.85f, 0.75f, 1f);
+        private float levelFlashStart = -10f;
+
         private void DrawLevelBar()
         {
             if (progression == null) return;
@@ -59,12 +65,12 @@ namespace IBlameYou.UI
             var rect = new Rect(12f, 204f, 360f, 30f);
             GUI.Box(rect, GUIContent.none, panel);
             float ratio = Mathf.Clamp01(progression.Experience / progression.XpToNext);
-            var back = new Rect(rect.x + 150f, rect.y + 10f, rect.width - 162f, 10f);
-            GUI.DrawTexture(back, Texture2D.grayTexture);
-            var previous = GUI.color;
-            GUI.color = new Color(0.55f, 0.9f, 0.45f);
-            GUI.DrawTexture(new Rect(back.x, back.y, back.width * ratio, back.height), Texture2D.whiteTexture);
-            GUI.color = previous;
+            // 경험치 캡슐 바 (lilac). 레벨업 순간 gold로 반짝 빛나며 하얗게 찼다가 돌아온다.
+            float flash = 1f - Mathf.Clamp01((Time.unscaledTime - levelFlashStart) / LevelFlashTime);
+            var fill = Color.Lerp(LevelFillColor, Color.white, flash * 0.8f);
+            var glow = Color.Lerp(LevelGlowColor, new Color(1f, 0.85f, 0.3f), flash);
+            DrawCapsuleBar(new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow, BarHeight),
+                Mathf.Max(ratio, flash), 0f, fill, glow, null);
 
             string points = progression.Points > 0 ? $"  <color=#ffd84d>+{progression.Points}</color>" : "";
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"레벨 {progression.Level}{points}", small);

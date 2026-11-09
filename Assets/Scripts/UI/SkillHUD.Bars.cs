@@ -29,6 +29,7 @@ namespace IBlameYou.UI
         private Texture2D heartIcon;
         private Texture2D starIcon;
         private Texture2D crownIcon;
+        private Texture2D flagIcon;
         private GUIStyle barText;
 
         private struct BarTrail
@@ -69,6 +70,7 @@ namespace IBlameYou.UI
             heartIcon = Resources.Load<Texture2D>("UI/HUD/Heart");
             starIcon = Resources.Load<Texture2D>("UI/HUD/Star");
             crownIcon = Resources.Load<Texture2D>("UI/HUD/Crown");
+            flagIcon = Resources.Load<Texture2D>("UI/HUD/Flag");
 
             barText = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, richText = false };
             barText.normal.textColor = Color.white;

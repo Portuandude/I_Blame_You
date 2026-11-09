@@ -420,12 +420,10 @@ namespace IBlameYou.UI
         {
             var rect = new Rect(12f, 168f, 360f, 30f);
             GUI.Box(rect, GUIContent.none, panel);
-            var fill = new Rect(rect.x + 150f, rect.y + 10f, (rect.width - 162f) * StageEvents.Progress, 10f);
-            GUI.DrawTexture(new Rect(rect.x + 150f, rect.y + 10f, rect.width - 162f, 10f), Texture2D.grayTexture);
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 0.85f, 0.4f);
-            GUI.DrawTexture(fill, Texture2D.whiteTexture);
-            GUI.color = previous;
+            // 진행도 캡슐 바 (gold) + 끝에 깃발 (SkillHUD.Bars.cs)
+            var bar = new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow - 10f, BarHeight);
+            DrawCapsuleBar(bar, Mathf.Clamp01(StageEvents.Progress), 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
+            DrawIcon(flagIcon, new Rect(bar.xMax - 6f, rect.y + 2f, 22f, 22f), 1f);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
         }
 
