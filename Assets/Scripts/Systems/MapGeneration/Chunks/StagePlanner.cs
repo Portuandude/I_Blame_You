@@ -93,7 +93,8 @@ namespace IBlameYou.Systems
         }
 
         // 진행도가 높을수록 어려운 지형(낭떠러지, 무너지는 다리, 절벽)이 자주 나온다. 같은 종류가 연달아 나오지 않게 한다.
-        private static ChunkKind PickTravel(Random rng, float progress, ChunkKind last, bool allowGate)
+        // internal: EditMode 테스트가 반올림 대비 경로를 직접 확인한다 (AssemblyInfo.cs의 InternalsVisibleTo).
+        internal static ChunkKind PickTravel(Random rng, float progress, ChunkKind last, bool allowGate)
         {
             var pool = new List<KeyValuePair<ChunkKind, float>>
             {
