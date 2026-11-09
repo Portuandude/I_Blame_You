@@ -9,7 +9,7 @@
 
 - DONE (claude/project-thread-8rxr8x): HUD 체력·마나 바 귀엽게 — `UI/SkillHUD.Bars.cs` 하트·별 아이콘 + 둥근 캡슐(9분할) + 빛 테두리 + 흰 잔상(0.45초 머문 뒤 줄어듦), 체력 낮으면 하트 두근. 그림 `Tools/ArtGen/generate_hud.py` → `Resources/UI/HUD`
 - DONE (claude/project-thread-8rxr8x): 보스 체력바 귀엽게 — 왕관 아이콘(`generate_hud.py` Crown) + 캡슐 바(보라, gold 빛) + 흰 잔상, 한 번에 5% 넘게 깎이면 0.25초 흔들림. 보스 교체·분열로 최대 체력이 바뀌면 잔상 초기화
-- TODO: 레벨·스테이지 진행 바 귀엽게 — `DrawLevelBar`·`DrawStageBar`도 캡슐 바로 (경험치 lilac, 진행도 gold), 레벨업 순간 바가 반짝 빛남, 진행도 끝에 깃발 아이콘
+- DONE (claude/project-thread-8rxr8x): 레벨·스테이지 진행 바 귀엽게 — 캡슐 바(경험치 lilac, 진행도 gold), 레벨업 0.6초 gold 반짝, 진행 바 끝 깃발(`generate_hud.py` Flag)
 - TODO: 머리 위 바·적 체력바 귀엽게 — `StatusBarsUI`(플레이어)·`EnemyHealthBar`의 단색 사각 스프라이트를 둥근 캡슐 스프라이트 + 흰 잔상으로 (월드 스프라이트라 잘라 그리기 대신 채움 스프라이트 크기 조절)
 - TODO: HUD 패널 귀엽게 — `GUI.skin.box` 기본 회색 패널을 둥근 모서리 + 진한 보라 반투명 + 크림 테두리 9분할 패널 그림으로 (상태 패널·스테이지·레벨·유물 목록·보스 바·피드 공통 `panel` 스타일)
 - TODO: 적 경직 프레임 — GDD 로드맵 "경직 애니메이션": 슬라임·고블린 피격 때 찌그러진 1~2프레임 그림(생성기)을 0.2초 보여 주기 (`PlayerHurtPose` 방식 참고)
