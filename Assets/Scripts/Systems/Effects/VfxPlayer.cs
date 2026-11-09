@@ -63,5 +63,13 @@ namespace IBlameYou.Systems
             if (frames == null) return;
             EffectLibrary.PlayOneShot(center, frames, 14f, Color.clear, 0f, false, 1.6f, sortingOrder: 8);
         }
+
+        // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
+        public static void AimGlint(Vector3 position)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/Sparkle");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(position, frames, 16f, Color.clear, 0f, false, 0.45f, sortingOrder: 7);
+        }
     }
 }
