@@ -76,6 +76,7 @@ Assets/
   Resources/LevelArtConfig.asset  # 바닥 타일/스프라이트/컨트롤러/프리팹 참조. 런타임에서 Resources.Load
   Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
+  Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle}/ # 착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임 (Tools/ArtGen/generate_vfx.py, Systems/Effects/VfxPlayer)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
