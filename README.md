@@ -32,6 +32,7 @@ Unity.exe -batchmode -nographics -projectPath "<프로젝트 경로>" -executeMe
 
 Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)는 한 사람이 A/B를 동시에 조작하고 스킬 미니게임을 숫자키 즉시 발동으로 대체한다.
 한 캐릭터를 플레이어 A(이동·방어)와 B(공격)가 나눠 조작하며, 마나는 하나를 같이 쓴다.
+시작 화면에서 배경음악/효과음 볼륨을 맞출 수 있고, 개발자 모드·볼륨 설정과 최고 기록(가장 빠른 클리어 시간, 최고 레벨 — 개발자 모드/일반 모드 따로)은 `Core/SaveData`가 PlayerPrefs에 저장해 시작 화면에 보여준다.
 
 | 역할 | 입력 | 동작 |
 | --- | --- | --- |
@@ -85,7 +86,7 @@ Assets/
       Input/                  # RoleInput(A/B 역할별 키), PlayerControlState(미니게임 정지/영창 중 입력 잠금)
       Skills/                 # A: TeleportSkill, ElementShieldSkill/ElementShield · B: SpellCaster/SpellBook, GroundSpike
       Progression/            # PlayerProgression(경험치/레벨/특성 포인트), TraitTree(던그리드식 특성 5갈래), LastStandGuard
-    Core/ (추가)              # StartMenu(개발자 모드 선택), GameSession, DevCheats
+    Core/ (추가)              # StartMenu(개발자 모드 선택, 볼륨, 최고 기록), GameSession, SaveData(PlayerPrefs 설정·최고 기록), DevCheats
     Enemies/                  # EnemyController(추상 기반: 체력/경직/접촉 데미지/사망), EnemySpawner(공용 조립 헬퍼)
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
