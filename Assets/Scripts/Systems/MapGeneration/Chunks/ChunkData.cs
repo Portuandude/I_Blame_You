@@ -22,6 +22,7 @@ namespace IBlameYou.Systems
         Climb,         // 발판을 밟고 올라가는 절벽
         Cave,          // 천장이 낮은 동굴 + 화염 분출구
         CrumbleBridge, // 밟으면 무너지는 발판 다리
+        ElementGate,   // 맵 퍼즐: 정해진 속성 마법을 맞혀야 열리는 봉인문
         Arena,         // 들어가면 문이 닫히고 적이 나오는 전투 구역
         EliteArena,    // 정예 전투 구역
         Rest,          // 체크포인트 (회복)
@@ -38,7 +39,8 @@ namespace IBlameYou.Systems
         Checkpoint,
         PlayerStart,
         Arena,       // X ~ X + Width - 1 칸이 전투 구역. 이 청크의 Deferred 적이 그 안에서 나온다
-        Exit
+        Exit,
+        ElementGate  // X 열을 바닥(Y)부터 천장까지 막는 봉인문 (씬에서만 생기는 벽이라 검증에서는 열린 것으로 본다). ElementIndex 속성 마법으로 열린다
     }
 
     public enum StageEnemy
@@ -62,6 +64,7 @@ namespace IBlameYou.Systems
         public StageEnemy Enemy;
         public bool Deferred;   // 전투 구역 적: 처음부터 두지 않고 구역에 들어가면 나온다
         public int Id;          // 스테이지 전체에서 유일 (적 처치 기록용)
+        public int ElementIndex; // ElementGate: 여는 속성 (Element 순서: 0 불, 1 물, 2 바람. 이 어셈블리는 UnityEngine을 안 써서 int로 둔다)
     }
 
     public class ChunkData

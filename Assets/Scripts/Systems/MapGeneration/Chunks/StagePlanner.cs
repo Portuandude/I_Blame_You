@@ -21,6 +21,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Climb: return 35f;
                 case ChunkKind.Cave: return 30f;
                 case ChunkKind.CrumbleBridge: return 30f;
+                case ChunkKind.ElementGate: return 30f;
                 case ChunkKind.Arena: return 70f;
                 case ChunkKind.EliteArena: return 100f;
                 case ChunkKind.Rest: return 20f;
@@ -30,6 +31,9 @@ namespace IBlameYou.Systems
         }
 
         private const int ArenasPerRest = 3;
+        private const int MaxGates = 2;                 // 스테이지당 봉인문 퍼즐 최대 개수
+        public const float GateMinProgress = 0.25f;     // 이 진행도 구간에서만 봉인문이 나온다 (초반 조작 연습 뒤, 보스 앞 휴식 전)
+        public const float GateMaxProgress = 0.85f;
         private static readonly float[] EliteAt = { 0.4f, 0.72f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예
 
         // 반환: (청크 종류, 그 청크가 시작될 때의 진행도 0~1) 목록.
@@ -41,6 +45,7 @@ namespace IBlameYou.Systems
             float reserve = EstimatedSeconds(ChunkKind.Rest) + EstimatedSeconds(ChunkKind.Boss);
             int elitesPlaced = 0;
             int arenasSinceRest = 0;
+            int gatesPlaced = 0;
             ChunkKind last = ChunkKind.Start;
 
             Action<ChunkKind> add = kind =>
@@ -58,7 +63,9 @@ namespace IBlameYou.Systems
                 int travelCount = rng.Next(2, 4);
                 for (int i = 0; i < travelCount && elapsed < targetSeconds - reserve; i++)
                 {
-                    add(PickTravel(rng, elapsed / targetSeconds, last));
+                    var travel = PickTravel(rng, elapsed / targetSeconds, last, gatesPlaced < MaxGates);
+                    if (travel == ChunkKind.ElementGate) gatesPlaced++;
+                    add(travel);
                 }
 
                 if (elapsed >= targetSeconds - reserve) break;
@@ -81,7 +88,7 @@ namespace IBlameYou.Systems
         }
 
         // 진행도가 높을수록 어려운 지형(낭떠러지, 무너지는 다리, 절벽)이 자주 나온다. 같은 종류가 연달아 나오지 않게 한다.
-        private static ChunkKind PickTravel(Random rng, float progress, ChunkKind last)
+        private static ChunkKind PickTravel(Random rng, float progress, ChunkKind last, bool allowGate)
         {
             var pool = new List<KeyValuePair<ChunkKind, float>>
             {
@@ -92,6 +99,8 @@ namespace IBlameYou.Systems
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Cave, progress < 0.15f ? 0f : 1.5f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Climb, progress < 0.2f ? 0f : 1.2f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.CrumbleBridge, progress < 0.3f ? 0f : 0.8f + progress),
+                new KeyValuePair<ChunkKind, float>(ChunkKind.ElementGate,
+                    allowGate && progress >= GateMinProgress && progress <= GateMaxProgress ? 0.7f : 0f),
             };
 
             float total = 0f;
