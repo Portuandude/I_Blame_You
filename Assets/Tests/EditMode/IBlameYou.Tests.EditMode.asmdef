@@ -6,7 +6,8 @@
         "UnityEditor.TestRunner",
         "IBlameYou.StageGeneration",
         "IBlameYou.Relics",
-        "IBlameYou.Formula"
+        "IBlameYou.Formula",
+        "IBlameYou.SkillRules"
     ],
     "includePlatforms": [
         "Editor"
