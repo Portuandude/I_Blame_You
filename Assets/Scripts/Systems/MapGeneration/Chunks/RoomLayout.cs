@@ -46,7 +46,10 @@ namespace IBlameYou.Systems
         public int ParentIndex = -1; // 곁방이 붙은 주 경로 방의 Index
 
         // 위/아래 문이 있는 방은 세로로 오르내리는 방(탑·굴)이다.
+        // 곁방으로 가는 위/아래 문도 포함한다 (지형을 세로 방으로 만들어야 하므로).
         public bool IsVertical => (Doors & (DoorDir.Up | DoorDir.Down)) != 0;
+        // 주 경로가 이 방에서 위/아래로 오르내리는지 (세로 플레이 비중은 이것으로 잰다).
+        public bool IsVerticalPassage => MainPath && ((EntryDoor | ExitDoor) & (DoorDir.Up | DoorDir.Down)) != 0;
         public bool IsDeadEnd => !MainPath;
         public bool LocksDoors => Kind == RoomKind.Combat || Kind == RoomKind.Elite || Kind == RoomKind.MidBoss || Kind == RoomKind.Boss;
     }
@@ -238,6 +241,7 @@ namespace IBlameYou.Systems
                     var (dx, dy) = Offset(dir);
                     int cx = parent.X + dx, cy = parent.Y + dy;
                     if (layout.At(cx, cy) != null || (parent.Doors & dir) != 0) continue;
+                    if (TouchesOtherRoom(layout, cx, cy, parent)) continue; // 미니맵에서 지름길처럼 보이지 않게
 
                     var side = new RoomData
                     {
@@ -253,6 +257,18 @@ namespace IBlameYou.Systems
                     break;
                 }
             }
+        }
+
+        private static bool TouchesOtherRoom(RoomLayoutData layout, int x, int y, RoomData parent)
+        {
+            foreach (var dir in new[] { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down })
+            {
+                var (dx, dy) = Offset(dir);
+                var other = layout.At(x + dx, y + dy);
+                if (other != null && other != parent) return true;
+            }
+
+            return false;
         }
 
         private static void UpdateBounds(RoomLayoutData layout)
