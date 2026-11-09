@@ -2,6 +2,7 @@
 
 5시간마다 클라우드의 Claude Code 세션이 예약 실행되어, 이 저장소에서 작업을 골라 구현하고 develop 대상 PR을 올린다.
 절차는 [`.claude/commands/auto-dev.md`](../../.claude/commands/auto-dev.md), 작업 목록은 [BACKLOG.md](BACKLOG.md), 실행 기록은 [LOG.md](LOG.md).
+탐색을 줄이는 코드 지도는 [CODEMAP.md](CODEMAP.md), 긴 세션을 넘길 때의 인수인계는 [HANDOFF.md](HANDOFF.md) (`handoff` 스킬). 끝난 항목·오래된 기록은 `BACKLOG_ARCHIVE.md`, `LOG_ARCHIVE.md`.
 
 ## 설정
 
@@ -28,3 +29,13 @@
 `.claude/agents`(planner, code-reviewer, adversarial-reviewer)와 `.claude/skills/review-loop`는
 [sangrokjung/claude-forge](https://github.com/sangrokjung/claude-forge) (MIT, `.claude/FORGE_LICENSE.txt`)에서 가져와
 이 저장소에 맞게 일부 줄을 뺐다 (홈 폴더 기록, 외부 스킬 참조).
+
+## 저장소 스킬 (`.claude/skills/`)
+
+| 스킬 | 쓰는 때 |
+| --- | --- |
+| `editmode-tests` | 스테이지·공식·유물 코드를 고친 뒤 로컬 테스트 (`Tools/Dev/run_editmode_tests.sh`) |
+| `unity-meta` | 새 .cs·폴더의 .meta 만들기·확인 (`Tools/Dev/unity_meta.py`) |
+| `handoff` | 세션이 길어졌을 때 인수인계를 쓰고 새 세션으로 넘기기 |
+| `review-loop` | 동작이 바뀐 작업의 적대적 검증 |
+| `pixelfx` | 픽셀 이펙트·스프라이트 애니메이션 |
