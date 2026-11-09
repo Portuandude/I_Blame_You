@@ -63,7 +63,7 @@ Assets/
     Animations/Player/        # 생성된 애니메이션 클립 + PlayerAnimator.controller
     Animations/Enemies/Slime/ # 슬라임 클립 + SlimeAnimator.controller
     Materials/                # Frictionless.physicsMaterial2D (프리팹 콜라이더용)
-    Sprites/Characters/Wizard/ # 플레이어 마법사 프레임(투명 PNG, 300x256 캔버스, 발 y=193). Idle 7장(직접 준비, 수정 빛이 단계적으로 켜짐, 왕복 재생) + Walk 8 / Run 8 / Jump 2 / Dash 6 / Attack 8장(Idle 한 장을 변형한 임시 프레임. 걷기/달리기는 로브 끝자락을 발처럼 번갈아 내디딤 — 동작별 그림이 생기면 같은 이름의 PNG로 교체 후 툴 재실행)
+    Sprites/Characters/Wizard/ # 플레이어 마법사 프레임(투명 PNG, 300x256 캔버스, 발 y=193). Idle 7장(수정 빛이 단계적으로 켜짐, 왕복 재생) + Walk 8 / Run 8 / Jump 2 / Dash 6(aqua 잔상) / Attack 8장(지팡이를 들었다 내지르며 수정 번쩍임). 모두 `Tools/ArtGen/generate_wizard.py`가 같은 몸으로 그린다 (사람이 그린 예전 Idle은 Trash에 보존). 다시 그린 뒤에는 툴 재실행
     Sprites/Enemies/Goblin*/   # 고블린/궁수/병사/대전사 Idle/Run/Attack/Die (임시 아트, Tools/ArtGen)
     Sprites/Effects/           # 스킬/투사체/방어막/순간이동 이펙트 프레임 (임시 아트, Tools/ArtGen)
     Sprites/Enemies/Slime/     # 슬라임 프레임(직접 만든 일러스트, 투명 PNG): Attack 10장, Idle/Run/Die 각 8장. 그 외 Characters, Environment, UI는 비어 있음
