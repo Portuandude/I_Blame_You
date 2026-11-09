@@ -219,12 +219,16 @@ def draw_goblin(spec, pose):
     # 코
     c.ellipse(hx + 19 * s, hy - 2 * s, 6 * s, 4.5 * s, shade(skin, 0.9), highlight=False)
     # 눈
-    eye_y = hy + 4 * s
-    eye_h = 2.2 * s if pose.squint else 4.5 * s
-    c.ellipse(hx + 8 * s, eye_y, 4.5 * s, eye_h, rgba("ffe14d"), highlight=False)
+    eye_y = hy + 0.5 * s  # 투구 챙(hy+2) 아래로 보이게
+    # 큰 눈 + 반짝임 점 + 볼터치 (Docs/ArtStyle.md: 귀엽지만 화려하게)
+    eye_h = 2.6 * s if pose.squint else 7 * s
+    c.ellipse(hx + 8 * s, eye_y, 6.2 * s, eye_h, rgba("fff8e6"), highlight=False)
     if not pose.squint:
-        c.ellipse(hx + 10 * s, eye_y, 1.8 * s, 2.5 * s, OUTLINE, outline=False, highlight=False)
-    c.limb((hx + 2 * s, eye_y + 7 * s), (hx + 13 * s, eye_y + 5 * s), 2.2 * s, OUTLINE, outline=False)  # 찡그린 눈썹
+        c.ellipse(hx + 10 * s, eye_y - 0.5 * s, 3.8 * s, 4.8 * s, OUTLINE, outline=False, highlight=False)
+        c.ellipse(hx + 8.6 * s, eye_y + 1.6 * s, 1.5 * s, 1.5 * s, rgba("fff4d6"), outline=False, highlight=False)
+        c.ellipse(hx + 11.4 * s, eye_y - 2.2 * s, 0.8 * s, 0.8 * s, rgba("fff4d6"), outline=False, highlight=False)
+    c.ellipse(hx + 1 * s, eye_y - 6.5 * s, 4 * s, 2.2 * s, rgba("ff6fae", 140), outline=False, highlight=False)  # 볼터치
+    c.limb((hx + 2 * s, eye_y + 8.5 * s), (hx + 13 * s, eye_y + 7 * s), 2.2 * s, OUTLINE, outline=False)  # 찡그린 눈썹
     # 입 + 송곳니
     if pose.mouth_open:
         c.ellipse(hx + 11 * s, hy - 9 * s, 6 * s, 4 * s, rgba("5a1a1a"), highlight=False)
@@ -234,14 +238,14 @@ def draw_goblin(spec, pose):
 
     # 투구
     if spec.kind == "soldier":
-        c.polygon(c.arc_points(hx, hy + 2 * s, 21 * s, 0, 180, 16) + [(hx - 23 * s, hy + 2 * s)], STEEL)
-        c.limb((hx - 23 * s, hy + 3 * s), (hx + 23 * s, hy + 3 * s), 4 * s, shade(STEEL, 0.8))
+        c.polygon(c.arc_points(hx, hy + 8 * s, 21 * s, 0, 180, 16) + [(hx - 23 * s, hy + 8 * s)], STEEL)  # 큰 눈이 보이게 챙을 올림
+        c.limb((hx - 23 * s, hy + 9 * s), (hx + 23 * s, hy + 9 * s), 4 * s, shade(STEEL, 0.8))
     elif spec.kind == "warrior":
-        c.polygon(c.arc_points(hx, hy + 3 * s, 21 * s, 0, 180, 16), rgba("6d737c"))
+        c.polygon(c.arc_points(hx, hy + 9 * s, 21 * s, 0, 180, 16), rgba("6d737c"))
         horn = rgba("efe2c0")
-        c.polygon([(hx - 14 * s, hy + 18 * s), (hx - 30 * s, hy + 34 * s), (hx - 20 * s, hy + 14 * s)], horn)
-        c.polygon([(hx + 14 * s, hy + 18 * s), (hx + 28 * s, hy + 36 * s), (hx + 20 * s, hy + 14 * s)], horn)
-        c.limb((hx - 22 * s, hy + 4 * s), (hx + 22 * s, hy + 4 * s), 4 * s, rgba("50555c"))
+        c.polygon([(hx - 14 * s, hy + 24 * s), (hx - 30 * s, hy + 40 * s), (hx - 20 * s, hy + 20 * s)], horn)
+        c.polygon([(hx + 14 * s, hy + 24 * s), (hx + 28 * s, hy + 42 * s), (hx + 20 * s, hy + 20 * s)], horn)
+        c.limb((hx - 22 * s, hy + 10 * s), (hx + 22 * s, hy + 10 * s), 4 * s, rgba("50555c"))
     elif spec.kind == "archer":
         c.polygon(c.arc_points(hx - 2 * s, hy + 4 * s, 21 * s, 20, 175, 14) + [(hx - 8 * s, hy + 12 * s)], rgba("3d5a2a"))
 
@@ -985,7 +989,7 @@ def arcane_hit():
     return frames
 
 
-def generate_spell_fx():
+def generate_spell_fx():  # 지금은 쓰지 않음 (generate_magic_fx.py로 대체). 예전 그림을 다시 보고 싶을 때만 직접 호출
     base = os.path.join(ROOT, "Assets", "Resources", "Effects")
     sets = {
         ("Flight", "Fire"): fire_flight(),
@@ -1348,8 +1352,7 @@ def generate_stage_art():
         "Flame": flame_frames(),
         "Smoke": smoke_frames(),
         "ArrowTrap": [arrow_trap_sprite()],
-        "Platform": [plank(rgba("#a07a4e"), 0)],
-        "Crumble": [plank(rgba("#8a6a4a"), 3, h=45)],
+        # Platform / Crumble 은 새 팔레트로 generate_terrain.py 가 그린다.
         "Checkpoint": checkpoint_frames(),
         "Gate": gate_frames(),
         "Exit": exit_frames(),
@@ -1420,7 +1423,7 @@ if __name__ == "__main__":
     generate_goblins()
     generate_effects()
     generate_status_icons()
-    generate_spell_fx()
+    # 마법 비행/적중(+발사) 이펙트는 새 팔레트로 generate_magic_fx.py 가 그린다.
     generate_slime_gray()
     generate_stage_art()
     generate_boss_art()

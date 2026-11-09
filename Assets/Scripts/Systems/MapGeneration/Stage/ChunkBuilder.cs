@@ -16,25 +16,28 @@ namespace IBlameYou.Systems
             root.SetParent(parent, false);
             root.position = new Vector3(chunk.Index * ChunkData.Width, 0f, 0f);
 
+            // 새 팔레트 지형 그림이 있으면 그것을 쓰고 외부 타일(groundTile)은 쓰지 않는다.
+            var terrain = TerrainDresser.Load();
             BuildBackground(chunk, root);
-            BuildSolids(chunk, root, groundTile);
+            BuildSolids(chunk, root, terrain != null ? null : groundTile, terrain != null);
             BuildPlatforms(chunk, root, groundTile);
+            terrain?.Dress(chunk, root);
             return root;
         }
 
-        // 전투/휴식/동굴처럼 성격이 다른 청크는 뒤 배경 색을 달리해서 멀리서도 알아보게 한다.
+        // 전투/휴식/동굴처럼 성격이 다른 청크는 시차 배경(ParallaxBackground) 위에 반투명 색을 덮어 멀리서도 알아보게 한다.
         private static void BuildBackground(ChunkData chunk, Transform root)
         {
             Color? tint = null;
             switch (chunk.Kind)
             {
-                case ChunkKind.Arena: tint = new Color(0.24f, 0.13f, 0.16f); break;
-                case ChunkKind.EliteArena: tint = new Color(0.3f, 0.16f, 0.12f); break;
-                case ChunkKind.Boss: tint = new Color(0.34f, 0.09f, 0.09f); break;
-                case ChunkKind.Rest: tint = new Color(0.11f, 0.2f, 0.25f); break;
-                case ChunkKind.ElementGate: tint = new Color(0.17f, 0.12f, 0.24f); break;
-                case ChunkKind.MovingBridge: tint = new Color(0.12f, 0.17f, 0.24f); break;
-                case ChunkKind.Cave: tint = new Color(0.08f, 0.08f, 0.11f); break;
+                case ChunkKind.Arena: tint = new Color(0.55f, 0.12f, 0.2f, 0.28f); break;
+                case ChunkKind.EliteArena: tint = new Color(0.7f, 0.25f, 0.1f, 0.32f); break;
+                case ChunkKind.Boss: tint = new Color(0.6f, 0.06f, 0.08f, 0.25f); break;
+                case ChunkKind.Rest: tint = new Color(0.2f, 0.6f, 0.65f, 0.22f); break;
+                case ChunkKind.ElementGate: tint = new Color(0.25f, 0.85f, 0.75f, 0.22f); break; // 보라 배경과 겹치지 않게 청록
+                case ChunkKind.MovingBridge: tint = new Color(0.35f, 0.75f, 1f, 0.3f); break;
+                case ChunkKind.Cave: tint = new Color(0.06f, 0.05f, 0.09f, 0.88f); break; // 동굴은 배경을 거의 가린다
             }
 
             if (!tint.HasValue) return;
@@ -50,7 +53,7 @@ namespace IBlameYou.Systems
         }
 
         // 땅 타일을 큰 직사각형으로 묶는다 (가로로 최대한 늘린 뒤 같은 폭으로 위로 늘림).
-        private static void BuildSolids(ChunkData chunk, Transform root, Sprite groundTile)
+        private static void BuildSolids(ChunkData chunk, Transform root, Sprite groundTile, bool dressed)
         {
             var solids = new GameObject("Ground");
             solids.transform.SetParent(root, false);
@@ -79,7 +82,7 @@ namespace IBlameYou.Systems
                         for (int dx = 0; dx < width; dx++)
                             used[x + dx, y + dy] = true;
 
-                    CreateBlock(solids.transform, new Vector2(x, y), new Vector2(width, height), groundTile);
+                    CreateBlock(solids.transform, new Vector2(x, y), new Vector2(width, height), groundTile, dressed);
                 }
             }
         }
@@ -94,7 +97,7 @@ namespace IBlameYou.Systems
             return true;
         }
 
-        private static void CreateBlock(Transform parent, Vector2 bottomLeft, Vector2 size, Sprite groundTile)
+        private static void CreateBlock(Transform parent, Vector2 bottomLeft, Vector2 size, Sprite groundTile, bool dressed)
         {
             var go = new GameObject("Block");
             go.transform.SetParent(parent, false);
@@ -104,6 +107,12 @@ namespace IBlameYou.Systems
             var collider = go.AddComponent<BoxCollider2D>();
             collider.size = size;
             collider.compositeOperation = Collider2D.CompositeOperation.Merge;
+
+            if (dressed)
+            {
+                TerrainDresser.Fill(go.transform, size);
+                return;
+            }
 
             if (groundTile != null)
             {

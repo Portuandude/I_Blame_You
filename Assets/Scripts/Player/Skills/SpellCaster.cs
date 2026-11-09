@@ -161,9 +161,10 @@ namespace IBlameYou.Player
         private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, float facing)
         {
             WindingUp = true;
-            charge = EffectLibrary.CreateVisual(transform, "EarthCharge", null, 0f, false,
+            charge = EffectLibrary.CreateVisual(transform, "EarthCharge", EffectLibrary.CastFrames(Element.Earth), 10f, true,
                 new Color(0.75f, 0.55f, 0.3f, 0.5f), 0.9f, 6);
             charge.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+            charge.color = new Color(1f, 1f, 1f, 0.75f); // 머리 위를 덮지 않게 반투명
 
             yield return new WaitForSeconds(spell.Windup);
 
@@ -178,6 +179,8 @@ namespace IBlameYou.Player
 
         private void SpawnProjectile(SpellDefinition spell, Vector2 origin, Vector2 direction)
         {
+            EffectLibrary.PlayCast(spell.Element, origin + direction.normalized * 0.35f, direction.x < 0f);
+
             var go = new GameObject($"Spell_{spell.Element}");
             go.transform.position = origin;
             EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.FlightFrames(spell.Element), 16f, true,
@@ -191,6 +194,7 @@ namespace IBlameYou.Player
             projectile.Hit = target =>
             {
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
+                ScreenFlash.Pulse();
                 GameAudio.PlaySfx($"Hit_{spell.Element}");
                 StatusEffects.TryApply(target, spell.Debuff, stats);
             };
@@ -221,6 +225,7 @@ namespace IBlameYou.Player
                 groundMask, health =>
                 {
                     EffectLibrary.PlayHit(Element.Earth, HitPoint(health));
+                    ScreenFlash.Pulse();
                     StatusEffects.TryApply(health, spell.Debuff, stats);
                 });
         }
