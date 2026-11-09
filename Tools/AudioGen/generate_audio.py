@@ -1,7 +1,7 @@
 """I Blame You! 임시 사운드 생성기 (numpy만 사용하는 간단한 합성).
 
 배경음악 2곡(메뉴/던전, 끊김 없이 반복되는 루프)과
-마법 발동음 5종(Cast_<속성>), 적중음 5종(Hit_<속성>), 동작음(Jump, Dash, Hurt, EnemyDie, LevelUp)을 WAV로 만들어
+마법 발동음 5종(Cast_<속성>), 적중음 5종(Hit_<속성>), 동작음(Jump, Dash, Hurt, EnemyDie, LevelUp, RelicOpen)을 WAV로 만들어
 Assets/Resources/Audio/{Music,SFX} 에 저장한다. 게임은 런타임에 Resources에서 바로 읽는다.
 진짜 사운드가 생기면 같은 이름의 파일(wav/ogg/mp3)로 바꾸면 된다.
 
@@ -309,6 +309,23 @@ def level_up():
     return normalize(fade_edges(lowpass(out, 6000)))
 
 
+def relic_open():
+    """유물 상자: 밝은 하프 같은 상승 아르페지오 + 반짝이는 고음 노이즈 꼬리."""
+    notes = ["G5", "B5", "D6", "G6", "B6"]
+    step = 0.06
+    n = int((step * len(notes) + 0.8) * SR)
+    out = np.zeros(n)
+    for k, name in enumerate(notes):
+        m = int(0.7 * SR)
+        f = note_hz(name)
+        pluck = (osc("sine", f, m) * 0.5 + osc("tri", f * 2, m) * 0.2) * env_exp(m, 7.0)
+        start = int(k * step * SR)
+        end = min(n, start + m)
+        out[start:end] += pluck[: end - start]
+    tail = bandpass(noise(n), 5000, 9000) * env_exp(n, 4.0) * 0.12
+    return normalize(fade_edges(lowpass(out + tail, 9000)))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -445,6 +462,7 @@ def main():
         "Hit_Fire": hit_fire, "Hit_Water": hit_water, "Hit_Wind": hit_wind, "Hit_Earth": hit_earth,
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
+        "RelicOpen": relic_open,
     }
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
     soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
