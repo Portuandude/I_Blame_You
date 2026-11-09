@@ -168,5 +168,41 @@ namespace IBlameYou.Tests
 
             Assert.AreEqual(3, seen.Count, "지그재그·양 갈래·선반이 모두 나와야 함");
         }
-    }
+    
+        // 세로 방 함정: 이동 방 바닥에만, 도착·출발 칸과 구멍 옆·맨 아래 발판 밑에서 떨어져 있고, 함정이 있어도 검증을 통과한다.
+        [Test]
+        public void ShaftTrapsStayOffArrivalsAndStairs()
+        {
+            int spikes = 0, jets = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var geometry = RoomShaper.Build(seed, room);
+                    Assert.IsTrue(geometry.Valid, $"seed {seed} room {room.Index}: {geometry.Reason}");
+                    var chunk = geometry.Chunk;
+                    foreach (var f in chunk.Features)
+                    {
+                        if (f.Kind != FeatureKind.Spikes && f.Kind != FeatureKind.FlameJet) continue;
+                        Assert.AreEqual(RoomKind.Travel, room.Kind, $"seed {seed} room {room.Index} 이동 방에만 함정");
+                        Assert.AreEqual(RoomShaper.ShaftGround, f.Y, "함정은 바닥에만");
+                        if (f.Kind == FeatureKind.Spikes) spikes++; else jets++;
+                        for (int x = f.X; x < f.X + f.Width; x++)
+                        {
+                            Assert.IsTrue(x >= 4 && x <= ChunkData.Width - 5, $"seed {seed} room {room.Index} 좌우 문 앞 {x}");
+                            Assert.IsFalse(x >= RoomShaper.HoleX0 - 3 && x <= RoomShaper.HoleX1 + 3, $"seed {seed} room {room.Index} 구멍 옆 {x}");
+                            foreach (var spot in geometry.Arrivals.Values)
+                                Assert.IsFalse(spot.Item2 == f.Y && System.Math.Abs(spot.Item1 - x) <= 2, $"seed {seed} room {room.Index} 도착 칸 옆 {x}");
+                            for (int y = f.Y + 1; y <= f.Y + 3; y++)
+                                Assert.AreNotEqual(StageTile.Platform, chunk.Get(x, y), $"seed {seed} room {room.Index} 맨 아래 발판 밑 {x}");
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(spikes, 0, "가시가 한 번은 나와야 함");
+            Assert.Greater(jets, 0, "불기둥이 한 번은 나와야 함");
+        }
+}
 }
