@@ -31,6 +31,7 @@ namespace IBlameYou.Player
             }
 
             go.name = "Player";
+            PlayerRelics.For(go); // 유물 컴포넌트가 생기기 전에 구운 프리팹이어도 유물을 가질 수 있게
 
             // 상태 바는 플레이어 자식이 아니라 위치만 따라가는 별도 오브젝트라 프리팹 밖에서 붙인다.
             var statusBars = new GameObject("StatusBars_Player").AddComponent<StatusBarsUI>();
@@ -99,6 +100,7 @@ namespace IBlameYou.Player
             go.AddComponent<TeleportSkill>();      // A: 순간이동
             go.AddComponent<FallRecovery>();       // 낭떠러지에 떨어지면 마지막 안전한 땅으로
             go.AddComponent<PlayerProgression>();  // 경험치·레벨·특성 (A·B 공용)
+            go.AddComponent<PlayerRelics>();       // 런 동안 얻은 유물 (A·B 공용)
             CharacterLayers.Assign(go, CharacterLayers.PlayerLayerName);
 
             return go;
