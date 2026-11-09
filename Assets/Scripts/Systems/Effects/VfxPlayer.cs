@@ -2,13 +2,14 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 시각 효과 묶음 (Tools/ArtGen/generate_vfx.py → Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle,CheckpointPillar,ClearBurst,ChestOpen,RelicBanner}).
+    // 시각 효과 묶음 (Tools/ArtGen/generate_vfx.py → Resources/Effects/{Dust,LevelUp,DeathPop,Sparkle,CheckpointPillar,ClearBurst,ChestOpen,RelicBanner,Shockwave}).
     // 그림이 없으면 아무것도 띄우지 않는다 (원형 대체 그림은 발밑·상자 위에서 어색하다).
     public static class VfxPlayer
     {
         // 그림 안에서 발밑이 중심보다 얼마나 아래인지 (유닛, 100px = 1유닛).
         private const float DustFootBelowCenter = 0.22f;   // 96x56 캔버스, 발밑 = 아래에서 6px
         private const float PillarFootBelowCenter = 0.6f;  // 120x240 캔버스, 발밑 = 위에서 180px
+        private const float ShockwaveFloorBelowCenter = 0.16f; // 192x64 캔버스, 바닥 = 아래에서 16px
         private const float ChestBelowCenter = 0.48f;      // ChestOpen 120x240 캔버스, 상자 그림 가운데 = 캔버스 가운데보다 48px 아래
 
         // 착지 먼지. strength 0~1 (떨어진 속도)로 크기를 정한다.
@@ -82,6 +83,23 @@ namespace IBlameYou.Systems
             if (string.IsNullOrEmpty(text)) return;
             var frames = EffectLibrary.LoadRuntimeFrames("Effects/RelicBanner");
             RelicBannerView.Create(position, frames != null ? frames[0] : null, text);
+        }
+
+        // 무거운 착지 충격파 (중간보스 등장). feet = 바닥 위 발밑.
+        public static void Shockwave(Vector3 feet, float scale)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/Shockwave");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(feet + Vector3.up * (ShockwaveFloorBelowCenter * scale), frames, 18f, Color.clear, 0f,
+                false, scale, sortingOrder: 2);
+        }
+
+        // 투구 꼭대기에서 크게 한 번 반짝 (반짝임 그림을 크게, 빠르게).
+        public static void HelmetGlint(Vector3 position)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/Sparkle");
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(position, frames, 14f, Color.clear, 0f, false, 0.9f, sortingOrder: 7);
         }
 
         // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
