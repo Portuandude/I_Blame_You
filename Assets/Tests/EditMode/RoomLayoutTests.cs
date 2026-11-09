@@ -133,11 +133,32 @@ namespace IBlameYou.Tests
                 int index = layout.MidBossPathIndex;
                 Assert.AreEqual(RoomKind.MidBoss, main[index].Kind);
                 float progress = index / (float)(main.Count - 1);
-                // 55% 자리에서 리듬 때문에 앞뒤로 한 방까지 옮길 수 있다 (RoomLayout.MidBossSlack)
+                // 55% 자리에서 리듬 때문에 조금 옮길 수 있다 (RoomLayout.PickMidBossIndex)
                 Assert.That(progress, Is.InRange(0.52f, 0.59f), $"seed {layout.Seed}: {progress}");
                 int count = 0;
                 foreach (var room in layout.Rooms) if (room.Kind == RoomKind.MidBoss) count++;
                 Assert.AreEqual(1, count);
+            }
+        }
+
+        // 30분이 아닌 짧은 스테이지에서도 중간보스는 55%에서 한 방 안쪽이고, 앞 방은 전투 방이 아니며 뒤는 휴식 방이다.
+        [Test]
+        public void MidBossStaysNearFiftyFivePercentOnShortStages()
+        {
+            foreach (float seconds in new[] { 300f, 420f, 600f, 900f })
+            {
+                for (int seed = 0; seed < 60; seed++)
+                {
+                    var layout = RoomLayout.Generate(seed, seconds);
+                    var main = new List<RoomData>(layout.MainPathRooms());
+                    int index = layout.MidBossPathIndex;
+                    float progress = index / (float)(main.Count - 1);
+                    Assert.LessOrEqual(System.Math.Abs(progress - RoomLayout.MidBossProgress), 1f / (main.Count - 1) + 1e-4f,
+                        $"{seconds}s seed {seed}: {progress} ({main.Count}방)");
+                    Assert.AreEqual(RoomKind.Rest, main[index + 1].Kind, $"{seconds}s seed {seed}");
+                    var before = main[index - 1].Kind;
+                    Assert.IsFalse(before == RoomKind.Combat || before == RoomKind.Elite || before == RoomKind.Boss, $"{seconds}s seed {seed}: 앞 방 {before}");
+                }
             }
         }
 

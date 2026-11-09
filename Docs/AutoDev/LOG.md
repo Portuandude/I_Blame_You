@@ -2,6 +2,11 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-09 13:41 UTC
+- 브랜치/PR: `claude/project-thread-j06mzc` → #17 (develop 대상, CI 통과 후 머지)
+- 완료: 레벨 재설계 검증(리뷰 APPROVE, 중간보스 자리를 최종 경로 진행도 기준으로 — 짧은 스테이지 편차 MEDIUM 수정, 테스트 추가), 방 전환 연출(문 지날 때 어둡게→0.15초 밝게, 방마다 배경 색조 — APPROVE·LOW 1 반영), 세로 방 함정(이동 탑 방 바닥 가시·불기둥, 문 앞·구멍 옆·맨 아래 발판 밑 제외 — APPROVE·LOW 2 반영), 대쉬·순간이동 잔상(APPROVE), 마법 투사체 잔상·방 문 빛 표시(APPROVE·LOW 2 반영), 플레이어 점프·착지 squash & stretch, 보스 등장 이름 띠. 로컬 EditMode 54/54
+- 실패/보류: 벽 점프는 사람 결정 대기로 분리(BLOCKED). `Assets/Scripts/Systems/MapGeneration/Stage` 폴더 .meta가 저장소에 없음(기존 상태, Unity가 로컬에서 만듦 — 추가하면 사람 PC의 로컬 .meta와 충돌할 수 있어 그대로 둠)
+- 다음 실행 메모: 비주얼 작업 4개를 백로그에 새로 추가함. 로컬 mono(mcs)는 지역 함수·다른 어셈블리 튜플 이름을 못 읽으니 Chunks·테스트에선 피할 것. 플레이테스트 필요: 방 전환 페이드 길이, 문 빛 표시 밝기, 잔상·squash 과하지 않은지, 탑 방 가시 위치
 ## 2026-11-09 08:41 UTC
 - 브랜치/PR: `claude/project-thread-qoeoof` → #14 (09:03 UTC CI 통과 후 자동 머지) → #15 (09:32 UTC CI 통과 후 자동 머지)
 - 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영), 중간보스 쌍둥이 슬라임 기사(불 돌진·물 방패·짝 잃으면 광폭화, 중간보스 방 배치 테스트 — 로컬 35/35, 리뷰 HIGH 1·MEDIUM 1·LOW 4 반영 후 APPROVE), 레벨 디자인 1차 재설계(방 리듬 규칙: 전투 방 연달아 금지·중간보스 뒤 휴식·중간보스 55%±1방, 세로 방 지그재그/양 갈래/선반 — 로컬 37/37) → #15
@@ -13,9 +18,3 @@
 - 완료: 백로그 새 항목 추가, 스테이지 2 기획 초안(Docs/Stage2Draft.md), 런 사이 성장 기획 초안(Docs/MetaProgressionDraft.md), PickTravel 반올림 경로 테스트 → #10. 유물 기초(정예 구역 유물 상자, 3택1, RelicBook 테스트 6개, 리뷰 2회: MEDIUM 1·LOW 3 반영) → #11 (EditMode 25/25). 런 진행 저장 기초(체크포인트 저장, 시작 화면 이어하기), 유물 HUD·기록, 특수 효과 유물 3종, 일시정지 런 요약, 결과 창 유물 목록, 새로 시작 확인 (리뷰: MEDIUM 2·LOW 2 반영 후 APPROVE) → #12. 적 머리 위 체력 바, 데미지 공식 분리·테스트 9개, 유물 효과음 (리뷰 APPROVE) → #12 머지. 사람 지시로 비주얼 우선 전환: 아트 스타일 가이드(Docs/ArtStyle.md, 팔레트 모듈) → #12. 시차 배경 3겹·진행도 색조·반짝이(리뷰 APPROVE, MEDIUM 2·LOW 3 반영), 지형 타일·장식(TerrainDresser), 마법 발사·비행·적중 이펙트와 적중 화면 번쩍임(리뷰 APPROVE, LOW 3 반영), 슬라임 얼굴(큰 눈·볼터치, 원본은 Trash), 투구 쓴 불·물 슬라임 기사 프레임, 고블린 4종 큰 눈 → #13
 - 실패/보류: pixelfx 저장소 clone·실행은 세션 권한에서 거부되어 같은 원리로 직접 그림. 05:07~08:05 UTC API 오류로 중단 후 재개. Unity 런타임 동작(배경·지형·이펙트 포함)은 실행 확인 불가라 플레이테스트 필요
 - 다음 실행 메모: 사람 결정 대기 — 스테이지 2 테마(Stage2Draft), 메타 진행 후보(MetaProgressionDraft), 중간보스 후보(MidBossDraft), 달리기·대쉬 건너뛰기 정책, 이어하기로 체력을 되돌리는 것을 막을지
-
-## 2026-11-09 00:35 UTC
-- 브랜치/PR: `claude/project-thread-nsj3x2` → #5~#8 (모두 CI 통과 후 자동 머지) → #9
-- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요) → 여기까지 PR #6 자동 머지. 이후 PR #7: 봉인문 보강(문 앞 땅 가시 안내, 리뷰 APPROVE), 컨트롤 퍼즐 MovingBridge(움직이는 발판 청크, 리뷰 UNVERIFIED=Unity 실행 불가로 읽기 검토만, MEDIUM 1건·LOW 2건 반영: 발판이 플레이어를 속도로 실어 나름, 시작 위치 보정, 발판 높이 테스트) → PR #7 자동 머지. 01:13~03:00 UTC 사용량 한도로 중단 후 재개. 백로그가 비어 새 항목 4개 추가. 이후 PR #8: 경직 연출(몸 뒤로 젖힘, 리뷰 HIGH 1건 반영 = 슬라임 스프라이트 판정이 함께 기울던 문제), 두 속성 봉인문(진행도 60% 이후, 리뷰 APPROVE) → 이어서 PR #8에 추가: 스테이지 배치 규칙 테스트 3개(코드 리뷰 APPROVE, MEDIUM 1건 반영), 발판 갈아타기 변형(리뷰 HIGH 반영: 6~7칸은 달리기 점프로 건너뛸 수 있어 9칸으로) → 같은 PR #9에 추가: 두 속성 봉인문 진행 기록, 이동 청크 선택 안전장치(둘 다 리뷰 APPROVE). 작업 20개로 안전 상한 도달, 종료
-- 실패/보류: 01:13~03:00 UTC 사용량 한도로 중단(리뷰 1건 재개). 마법사 동작별 그림은 계속 BLOCKED(그림 필요). 중간보스 후보 선택(Docs/MidBossDraft.md)과 달리기·대쉬 건너뛰기 정책은 사람 결정 필요(BACKLOG BLOCKED). Unity 런타임 코드(움직이는 발판, 경직 연출, 봉인문 표시)는 실행 확인 불가라 플레이테스트 필요
-- 다음 실행 메모: 백로그 TODO가 없다. GDD 로드맵에서 새 항목을 뽑을 것 (후보: 런 사이 성장/아이템 기획 초안, 스테이지 2 기획 초안, PickTravel 대체 경로 테스트). 검증기 점프 거리(걷기 기준)와 실제 달리기 점프 차이를 기억할 것

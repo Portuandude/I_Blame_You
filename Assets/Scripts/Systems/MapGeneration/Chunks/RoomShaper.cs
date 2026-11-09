@@ -150,6 +150,7 @@ namespace IBlameYou.Systems
 
             if (room.Kind == RoomKind.Rest) chunk.AddFeature(FeatureKind.Checkpoint, 6, g);
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
+            if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
             return Check(geometry);
         }
 
@@ -218,6 +219,75 @@ namespace IBlameYou.Systems
                 chunk.AddEnemy(ChunkGenerator.PickEnemy(rng, chunk.Difficulty), spots[pick], g);
                 spots.RemoveAt(pick);
             }
+        }
+
+        // 세로 방 함정: 이동 방 바닥에만 가시 줄(2~3칸)과 불기둥(어려운 방). 도착·출발 칸, 구멍 옆,
+        // 바닥에서 뛰어오르는 맨 아래 발판 밑, 적이 선 칸에서는 두 칸씩 떨어뜨린다. 계단 판·선반 위에는 놓지 않는다.
+        // 지형 난수열과 따로 굴려서 함정이 없는 방의 모양·적 자리는 그대로다. 가시·불기둥은 길을 막지 않아 검증 결과는 같다.
+        public const float TrapMinDifficulty = 0.25f;
+        private const int TrapMargin = 2;
+
+        private static void PlaceShaftTraps(int seed, RoomData room, RoomGeometry geometry)
+        {
+            var chunk = geometry.Chunk;
+            int g = ShaftGround;
+            var rng = new Random(unchecked(seed * 92821 + room.Index * 68917 + 23));
+            bool[] safe = SafeTrapColumns(geometry);
+
+            int width = room.Difficulty >= 0.5f && rng.NextDouble() < 0.5 ? 3 : 2;
+            var starts = new List<int>();
+            for (int x = 0; x + width <= W; x++)
+            {
+                bool ok = true;
+                for (int i = 0; i < width; i++) ok &= safe[x + i];
+                if (ok) starts.Add(x);
+            }
+
+            if (starts.Count > 0)
+            {
+                int x = starts[rng.Next(starts.Count)];
+                chunk.AddFeature(FeatureKind.Spikes, x, g, width);
+                for (int i = -TrapMargin; i < width + TrapMargin; i++)
+                    if (x + i >= 0 && x + i < W) safe[x + i] = false;
+            }
+
+            if (room.Difficulty < 0.5f) return;
+            var jets = new List<int>();
+            for (int x = 1; x < W - 1; x++)
+                if (safe[x - 1] && safe[x] && safe[x + 1]) jets.Add(x);
+            if (jets.Count > 0) chunk.AddFeature(FeatureKind.FlameJet, jets[rng.Next(jets.Count)], g);
+        }
+
+        // 바닥(서는 칸 g)에서 함정을 놓아도 되는 열.
+        internal static bool[] SafeTrapColumns(RoomGeometry geometry)
+        {
+            var chunk = geometry.Chunk;
+            int g = ShaftGround;
+            var safe = new bool[W];
+            for (int x = 0; x < W; x++)
+                safe[x] = chunk.IsSolid(x, g - 1) && !chunk.IsSolid(x, g) && !chunk.IsSolid(x, g + 1);
+
+            // 문 앞: 좌우 문으로 들어오면 한 칸 안쪽(1, W-2)에 선다 (ChunkStreamer.PlaceAtArrival)
+            Block(safe, 0, 1);
+            Block(safe, W - 2, W - 1);
+            foreach (var spot in geometry.Arrivals.Values) if (spot.y == g) Block(safe, spot.x, spot.x);
+            foreach (var spot in geometry.Exits.Values) if (spot.y == g) Block(safe, spot.x, spot.x);
+            // Floor(6, g)는 검증용 칸이라 막지 않는다 (막으면 왼쪽에 자리가 남지 않아 가시가 늘 오른쪽 통로에 몰림)
+            Block(safe, HoleX0 - 1, HoleX1 + 1); // 구멍 옆과 위 문으로 내려올 때 떨어지는 자리
+
+            // 바닥에서 바로 뛰어오르는 발판(서는 칸에서 3칸 위까지) 밑
+            for (int y = g + 1; y <= g + 3 && y < H; y++)
+                for (int x = 0; x < W; x++)
+                    if (chunk.Get(x, y) == StageTile.Platform) Block(safe, x, x);
+
+            foreach (var f in chunk.Features)
+                if ((f.Kind == FeatureKind.Enemy || f.Kind == FeatureKind.Checkpoint) && f.Y == g) Block(safe, f.X, f.X);
+            return safe;
+        }
+
+        private static void Block(bool[] safe, int x0, int x1)
+        {
+            for (int x = Math.Max(0, x0 - TrapMargin); x <= Math.Min(W - 1, x1 + TrapMargin); x++) safe[x] = false;
         }
 
         // ------------------------------------------------------------------ 공통

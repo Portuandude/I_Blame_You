@@ -257,7 +257,13 @@ namespace IBlameYou.Core
             cam.orthographic = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.165f, 0.13f, 0.31f); // 팔레트 night (배경 그림이 없을 때)
-            ParallaxBackground.Attach(cam, stageStreamer.WorldBounds);
+            var background = ParallaxBackground.Attach(cam, stageStreamer.WorldBounds);
+            background.SetRoom(stageStreamer.IsRoomMode ? stageStreamer.CurrentRoom : -1); // 첫 방은 이미 들어온 뒤라 지금 방으로 맞춘다
+            if (stageStreamer.IsRoomMode)
+            {
+                stageStreamer.RoomEntered -= background.SetRoom;
+                stageStreamer.RoomEntered += background.SetRoom;
+            }
 
             var follow = cam.GetComponent<CameraFollow>();
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();

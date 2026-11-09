@@ -314,6 +314,7 @@ namespace IBlameYou.Systems
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
+            RoomDoorMarkers.Create(root, origin, room, geometries[index]);
             // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
@@ -518,6 +519,7 @@ namespace IBlameYou.Systems
             Refresh();
             PlaceAtArrival(next.Index, RoomLayout.Opposite(passed));
             EnterRoom(next.Index);
+            ScreenFlash.RoomFade(); // 옮긴 순간을 어둡게 덮었다가 밝혀 순간이동처럼 튀어 보이지 않게
         }
 
         // 방을 옮기면 떠난 방의 적은 바로 치운다 (쓰러뜨린 것으로 치지 않아 그 방에 다시 들어가면 다시 나온다).
@@ -579,6 +581,7 @@ namespace IBlameYou.Systems
                 follow.SnapToTarget();
             }
 
+            StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }
 

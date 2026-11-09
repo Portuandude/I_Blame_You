@@ -32,6 +32,7 @@ namespace IBlameYou.Systems
         private Rect? previousCameraBounds;
 
         public bool IsCleared => cleared;
+        public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
         public Rect Area => area; // 구역 범위 (보스가 무작위 위치를 고를 때)
 
         // left/right: 구역 양 끝 x(월드), ground: 바닥 윗면 y. 이미 클리어한 구역이면 아무 일도 하지 않는다.

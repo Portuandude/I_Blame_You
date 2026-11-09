@@ -114,23 +114,27 @@ namespace IBlameYou.Systems
         // 방 count개짜리 주 경로에서 중간보스가 설 순번.
         public static int MidBossIndex(int count) => (int)Math.Round(MidBossProgress * (count - 1), MidpointRounding.AwayFromZero);
 
-        public const int MidBossSlack = 1; // 리듬을 맞추려고 55% 자리에서 앞뒤로 옮길 수 있는 방 수
-
-        // 중간보스를 끼울 자리 (path[index] 앞). 55% 자리에서 가까운 순으로 보며, 앞뒤 방이 문 잠기는 전투 방이 아닌 곳을 고른다
-        // (정예 → 중간보스 → 전투처럼 쉬지 않고 이어지는 싸움을 막는다). 마땅한 곳이 없으면 55% 자리.
+        // 중간보스를 끼울 자리 (path[index] 앞). 바로 앞 방이 문 잠기는 전투 방이 아닌 자리 중에서, 끼운 뒤 최종 경로
+        // (중간보스 + 뒤 휴식 방이 새로 들어가는지까지 셈)에서의 진행도가 55%에 가장 가까운 곳을 고른다.
+        // 바로 뒤가 전투 방이어도 사이에 휴식 방이 들어가므로 괜찮다. 마땅한 곳이 없으면 55% 자리 (경로 안으로 자름).
         internal static int PickMidBossIndex(List<(RoomKind kind, ChunkKind chunk, float difficulty)> path)
         {
-            int ideal = MidBossIndex(path.Count + 2); // 중간보스 + 뒤 휴식 방까지 넣은 길이 기준
-            for (int d = 0; d <= MidBossSlack; d++)
+            int best = -1;
+            double bestGap = double.MaxValue;
+            for (int k = 2; k <= path.Count - 2; k++)
             {
-                foreach (int k in d == 0 ? new[] { ideal } : new[] { ideal - d, ideal + d })
+                if (IsFight(path[k - 1].kind)) continue;
+                int final = path.Count + 1 + (path[k].kind != RoomKind.Rest ? 1 : 0);
+                double gap = Math.Abs(k / (double)(final - 1) - MidBossProgress);
+                if (gap < bestGap - 1e-9)
                 {
-                    if (k < 2 || k > path.Count - 2) continue;
-                    if (IsFight(path[k - 1].kind) || IsFight(path[k].kind)) continue;
-                    return k;
+                    best = k;
+                    bestGap = gap;
                 }
             }
-            return ideal;
+
+            if (best >= 0) return best;
+            return Math.Max(0, Math.Min(MidBossIndex(path.Count + 2), path.Count - 1));
         }
 
         private static bool IsFight(RoomKind kind) =>

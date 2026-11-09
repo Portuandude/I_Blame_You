@@ -92,6 +92,8 @@ namespace IBlameYou.Player
             Vector2 from = rb.position;
             Vector2 to = from + direction * travel;
 
+            var visual = transform.Find("Visual");
+            if (visual != null) Afterimage.Spawn(visual.GetComponent<SpriteRenderer>(), new Color(0.8f, 0.6f, 1f), 0.6f, 0.25f); // 떠난 자리에 잔상
             EffectLibrary.PlayOneShot(from, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.6f, 1f, 0.7f), 1.2f);
             rb.position = to;
             transform.position = to;
