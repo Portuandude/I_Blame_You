@@ -83,7 +83,7 @@ namespace IBlameYou.Tests
             Assert.IsTrue(StageValidator.ValidateRoom(chunk, floor, floor, out string reason), reason);
         }
 
-        // 세로 방 적은 구멍 위에 서지 않는다.
+        // 세로 방 적은 바닥이나 선반 위에 서고, 구멍 위에 서지 않는다.
         [Test]
         public void ShaftEnemiesStandOnFloor()
         {
@@ -96,7 +96,9 @@ namespace IBlameYou.Tests
                     foreach (var feature in chunk.Features)
                     {
                         if (feature.Kind != FeatureKind.Enemy) continue;
-                        Assert.IsTrue(chunk.IsSolid(feature.X, feature.Y - 1), $"seed {seed} room {room.Index} 적 ({feature.X},{feature.Y})");
+                        var below = chunk.Get(feature.X, feature.Y - 1);
+                        Assert.IsTrue(below == StageTile.Solid || below == StageTile.Platform, $"seed {seed} room {room.Index} 적 ({feature.X},{feature.Y})");
+                        Assert.IsFalse(chunk.IsSolid(feature.X, feature.Y) || chunk.IsSolid(feature.X, feature.Y + 1));
                         Assert.IsFalse(feature.X >= RoomShaper.HoleX0 - 1 && feature.X <= RoomShaper.HoleX1 + 1);
                     }
                 }
@@ -145,6 +147,26 @@ namespace IBlameYou.Tests
 
                 Assert.AreEqual(1, midBossRooms, $"seed {seed}: 중간보스 방은 하나");
             }
+        }
+
+        // 세로 방 발판 모양 세 가지가 모두 나오고, 고른 모양 그대로 검증을 통과한다 (지그재그로 되돌아가는 일 없음).
+        [Test]
+        public void EveryShaftStyleAppearsAndPassesWithoutFallback()
+        {
+            var seen = new System.Collections.Generic.HashSet<RoomShaper.ShaftStyle>();
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    seen.Add(style);
+                    var geometry = RoomShaper.BuildShaft(seed, room, style);
+                    Assert.IsTrue(geometry.Valid, $"seed {seed} room {room.Index} {style}: {geometry.Reason}");
+                }
+            }
+
+            Assert.AreEqual(3, seen.Count, "지그재그·양 갈래·선반이 모두 나와야 함");
         }
     }
 }

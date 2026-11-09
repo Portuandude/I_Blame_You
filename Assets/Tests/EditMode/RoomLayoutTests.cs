@@ -95,12 +95,19 @@ namespace IBlameYou.Tests
             {
                 var plan = StagePlanner.Plan(layout.Seed, TargetSeconds);
                 var main = new List<RoomData>(layout.MainPathRooms());
-                Assert.AreEqual(plan.Count + 1, main.Count, $"seed {layout.Seed}: 계획 + 중간보스 1개");
+                // 계획 + 중간보스 1개 (+ 중간보스 뒤 휴식 방 1개, 계획에서 이미 휴식이 이어지면 없음)
+                bool restAdded = main.Count == plan.Count + 2;
+                Assert.IsTrue(restAdded || main.Count == plan.Count + 1, $"seed {layout.Seed}: 방 수 {main.Count}, 계획 {plan.Count}");
                 int p = 0;
                 for (int i = 0; i < main.Count; i++)
                 {
                     Assert.AreEqual(i, main[i].PathIndex);
                     if (i == layout.MidBossPathIndex) continue;
+                    if (restAdded && i == layout.MidBossPathIndex + 1)
+                    {
+                        Assert.AreEqual(RoomKind.Rest, main[i].Kind);
+                        continue;
+                    }
                     Assert.AreEqual(plan[p].Key, main[i].Chunk, $"seed {layout.Seed} path {i}");
                     p++;
                 }
@@ -126,7 +133,8 @@ namespace IBlameYou.Tests
                 int index = layout.MidBossPathIndex;
                 Assert.AreEqual(RoomKind.MidBoss, main[index].Kind);
                 float progress = index / (float)(main.Count - 1);
-                Assert.That(progress, Is.InRange(0.53f, 0.57f), $"seed {layout.Seed}: {progress}");
+                // 55% 자리에서 리듬 때문에 앞뒤로 한 방까지 옮길 수 있다 (RoomLayout.MidBossSlack)
+                Assert.That(progress, Is.InRange(0.52f, 0.59f), $"seed {layout.Seed}: {progress}");
                 int count = 0;
                 foreach (var room in layout.Rooms) if (room.Kind == RoomKind.MidBoss) count++;
                 Assert.AreEqual(1, count);
@@ -204,6 +212,19 @@ namespace IBlameYou.Tests
 
                 Assert.That(side, Is.InRange(RoomLayout.MinSideRooms, RoomLayout.MaxSideRooms), $"seed {layout.Seed}");
                 Assert.GreaterOrEqual(treasure, 1);
+            }
+        }
+
+        [Test]
+        public void FightsNeverComeBackToBackAndMidBossIsFollowedByRest()
+        {
+            foreach (var layout in Layouts())
+            {
+                var main = new List<RoomData>(layout.MainPathRooms());
+                for (int i = 1; i < main.Count; i++)
+                    Assert.IsFalse(main[i - 1].LocksDoors && main[i].LocksDoors,
+                        $"seed {layout.Seed}: 문 잠기는 방이 연달아 ({i - 1} {main[i - 1].Kind} → {i} {main[i].Kind})");
+                Assert.AreEqual(RoomKind.Rest, main[layout.MidBossPathIndex + 1].Kind, $"seed {layout.Seed}: 중간보스 뒤는 휴식 방");
             }
         }
     }
