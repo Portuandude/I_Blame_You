@@ -10,7 +10,7 @@
 - DONE (claude/project-thread-ulxu6c): 플레이어 사망 연출 — 사망 애니메이션 대체 연출(페이드, 슬로모션)과 게임오버 화면 정리
 - DONE (기존): 정예몹 1종 — `Enemies/Elite/MotherSlime`(분열), `Enemies/Elite/GoblinWarrior`(광폭화)가 이미 있음
 - DONE (claude/project-thread-nsj3x2): 전투 구역 보상 — 방 구조가 청크식 스테이지로 바뀌었으므로, `ArenaZone` 클리어 시 체력/마나 회복 오브젝트 드롭 (기존 "방 보상" 대체)
-- TODO: 저장/불러오기 기초 — 설정값(개발자 모드, 볼륨)과 최고 기록(클리어 시간, 최고 레벨)을 PlayerPrefs로 저장, 시작 화면에 최고 기록 표시
+- DONE (claude/project-thread-nsj3x2): 저장/불러오기 기초 — 설정값(개발자 모드, 볼륨)과 최고 기록(클리어 시간, 최고 레벨)을 PlayerPrefs로 저장, 시작 화면에 최고 기록 표시
 - TODO: EditMode 테스트 기반 — 테스트 가능한 순수 로직(데미지 공식, 스탯 표, 청크 생성기 검증)에 대한 asmdef 분리 검토와 첫 테스트. 현재 asmdef/테스트가 하나도 없어 CI `editmode`는 컴파일만 확인한다
 - TODO: GDD 현행화 — `Docs/GameDesignDocument.md`가 방(Room) 구조·슬라임 1종 시점에 멈춰 있음. README 기준으로 청크식 스테이지, 2인 A/B 조작, 마나 스킬, 적/정예/보스, 특성 트리, 상태이상 현황을 반영
 - TODO: 피격 이펙트 — GDD "경직 전용 애니메이션/피격 이펙트는 미구현". 피격 시 스프라이트 흰색 번쩍임(0.08초)과 작은 파편 이펙트

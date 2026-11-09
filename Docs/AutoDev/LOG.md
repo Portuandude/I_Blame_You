@@ -3,8 +3,8 @@
 최신 실행이 맨 위.
 
 ## 2026-11-09 00:35 UTC
-- 브랜치/PR: `claude/project-thread-nsj3x2` → PR (작성 중)
-- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영)
+- 브랜치/PR: `claude/project-thread-nsj3x2` → #5 (develop 대상, GitHub 자동 머지 켬)
+- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영)
 - 실패/보류: 없음 (진행 중)
 - 다음 실행 메모: 진행 중
 
