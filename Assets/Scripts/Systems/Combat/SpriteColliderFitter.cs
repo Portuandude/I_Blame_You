@@ -14,12 +14,23 @@ namespace IBlameYou.Systems
         private readonly List<Vector2> shape = new List<Vector2>();
         private readonly List<Vector2> converted = new List<Vector2>();
         private Sprite lastSprite;
+        private bool hasRestPose;
+        private Vector3 restPosition;
+        private Vector3 restScale;
 
         public void Configure(SpriteRenderer spriteRenderer, PolygonCollider2D polygonCollider)
         {
             source = spriteRenderer;
             target = polygonCollider;
             Refit();
+        }
+
+        // 그림 크기를 잠깐 바꾸는 연출(EnemySquash)이 있으면 판정은 이 원래 위치·크기로 만든다 (웅크려도 판정이 줄지 않게).
+        public void SetRestPose(Vector3 localPosition, Vector3 localScale)
+        {
+            hasRestPose = true;
+            restPosition = localPosition;
+            restScale = localScale;
         }
 
         private void Awake()
@@ -70,7 +81,9 @@ namespace IBlameYou.Systems
         {
             converted.Clear();
             var visual = source.transform;
-            var unrotated = Matrix4x4.TRS(visual.localPosition, Quaternion.identity, visual.localScale);
+            var unrotated = hasRestPose
+                ? Matrix4x4.TRS(restPosition, Quaternion.identity, restScale)
+                : Matrix4x4.TRS(visual.localPosition, Quaternion.identity, visual.localScale);
             foreach (var point in spritePoints)
             {
                 var local = unrotated.MultiplyPoint3x4(point);
