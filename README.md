@@ -75,7 +75,7 @@ Assets/
   Resources/StatusIcons/          # 디버프 아이콘 (런타임 로드, Tools/ArtGen)
   Resources/Effects/{Flight,Hit}/ # 마법 비행/적중 이펙트 프레임 (런타임 로드, Tools/ArtGen)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성> 효과음 (런타임 로드, Tools/AudioGen)
-  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/출구 그림 (런타임 로드, Tools/ArtGen)
+  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
@@ -104,7 +104,7 @@ Assets/
         Chunks/               # 순수 C# 스테이지 생성기 (Unity 없이 Tools/StageGen에서 검증): ChunkData(32×24 타일 격자), StagePlanner(청크 순서·예상 시간),
                               # ChunkGenerator(청크 12종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
-                              # ArenaZone(전투 구역 잠금), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
+                              # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), Checkpoint, StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 미니게임/영창/마나 탓하기 피드(IMGUI)
@@ -126,7 +126,8 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 - 스테이지 = 32×24 타일(1타일 = 1유닛) 청크를 가로로 이어 붙인 것. 청크 종류: 시작, 평지, 언덕, 낭떠러지, 가시밭, 절벽, 동굴, 무너지는 다리, 전투, 정예 전투, 휴식(체크포인트), 보스.
 - `StagePlanner`가 청크 종류별 예상 시간(가안)을 더해 목표 30분이 될 때까지 이동 구간 2~3개 + 전투 구역을 번갈아 놓는다. 진행도가 오를수록 어려운 지형·함정·적이 늘고, 40%/72% 지점에 정예 전투, 마지막에 휴식 + 보스.
 - 지형 규칙은 점프 능력에서 나왔다 (최대 2칸 오르기, 최대 3칸 낭떠러지). `StageValidator`가 청크마다 통과 가능 여부와 빠지면 못 나오는 구덩이를 검사하고, 실패하면 다시 만든다.
-- 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 켠 체크포인트는 기록해 둔다.
+- 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상, 켠 체크포인트는 기록해 둔다.
+- 일반·정예 전투 구역을 돌파하면 가운데에 회복 구슬(`ArenaReward`)이 떨어진다. 닿으면 최대 체력 30%, 최대 마나 50% 회복. 줍지 않고 떠나도 다시 오면 그대로 있다 (보스 구역은 출구가 보상이라 없음).
 - 낭떠러지에 떨어지면 체력 15%를 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다. 보스 구역을 돌파하면 출구가 열리고, 들어가면 클리어.
 
 ## 레벨업 특성 (던그리드식)
