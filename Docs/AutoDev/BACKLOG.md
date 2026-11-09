@@ -31,8 +31,12 @@
 - DONE (claude/project-thread-nsj3x2): 두 속성 봉인문 진행 기록 — 첫 속성을 맞힌 뒤 청크를 치웠다 다시 만들어도 맞힌 개수가 이어지게 (ChunkStreamer 기록)
 - DONE (claude/project-thread-nsj3x2): 이동 청크 선택 안전장치 — `PickTravel`의 반올림 대비 기본값이 직전 종류(평지)와 겹칠 수 있던 문제 정리
 - DONE (claude/project-thread-5ne2al): 유물(런 중 아이템) 기초 — 정예 전투 구역을 돌파하면 회복 구슬 옆에 유물 상자. 닿으면 게임이 멈추고 유물 3개 중 1개를 고른다 (A/B 공용, 한 런에 같은 유물은 한 번). 효과는 기존 수치 훅(최대 체력/마나, 방어, 이동속도, 주는 피해, 마나 재생, 치명타)만 쓴다. 고르는 후보는 시드로 결정, 순수 로직은 EditMode 테스트
-- TODO: 유물 HUD·기록 — 가진 유물을 레벨 막대 아래에 표시, 게임오버·클리어 창 런 기록에 유물 수
-- TODO: 런 진행 저장 기초 — 휴식 체크포인트를 켜면 시드·체크포인트 위치·레벨·특성·유물·런 기록을 PlayerPrefs에 저장, 시작 화면에 "이어하기". 쓰러지거나 클리어하면 지운다
+- DONE (claude/project-thread-5ne2al): 유물 HUD·기록 — 가진 유물을 레벨 막대 아래에 표시, 게임오버·클리어 창 런 기록에 유물 수
+- DONE (claude/project-thread-5ne2al): 런 진행 저장 기초 — 휴식 체크포인트를 켜면 시드·체크포인트 위치·레벨·특성·유물·런 기록을 PlayerPrefs에 저장, 시작 화면에 "이어하기". 쓰러지거나 클리어하면 지운다
 - DONE (claude/project-thread-5ne2al): 스테이지 2 기획 초안 — 테마, 새 쫄몹 2~3종, 새 함정·퍼즐, 보스 후보를 문서로만 (구현은 사람 확인 후) → [Stage2Draft.md](../Stage2Draft.md). 테마 선택은 사람 필요
 - DONE (claude/project-thread-5ne2al): 런 사이 성장 기획 초안 — 메타 진행(런이 끝나도 남는 해금/재화) 후보 2~3개를 문서로만 → [MetaProgressionDraft.md](../MetaProgressionDraft.md). 후보 선택은 사람 필요
 - DONE (claude/project-thread-5ne2al): `PickTravel` 반올림 대비 경로 테스트 — 기본값이 직전 종류와 겹치지 않음을 테스트로 고정
+- DONE (claude/project-thread-5ne2al): 특수 효과 유물 3종 — 깃털 부적(낙하 피해 15% → 5%), 흡혈 송곳니(처치 시 체력 +3), 집중 구슬(날린 마나 25% 환급, 신비 10과 합산)
+- DONE (claude/project-thread-5ne2al): 일시정지 메뉴 런 요약 — Esc 메뉴에 이번 런의 특성 단계와 가진 유물 효과를 한눈에 (A/B가 서로 뭘 골랐는지 확인용)
+- DONE (claude/project-thread-5ne2al): 결과 창 유물 목록 — 게임오버·클리어 창에 고른 유물 이름
+- DONE (claude/project-thread-5ne2al): 이어하기 확인 — 저장된 런이 있을 때 "새로 시작"은 한 번 더 눌러야 시작 (따로 버리는 버튼은 새로 시작이 대신함)
