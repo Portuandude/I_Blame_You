@@ -5,6 +5,8 @@ namespace IBlameYou.Systems
     // 카메라 뒤 시차(패럴랙스) 배경 3겹 + 떠다니는 반짝이 (Docs/ArtStyle.md 배경 규칙).
     // 그림은 Resources/Stage/BgSky, BgMid, BgNear, Sparkle (Tools/ArtGen/generate_background.py). 없으면 아무것도 그리지 않는다.
     // 진행도(카메라가 스테이지 가로의 어디쯤인지)에 따라 하늘 색조가 해질녘 → 밤 → 보스 앞 붉은 빛으로 바뀐다.
+    // CameraFollow가 이번 프레임 위치를 정한 뒤에 따라가도록 늦게 돈다 (먼저 돌면 한 프레임 늦어 떨려 보임).
+    [DefaultExecutionOrder(1000)]
     public class ParallaxBackground : MonoBehaviour
     {
         private const int SkyOrder = -40;
@@ -12,6 +14,7 @@ namespace IBlameYou.Systems
         private const int NearOrder = -30;
         private const int SparkleOrder = -25;
         private const int SparkleCount = 22;
+        private const float Dim = 0.8f; // 플레이 레이어(땅·캐릭터)가 앞에 읽히도록 배경 전체 명도를 낮춘다
 
         // 가로 시차: 0이면 땅과 같이 움직이고, 1이면 카메라에 붙어 멀리 있는 것처럼 보인다.
         private const float MidFactor = 0.85f;
@@ -23,12 +26,13 @@ namespace IBlameYou.Systems
             new Color(1f, 0.9f, 0.92f),   // 0%: 해질녘 (살짝 따뜻하게)
             new Color(0.82f, 0.86f, 1f),  // 50%: 밤
             new Color(0.78f, 0.8f, 1f),   // 80%: 깊은 밤
-            new Color(1f, 0.64f, 0.66f),  // 100%: 보스 앞 붉은 빛
+            new Color(1f, 0.75f, 0.78f),  // 100%: 보스 앞 붉은 빛 (적의 붉은색과 겹치지 않게 약하게)
         };
         private static readonly float[] TintStops = { 0f, 0.5f, 0.8f, 1f };
 
         private Camera cam;
         private Rect world;
+        private Transform root;
         private SpriteRenderer sky;
         private Layer mid;
         private Layer near;
@@ -65,9 +69,10 @@ namespace IBlameYou.Systems
         {
             cam = camera;
             world = worldBounds;
-            if (sky != null) return; // 이미 만들어 둠 (다시 시작할 때 범위만 바꾼다)
+            lastCameraPosition = cam.transform.position; // 다시 시작할 때 반짝이가 튀지 않게
+            if (root != null) return; // 이미 만들어 둠 (다시 시작할 때 범위만 바꾼다)
 
-            var root = new GameObject("ParallaxBackground").transform;
+            root = new GameObject("ParallaxBackground").transform;
             root.SetParent(transform, false);
 
             var skySprite = TrapCommon.Frame("BgSky");
@@ -87,7 +92,7 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < SparkleCount; i++)
                 {
                     var renderer = CreateRenderer(root, $"Sparkle_{i}", sparkleFrames[0], SparkleOrder);
-                    renderer.color = i % 3 == 0 ? new Color(1f, 0.85f, 0.3f) : new Color(0.5f, 0.97f, 1f);
+                    renderer.color = new Color(0.5f, 0.97f, 1f); // aqua만 (gold는 보상 신호라 배경에 쓰지 않는다)
                     sparkles[i] = new Sparkle
                     {
                         Renderer = renderer,
@@ -133,7 +138,8 @@ namespace IBlameYou.Systems
             Vector3 camPos = cam.transform.position;
             float halfHeight = cam.orthographicSize;
             float halfWidth = halfHeight * cam.aspect;
-            Color tint = Tint(world.width > 0f ? Mathf.InverseLerp(world.xMin, world.xMax, camPos.x) : 0f);
+            Color tint = Tint(world.width > 0f ? Mathf.InverseLerp(world.xMin, world.xMax, camPos.x) : 0f) * Dim;
+            tint.a = 1f;
 
             if (sky != null)
             {
@@ -148,7 +154,7 @@ namespace IBlameYou.Systems
             // 위로 올라갈수록 먼 층이 조금 덜 올라가 보이게 (세로 시차 약하게).
             float climb = camPos.y - (world.yMin + halfHeight);
             PlaceLayer(mid, camPos, halfHeight, tint, -climb * 0.08f);
-            PlaceLayer(near, camPos, halfHeight, Color.Lerp(tint, Color.white, 0.4f), -climb * 0.04f);
+            PlaceLayer(near, camPos, halfHeight, Color.Lerp(tint, Color.white * Dim, 0.4f), -climb * 0.04f);
             UpdateSparkles(camPos, halfWidth, halfHeight);
             lastCameraPosition = camPos;
         }
