@@ -125,6 +125,7 @@ namespace IBlameYou.Systems
                     arenaSpawns.Add(new ArenaZone.Spawn { Kind = f.Enemy, Position = EnemyPosition(ox, f) });
             }
 
+            int platformOrdinal = 0;
             foreach (var f in chunk.Features)
             {
                 switch (f.Kind)
@@ -139,7 +140,8 @@ namespace IBlameYou.Systems
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, f.Y + 0.5f), f.Direction);
                         break;
                     case FeatureKind.MovingPlatform:
-                        MovingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width, f.Direction, index * 0.37f);
+                        // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다.
+                        MovingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width, f.Direction, index * 0.37f + platformOrdinal++ * 0.5f);
                         break;
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, f.Y + 1f), f.Width);
