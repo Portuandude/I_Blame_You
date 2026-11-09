@@ -147,7 +147,7 @@ namespace IBlameYou.Tests
             }
         }
 
-        // 세로 플레이 비중: 주 경로 방 중 위/아래 문이 있는 방이 평균 20~45%, 모든 스테이지에 적어도 하나.
+        // 세로 플레이 비중: 주 경로가 위/아래로 오르내리는 방이 평균 20~45%, 모든 스테이지에 적어도 하나 (곁방 문은 세지 않는다).
         [Test]
         public void VerticalRoomShareIsInRange()
         {
@@ -158,7 +158,7 @@ namespace IBlameYou.Tests
                 foreach (var room in layout.MainPathRooms())
                 {
                     total++;
-                    if (room.IsVertical) here++;
+                    if (room.IsVerticalPassage) here++;
                 }
 
                 Assert.Greater(here, 0, $"seed {layout.Seed}: 세로 방이 없음");
@@ -195,6 +195,11 @@ namespace IBlameYou.Tests
                     var parent = layout.Rooms[room.ParentIndex];
                     Assert.IsTrue(parent.MainPath);
                     Assert.IsTrue(RoomLayout.CanBeVertical(parent.Kind), "곁방은 이동·휴식 방에만 붙는다");
+                    foreach (var dir in new[] { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down })
+                    {
+                        var touching = layout.Neighbor(room, dir);
+                        Assert.IsTrue(touching == null || touching == parent, $"seed {layout.Seed}: 곁방 {room.Index}가 다른 방과 맞닿음");
+                    }
                 }
 
                 Assert.That(side, Is.InRange(RoomLayout.MinSideRooms, RoomLayout.MaxSideRooms), $"seed {layout.Seed}");
