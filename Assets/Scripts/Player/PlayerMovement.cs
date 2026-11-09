@@ -102,6 +102,17 @@ namespace IBlameYou.Player
             // 물리는 고정 프레임(50Hz)으로 위치를 갱신하는데 카메라는 렌더 프레임마다 따라가서, 보간이 없으면
             // 캐릭터가 계단식으로 움직이고 카메라와 박자가 어긋나 번져/떨려 보인다. 렌더 프레임 사이를 보간한다.
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            health.Damaged += OnDamaged;
+        }
+
+        private void OnDestroy()
+        {
+            if (health != null) health.Damaged -= OnDamaged;
+        }
+
+        private void OnDamaged(float amount)
+        {
+            if (!health.IsDead) GameAudio.PlaySfx("Hurt", 0.7f);
         }
 
         private void Update()
@@ -142,6 +153,8 @@ namespace IBlameYou.Player
             dashDirection = Mathf.Sign(transform.localScale.x);
             rb.gravityScale = 0f;
             health.Invulnerable = true;
+            jumpQueued = false; // 같은 프레임에 누른 점프가 대쉬가 끝난 뒤 공중에서 터지지 않게
+            GameAudio.PlaySfx("Dash", 0.8f);
         }
 
         private void EndDash()
@@ -176,6 +189,7 @@ namespace IBlameYou.Player
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
                 jumpQueued = false;
+                GameAudio.PlaySfx("Jump", 0.6f);
             }
 
             float moveInput = RoleInput.MoveAxis(control);
