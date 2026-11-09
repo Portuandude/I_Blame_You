@@ -80,6 +80,17 @@ namespace IBlameYou.Systems
             attackSpeed = 0.5f, physicalDamage = 35, experience = 1000
         };
 
+        // 중간보스 쌍둥이 슬라임 기사 한 몸 (스탯 문서에 없는 가안, Docs/MidBossDraft.md 후보 C: 체력 각 200).
+        // 무속성 데미지는 스포너가 기사 속성(불/물)으로 옮기고, 자기 속성 방어를 올린다. 마나는 광폭화에 쓴다.
+        public static StatBlock SlimeKnight => new StatBlock
+        {
+            maxHealth = 200, maxMana = 50, maxStamina = 50, moveSpeed = 0.6f,
+            debuffResistance = 20, defense = 20, critChance = 0f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 30 },
+            elementDefense = new float[] { 10, 10, 10, 10, 25 },
+            attackSpeed = 0.25f, physicalDamage = 30, experience = 300
+        };
+
         // 함정 (스탯 문서에 없는 가안). 플레이어 방어력 10 기준 가시 약 18, 화살 약 15, 불기둥 한 번 약 12 + 화상.
         public static StatBlock Trap => new StatBlock
         {
