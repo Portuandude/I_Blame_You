@@ -28,6 +28,7 @@ namespace IBlameYou.UI
         private GUIStyle barFrameStyle;
         private Texture2D heartIcon;
         private Texture2D starIcon;
+        private Texture2D crownIcon;
         private GUIStyle barText;
 
         private struct BarTrail
@@ -67,6 +68,7 @@ namespace IBlameYou.UI
             barFrameStyle = NineSlice("UI/HUD/BarFrame", new RectOffset(14, 14, 14, 14), Color.clear);
             heartIcon = Resources.Load<Texture2D>("UI/HUD/Heart");
             starIcon = Resources.Load<Texture2D>("UI/HUD/Star");
+            crownIcon = Resources.Load<Texture2D>("UI/HUD/Crown");
 
             barText = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, richText = false };
             barText.normal.textColor = Color.white;
@@ -129,9 +131,17 @@ namespace IBlameYou.UI
 
         private void DrawVitalBar(Rect area, Texture2D icon, float iconScale, float ratio, float trail, Color fill, Color glow, string text)
         {
-            var previous = GUI.color;
             float barX = area.x + BarIconSize + 4f;
             var bar = new Rect(barX, area.y + (area.height - BarHeight) / 2f, area.xMax - barX - BarGlow, BarHeight);
+            DrawCapsuleBar(bar, ratio, trail, fill, glow, text);
+            DrawIcon(icon, new Rect(area.x, area.y + (area.height - BarIconSize) / 2f, BarIconSize, BarIconSize), iconScale);
+        }
+
+        // 둥근 캡슐 바 하나 (빛 테두리 → 바탕 → 흰 잔상 → 채움 → 글자). 보스 체력바도 쓴다.
+        private void DrawCapsuleBar(Rect bar, float ratio, float trail, Color fill, Color glow, string text)
+        {
+            EnsureBarArt();
+            var previous = GUI.color;
 
             // 빛나는 테두리 (바깥 빛 여백만큼 크게)
             GUI.color = glow;
@@ -143,17 +153,20 @@ namespace IBlameYou.UI
             DrawClipped(bar, trail, new Color(1f, 1f, 1f, 0.95f));
             DrawClipped(bar, ratio, fill);
 
+            if (string.IsNullOrEmpty(text)) return;
             GUI.color = new Color(0f, 0f, 0f, 0.6f);
             GUI.Label(new Rect(bar.x + 1f, bar.y + 1f, bar.width, bar.height), text, barText);
             GUI.color = previous;
             GUI.Label(bar, text, barText);
+        }
 
-            if (icon != null)
-            {
-                float size = BarIconSize * iconScale;
-                var iconRect = new Rect(area.x + (BarIconSize - size) / 2f, area.y + (area.height - size) / 2f, size, size);
-                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit, true);
-            }
+        // 아이콘을 칸 가운데에 scale배 크기로 (두근거림 등).
+        private static void DrawIcon(Texture2D icon, Rect cell, float scale)
+        {
+            if (icon == null) return;
+            float w = cell.width * scale;
+            float h = cell.height * scale;
+            GUI.DrawTexture(new Rect(cell.center.x - w / 2f, cell.center.y - h / 2f, w, h), icon, ScaleMode.ScaleToFit, true);
         }
 
         private void DrawClipped(Rect bar, float ratio, Color color)
