@@ -30,9 +30,26 @@ namespace IBlameYou.Systems
         private const int W = ChunkData.Width;
         private const int H = ChunkData.Height;
 
+        // 중간보스 방: 정예 전투 구역 지형에 정예 대신 쌍둥이 슬라임 기사 둘 (Docs/MidBossDraft.md 후보 C)
+        public const int MidBossFireX = 9;
+        public const int MidBossWaterX = 22;
+
         public static RoomGeometry Build(int seed, RoomData room)
         {
-            return room.IsVertical ? BuildShaft(seed, room) : BuildHorizontal(seed, room);
+            var geometry = room.IsVertical ? BuildShaft(seed, room) : BuildHorizontal(seed, room);
+            if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
+            return geometry;
+        }
+
+        // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
+        private static void ArmMidBoss(ChunkData chunk)
+        {
+            int ground = chunk.EntryHeight;
+            foreach (var f in chunk.Features)
+                if (f.Kind == FeatureKind.Arena) { ground = f.Y; break; }
+            chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy && f.Deferred);
+            chunk.AddEnemy(StageEnemy.SlimeKnightFire, MidBossFireX, ground, true);
+            chunk.AddEnemy(StageEnemy.SlimeKnightWater, MidBossWaterX, ground, true);
         }
 
         // ------------------------------------------------------------------ 좌우 방

@@ -53,7 +53,9 @@ namespace IBlameYou.Systems
         GoblinSoldier,
         MotherSlime,
         GoblinWarrior,
-        SlimeKing    // 스테이지 1 보스
+        SlimeKing,   // 스테이지 1 보스
+        SlimeKnightFire,  // 중간보스 쌍둥이 슬라임 기사 (불: 돌진)
+        SlimeKnightWater  // 중간보스 쌍둥이 슬라임 기사 (물: 방패)
     }
 
     public struct ChunkFeature
