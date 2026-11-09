@@ -27,6 +27,9 @@ namespace IBlameYou.Enemies
         // false면 체력 조건으로 스스로 켜지지 않고 Trigger로만 켜진다 (쌍둥이 슬라임 기사: 짝이 쓰러지면 광폭화).
         public bool AutoTrigger { get; set; } = true;
 
+        // false면 몸 색을 건드리지 않는다 (색을 따로 관리하는 몹).
+        public bool TintsBody { get; set; } = true;
+
         // 바로 광폭화한다 (마나와 상관없이, 한 번만).
         public void Trigger()
         {
@@ -64,7 +67,7 @@ namespace IBlameYou.Enemies
 
             remaining -= Time.deltaTime;
             health.Drain(healthDrainPerSecond * Time.deltaTime);
-            if (visual != null) visual.color = Color.Lerp(Color.white, new Color(1f, 0.4f, 0.4f), 0.5f + 0.5f * Mathf.Sin(Time.time * 10f));
+            if (TintsBody && visual != null) visual.color = Color.Lerp(Color.white, new Color(1f, 0.4f, 0.4f), 0.5f + 0.5f * Mathf.Sin(Time.time * 10f));
 
             if (remaining <= 0f) End();
         }
@@ -84,7 +87,7 @@ namespace IBlameYou.Enemies
             remaining = 0f;
             stats.MoveSpeedMultiplier = 1f;
             stats.AttackSpeedMultiplier = 1f;
-            if (visual != null) visual.color = Color.white;
+            if (TintsBody && visual != null) visual.color = Color.white;
         }
     }
 }

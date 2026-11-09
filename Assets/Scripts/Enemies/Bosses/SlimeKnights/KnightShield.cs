@@ -89,6 +89,7 @@ namespace IBlameYou.Enemies
             lowerTime = Time.time + RaiseTime;
             slime.Suspended = true;
             if (stun != null) stun.Immune = true;
+            if (knight == null) knight = GetComponent<SlimeKnight>();
             if (knight != null) knight.Flash(WarnColor, 0.3f);
 
             if (bubble == null)

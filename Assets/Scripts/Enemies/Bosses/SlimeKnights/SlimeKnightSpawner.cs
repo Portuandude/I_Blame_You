@@ -14,6 +14,7 @@ namespace IBlameYou.Enemies
         private const float MaxLeapSpeed = 9f;
         private const float OwnElementDefense = 40f;
         private const float WaterKnightWindDefense = -30f;
+        public const float ArtPadding = 28f; // 투구 그림이 원본 슬라임보다 사방으로 넓은 px (Tools/ArtGen/decorate_slime.py KNIGHT_PAD)
 
         public static SlimeController Spawn(Vector3 position, Element element, LevelArtConfig artConfig = null)
         {
@@ -47,18 +48,22 @@ namespace IBlameYou.Enemies
             if (renderer != null)
             {
                 if (artConfig != null && artConfig.slimeDefaultSprite != null)
-                    recolor = ElementRecolor.Attach(renderer, fire ? "Enemies/SlimeKnightFire" : "Enemies/SlimeKnightWater", Color.white);
+                    recolor = ElementRecolor.Attach(renderer, fire ? "Enemies/SlimeKnightFire" : "Enemies/SlimeKnightWater", Color.white, ArtPadding);
                 else
                     renderer.color = ElementInfo.Color(element); // 아트가 없을 때의 단색 사각형
             }
 
+            go.GetComponent<SlimeController>().ShowsOwnHealthBar = false; // 화면 위 보스 체력바가 두 몸을 합쳐 보여 준다
+
             var enrage = go.AddComponent<EnrageAbility>();
             enrage.AutoTrigger = false;
+            enrage.TintsBody = false; // 몸 색은 SlimeKnight가 ElementRecolor.Tint로 준다
             enrage.Configure(0.4f, 2f, 12f);
 
+            // SlimeKnight를 기술 컴포넌트보다 먼저 붙인다 (기술 컴포넌트가 Awake에서 찾는다)
+            go.AddComponent<SlimeKnight>().Configure(recolor, enrage);
             if (fire) go.AddComponent<KnightCharge>();
             else go.AddComponent<KnightShield>();
-            go.AddComponent<SlimeKnight>().Configure(recolor, enrage);
             return go;
         }
     }

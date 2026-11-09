@@ -119,6 +119,7 @@ namespace IBlameYou.Enemies
             phaseEnd = Time.time + WindupTime;
             slime.Suspended = true;
             transform.localScale = new Vector3(direction, 1f, 1f);
+            if (knight == null) knight = GetComponent<SlimeKnight>();
             if (knight != null) knight.Flash(WarnColor, WindupTime);
         }
 
