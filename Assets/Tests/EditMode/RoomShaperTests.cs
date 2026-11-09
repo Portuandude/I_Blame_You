@@ -102,5 +102,49 @@ namespace IBlameYou.Tests
                 }
             }
         }
+
+        [Test]
+        public void MidBossRoomHasTwinKnightsOnArenaFloor()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                int midBossRooms = 0;
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    var chunk = RoomShaper.Build(seed, room).Chunk;
+                    var knights = new System.Collections.Generic.List<ChunkFeature>();
+                    ChunkFeature? arena = null;
+                    foreach (var f in chunk.Features)
+                    {
+                        if (f.Kind == FeatureKind.Arena) arena = f;
+                        if (f.Kind == FeatureKind.Enemy && (f.Enemy == StageEnemy.SlimeKnightFire || f.Enemy == StageEnemy.SlimeKnightWater))
+                            knights.Add(f);
+                    }
+
+                    if (room.Kind != RoomKind.MidBoss)
+                    {
+                        Assert.AreEqual(0, knights.Count, $"seed {seed} room {room.Index}: 중간보스 방이 아닌데 기사가 있음");
+                        continue;
+                    }
+
+                    midBossRooms++;
+                    Assert.IsTrue(arena.HasValue, $"seed {seed}: 중간보스 방에 전투 구역이 없음");
+                    int deferred = 0;
+                    foreach (var f in chunk.Features) if (f.Kind == FeatureKind.Enemy && f.Deferred) deferred++;
+                    Assert.AreEqual(2, deferred, $"seed {seed}: 중간보스 방의 구역 적은 기사 둘뿐이어야 함");
+                    Assert.AreEqual(2, knights.Count);
+                    Assert.AreNotEqual(knights[0].Enemy, knights[1].Enemy, "불 기사 하나, 물 기사 하나");
+                    Assert.AreNotEqual(knights[0].Id, knights[1].Id);
+                    foreach (var k in knights)
+                    {
+                        Assert.IsTrue(k.Deferred);
+                        Assert.IsTrue(k.X > arena.Value.X && k.X < arena.Value.X + arena.Value.Width, $"seed {seed}: 기사가 구역 밖 ({k.X})");
+                        Assert.IsTrue(chunk.IsSolid(k.X, k.Y - 1) && !chunk.IsSolid(k.X, k.Y), $"seed {seed}: 기사가 바닥 위가 아님 ({k.X},{k.Y})");
+                    }
+                }
+
+                Assert.AreEqual(1, midBossRooms, $"seed {seed}: 중간보스 방은 하나");
+            }
+        }
     }
 }
