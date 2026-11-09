@@ -149,6 +149,13 @@ namespace IBlameYou.Player
             UpdateAnimator();
         }
 
+        // 순간이동·낭떠러지 복귀처럼 떨어지던 중에 위치를 옮길 때: 옮긴 자리에서 착지 먼지가 나지 않게 낙하 기록을 지운다.
+        public void ResetAirborne()
+        {
+            airMinVelocityY = 0f;
+            wasGrounded = true;
+        }
+
         private void UpdateLandingDust()
         {
             if (!isGrounded) airMinVelocityY = Mathf.Min(airMinVelocityY, rb.linearVelocity.y);

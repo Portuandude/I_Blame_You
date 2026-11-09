@@ -95,6 +95,8 @@ namespace IBlameYou.Player
             EffectLibrary.PlayOneShot(from, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.6f, 1f, 0.7f), 1.2f);
             rb.position = to;
             transform.position = to;
+            var movement = GetComponent<PlayerMovement>();
+            if (movement != null) movement.ResetAirborne();
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, 0f));
             EffectLibrary.PlayOneShot(to, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.6f, 1f, 0.7f), 1.2f);
 
