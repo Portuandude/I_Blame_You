@@ -22,6 +22,7 @@ namespace IBlameYou.UI
         private static readonly Color BossGlowColor = new Color(1f, 0.85f, 0.3f);    // gold
         private BarTrail bossTrail;
         private float bossShakeStart = -10f;
+        private float lastBossMax;
 
         private void DrawBossBar()
         {
@@ -30,6 +31,7 @@ namespace IBlameYou.UI
             {
                 bossIntroStart = Time.unscaledTime;
                 bossIntroName = BossEvents.Name;
+                bossTrail = default; // 새 보스: 이전 보스의 잔상을 버린다
             }
 
             bossWasActive = active;
@@ -46,11 +48,15 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
                 $"<b>{title}</b>  {BossEvents.Current:0} / {BossEvents.Max:0}", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
 
-            // 왕관 아이콘 + 캡슐 바 (SkillHUD.Bars.cs). 한 번에 크게 깎이면 바가 잠깐 흔들린다.
+            // 왕관 아이콘 + 캡슐 바 (SkillHUD.Bars.cs). 한 번에 크게 깎이면 아이콘과 바가 함께 잠깐 흔들린다 (바 x가 아이콘 기준).
             float ratio = BossEvents.Max > 0f ? Mathf.Clamp01(BossEvents.Current / BossEvents.Max) : 0f;
             if (Event.current.type == EventType.Repaint)
             {
-                if (bossTrail.Started && bossTrail.Last - ratio >= BossShakeDrop) bossShakeStart = Time.unscaledTime;
+                // 분열·몸 사망으로 합친 최대 체력이 바뀐 프레임은 피해가 아니므로 잔상·흔들림 없이 맞춘다.
+                bool maxChanged = !Mathf.Approximately(BossEvents.Max, lastBossMax);
+                lastBossMax = BossEvents.Max;
+                if (maxChanged) bossTrail = default;
+                else if (bossTrail.Started && bossTrail.Last - ratio >= BossShakeDrop) bossShakeStart = Time.unscaledTime;
                 bossTrail.Step(ratio, Time.unscaledTime, Time.unscaledDeltaTime);
             }
 
