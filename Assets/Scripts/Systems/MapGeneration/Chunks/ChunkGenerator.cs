@@ -431,11 +431,20 @@ namespace IBlameYou.Systems
             ApplyHeights(chunk, heights);
             chunk.SetRow(8, 10, ground + 1, StageTile.Platform);
 
-            chunk.Features.Add(new ChunkFeature
+            var gate = new ChunkFeature
             {
                 Kind = FeatureKind.ElementGate, X = GateX, Y = ground, Width = 1, ElementIndex = rng.Next(GateElementCount)
-            });
+            };
+            // 진행도 후반에는 두 속성을 순서대로 맞혀야 열리는 봉인문 (B가 영창을 두 번, 서로 다른 속성으로).
+            if (chunk.Difficulty >= TwoElementGateMinDifficulty)
+            {
+                gate.HasSecondElement = true;
+                gate.SecondElementIndex = (gate.ElementIndex + 1 + rng.Next(GateElementCount - 1)) % GateElementCount;
+            }
+            chunk.Features.Add(gate);
         }
+
+        public const float TwoElementGateMinDifficulty = 0.6f;
 
         public const int MovingPlatformWidth = 3;
         public const int MovingBridgeLeft = 8; // 낭떠러지가 시작되는 열
