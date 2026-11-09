@@ -177,6 +177,7 @@ namespace IBlameYou.Enemies
 
             IsDead = true;
             if (Animator != null) Animator.SetBool(IsDeadParam, true);
+            GameAudio.PlaySfx("EnemyDie", 0.6f);
             OnDied();
             Killed?.Invoke(this, Stats != null ? Stats.Stats.experience : 0f);
             Destroy(gameObject, destroyDelayAfterDeath);
