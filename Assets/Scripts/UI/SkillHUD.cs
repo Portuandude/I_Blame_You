@@ -9,7 +9,7 @@ using UnityEngine;
 namespace IBlameYou.UI
 {
     // 테스트용 화면 UI (IMGUI). 정식 UI 아트가 생기기 전까지 이걸로 확인한다.
-    // - 좌상단: 체력/마나, A와 B가 쓴/날린 마나, 경험치, 모드
+    // - 좌상단: 체력·마나 바 (SkillHUD.Bars.cs), A와 B가 쓴/날린 마나, 경험치, 모드
     // - 우상단: 스킬 알림 피드 (실패는 빨간색, 마나 부족이면 최근에 마나를 많이 쓴 쪽을 탓함)
     // - 중앙: A의 방어막 미니게임(방향키 순서), B의 영창 입력창
     // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
@@ -234,11 +234,23 @@ namespace IBlameYou.UI
         {
             if (panel != null) return;
             panel = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, padding = new RectOffset(10, 10, 8, 8) };
+            // 귀엽게: 둥근 모서리 + 진한 보라 반투명 + 크림 테두리 (generate_hud.py Panel, 9분할 사방 10픽셀). 없으면 기본 상자
+            var panelTexture = Resources.Load<Texture2D>("UI/HUD/Panel");
+            if (panelTexture != null)
+            {
+                panel.normal.background = panelTexture;
+                panel.border = new RectOffset(10, 10, 10, 10);
+            }
             label = new GUIStyle(GUI.skin.label) { fontSize = 16, richText = true };
             label.normal.textColor = Color.white;
             small = new GUIStyle(label) { fontSize = 13, wordWrap = true };
             big = new GUIStyle(label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             keyBox = new GUIStyle(GUI.skin.box) { fontSize = 34, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            if (panelTexture != null)
+            {
+                keyBox.normal.background = panelTexture; // 방어막 미니게임 화살표 칸도 같은 둥근 패널
+                keyBox.border = new RectOffset(10, 10, 10, 10);
+            }
             input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
         }
 
@@ -271,8 +283,7 @@ namespace IBlameYou.UI
             var rect = new Rect(12f, 12f, 360f, 150f);
             GUI.Box(rect, GUIContent.none, panel);
             GUILayout.BeginArea(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f));
-            GUILayout.Label($"체력 {health.Current:0}/{health.Max:0}    마나 {mana.Current:0}/{mana.Max:0}" +
-                            (mana.Infinite ? " <color=#ffd84d>(무한)</color>" : ""), label);
+            DrawVitalBars(GUILayoutUtility.GetRect(rect.width - 20f, BarIconSize + 2f)); // 체력·마나 바 (SkillHUD.Bars.cs)
             GUILayout.Label($"<color=#73d9ff>A</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
             GUILayout.Label($"<color=#ffa659>B</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
             string shieldText = shield != null && shield.Active
@@ -421,12 +432,10 @@ namespace IBlameYou.UI
         {
             var rect = new Rect(12f, 168f, 360f, 30f);
             GUI.Box(rect, GUIContent.none, panel);
-            var fill = new Rect(rect.x + 150f, rect.y + 10f, (rect.width - 162f) * StageEvents.Progress, 10f);
-            GUI.DrawTexture(new Rect(rect.x + 150f, rect.y + 10f, rect.width - 162f, 10f), Texture2D.grayTexture);
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 0.85f, 0.4f);
-            GUI.DrawTexture(fill, Texture2D.whiteTexture);
-            GUI.color = previous;
+            // 진행도 캡슐 바 (gold) + 끝에 깃발 (SkillHUD.Bars.cs)
+            var bar = new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow - 10f, BarHeight);
+            DrawCapsuleBar(bar, Mathf.Clamp01(StageEvents.Progress), 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
+            DrawIcon(flagIcon, new Rect(bar.xMax - 6f, rect.y + 2f, 22f, 22f), 1f);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
         }
 

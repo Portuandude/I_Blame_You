@@ -19,9 +19,9 @@ namespace IBlameYou.UI
         private StaminaSystem stamina;
         private ManaSystem mana;
 
-        private Transform healthFill;
-        private Transform manaFill;
-        private Transform staminaFill;
+        private CapsuleBar healthBar;
+        private CapsuleBar manaBar;
+        private CapsuleBar staminaBar;
 
         public void Initialize(Transform followTarget, HealthSystem healthSystem, StaminaSystem staminaSystem, ManaSystem manaSystem)
         {
@@ -51,47 +51,18 @@ namespace IBlameYou.UI
             float manaY = healthY - (HealthBarHeight / 2f + BarGap + subBarHeight / 2f);
             float staminaY = manaY - (subBarHeight + BarGap);
 
-            healthFill = CreateBar("HealthBar", healthY, HealthBarHeight, new Color(0.15f, 0.02f, 0.02f), new Color(0.85f, 0.15f, 0.15f));
-            manaFill = CreateBar("ManaBar", manaY, subBarHeight, new Color(0.02f, 0.03f, 0.15f), new Color(0.2f, 0.4f, 0.95f));
-            staminaFill = CreateBar("StaminaBar", staminaY, subBarHeight, new Color(0.03f, 0.1f, 0.03f), new Color(0.3f, 0.85f, 0.3f));
+            // 둥근 캡슐 + 흰 잔상 (CapsuleBar, HUD와 같은 그림). 색은 HUD 바와 맞춘다: 체력 분홍, 마나 하늘, 기력 풀색
+            healthBar = new CapsuleBar(transform, "HealthBar", new Vector3(0f, healthY, 0f), BarWidth, HealthBarHeight,
+                new Color(0.15f, 0.02f, 0.02f), new Color(1f, 0.37f, 0.59f), 10);
+            manaBar = new CapsuleBar(transform, "ManaBar", new Vector3(0f, manaY, 0f), BarWidth, subBarHeight,
+                new Color(0.02f, 0.03f, 0.15f), new Color(0.35f, 0.7f, 1f), 10);
+            staminaBar = new CapsuleBar(transform, "StaminaBar", new Vector3(0f, staminaY, 0f), BarWidth, subBarHeight,
+                new Color(0.03f, 0.1f, 0.03f), new Color(0.31f, 0.76f, 0.29f), 10);
         }
 
-        private Transform CreateBar(string name, float centerY, float height, Color backgroundColor, Color fillColor)
-        {
-            var barRoot = new GameObject(name);
-            barRoot.transform.SetParent(transform, false);
-            barRoot.transform.localPosition = new Vector3(0f, centerY, 0f);
-
-            var background = new GameObject("Background");
-            background.transform.SetParent(barRoot.transform, false);
-            background.transform.localScale = new Vector3(BarWidth, height, 1f);
-            var backgroundRenderer = background.AddComponent<SpriteRenderer>();
-            backgroundRenderer.sprite = SolidSpriteFactory.CreateSquare();
-            backgroundRenderer.color = backgroundColor;
-            backgroundRenderer.sortingOrder = 10;
-
-            var fill = new GameObject("Fill");
-            fill.transform.SetParent(barRoot.transform, false);
-            fill.transform.localPosition = new Vector3(-BarWidth / 2f, 0f, 0f);
-            fill.transform.localScale = new Vector3(BarWidth, height, 1f);
-            var fillRenderer = fill.AddComponent<SpriteRenderer>();
-            fillRenderer.sprite = SolidSpriteFactory.CreateLeftPivotSquare();
-            fillRenderer.color = fillColor;
-            fillRenderer.sortingOrder = 11;
-
-            return fill.transform;
-        }
-
-        private void OnHealthChanged(float current, float max) => SetFill(healthFill, current / max);
-        private void OnStaminaChanged(float current, float max) => SetFill(staminaFill, current / max);
-        private void OnManaChanged(float current, float max) => SetFill(manaFill, current / max);
-
-        private static void SetFill(Transform fill, float ratio)
-        {
-            var scale = fill.localScale;
-            scale.x = BarWidth * Mathf.Clamp01(ratio);
-            fill.localScale = scale;
-        }
+        private void OnHealthChanged(float current, float max) => healthBar.SetRatio(max > 0f ? current / max : 0f);
+        private void OnStaminaChanged(float current, float max) => staminaBar.SetRatio(max > 0f ? current / max : 0f);
+        private void OnManaChanged(float current, float max) => manaBar.SetRatio(max > 0f ? current / max : 0f);
 
         private void LateUpdate()
         {
@@ -102,6 +73,11 @@ namespace IBlameYou.UI
             }
 
             transform.position = target.position + offset;
+            float now = Time.unscaledTime;
+            float dt = Time.unscaledDeltaTime;
+            healthBar.Tick(now, dt);
+            manaBar.Tick(now, dt);
+            staminaBar.Tick(now, dt);
         }
 
         private void OnDestroy()

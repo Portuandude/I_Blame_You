@@ -55,6 +55,7 @@ namespace IBlameYou.Enemies
             Health = GetComponent<HealthSystem>();
             hitStun = GetComponent<HitStun>();
             if (hitStun == null) hitStun = gameObject.AddComponent<HitStun>(); // 프리팹을 재생성하기 전의 구버전 대비
+            if (GetComponent<StunStars>() == null) gameObject.AddComponent<StunStars>(); // 경직 어질어질 별 (적 공통, 프리팹 재생성 불필요)
             bodyCollider = GetComponent<Collider2D>();
             Animator = GetComponentInChildren<Animator>();
             Stats = GetComponent<CombatStats>();

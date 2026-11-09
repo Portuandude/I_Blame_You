@@ -2,6 +2,13 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-8rxr8x): HUD 체력·마나 바 귀엽게 — `UI/SkillHUD.Bars.cs` 하트·별 아이콘 + 둥근 캡슐(9분할) + 빛 테두리 + 흰 잔상(0.45초 머문 뒤 줄어듦), 체력 낮으면 하트 두근. 그림 `Tools/ArtGen/generate_hud.py` → `Resources/UI/HUD`
+- DONE (claude/project-thread-8rxr8x): 보스 체력바 귀엽게 — 왕관 아이콘(`generate_hud.py` Crown) + 캡슐 바(보라, gold 빛) + 흰 잔상, 한 번에 5% 넘게 깎이면 0.25초 흔들림. 보스 교체·분열로 최대 체력이 바뀌면 잔상 초기화
+- DONE (claude/project-thread-8rxr8x): 레벨·스테이지 진행 바 귀엽게 — 캡슐 바(경험치 lilac, 진행도 gold), 레벨업 0.6초 gold 반짝, 진행 바 끝 깃발(`generate_hud.py` Flag)
+- DONE (claude/project-thread-8rxr8x): 머리 위 바·적 체력바 귀엽게 — `UI/CapsuleBar.cs`(런타임 9분할 Sliced 스프라이트 + 흰 잔상, 잔상 계산 `BarTrail` 공용)로 `StatusBarsUI`·`EnemyHealthBar` 교체. 그림 없으면 예전 단색 사각형
+- DONE (claude/project-thread-8rxr8x): HUD 패널 귀엽게 — `panel`·`keyBox` 스타일 배경을 둥근 모서리 + night 반투명 + 크림 테두리 9분할(`generate_hud.py` Panel)로. 피드는 패널이 없어 그대로
+- DONE (claude/project-thread-8rxr8x): 적 경직 연출 — `Systems/Effects/StunStars` 경직 동안 머리 위 gold·aqua·berry 별 3개가 도는 12프레임(한 바퀴 0.6초, 최소 0.45초 표시), `EnemyController.Awake`가 모든 적에 붙임. 그림 `generate_skill_fx.py` StunStars
+- DONE (claude/project-thread-8rxr8x): 미니맵 귀엽게 — 둥근 보라 패널 + 둥근 방 칸(지금 방은 흰 빛 테두리 깜빡임) + 방 종류 아이콘(보스 왕관·중간보스 투구·정예 보라 별·보물 상자·휴식/샘 하트·시작 깃발), 큰 지도 범례도 아이콘으로. 그림 없으면 예전 네모
 - DONE (claude/project-thread-iz8mmy): 순간이동·방어막·평타 이펙트 다시 그리기 — `LevelArtConfig`의 옛 teleport/shield/slash 프레임 대신 `generate_magic_fx.py` 방식(색·빛 두 층)으로 귀엽고 화려하게, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`에서 읽고 없으면 옛 프레임 (`EffectLibrary`)
 - DONE (claude/project-thread-iz8mmy): 유물 상자 열 때 연출 — 뚜껑이 튀어 오르며 gold 빛기둥(레벨업 기둥 재사용) + 별 반짝임 터짐, 유물 이름 띠
 - DONE (claude/project-thread-iz8mmy): 중간보스(슬라임 기사) 등장 연출 — 두 기사가 위에서 떨어져 착지할 때 충격파 고리 + 투구 반짝임, 화면 살짝 흔들림

@@ -6,6 +6,7 @@ generate_magic_fx.py 와 같은 방식(색 층 + 흐린 빛 층)으로 그린다
   Assets/Resources/Effects/Teleport/00~07   순간이동 (128x128): 보라 고리가 빨려 들었다가 별이 터진다
   Assets/Resources/Effects/Shield/00~05     방어막 반복 (160x160): 흰색 거품. 코드가 속성색으로 물들이므로 흰·회색만 쓴다
   Assets/Resources/Effects/Slash/00~04      베기 (120x120, +x 방향): 흰 초승달 + 분홍 빛 + 끝의 별
+  Assets/Resources/Effects/StunStars/00~11  적 경직 어질어질 (64x32, 12프레임 반복): 머리 위 타원을 도는 별 3개 (앞쪽은 크고 밝게)
 
     python3 Tools/ArtGen/generate_skill_fx.py [미리보기.png]
 """
@@ -31,6 +32,7 @@ AQUA = COLORS["aqua"]
 TELEPORT_FRAMES = 8
 SHIELD_FRAMES = 6
 SLASH_FRAMES = 5
+STUN_FRAMES = 12
 
 
 def heart(fx, x, y, r, col, light=False):
@@ -170,11 +172,36 @@ def slash(i):
     return fx.finish(3)
 
 
+# --------------------------------------------------------------------------------------
+# 경직 어질어질 (64x32, 12프레임 반복): 색이 다른 별 3개가 타원을 한 바퀴 돈다 (한 바퀴라 이어 붙여도 색이 끊기지 않는다)
+# --------------------------------------------------------------------------------------
+def stun_stars(i):
+    w, h = 64, 32
+    cx, cy, rx, ry = w / 2, h / 2, 22, 7
+    fx = Fx(w, h)
+    t = i / STUN_FRAMES
+    cols = [GOLD, AQUA, BERRY]
+    stars = []
+    for k in range(3):
+        a = 2 * math.pi * (k / 3 + t)
+        x, y = cx + math.cos(a) * rx, cy + math.sin(a) * ry
+        depth = (math.sin(a) + 1) / 2  # 0 = 뒤(위), 1 = 앞(아래)
+        stars.append((depth, x, y, cols[k]))
+    for depth, x, y, col in sorted(stars):  # 뒤에 있는 별부터
+        r = 4.5 + 3.5 * depth
+        fx.circle(x, y, r * 0.8, alpha(col, int(120 + 100 * depth)), light=True)
+        fx.star(x, y, r + 1.2, alpha((24, 20, 26, 255), int(150 + 105 * depth)))
+        fx.star(x, y, r, alpha(col, int(170 + 85 * depth)))
+        fx.circle(x, y, r * 0.22, alpha(WHITE, int(160 + 95 * depth)))
+    return fx.finish(2)
+
+
 def generate():
     result = {
         "Teleport": [teleport(i) for i in range(TELEPORT_FRAMES)],
         "Shield": [shield(i) for i in range(SHIELD_FRAMES)],
         "Slash": [slash(i) for i in range(SLASH_FRAMES)],
+        "StunStars": [stun_stars(i) for i in range(STUN_FRAMES)],
     }
     for name, frames in result.items():
         save(os.path.join(BASE, name), frames)

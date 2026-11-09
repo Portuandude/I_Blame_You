@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.UI
 {
-    // 화면 위쪽 가운데 보스 체력바. 보스가 분열하면 몸 수와 합친 체력을 보여주고,
+    // 화면 위쪽 가운데 보스 체력바 (왕관 + 캡슐 바 + 흰 잔상, 5% 넘게 깎이면 흔들림). 보스가 분열하면 몸 수와 합친 체력을 보여주고,
     // 소환한 무리가 있으면 합체까지 남은 시간을 아래에 적는다 (BossEvents).
     // 보스(중간보스 포함)가 처음 나타나면 화면 가운데에 이름 띠를 잠깐 크게 띄운다 (귀엽지만 화려하게: gold 글자 + 반짝 테두리).
     public partial class SkillHUD
@@ -16,6 +16,14 @@ namespace IBlameYou.UI
         private GUIStyle introTitle;
         private GUIStyle introSub;
 
+        private const float BossShakeDrop = 0.05f;   // 한 프레임에 이만큼(5%) 이상 깎이면 흔들림
+        private const float BossShakeTime = 0.25f;
+        private static readonly Color BossFillColor = new Color(0.78f, 0.45f, 1f);   // arcane 보라
+        private static readonly Color BossGlowColor = new Color(1f, 0.85f, 0.3f);    // gold
+        private BarTrail bossTrail;
+        private float bossShakeStart = -10f;
+        private float lastBossMax;
+
         private void DrawBossBar()
         {
             bool active = BossEvents.Active;
@@ -23,6 +31,7 @@ namespace IBlameYou.UI
             {
                 bossIntroStart = Time.unscaledTime;
                 bossIntroName = BossEvents.Name;
+                bossTrail = default; // 새 보스: 이전 보스의 잔상을 버린다
             }
 
             bossWasActive = active;
@@ -31,7 +40,7 @@ namespace IBlameYou.UI
 
             float width = Mathf.Min(560f, Screen.width - 2f * 400f);
             if (width < 280f) width = 280f;
-            var rect = new Rect((Screen.width - width) / 2f, 12f, width, 52f);
+            var rect = new Rect((Screen.width - width) / 2f, 12f, width, 58f);
             GUI.Box(rect, GUIContent.none, panel);
 
             int alive = BossEvents.AliveCount;
@@ -39,13 +48,24 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
                 $"<b>{title}</b>  {BossEvents.Current:0} / {BossEvents.Max:0}", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
 
-            var back = new Rect(rect.x + 12f, rect.y + 30f, rect.width - 24f, 12f);
-            GUI.DrawTexture(back, Texture2D.grayTexture);
+            // 왕관 아이콘 + 캡슐 바 (SkillHUD.Bars.cs). 한 번에 크게 깎이면 아이콘과 바가 함께 잠깐 흔들린다 (바 x가 아이콘 기준).
             float ratio = BossEvents.Max > 0f ? Mathf.Clamp01(BossEvents.Current / BossEvents.Max) : 0f;
-            var previous = GUI.color;
-            GUI.color = new Color(0.75f, 0.35f, 1f);
-            GUI.DrawTexture(new Rect(back.x, back.y, back.width * ratio, back.height), Texture2D.whiteTexture);
-            GUI.color = previous;
+            if (Event.current.type == EventType.Repaint)
+            {
+                // 분열·몸 사망으로 합친 최대 체력이 바뀐 프레임은 피해가 아니므로 잔상·흔들림 없이 맞춘다.
+                bool maxChanged = !Mathf.Approximately(BossEvents.Max, lastBossMax);
+                lastBossMax = BossEvents.Max;
+                if (maxChanged) bossTrail = default;
+                else if (bossTrail.Started && bossTrail.Last - ratio >= BossShakeDrop) bossShakeStart = Time.unscaledTime;
+                bossTrail.Step(ratio, Time.unscaledTime, Time.unscaledDeltaTime);
+            }
+
+            float shakeAge = Time.unscaledTime - bossShakeStart;
+            float shake = shakeAge < BossShakeTime ? Mathf.Sin(shakeAge * 70f) * 3f * (1f - shakeAge / BossShakeTime) : 0f;
+            var icon = new Rect(rect.x + 10f + shake, rect.y + 26f, BarIconSize, BarIconSize);
+            var bar = new Rect(icon.xMax + 4f, rect.y + 29f, rect.xMax - icon.xMax - 4f - 10f - BarGlow, BarHeight);
+            DrawCapsuleBar(bar, ratio, bossTrail.Shown, BossFillColor, BossGlowColor, null);
+            DrawIcon(crownIcon, icon, 1f);
 
             if (!string.IsNullOrEmpty(BossEvents.Notice))
                 GUI.Label(new Rect(rect.x, rect.yMax + 2f, rect.width, 22f), $"<color=#ffd84d>{BossEvents.Notice}</color>",
