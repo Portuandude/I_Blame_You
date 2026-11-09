@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-09 17:40 UTC
+- 브랜치/PR: `claude/project-thread-iz8mmy` → #19 (머지됨), #20 (진행 중)
+- 완료: 순간이동·방어막·베기 이펙트 다시 그리기(`generate_skill_fx.py`, 런타임 `Resources/Effects/{Teleport,Shield,Slash}`, 없으면 옛 프레임 — APPROVE), `unity_meta.py add`가 런타임 PNG .meta도 생성, 유물 상자 열기(뚜껑 튀어 오름·gold 빛기둥·별 + 유물 이름 띠 `RelicBannerView` — APPROVE·LOW 1 반영), 중간보스 등장(위에서 떨어져 충격파·흙먼지·투구 반짝임·흔들림 — APPROVE·LOW 2 반영), 백로그 비주얼 5개 추가, 보스 격파 연출(`BossDefeatFx` 슬로모션 0.3배 0.35초·흰 번쩍임·큰 폭발·"격파!" 띠), 등장 연출 일반화(`BossEntrance`) + 슬라임 킹 등장
+- 실패/보류: 17:51~18:00 UTC 5시간 사용량 한도로 잠깐 멈춤. 보스 격파 연출은 리뷰가 끊긴 사이 #19로 머지됨 → 리뷰 결과는 #20에서 반영
+- 다음 실행 메모: 플레이테스트 필요: 새 스킬 이펙트 크기(베기가 조금 커 보일 수 있음), 방어막 거품 투명도, 유물 이름 띠의 한글 표시(LegacyRuntime 글꼴), 보스 등장 낙하가 천장 낮은 방에서 어색하지 않은지, 격파 슬로모션 느낌
+
 ## 2026-11-09 14:15 UTC
 - 브랜치/PR: `claude/project-thread-d1pgr2` → #18 (develop 대상, CI 통과 후 머지)
 - 완료: 순간이동 상하좌우 + 아래 낙사 방지(`TeleportRules` 순수 규칙 + 새 어셈블리 `IBlameYou.SkillRules`, 테스트 7개 — APPROVE, MEDIUM 1·LOW 2 반영), 적 공격 예고 squash(`EnemySquash`, 슬라임 판정 축소 방지 `SpriteColliderFitter.SetRestPose` — APPROVE), 체크포인트 aqua 빛기둥, 구역 돌파 별·하트 터짐 + 문 빛 번쩍임(APPROVE), 마법사 피격 2프레임(`PlayerHurtPose`, 런타임 로드라 에디터 툴 재실행 불필요 — 리뷰 MEDIUM: 메타 없는 300x256 PNG가 256으로 줄어 보일 수 있어 새 런타임 PNG 22장에 .meta 추가), 백로그가 비어 새 항목 5개 추가, 순간이동 지름길 선반(위 문 없는 이동 세로 방 50%, 바닥+5칸 선반 + 회복 구슬 `FeatureKind.Reward` — APPROVE·LOW 2 반영), 고블린 궁수 공격 예고(웅크림 + 화살 끝 반짝임). 로컬 EditMode 62/62
