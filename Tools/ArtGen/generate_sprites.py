@@ -1214,6 +1214,37 @@ def exit_frames():
     return frames
 
 
+def reward_frames():
+    """전투 구역 보상 구슬: 붉은 체력 하트를 푸른 마나 고리가 감싸고 돈다."""
+    frames = []
+    w, h = 64, 64
+    for i in range(8):
+        t = i / 8 * math.tau
+        pulse = 0.5 + 0.5 * math.sin(t)
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        cx, cy = 32, 32
+        dot(d, cx * S, cy * S, (24 + 3 * pulse) * S, (255, 140, 160, int(60 + 60 * pulse)))
+        ring(d, cx * S, cy * S, 22 * S, 3 * S, (110, 200, 255, 230))
+        # 하트
+        r = 7
+        d.ellipse([(cx - 2 * r) * S, (cy - 9) * S, cx * S, (cy - 9 + 2 * r) * S], fill=OUTLINE)
+        d.ellipse([cx * S, (cy - 9) * S, (cx + 2 * r) * S, (cy - 9 + 2 * r) * S], fill=OUTLINE)
+        d.polygon([((cx - 2 * r + 1) * S, (cy - 1) * S), ((cx + 2 * r - 1) * S, (cy - 1) * S), (cx * S, (cy + 15) * S)], fill=OUTLINE)
+        r2 = 5.5
+        d.ellipse([(cx - 2 * r2 - 0.5) * S, (cy - 7.5) * S, (cx - 0.5) * S, (cy - 7.5 + 2 * r2) * S], fill=rgba("#ff4d6a"))
+        d.ellipse([(cx + 0.5) * S, (cy - 7.5) * S, (cx + 2 * r2 + 0.5) * S, (cy - 7.5 + 2 * r2) * S], fill=rgba("#ff4d6a"))
+        d.polygon([((cx - 2 * r2) * S, (cy - 1) * S), ((cx + 2 * r2) * S, (cy - 1) * S), (cx * S, (cy + 12) * S)], fill=rgba("#ff4d6a"))
+        dot(d, (cx - 5) * S, (cy - 4) * S, 2 * S, (255, 220, 225, 255))
+        # 고리를 도는 마나 알갱이
+        for k in range(3):
+            a = t + k * math.tau / 3
+            dot(d, (cx + math.cos(a) * 22) * S, (cy + math.sin(a) * 22) * S, 3.5 * S, (210, 245, 255, 255))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
 def generate_stage_art():
     base = os.path.join(ROOT, "Assets", "Resources", "Stage")
     sets = {
@@ -1227,6 +1258,7 @@ def generate_stage_art():
         "Checkpoint": checkpoint_frames(),
         "Gate": gate_frames(),
         "Exit": exit_frames(),
+        "Reward": reward_frames(),
     }
     for name, frames in sets.items():
         folder = os.path.join(base, name)
