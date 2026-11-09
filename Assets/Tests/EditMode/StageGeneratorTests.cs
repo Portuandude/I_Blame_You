@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using NUnit.Framework;
 
@@ -188,6 +189,78 @@ namespace IBlameYou.Tests
                     if (!late) continue;
                     Assert.That(gate.SecondElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1));
                     Assert.IsFalse(gate.SecondElementIndex == gate.ElementIndex, $"seed {seed}: 같은 속성 두 번");
+                }
+            }
+        }
+
+        // ---- 스테이지 배치 규칙 (StagePlanner) ----
+
+        // 정예 전투는 정해진 진행도를 넘은 뒤 첫 전투 구역에 하나씩, 그 뒤에는 바로 휴식이 온다.
+        [Test]
+        public void ElitesAppearAtTheirProgressAndAreFollowedByRest()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                int elites = 0;
+                for (int i = 0; i < plan.Count; i++)
+                {
+                    if (plan[i].Key != ChunkKind.EliteArena) continue;
+                    Assert.Less(elites, StagePlanner.EliteProgress.Count, $"seed {seed}: 정예가 너무 많음");
+                    Assert.That(plan[i].Value, Is.InRange(StagePlanner.EliteProgress[elites], 1.0), $"seed {seed}: {elites + 1}번째 정예 위치");
+                    Assert.AreEqual(ChunkKind.Rest, plan[i + 1].Key, $"seed {seed}: 정예 뒤 휴식");
+                    elites++;
+                }
+                Assert.AreEqual(StagePlanner.EliteProgress.Count, elites, $"seed {seed}: 정예 개수");
+            }
+        }
+
+        // 시작 → 평지로 열고, 휴식 → 보스로 닫는다. 전투 구역이 휴식 없이 너무 이어지지 않는다.
+        [Test]
+        public void PlanOpensAndClosesAndRestsRegularly()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                Assert.AreEqual(ChunkKind.Start, plan[0].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Plains, plan[1].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Rest, plan[plan.Count - 2].Key, $"seed {seed}");
+                Assert.AreEqual(ChunkKind.Boss, plan[plan.Count - 1].Key, $"seed {seed}");
+
+                int arenasSinceRest = 0;
+                foreach (var entry in plan)
+                {
+                    if (entry.Key == ChunkKind.Rest) arenasSinceRest = 0;
+                    else if (entry.Key == ChunkKind.Arena || entry.Key == ChunkKind.EliteArena) arenasSinceRest++;
+                    Assert.That(arenasSinceRest, Is.InRange(0, StagePlanner.ArenasPerRest), $"seed {seed}: 휴식 없이 전투 구역 연속");
+                }
+            }
+        }
+
+        // 이동 청크는 같은 종류가 연달아 나오지 않고, 어려운 지형은 진행도 문턱을 넘은 뒤에만 나온다.
+        [Test]
+        public void TravelChunksRespectProgressFloorsAndDontRepeat()
+        {
+            var floors = new Dictionary<ChunkKind, float>
+            {
+                { ChunkKind.Cave, 0.15f }, { ChunkKind.Climb, 0.2f }, { ChunkKind.MovingBridge, 0.2f },
+                { ChunkKind.CrumbleBridge, 0.3f }, { ChunkKind.ElementGate, StagePlanner.GateMinProgress },
+            };
+            var travel = new HashSet<ChunkKind>
+            {
+                ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave, ChunkKind.Climb,
+                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate,
+            };
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var plan = StagePlanner.Plan(seed, TargetSeconds);
+                for (int i = 2; i < plan.Count; i++) // 0, 1은 고정된 시작·평지
+                {
+                    var kind = plan[i].Key;
+                    if (!travel.Contains(kind)) continue;
+                    Assert.IsFalse(kind == plan[i - 1].Key, $"seed {seed}: {kind} 연속 ({i})");
+                    if (floors.TryGetValue(kind, out float floor))
+                        Assert.That(plan[i].Value, Is.InRange(floor, 1.0), $"seed {seed}: {kind}가 진행도 {plan[i].Value:0.00}에 나옴");
                 }
             }
         }
