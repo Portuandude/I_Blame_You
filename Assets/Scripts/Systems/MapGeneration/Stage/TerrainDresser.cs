@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace IBlameYou.Systems
@@ -68,6 +69,7 @@ namespace IBlameYou.Systems
         {
             var parent = new GameObject("TerrainArt").transform;
             parent.SetParent(root, false);
+            var blocked = BlockedTiles(chunk);
 
             for (int y = 0; y < ChunkData.Height; y++)
             {
@@ -91,7 +93,7 @@ namespace IBlameYou.Systems
                         var sprite = grass[(leftEnd ? 1 : 0) + (rightEnd ? 2 : 0)];
                         Add(parent, sprite, new Vector2(center.x, y + 1f - GrassCenterBelowTop), GrassOrder);
 
-                        if (decor != null && decor.Length > 0 && hash % 4 == 0 && Empty(chunk, x, y + 1))
+                        if (decor != null && decor.Length > 0 && hash % 4 == 0 && Empty(chunk, x, y + 1) && !blocked.Contains(new Vector2Int(x, y + 1)))
                         {
                             var deco = decor[(hash / 4) % decor.Length];
                             float jitter = ((hash / 32) % 5 - 2) * 0.08f;
@@ -107,6 +109,32 @@ namespace IBlameYou.Systems
                     }
                 }
             }
+        }
+
+        // 함정·문·체크포인트·출구 칸에는 장식을 두지 않는다 (위험 신호와 목표물이 가려지지 않게).
+        private static HashSet<Vector2Int> BlockedTiles(ChunkData chunk)
+        {
+            var blocked = new HashSet<Vector2Int>();
+            foreach (var feature in chunk.Features)
+            {
+                switch (feature.Kind)
+                {
+                    case FeatureKind.Spikes:
+                    case FeatureKind.FlameJet:
+                    case FeatureKind.ArrowTrap:
+                    case FeatureKind.Checkpoint:
+                    case FeatureKind.Exit:
+                        int width = Mathf.Max(1, feature.Width);
+                        for (int dx = -1; dx <= width; dx++) blocked.Add(new Vector2Int(feature.X + dx, feature.Y));
+                        break;
+                    case FeatureKind.ElementGate:
+                        for (int y = 0; y < ChunkData.Height; y++)
+                            for (int dx = -1; dx <= 1; dx++) blocked.Add(new Vector2Int(feature.X + dx, y));
+                        break;
+                }
+            }
+
+            return blocked;
         }
 
         // 청크 밖 가로 이웃은 이음새 높이가 같으므로 같은 행의 끝 칸으로 본다. 아래는 계속 땅, 위는 하늘.
