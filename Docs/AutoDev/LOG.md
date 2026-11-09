@@ -1,12 +1,12 @@
 # 자동 개발 실행 기록
 
-최신 실행이 맨 위.
+최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
 ## 2026-11-09 08:41 UTC
-- 브랜치/PR: `claude/project-thread-qoeoof` → #14 (09:03 UTC CI 통과 후 자동 머지) → #15 (진행 중, 자동 머지 켬)
-- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영), 중간보스 쌍둥이 슬라임 기사(불 돌진·물 방패·짝 잃으면 광폭화, 중간보스 방 배치 테스트 — 로컬 35/35, 리뷰 HIGH 1·MEDIUM 1·LOW 4 반영 후 APPROVE) → #15
-- 실패/보류: 없음 (진행 중)
-- 다음 실행 메모: (진행 중)
+- 브랜치/PR: `claude/project-thread-qoeoof` → #14 (09:03 UTC CI 통과 후 자동 머지) → #15 (09:32 UTC CI 통과 후 자동 머지)
+- 완료: 몬스터 스프라이트 마무리(고블린 4종 통통하게·테두리 빛, 슬라임 킹 왕관 반짝임 12프레임 — 리뷰 HIGH 1·MEDIUM 1·LOW 1 반영), 플레이어 마법사 전 동작 새로 그림(`generate_wizard.py`, 예전 Idle은 Trash, 리뷰 APPROVE·LOW 3 반영), 시각 효과 묶음(착지 먼지, 레벨업 빛기둥, 적 사망 별·하트, 유물 상자 반짝임, 피해 숫자 테두리·팝 — 리뷰 APPROVE, MEDIUM 1·LOW 1 반영), 방 격자형 스테이지 1단계(설계 문서 LevelDesign.md, 배치 생성기 RoomLayout, 테스트 10개 — 로컬 mono+NUnit 29/29 통과, 리뷰 APPROVE·MEDIUM 1·LOW 3 반영), 방 지형 RoomShaper(좌우 방 벽·문, 세로 방 탑 지형, ValidateRoom, 검증기가 발판을 뚫고 내려가지 않게 — 리뷰 CRITICAL 1·HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 방 격자 씬 연결(ChunkStreamer 방 모드·문 전환·카메라·저장 — 리뷰 HIGH 1·MEDIUM 1·LOW 2 반영 후 APPROVE), 미니맵 MinimapUI(리뷰 APPROVE·LOW 2 반영), 중간보스 쌍둥이 슬라임 기사(불 돌진·물 방패·짝 잃으면 광폭화, 중간보스 방 배치 테스트 — 로컬 35/35, 리뷰 HIGH 1·MEDIUM 1·LOW 4 반영 후 APPROVE), 레벨 디자인 1차 재설계(방 리듬 규칙: 전투 방 연달아 금지·중간보스 뒤 휴식·중간보스 55%±1방, 세로 방 지그재그/양 갈래/선반 — 로컬 37/37) → #15
+- 실패/보류: 레벨 재설계 커밋은 적대적 리뷰 전에 #15와 함께 자동 머지됨 → 백로그 맨 위 "레벨 재설계 검증"으로. 세션이 09:25~13:05 UTC 동안 API 오류로 멈춰 안전 상한(13:11)에 닿아 종료
+- 다음 실행 메모: Unity 플레이테스트 필요(방 격자 이동·탑 방·미니맵·중간보스·마법사/고블린 새 그림·시각 효과). 사람 결정 대기: 미니맵에 안 가 본 방 표시 여부, 중간보스 보상, 스테이지 2 테마, 메타 진행, 달리기·대쉬 건너뛰기 허용. 로컬 테스트는 `stage-tests` 스킬(아래 토큰 절감 작업에서 추가)
 
 ## 2026-11-09 04:26 UTC
 - 브랜치/PR: `claude/project-thread-5ne2al` → #10, #11 (CI 통과 후 머지) → #12 (CI 통과 후 머지) → #13
@@ -19,9 +19,3 @@
 - 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요) → 여기까지 PR #6 자동 머지. 이후 PR #7: 봉인문 보강(문 앞 땅 가시 안내, 리뷰 APPROVE), 컨트롤 퍼즐 MovingBridge(움직이는 발판 청크, 리뷰 UNVERIFIED=Unity 실행 불가로 읽기 검토만, MEDIUM 1건·LOW 2건 반영: 발판이 플레이어를 속도로 실어 나름, 시작 위치 보정, 발판 높이 테스트) → PR #7 자동 머지. 01:13~03:00 UTC 사용량 한도로 중단 후 재개. 백로그가 비어 새 항목 4개 추가. 이후 PR #8: 경직 연출(몸 뒤로 젖힘, 리뷰 HIGH 1건 반영 = 슬라임 스프라이트 판정이 함께 기울던 문제), 두 속성 봉인문(진행도 60% 이후, 리뷰 APPROVE) → 이어서 PR #8에 추가: 스테이지 배치 규칙 테스트 3개(코드 리뷰 APPROVE, MEDIUM 1건 반영), 발판 갈아타기 변형(리뷰 HIGH 반영: 6~7칸은 달리기 점프로 건너뛸 수 있어 9칸으로) → 같은 PR #9에 추가: 두 속성 봉인문 진행 기록, 이동 청크 선택 안전장치(둘 다 리뷰 APPROVE). 작업 20개로 안전 상한 도달, 종료
 - 실패/보류: 01:13~03:00 UTC 사용량 한도로 중단(리뷰 1건 재개). 마법사 동작별 그림은 계속 BLOCKED(그림 필요). 중간보스 후보 선택(Docs/MidBossDraft.md)과 달리기·대쉬 건너뛰기 정책은 사람 결정 필요(BACKLOG BLOCKED). Unity 런타임 코드(움직이는 발판, 경직 연출, 봉인문 표시)는 실행 확인 불가라 플레이테스트 필요
 - 다음 실행 메모: 백로그 TODO가 없다. GDD 로드맵에서 새 항목을 뽑을 것 (후보: 런 사이 성장/아이템 기획 초안, 스테이지 2 기획 초안, PickTravel 대체 경로 테스트). 검증기 점프 거리(걷기 기준)와 실제 달리기 점프 차이를 기억할 것
-
-## 2026-11-08 23:30 UTC
-- 브랜치/PR: `claude/project-thread-ulxu6c` → #3 (develop 대상, GitHub 자동 머지 켬)
-- 완료: 백로그 재점검 (상태이상·정예몹은 기존 구현으로 DONE, 로드맵 누락 항목 추가), HP 화면 경고등, Esc 일시정지 메뉴, 플레이어 사망 연출. 세 작업 모두 adversarial 리뷰 APPROVE, LOW 지적(맥동 위상, 일시정지 중 사망/클리어)은 반영함
-- 실패/보류: 없음. 세션 환경이 브랜치 이름을 `claude/...`로 지정해 `feature-auto-*` 대신 그 브랜치를 썼다 (auto-dev.md 1단계에 처리 규칙 추가)
-- 다음 실행 메모: PR #3이 아직 열려 있으면 CI 상태를 먼저 확인. 다음 TODO는 "전투 구역 보상"
