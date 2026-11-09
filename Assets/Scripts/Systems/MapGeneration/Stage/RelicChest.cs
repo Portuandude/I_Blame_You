@@ -108,7 +108,7 @@ namespace IBlameYou.Systems
             {
                 waiting = false;
                 if (taken || relics == null || !relics.Add(chosen)) return;
-                GameAudio.PlaySfx("LevelUp", 0.6f);
+                GameAudio.PlaySfx("RelicOpen", 0.7f);
                 StageEvents.PostNotice($"유물: {RelicBook.Name(chosen)} ({RelicBook.Description(chosen)})");
                 Take();
             }, () => waiting = false);
