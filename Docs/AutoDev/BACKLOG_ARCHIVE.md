@@ -2,6 +2,11 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-d1pgr2): **(최우선, 2026-11-09 사람 지시)** 순간이동 상하좌우 — 벽 점프는 넣지 않는다(결정). 대신 세로 이동 수단으로 `TeleportSkill`을 상/하/좌/우 4방향으로 정리: 방향키 입력을 가장 큰 축 하나로 고정(대각선 없음), 위로 갈 때 천장·발판 아래면에 막히면 그 앞에서 멈춤, 아래로 갈 때는 발판을 뚫고 내려갈 수 있되 **낙사 방지**: 도착 지점 아래에 일정 거리(예: 점프 높이 이내) 안에 디딜 바닥이 없거나, 낙사 구역(낭떠러지 아래 킬존·방 밖)으로 떨어지는 경로면 순간이동 거리를 바닥이 있는 지점까지 줄이고, 그런 지점이 없으면 발동하지 않음(마나 소모 없음 + 짧은 실패 표시). 세로 방 레벨 디자인에서 순간이동으로 오르는 구간을 고려하도록 `StageValidator`/방 생성 규칙에 반영. 판정 로직은 순수 함수로 분리해 EditMode 테스트(위 막힘, 아래 안전 착지, 아래 낙사 경로 거부, 좌우 기존 동작 유지)
+- DONE (claude/project-thread-d1pgr2): 적 공격 예고 squash — 슬라임·고블린이 공격 직전 웅크렸다(세로 -15%) 공격 순간 늘어나기 (`ArtStyle.md` 포즈 규칙). 슬라임은 SpriteColliderFitter가 Visual 크기를 쓰므로 판정이 같이 줄지 않게 주의
+- DONE (claude/project-thread-d1pgr2): 체크포인트 켤 때 연출 — 수정 위로 aqua 빛 기둥 + 반짝임 3개 (지금은 물 적중 효과만)
+- DONE (claude/project-thread-d1pgr2): 구역 돌파 축하 — 전투 구역을 깨면 구역 가운데에서 별·하트 반짝임이 터지고 문 빛 표시가 aqua로 돌아올 때 한 번 번쩍임
+- DONE (claude/project-thread-d1pgr2): 마법사 피격 프레임 — `generate_wizard.py`에 Hurt 2프레임(눈 질끈, 몸 젖힘)을 그려 HitStun 회전 대체 연출과 함께 쓰기 (에디터 툴 재실행 필요)
 - DONE (claude/project-thread-j06mzc): 레벨 재설계 검증 — PR #15 마지막 커밋(방 리듬 `RoomLayout.PickMidBossIndex`·중간보스 뒤 휴식, `RoomShaper` 양 갈래·선반 모양, 테스트)을 `adversarial-reviewer`로 리뷰하고 지적 사항 수정 (리뷰 전에 자동 머지됨)
 - DONE (claude/project-thread-j06mzc): 방 전환 연출 — 문을 지날 때 짧은 페이드(0.15초 어둡게 → 밝게), 방마다 배경 색조를 조금씩 바꿔 이동감 주기 (`ChunkStreamer.EnterRoom`, 시차 배경)
 - DONE (claude/project-thread-j06mzc): 세로 방 함정 — 탑 방에 가시·불기둥 (벽 점프는 아래 BLOCKED 항목으로 분리)
