@@ -23,6 +23,7 @@ namespace IBlameYou.Systems
         Cave,          // 천장이 낮은 동굴 + 화염 분출구
         CrumbleBridge, // 밟으면 무너지는 발판 다리
         ElementGate,   // 맵 퍼즐: 정해진 속성 마법을 맞혀야 열리는 봉인문
+        MovingBridge,  // 컨트롤 퍼즐: 점프로 못 건너는 낭떠러지를 오가는 움직이는 발판을 타고 건넌다
         Arena,         // 들어가면 문이 닫히고 적이 나오는 전투 구역
         EliteArena,    // 정예 전투 구역
         Rest,          // 체크포인트 (회복)
@@ -40,7 +41,8 @@ namespace IBlameYou.Systems
         PlayerStart,
         Arena,       // X ~ X + Width - 1 칸이 전투 구역. 이 청크의 Deferred 적이 그 안에서 나온다
         Exit,
-        ElementGate  // X 열을 바닥(Y)부터 천장까지 막는 봉인문 (씬에서만 생기는 벽이라 검증에서는 열린 것으로 본다). ElementIndex 속성 마법으로 열린다
+        ElementGate,  // X 열을 바닥(Y)부터 천장까지 막는 봉인문 (씬에서만 생기는 벽이라 검증에서는 열린 것으로 본다). ElementIndex 속성 마법으로 열린다
+        MovingPlatform // Width칸 발판이 Y 행(윗면 = Y + 1)에서 X부터 오른쪽으로 Direction칸까지 오간다. 검증에서는 지나는 모든 칸을 발판으로 본다
     }
 
     public enum StageEnemy

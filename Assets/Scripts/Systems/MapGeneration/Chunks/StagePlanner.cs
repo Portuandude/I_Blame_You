@@ -22,6 +22,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Cave: return 30f;
                 case ChunkKind.CrumbleBridge: return 30f;
                 case ChunkKind.ElementGate: return 30f;
+                case ChunkKind.MovingBridge: return 30f;
                 case ChunkKind.Arena: return 70f;
                 case ChunkKind.EliteArena: return 100f;
                 case ChunkKind.Rest: return 20f;
@@ -99,6 +100,7 @@ namespace IBlameYou.Systems
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Cave, progress < 0.15f ? 0f : 1.5f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Climb, progress < 0.2f ? 0f : 1.2f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.CrumbleBridge, progress < 0.3f ? 0f : 0.8f + progress),
+                new KeyValuePair<ChunkKind, float>(ChunkKind.MovingBridge, progress < 0.2f ? 0f : 0.6f + 0.4f * progress),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.ElementGate,
                     allowGate && progress >= GateMinProgress && progress <= GateMaxProgress ? 0.7f : 0f),
             };

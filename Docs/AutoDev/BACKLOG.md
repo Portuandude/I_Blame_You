@@ -20,6 +20,6 @@
 - DONE (claude/project-thread-nsj3x2): 새 Input System 이전 검토 — 레거시 Input Manager 사용처 목록과 이전 계획만 문서로 (코드 변경은 사람 확인 후) → [InputSystemMigration.md](../InputSystemMigration.md)
 - DONE (claude/project-thread-nsj3x2): 일시정지 메뉴 볼륨 조절 — Esc 메뉴에 배경음악/효과음 슬라이더 (시작 화면과 같은 SaveData 저장)
 - DONE (claude/project-thread-nsj3x2): 런 결과 통계 — 처치 수, 도달 레벨, 받은 피해, 연 봉인문/돌파 구역 수를 게임오버·클리어 창에 표시
-- TODO: 컨트롤 퍼즐 1종 — 일정 주기로 움직이는 발판을 타고 건너는 청크 (`ChunkGenerator` + `StageValidator`는 발판이 없을 때도 막히지 않게, 낭떠러지 복귀 규칙 활용)
-- TODO: 봉인문 보강 — 땅 속성 가시를 문 앞에서 쓰면 안내, 문 근처에서는 유도 마법이 적보다 문을 우선하지 않도록 안내 문구 정리
+- DONE (claude/project-thread-nsj3x2): 컨트롤 퍼즐 1종 — 일정 주기로 움직이는 발판을 타고 건너는 청크 (`ChunkGenerator` + `StageValidator`는 발판이 없을 때도 막히지 않게, 낭떠러지 복귀 규칙 활용)
+- DONE (claude/project-thread-nsj3x2): 봉인문 보강 — 땅 속성 가시를 문 앞에서 쓰면 안내, 문 근처에서는 유도 마법이 적보다 문을 우선하지 않도록 안내 문구 정리
 - DONE (claude/project-thread-nsj3x2): 중간보스 기획 초안 — GDD에 스테이지 1 중간보스 후보 2~3개(패턴, 위치)를 문서로만 (구현은 사람 확인 후) → [MidBossDraft.md](../MidBossDraft.md). 후보 선택은 사람 필요

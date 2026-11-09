@@ -3,8 +3,8 @@
 최신 실행이 맨 위.
 
 ## 2026-11-09 00:35 UTC
-- 브랜치/PR: `claude/project-thread-nsj3x2` → #5 (CI 통과 후 자동 머지됨, EditMode 테스트 7/7 Unity에서 실행 확인) → 이후 작업은 develop에서 같은 브랜치를 다시 만들어 새 PR
-- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요)
+- 브랜치/PR: `claude/project-thread-nsj3x2` → #5, #6 (둘 다 CI 통과 후 자동 머지, EditMode 테스트 Unity에서 실행 확인) → #7
+- 완료: 전투 구역 보상 (ArenaReward 회복 구슬, adversarial 리뷰 LOW 3건 중 2건 반영), 저장/불러오기 기초 (SaveData: 설정·최고 기록, 시작 화면 볼륨/기록, 리뷰 APPROVE, LOW 2건 반영), EditMode 테스트 기반 (청크 생성기 asmdef 분리 + StageGeneratorTests 7개, 로컬 mono로 통과 확인), GDD 현행화, 피격 이펙트 (HitFlash 흰색 번쩍임 + 파편, SpriteFlash 셰이더), 사운드 보강 (Jump/Dash/Hurt/EnemyDie/LevelUp), 새 Input System 이전 검토 문서, 맵 퍼즐 기초 (봉인문 청크: 속성 마법으로 여는 문, 테스트 3개 추가 — 리뷰 APPROVE, PR #6), 백로그에 새 항목 5개 추가, 일시정지 메뉴 볼륨 조절, 런 결과 통계(게임오버/클리어 창), 중간보스 기획 초안 문서(사람이 후보 선택 필요) → 여기까지 PR #6 자동 머지. 이후 PR #7: 봉인문 보강(문 앞 땅 가시 안내, 리뷰 APPROVE), 컨트롤 퍼즐 MovingBridge(움직이는 발판 청크, 리뷰 UNVERIFIED=Unity 실행 불가로 읽기 검토만, MEDIUM 1건·LOW 2건 반영: 발판이 플레이어를 속도로 실어 나름, 시작 위치 보정, 발판 높이 테스트)
 - 실패/보류: 없음 (진행 중)
 - 다음 실행 메모: 진행 중
 

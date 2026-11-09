@@ -50,6 +50,7 @@ namespace IBlameYou.Player
         private float dashTimeRemaining;
         private float dashDirection;
         private float defaultGravityScale;
+        private Vector2 platformVelocity; // 움직이는 발판이 이번 물리 프레임에 넘겨준 속도 (한 번 쓰고 비운다)
 
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
@@ -80,6 +81,12 @@ namespace IBlameYou.Player
         {
             groundCheck = check;
             groundLayer = layer;
+        }
+
+        // MovingPlatform이 자기 FixedUpdate(먼저 실행)에서 부른다. 발판 위에 있는 프레임에만 들어온다.
+        public void SetPlatformVelocity(Vector2 velocity)
+        {
+            platformVelocity = velocity;
         }
 
         private void Awake()
@@ -166,6 +173,9 @@ namespace IBlameYou.Player
 
         private void FixedUpdate()
         {
+            float carryX = platformVelocity.x;
+            platformVelocity = Vector2.zero;
+
             if (isDashing)
             {
                 rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
@@ -181,7 +191,7 @@ namespace IBlameYou.Player
             {
                 isRunning = false;
                 jumpQueued = false;
-                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                rb.linearVelocity = new Vector2(carryX, rb.linearVelocity.y);
                 return;
             }
 
@@ -208,7 +218,7 @@ namespace IBlameYou.Player
 
             float speed = isRunning ? runSpeed : walkSpeed;
             if (combatStats != null) speed *= combatStats.TotalMoveMultiplier; // 특성 이동속도, 젖음/붙잡기 둔화
-            rb.linearVelocity = new Vector2(moveInput * speed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(moveInput * speed + carryX, rb.linearVelocity.y);
 
             if (Mathf.Abs(moveInput) > 0.01f)
             {

@@ -33,6 +33,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Boss: tint = new Color(0.34f, 0.09f, 0.09f); break;
                 case ChunkKind.Rest: tint = new Color(0.11f, 0.2f, 0.25f); break;
                 case ChunkKind.ElementGate: tint = new Color(0.17f, 0.12f, 0.24f); break;
+                case ChunkKind.MovingBridge: tint = new Color(0.12f, 0.17f, 0.24f); break;
                 case ChunkKind.Cave: tint = new Color(0.08f, 0.08f, 0.11f); break;
             }
 
