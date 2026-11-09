@@ -103,8 +103,7 @@ namespace IBlameYou.EditorTools
 
         private static (AnimatorController controller, Sprite defaultSprite) GeneratePlayerAnimations()
         {
-            // 플레이어는 전부 마법사 아트. Idle은 직접 준비한 그림이고, Run/Jump/Dash/Attack은 그 마법사 한 장을 변형해서 만든
-            // 임시 프레임이다(기울임/늘임/회전/지팡이 휘두르기/수정 빛). 동작별 그림이 생기면 같은 폴더의 PNG만 바꿔 다시 실행하면 된다.
+            // 플레이어는 전부 마법사 아트. 모든 동작을 Tools/ArtGen/generate_wizard.py가 같은 몸으로 그린다. 그림을 다시 만들면 이 메뉴를 다시 실행하면 된다.
             // Idle 프레임 0~6은 스태프 수정의 빛이 꺼진 상태에서 켜진 상태까지 단계적으로 밝아지는 순서라서, 왕복(핑퐁) 재생하면 빛이 자연스럽게 켜졌다 꺼진다.
             var idleFrames = PingPong(LoadNamedFrames($"{WizardSpriteRoot}/Idle", "wizard_idle_", 0, 6, padWidth: 2, prepare: EnsureWizardSpriteImport));
             var walkFrames = LoadNamedFrames($"{WizardSpriteRoot}/Walk", "wizard_walk_", 0, 7, padWidth: 2, prepare: EnsureWizardSpriteImport);
