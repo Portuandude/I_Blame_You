@@ -66,6 +66,19 @@ namespace IBlameYou.Systems
             if (player != null && player == touching) touching = null;
         }
 
+        // 돌파 직후 상자가 생긴 자리에 플레이어가 가만히 서 있으면(Rigidbody 수면) Enter가 오지 않을 수 있어, 처음 한 번 직접 겹침을 본다.
+        private void Start()
+        {
+            var box = GetComponent<BoxCollider2D>();
+            if (box == null) return;
+            var center = (Vector2)transform.position + box.offset;
+            foreach (var hit in Physics2D.OverlapBoxAll(center, box.size, 0f))
+            {
+                var player = TrapCommon.PlayerFrom(hit);
+                if (player != null) { touching = player; break; }
+            }
+        }
+
         // 영창 중처럼 열 수 없었던 경우, 닿아 있는 동안 매 프레임 다시 묻는다.
         private void Update()
         {
