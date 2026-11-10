@@ -89,6 +89,7 @@ public static class StagePreview
                     case FeatureKind.MovingPlatform:
                         for (int i = 0; i < f.Width + f.Direction; i++) grid[ox + f.X + i, f.Y] = i < f.Width ? 'M' : '-';
                         break;
+                    case FeatureKind.PlatformSwitch: grid[ox + f.X, f.Y] = 'S'; break;
                     case FeatureKind.ElementGate: for (int y = f.Y; y < ChunkData.Height; y++) grid[ox + f.X, y] = 'G'; break;
                     case FeatureKind.Enemy: grid[ox + f.X, f.Y] = EnemyChar(f.Enemy, f.Deferred); break;
                 }
