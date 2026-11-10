@@ -1403,6 +1403,67 @@ def rune_sigil(kind):
     return finish(img, w, h, 3)
 
 
+def rune_switch_sprite():
+    """마법 스위치 룬 기둥 (가로 100 × 세로 180 = 1 × 1.8유닛, 중앙 피벗). 위쪽 둥근 받침(바닥에서 1.25유닛)에
+    속성 문양(RuneSigil_*)이 얹힌다. 통통한 돌 기둥 + 받침 테두리 + 작은 룬 홈."""
+    w, h = 100, 180
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    stone, light, dark = rgba("#6b6380"), rgba("#8f88a6"), rgba("#4a4459")
+    # 받침돌 (아래가 넓다)
+    d.rounded_rectangle([14 * S, 160 * S, 86 * S, 180 * S], radius=6 * S, fill=OUTLINE)
+    d.rounded_rectangle([18 * S, 163 * S, 82 * S, 177 * S], radius=4 * S, fill=dark)
+    # 기둥 몸통
+    d.rounded_rectangle([30 * S, 70 * S, 70 * S, 166 * S], radius=10 * S, fill=OUTLINE)
+    d.rounded_rectangle([34 * S, 74 * S, 66 * S, 163 * S], radius=8 * S, fill=stone)
+    d.rounded_rectangle([36 * S, 78 * S, 44 * S, 158 * S], radius=4 * S, fill=light)  # 왼쪽 빛
+    # 룬 홈 (흰빛 작은 표식 두 개)
+    for y in (104, 134):
+        d.polygon([(52 * S, (y - 7) * S), (58 * S, y * S), (52 * S, (y + 7) * S), (46 * S, y * S)], fill=(235, 230, 255, 200))
+    # 문양 받침 (둥근 고리, 가운데는 문양이 덮는다)
+    dot(d, 50 * S, 55 * S, 40 * S, OUTLINE)
+    dot(d, 50 * S, 55 * S, 36 * S, stone)
+    ring(d, 50 * S, 55 * S, 36 * S, 4 * S, light)
+    dot(d, 50 * S, 55 * S, 30 * S, dark)
+    # 받침 위아래 작은 장식 돌기
+    for x in (14, 86):
+        dot(d, x * S, 55 * S, 7 * S, OUTLINE)
+        dot(d, x * S, 55 * S, 5 * S, light)
+    return finish(img, w, h)
+
+
+def rune_switch_glow_frames():
+    """스위치가 켜져 있는 동안 문양 둘레에 도는 빛 고리 + 반짝임 (흰색으로 그려 게임에서 속성 색으로 물들인다). 100 × 100."""
+    frames = []
+    w, h = 100, 100
+    for i in range(8):
+        t = i / 8
+        img = blank(w, h)
+        d = ImageDraw.Draw(img)
+        S = SS
+        pulse = 0.5 + 0.5 * math.sin(t * math.tau)
+        r = 40 + 4 * pulse
+        ring(d, 50 * S, 50 * S, r * S, 3 * S, (255, 255, 255, int(120 + 100 * pulse)))
+        for k in range(3):  # 고리를 따라 도는 반짝임 3개
+            a = (t + k / 3) * math.tau
+            x, y = 50 + r * math.cos(a), 50 + r * math.sin(a)
+            for dx, dy in ((1, 0), (0, 1)):
+                d.line([((x - 6 * dx) * S, (y - 6 * dy) * S), ((x + 6 * dx) * S, (y + 6 * dy) * S)], fill=(255, 255, 255, 255), width=2 * S)
+            dot(d, x * S, y * S, 2.5 * S, (255, 255, 255, 255))
+        frames.append(finish(img, w, h, 3))
+    return frames
+
+
+def generate_rune_switch():
+    base = os.path.join(ROOT, "Assets", "Resources", "Stage")
+    for name, frames in {"RuneSwitch": [rune_switch_sprite()], "RuneSwitchGlow": rune_switch_glow_frames()}.items():
+        folder = os.path.join(base, name)
+        os.makedirs(folder, exist_ok=True)
+        for i, img in enumerate(frames):
+            img.save(os.path.join(folder, f"{i:02d}.png"))
+
+
 def generate_stage_art():
     base = os.path.join(ROOT, "Assets", "Resources", "Stage")
     sets = {
@@ -1421,6 +1482,8 @@ def generate_stage_art():
         "RuneSigil_Fire": [rune_sigil("Fire")],
         "RuneSigil_Water": [rune_sigil("Water")],
         "RuneSigil_Wind": [rune_sigil("Wind")],
+        "RuneSwitch": [rune_switch_sprite()],
+        "RuneSwitchGlow": rune_switch_glow_frames(),
     }
     for name, frames in sets.items():
         folder = os.path.join(base, name)
@@ -1492,6 +1555,10 @@ def generate_boss_art():
 if __name__ == "__main__":
     import sys
 
+    if "--switch" in sys.argv:  # 마법 스위치 룬 그림만
+        generate_rune_switch()
+        print("switch done")
+        sys.exit(0)
     if "--hurt" in sys.argv:  # 적 경직 그림만 (다른 그림은 그대로)
         generate_goblin_hurt()
         print("hurt done")
