@@ -89,6 +89,10 @@ namespace IBlameYou.Core
         public static string RecentDefeatSummary(bool devMode) =>
             ClearPace.RecentDefeatSummary(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
 
+        // 최근 쓰러진 곳 평균 진행도(0~100). 기록이 없으면 -1. 게임오버 창 "평소보다 더/덜 갔다" 비교용 (기록하기 전에 읽는다).
+        public static int RecentDefeatAverage(bool devMode) =>
+            ClearPace.RecentDefeatAverage(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
+
         // 최근 10판 "누구 탓?" 판정 (BlameVerdict.AddRecent 형식). 모드별로 따로. 클리어·게임오버 모두.
         public static void RecordBlame(float wastedA, float wastedB)
         {
