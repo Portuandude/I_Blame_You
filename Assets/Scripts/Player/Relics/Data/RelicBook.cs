@@ -17,7 +17,11 @@ namespace IBlameYou.Player
         HawkEye,     // 매의 눈: 치명타 확률 +8%
         Featherfall, // 깃털 부적: 낭떠러지 낙하 피해 15% → 5%
         VampireFang, // 흡혈 송곳니: 적 처치 시 체력 +3
-        FocusBead    // 집중 구슬: 실패로 날린 마나 25% 돌려받기 (신비 10과 합산)
+        FocusBead,   // 집중 구슬: 실패로 날린 마나 25% 돌려받기 (신비 10과 합산)
+        ShadowVeil,  // 그림자 베일: 대쉬가 끝난 뒤 0.5초 더 무적
+        BloodPact,   // 피의 계약: 마나가 모자라면 모자란 만큼 체력으로 대신 낸다 (40초에 한 번, 체력 1은 남긴다)
+        PhoenixFeather // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
+        // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
     public static class RelicBook
@@ -35,11 +39,17 @@ namespace IBlameYou.Player
         public const float FeatherfallDamageRatio = 0.05f;
         public const float VampireFangHeal = 3f;
         public const float FocusBeadRefund = 0.25f;
+        public const float ShadowVeilGrace = 0.5f;
+        public const float BloodPactHealthPerMana = 1f;
+        public const float BloodPactCooldown = 40f;
+        public const float BloodPactMinHealthLeft = 1f;
+        public const int PhoenixFeatherSaves = 1;
 
         public static readonly RelicId[] All =
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
-            RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead
+            RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
+            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather
         };
 
         public static string Name(RelicId id)
@@ -55,6 +65,9 @@ namespace IBlameYou.Player
                 case RelicId.HawkEye: return "매의 눈";
                 case RelicId.Featherfall: return "깃털 부적";
                 case RelicId.VampireFang: return "흡혈 송곳니";
+                case RelicId.ShadowVeil: return "그림자 베일";
+                case RelicId.BloodPact: return "피의 계약";
+                case RelicId.PhoenixFeather: return "불사조 깃털";
                 default: return "집중 구슬";
             }
         }
@@ -72,6 +85,9 @@ namespace IBlameYou.Player
                 case RelicId.HawkEye: return $"치명타 확률 +{HawkEyeCrit * 100f:0}%";
                 case RelicId.Featherfall: return $"낭떠러지 낙하 피해 15% → {FeatherfallDamageRatio * 100f:0}%";
                 case RelicId.VampireFang: return $"적 처치 시 체력 +{VampireFangHeal:0}";
+                case RelicId.ShadowVeil: return $"대쉬가 끝난 뒤 {ShadowVeilGrace:0.0}초 더 무적";
+                case RelicId.BloodPact: return $"마나가 모자라면 체력으로 대신 내기 ({BloodPactCooldown:0}초에 한 번)";
+                case RelicId.PhoenixFeather: return "쓰러질 피해를 한 번 버티고 체력 30%로";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
@@ -83,12 +99,21 @@ namespace IBlameYou.Player
             {
                 case RelicId.IronCloak:
                 case RelicId.SwiftBoots:
-                case RelicId.Featherfall: return "A";
+                case RelicId.Featherfall:
+                case RelicId.ShadowVeil: return "A";
                 case RelicId.WrathCharm:
                 case RelicId.HawkEye:
                 case RelicId.VampireFang: return "B";
                 default: return "공용";
             }
+        }
+
+        // 피의 계약: 모자란 마나(shortfall)를 체력으로 낼 수 있으면 true와 그 체력 값을 돌려준다.
+        // 낸 뒤에도 체력이 BloodPactMinHealthLeft 이상 남아야 한다 (이 유물로 쓰러지지 않는다). 재사용 대기는 부르는 쪽이 본다.
+        public static bool BloodPactCost(float health, float shortfall, out float cost)
+        {
+            cost = Math.Max(0f, shortfall) * BloodPactHealthPerMana;
+            return shortfall > 0f && health - cost >= BloodPactMinHealthLeft;
         }
 
         // 상자 하나가 보여 줄 후보. 시드와 상자가 놓인 청크로 정해지므로 같은 맵·같은 보유 유물이면 늘 같은 후보가 나온다.
