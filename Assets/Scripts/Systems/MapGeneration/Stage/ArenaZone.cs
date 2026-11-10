@@ -95,6 +95,7 @@ namespace IBlameYou.Systems
             CreateGate(area.xMin + 0.5f);
             CreateGate(area.xMax - 0.5f);
             LockCamera();
+            GameAudio.PlaySfx("ArenaLock", 0.8f);
             StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
 
             foreach (var spawn in spawns)
