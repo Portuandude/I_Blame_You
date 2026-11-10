@@ -3,10 +3,11 @@
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
 ## 2026-11-10 09:15 UTC
-- 브랜치/PR: `claude/project-thread-4vxux1` → #26 (develop 대상, 자동 머지 켬. #25 위에서 이어 작업 — #25가 CI 진행 중이었음)
-- 완료 (6개, 동작 변경은 모두 적대적 리뷰 APPROVE): 모래시계 남은 횟수 이어하기 저장(`RunSave.Data.freeFalls`), HUD 유물 횟수 배지(모래시계·불사조 깃털, 0이면 어둡게), 미니맵 스위치 퍼즐 룬 색 점(`ChunkStreamer.SwitchElements`), 보스 곡 `Boss`(보스·중간보스 구역 잠김 → 보스 곡, 돌파·이탈 → 던전 곡), 진행 효과음 4종(Checkpoint·GateOpen·Pickup·ArenaLock), 결과 징글(클리어 팡파르·게임오버, 배경음악 끔). 백로그 6개 추가(3개 처리)
-- 실패/보류: 없음. 작업 6개로 `handoff` 규칙대로 여기서 끝냄
-- 다음 실행 메모: 플레이테스트 필요: 보스 곡이 너무 시끄럽거나 빠르지 않은지(152 BPM), 새 효과음 크기(특히 ArenaLock 쿵, Pickup), 징글 길이(2.6~2.8초)와 배경음악이 꺼지는 느낌, 미니맵 룬 점이 작은 미니맵에서 보이는지, 유물 배지 숫자 가독성
+- 브랜치/PR: `claude/project-thread-4vxux1` → #26 (develop 대상, 자동 머지 켬. #25 위에서 시작, #25 머지 뒤 develop의 사람 결정 백로그를 merge)
+- 사람 결정 4건(2026-11-10) 중 2건 처리: 낭떠러지 건너뛰기 허용(`Docs/LevelDesign.md` 숙련자 지름길, `StageValidator.RunJumpReach` 등 참고 상수), 중간보스 보상 = 체력 50% 즉시 회복 + 유물 상자 확정(`RoomShaper.IsMidBossArena` + 테스트)
+- 완료 (그 전 6개, 동작 변경은 모두 적대적 리뷰 APPROVE): 모래시계 남은 횟수 이어하기 저장(`RunSave.Data.freeFalls`), HUD 유물 횟수 배지(모래시계·불사조 깃털, 0이면 어둡게), 미니맵 스위치 퍼즐 룬 색 점(`ChunkStreamer.SwitchElements`), 보스 곡 `Boss`(보스·중간보스 구역 잠김 → 보스 곡, 돌파·이탈 → 던전 곡), 진행 효과음 4종(Checkpoint·GateOpen·Pickup·ArenaLock), 결과 징글(클리어 팡파르·게임오버, 배경음악 끔). 백로그 6개 추가(3개 처리)
+- 실패/보류: 없음. 작업 8개로 `handoff` 규칙대로 여기서 끝냄. 남은 사람 결정 2건(미니맵 던그리드 방식, 체크포인트 제거 + 15분 스테이지)은 다음 실행 맨 위
+- 다음 실행 메모: 플레이테스트 필요: 중간보스 처치 시 체력 회복·유물 상자 위치, 보스 곡이 너무 시끄럽거나 빠르지 않은지(152 BPM), 새 효과음 크기(특히 ArenaLock 쿵, Pickup), 징글 길이(2.6~2.8초)와 배경음악이 꺼지는 느낌, 미니맵 룬 점이 작은 미니맵에서 보이는지, 유물 배지 숫자 가독성
 
 ## 2026-11-10 09:00 UTC
 - 브랜치/PR: `claude/project-thread-b2uz39` → #25 (develop 대상, 자동 머지 켬, editmode CI 대기)
