@@ -12,6 +12,8 @@ Assets/Resources/Audio/{Music,SFX} 에 저장한다. 게임은 런타임에 Reso
 import os
 import wave
 
+import sys
+
 import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -326,6 +328,27 @@ def relic_open():
     return normalize(fade_edges(lowpass(out + tail, 9000)))
 
 
+def switch_on():
+    """마법 스위치 룬이 켜짐: 맑은 종 두 음(5도 위로) + 반짝이는 고음 꼬리."""
+    n = int(0.9 * SR)
+    out = np.zeros(n)
+    for k, name in enumerate(["E6", "B6"]):
+        m = int(0.75 * SR)
+        f = note_hz(name)
+        bell = (osc("sine", f, m) * 0.55 + osc("sine", f * 2.76, m) * 0.18 * env_exp(m, 14.0)) * env_exp(m, 5.0)
+        mix_at(out, bell, int(k * 0.09 * SR))
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 6.0) * 0.08
+    return normalize(fade_edges(lowpass(out + tail, 10000)))
+
+
+def switch_tick():
+    """스위치 가동이 끝나 감: 짧고 가벼운 나무 똑딱 (0.5초마다 울린다)."""
+    n = int(0.12 * SR)
+    click = osc("tri", note_hz("A5"), n) * env_exp(n, 45.0)
+    knock = bandpass(noise(n), 1500, 4000) * env_exp(n, 80.0) * 0.5
+    return normalize(fade_edges(click + knock))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -462,10 +485,13 @@ def main():
         "Hit_Fire": hit_fire, "Hit_Water": hit_water, "Hit_Wind": hit_wind, "Hit_Earth": hit_earth,
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
-        "RelicOpen": relic_open,
+        "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
     }
+    only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
+    if only:
+        sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
@@ -475,6 +501,9 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
+    if only:
+        print("done")
+        return
     reseed("Menu")
     save_wav(menu_theme(), "Music", "Menu.wav")
     reseed("Dungeon")
