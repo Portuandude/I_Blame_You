@@ -5,8 +5,10 @@ namespace IBlameYou.Enemies
 {
     // 적 전용 피격 그림 (로드맵 "적별 전용 경직 그림"): 맞은 순간 X 눈 + 팔 번쩍 + 몸 찌그러짐 그림, 이어서 반쯤 돌아온 그림을 잠깐 보여 준다.
     // 그림은 Resources/Enemies/<오브젝트 이름>/Hurt (Tools/ArtGen/generate_sprites.py --hurt, 고블린 4종). 다른 적 그림과 같은 아래 가운데 피벗.
+    // 슬라임 무리(속성 슬라임 Slime_<속성>, 어미 슬라임, 슬라임 기사)는 모두 Enemies/Slime/Hurt (decorate_slime.py --hurt)를 쓴다.
+    // 속성 슬라임·기사는 ElementRecolor(실행 순서 1000)가 이 그림을 같은 이름의 회색판·투구판으로 다시 바꿔 끼운다.
     // PlayerHurtPose처럼 Animator가 그림을 정한 뒤 LateUpdate에서 덮어쓴다 (애니메이터 클립·프리팹 재생성 불필요).
-    // HitStun의 몸 젖히기(Visual 회전)와 머리 위 별(StunStars)은 그대로 겹친다. 그림이 없는 적(슬라임·보스)은 아무것도 하지 않는다.
+    // HitStun의 몸 젖히기(Visual 회전)와 머리 위 별(StunStars)은 그대로 겹친다. 그림이 없는 적(보스)은 아무것도 하지 않는다.
     // 이름은 스폰 뒤에 정해지므로(EnemySpawner.Spawn) 처음 맞을 때 읽는다.
     public class EnemyHurtPose : MonoBehaviour
     {
@@ -37,10 +39,18 @@ namespace IBlameYou.Enemies
             if (!loaded)
             {
                 loaded = true;
-                frames = EffectLibrary.LoadRuntimeFrames($"Enemies/{name}/Hurt", new Vector2(0.5f, 0f));
+                frames = EffectLibrary.LoadRuntimeFrames($"Enemies/{FolderFor(name)}/Hurt", new Vector2(0.5f, 0f));
             }
             if (health.IsDead || frames == null || frames.Length < 2 || spriteRenderer == null) return;
             elapsed = 0f;
+        }
+
+        // 슬라임 킹은 보스라 제외 (자기 연출이 있다).
+        internal static string FolderFor(string objectName)
+        {
+            if (objectName == "Slime" || objectName.StartsWith("Slime_") || objectName == "MotherSlime" || objectName.StartsWith("SlimeKnight"))
+                return "Slime";
+            return objectName;
         }
 
         private void LateUpdate()
