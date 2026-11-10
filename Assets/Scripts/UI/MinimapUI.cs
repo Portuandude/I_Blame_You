@@ -204,6 +204,16 @@ namespace IBlameYou.UI
                     Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
                 }
 
+                // 돌파한 전투·정예·중간보스 방: 방 칸 오른쪽 아래에 작은 초록 체크 (보스 방은 클리어 화면이 대신한다)
+                if (art.Check != null && room.Kind != RoomKind.Boss && streamer.HasClearedArena(room.Index))
+                {
+                    float s = body.width * 0.55f;
+                    var previous = GUI.color;
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(body.xMax - s * 0.75f, body.yMax - s * 0.75f, s, s), art.Check, ScaleMode.ScaleToFit, true);
+                    GUI.color = previous;
+                }
+
                 // 안 연 협동 봉인문: 방 칸 오른쪽 아래에 작은 자물쇠 (열면 사라짐)
                 if (art.Lock != null && streamer.HasClosedPairGate(room.Index))
                 {
@@ -259,7 +269,7 @@ namespace IBlameYou.UI
             public bool Loaded;
             public GUIStyle Tile;
             public GUIStyle Panel;
-            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock;
+            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock, Check;
         }
 
         private static MapArt art;
@@ -277,6 +287,7 @@ namespace IBlameYou.UI
             art.Rest = Resources.Load<Texture2D>("UI/HUD/Heart");
             art.Start = Resources.Load<Texture2D>("UI/HUD/Flag");
             art.Lock = Resources.Load<Texture2D>("UI/HUD/MapLock");
+            art.Check = Resources.Load<Texture2D>("UI/HUD/MapCheck");
         }
 
         private static GUIStyle NineSlice(string path, int border)
@@ -337,7 +348,7 @@ namespace IBlameYou.UI
             var items = new[]
             {
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작")
+                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Check, "돌파")
             };
             float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
