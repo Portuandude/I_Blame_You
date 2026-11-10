@@ -127,19 +127,7 @@ namespace IBlameYou.UI
             return names.ToString();
         }
 
-        // 레벨 막대 아래: 가진 유물 이름 (특성 포인트 안내가 뜨는 줄 아래).
-        private void DrawRelicList()
-        {
-            if (relics == null || relics.Owned.Count == 0) return;
-            var names = new System.Text.StringBuilder("<color=#ffd84d>유물</color> ");
-            for (int i = 0; i < relics.Owned.Count; i++)
-            {
-                if (i > 0) names.Append(" · ");
-                names.Append(RelicBook.Name(relics.Owned[i]));
-            }
-
-            GUI.Label(new Rect(12f, 256f, 520f, 22f), names.ToString(), small);
-        }
+        // DrawRelicList: 레벨 막대 아래 유물 목록 (SkillHUD.RelicIcons.cs)
 
         private void DrawRelicWindow()
         {
@@ -172,7 +160,8 @@ namespace IBlameYou.UI
                 DrawCard(card, owner);
 
                 string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
-                GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 20f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
+                DrawRelicIcon(id, new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f)); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
+                GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
