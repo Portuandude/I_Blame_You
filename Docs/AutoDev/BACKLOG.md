@@ -13,7 +13,7 @@
 - DONE (claude/project-thread-5764qw): 최근 쓰러진 곳 기록 — 게임오버 때 진행도·주 경로 순번을 최근 5개 저장(`ClearPace` 형식 재사용), 시작 화면 최근 기록 줄 아래에 "최근 쓰러진 곳 평균 진행도 P%". 어려운 구간 찾기용
 - DONE (claude/project-thread-5764qw): 나침반 획득 연출 — 나침반을 고르는 순간 큰 지도가 1.5초 자동으로 펼쳐지며 흐린 칸들이 차례로 나타난다 (`MinimapUI`, 발견 연출 재사용)
 - DONE (claude/project-thread-5764qw): 결과 창 "누구 탓?" 판정 — 날린 마나가 더 많은 쪽 탓(차이 5 이하·10% 이하는 반반), 이름 색으로 한 줄 (`Chunks/BlameVerdict` + 테스트)
-- TODO: 최근 탓 기록 — 판마다 판정(A/B/반반/없음)을 최근 10개 저장, 시작 화면에 "최근 10판 탓: A 4 · B 5 · 반반 1". 두 사람이 서로 놀릴 거리 (`BlameVerdict`, `SaveData`)
+- DONE (claude/project-thread-5764qw): 최근 탓 기록 — 판마다 판정(A/B/반반/없음)을 최근 10개 저장, 시작 화면에 "최근 10판 탓: A 4 · B 5 · 반반 1". 두 사람이 서로 놀릴 거리 (`BlameVerdict`, `SaveData`)
 - TODO: 유물 네잎 클로버 — 유물 상자 후보가 3개 → 4개 (`RelicBook`, 유물 창 너비, 아이콘 `generate_relic_icons.py`)
 - TODO: 탓 판정 연출 — 게임오버 창에서 판정 줄이 0.6초 늦게 "쾅" 도장처럼 찍히고(크기 1.6→1, 흔들림), 탓 받은 쪽 이름 색으로 번쩍 (`SkillHUD.EndScreen`)
 
