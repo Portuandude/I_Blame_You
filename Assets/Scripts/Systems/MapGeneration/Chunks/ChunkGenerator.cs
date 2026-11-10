@@ -517,7 +517,27 @@ namespace IBlameYou.Systems
             int travel = gap - MovingPlatformWidth;
             chunk.AddFeature(FeatureKind.MovingPlatform, MovingBridgeLeft, top - 1, MovingPlatformWidth, travel);
             chunk.AddFeature(FeatureKind.MovingPlatform, secondLeft, top - 1, MovingPlatformWidth, travel);
+
+            // 변형: 이중 스위치 발판. 두 발판 모두 멈춰 있고, 각 발판 건너편 첫 칸(기둥 첫 칸, 건너편 절벽 첫 칸)에 서로 다른 속성 룬.
+            // 첫 룬은 출발 쪽 절벽에서, 둘째 룬은 기둥 위에서 쏴서 맞힌다 (둘 다 10칸 거리).
+            if (chunk.Difficulty >= DoubleSwitchBridgeMinDifficulty && rng.Next(DoubleSwitchBridgeOneIn) == 0)
+            {
+                int count = chunk.Features.Count;
+                for (int i = count - 2; i < count; i++)
+                {
+                    var platform = chunk.Features[i];
+                    platform.SwitchDriven = true;
+                    chunk.Features[i] = platform;
+                }
+                int first = rng.Next(GateElementCount);
+                int second = (first + 1 + rng.Next(GateElementCount - 1)) % GateElementCount;
+                chunk.Features.Add(new ChunkFeature { Kind = FeatureKind.PlatformSwitch, X = pillar, Y = top, Width = 1, ElementIndex = first });
+                chunk.Features.Add(new ChunkFeature { Kind = FeatureKind.PlatformSwitch, X = right, Y = far, Width = 1, ElementIndex = second });
+            }
         }
+
+        public const float DoubleSwitchBridgeMinDifficulty = 0.8f;
+        public const int DoubleSwitchBridgeOneIn = 2;
 
         private static void BuildRest(ChunkData chunk, int[] heights)
         {

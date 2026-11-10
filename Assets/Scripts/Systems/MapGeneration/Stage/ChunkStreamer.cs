@@ -321,9 +321,13 @@ namespace IBlameYou.Systems
                 }
             }
 
-            // 마법 스위치 룬: 같은 청크의 스위치 발판을 움직인다 (발판을 먼저 다 만든 뒤에 잇는다).
-            foreach (var f in switchFeatures)
-                IBlameYou.Puzzles.PlatformSwitch.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), (Element)f.ElementIndex, switchPlatforms);
+            // 마법 스위치 룬: k번째 룬이 k번째 스위치 발판을 움직인다 (발판을 먼저 다 만든 뒤에 잇는다).
+            for (int k = 0; k < switchFeatures.Count; k++)
+            {
+                var f = switchFeatures[k];
+                var linked = k < switchPlatforms.Count ? new[] { switchPlatforms[k] } : new MovingPlatform[0];
+                IBlameYou.Puzzles.PlatformSwitch.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), (Element)f.ElementIndex, linked);
+            }
 
             if (rooms != null) LoadRoomExtras(index, root, origin);
         }

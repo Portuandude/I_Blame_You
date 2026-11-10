@@ -44,7 +44,8 @@ namespace IBlameYou.Systems
         Exit,
         ElementGate,  // X 열을 바닥(Y)부터 천장까지 막는 봉인문 (씬에서만 생기는 벽이라 검증에서는 열린 것으로 본다). ElementIndex 속성 마법으로 열린다
         MovingPlatform, // Width칸 발판이 Y 행(윗면 = Y + 1)에서 X부터 오른쪽으로 Direction칸까지 오간다. 검증에서는 지나는 모든 칸을 발판으로 본다
-        PlatformSwitch, // 마법 스위치 룬. (X, Y)는 룬이 선 칸 (바닥 바로 위). ElementIndex 속성 마법을 맞히면 이 청크의 SwitchDriven 발판이 잠시 움직인다.
+        PlatformSwitch, // 마법 스위치 룬. (X, Y)는 룬이 선 칸 (바닥 바로 위). ElementIndex 속성 마법을 맞히면 짝 발판이 잠시 움직인다.
+                        // 짝: 청크의 k번째 PlatformSwitch ↔ k번째 SwitchDriven MovingPlatform (Features 순서)
                         // 몸이 지나가는 트리거라 길을 막지 않는다 (검증에서는 무시)
         Reward          // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
     }
