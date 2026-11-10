@@ -5,20 +5,25 @@ namespace IBlameYou.Systems
     public static class RunTally
     {
         // 예: "B 최애 마법: 불(12회)". 모두 0이면 빈 문자열.
-        public static string Favorite(string who, string kind, int[] counts, string[] names)
+        // colors(선택): 속성별 "RRGGBB" 16진 색. 주면 속성 이름만 rich text 색 태그로 감싼다 (GUIStyle.richText 필요).
+        public static string Favorite(string who, string kind, int[] counts, string[] names, string[] colors = null)
         {
             if (counts == null || names == null) return "";
             int best = -1;
             for (int i = 0; i < counts.Length && i < names.Length; i++)
                 if (counts[i] > 0 && (best < 0 || counts[i] > counts[best])) best = i;
-            return best < 0 ? "" : $"{who} 최애 {kind}: {names[best]}({counts[best]}회)";
+            if (best < 0) return "";
+            string name = names[best];
+            if (colors != null && best < colors.Length && !string.IsNullOrEmpty(colors[best]))
+                name = $"<color=#{colors[best]}>{name}</color>";
+            return $"{who} 최애 {kind}: {name}({counts[best]}회)";
         }
 
         // 결과 창 한 줄: B 공격 마법과 A 방어막 최애를 " · "로 잇는다. 둘 다 없으면 빈 문자열.
-        public static string Line(int[] spells, int[] shields, string[] names)
+        public static string Line(int[] spells, int[] shields, string[] names, string[] colors = null)
         {
-            string b = Favorite("B", "마법", spells, names);
-            string a = Favorite("A", "방어막", shields, names);
+            string b = Favorite("B", "마법", spells, names, colors);
+            string a = Favorite("A", "방어막", shields, names, colors);
             if (b.Length == 0) return a;
             return a.Length == 0 ? b : b + " · " + a;
         }

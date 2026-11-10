@@ -25,5 +25,17 @@ namespace IBlameYou.Tests.EditMode
             Assert.AreEqual("B 최애 마법: 물(1회)", RunTally.Line(new[] { 0, 1, 0, 0, 0 }, new int[5], Names));
             Assert.AreEqual("", RunTally.Line(new int[5], new int[5], Names));
         }
+    
+        [Test]
+        public void Colors_WrapOnlyElementName()
+        {
+            var colors = new[] { "FF7326", "4099FF", "8CFFB3", "BF8C4D", "D9BFFF" };
+            Assert.AreEqual("B 최애 마법: <color=#FF7326>불</color>(12회) · A 최애 방어막: <color=#BF8C4D>땅</color>(4회)",
+                RunTally.Line(new[] { 12, 0, 0, 0, 0 }, new[] { 0, 0, 0, 4, 1 }, Names, colors));
+            // 색이 비었거나 모자라면 이름만 그대로
+            Assert.AreEqual("B 최애 마법: 바람(1회)", RunTally.Favorite("B", "마법", new[] { 0, 0, 1, 0, 0 }, Names, new[] { "FF0000" }));
+            Assert.AreEqual("B 최애 마법: 불(1회)", RunTally.Favorite("B", "마법", new[] { 1, 0, 0, 0, 0 }, Names, new[] { "" }));
+            Assert.AreEqual("", RunTally.Line(new int[5], new int[5], Names, colors));
+        }
     }
 }
