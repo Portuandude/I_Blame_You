@@ -15,6 +15,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/MapHelmet.png 16x16  미니맵 중간보스 방 투구
   Assets/Resources/UI/HUD/MapElite.png  16x16  미니맵 정예 방 보라 별
   Assets/Resources/UI/HUD/MapLock.png   16x16  미니맵 안 연 협동 봉인문 자물쇠 (방 칸 오른쪽 아래에 작게)
+  Assets/Resources/UI/HUD/MapCheck.png  16x16  미니맵 돌파한 전투·정예 방 초록 체크 (방 칸 오른쪽 아래에 작게)
   Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/Button.png         32x32  둥근 버튼 보통 (dusk→lilac 젤리 + 크림 테두리 + 아래 두께). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/ButtonHover.png    32x32  마우스를 올렸을 때 (조금 밝게 + 빛 테두리)
@@ -307,6 +308,18 @@ def map_lock():
     return small(img, n, n)
 
 
+def map_check():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    pts = [(2.2, 8.6), (6.2, 12.6), (13.8, 3.6)]
+    d.line([(x * SS, y * SS) for x, y in pts], fill=OUTLINE, width=int(4.6 * SS), joint="curve")   # 외곽선
+    d.line([(x * SS, y * SS) for x, y in pts], fill=(110, 230, 120, 255), width=int(2.4 * SS), joint="curve")  # 초록 체크
+    for x, y in pts:  # 끝을 둥글게
+        d.ellipse([(x - 1.2) * SS, (y - 1.2) * SS, (x + 1.2) * SS, (y + 1.2) * SS], fill=(110, 230, 120, 255))
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -328,6 +341,7 @@ def generate():
         "MapHelmet": map_helmet(),
         "MapElite": map_elite(),
         "MapLock": map_lock(),
+        "MapCheck": map_check(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
