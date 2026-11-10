@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-c1p8f6): 아래 조작 도움말 줄 귀엽게 — `DrawHelp`의 키 이름(A/D, Space, Shift 등)을 작은 둥근 키캡(`CuteButton` 그림 재사용)으로, 줄 전체에 반투명 알약 배경(`Pill`)
+- DONE (claude/project-thread-c1p8f6): 특성 포인트 안내 강조 — 레벨 막대 아래 "특성 포인트 N (Tab)"을 gold 알약 배경 + 숨 쉬듯 밝아졌다 어두워짐, 포인트가 생긴 순간 한 번 팝
+- DONE (claude/project-thread-c1p8f6, 처치 회복은 흡혈 송곳니와 겹쳐 쓰러짐 1회 버티기로 대신): 유물 종류 늘리기 (로드맵) — 특수 효과 유물 3종을 `Player/Relics`에 추가 (예: 대쉬 뒤 0.5초 무적, 마나 부족 시 체력으로 대신 내기 1회/구역, 처치 시 작은 회복). `RelicBook` 이름·설명 + EditMode 테스트
+- DONE (claude/project-thread-c1p8f6): 새 유물 효과 연출 — 그림자 베일 무적 동안 플레이어가 보라 반투명으로 깜빡임 + 잔상, 피의 계약을 쓸 때 berry 하트 조각이 별(마나)로 바뀌며 흩어짐, 불사조 깃털이 버틸 때 gold 깃털·불꽃 고리 + "버텼다!" 띠 (특성 버티기와 공용, `HealthSystem.DeathPrevented`)
+- DONE (claude/project-thread-c1p8f6, 일시정지 요약은 글자 그대로): 유물 아이콘 13종 — `generate_hud.py`에 유물별 24px 아이콘(둥글고 통통, 채도 높게)을 그려 유물 상자 카드·HUD 유물 목록·일시정지 요약에 이름 앞에 표시 (`Resources/UI/HUD/Relics/<RelicId>.png`, 없으면 글자만)
+- DONE (claude/project-thread-c1p8f6, 고블린 4종만 — 슬라임은 원본 그림이라 아래 새 항목으로): 적별 전용 경직 그림 (로드맵) — 슬라임·고블린·고블린 궁수 피격 2프레임(눈 질끈 X, 몸 찌그러짐)을 `generate_sprites.py`로 그려 경직 동안 표시 (지금은 몸 젖히기 + 별로 대신)
 - DONE (claude/project-thread-u6xniz): 버튼 귀엽게 — `UI/CuteButton.cs` 둥근 젤리 버튼(보통/올림/누름 `generate_hud.py` Button*), 일시정지·유물·특성 창·시작 화면
 - DONE (claude/project-thread-u6xniz): 알림 피드 귀엽게 — 줄마다 반투명 알약(`Pill`) + 왼쪽 색 띠(실패 berry) + 오른쪽에서 튕기며 들어옴
 - DONE (claude/project-thread-u6xniz): 화면 가운데 안내 문구 귀엽게 — `UI/SkillHUD.Notice.cs` 외곽선 + gold 테두리 + 크림 글자, 0.35초 팝
