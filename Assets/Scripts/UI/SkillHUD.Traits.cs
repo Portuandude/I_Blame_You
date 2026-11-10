@@ -41,6 +41,7 @@ namespace IBlameYou.UI
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return; // 영창/미니게임 중에는 열지 않는다
 
             traitWindowOpen = true;
+            traitWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
             control.Locked = true;
             Time.timeScale = 0f;
         }
@@ -104,36 +105,37 @@ namespace IBlameYou.UI
                 var trait = TraitTree.All[i];
                 int rank = progression.Rank(trait);
                 var column = new Rect(rect.x + 20f + i * (columnWidth + gap), rect.y + 80f, columnWidth, rect.height - 100f);
-                GUI.Box(column, GUIContent.none, panel);
-
+                var previousMatrix = BeginCardPop(column, traitWindowOpenedAt, i);
                 string owner = TraitTree.Owner(trait);
+                DrawCard(column, owner);
+
                 string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
                 GUI.Label(new Rect(column.x + 10f, column.y + 8f, column.width - 20f, 26f),
                     $"<b>{TraitTree.Name(trait)}</b>  <color={ownerColor}>{owner}</color>", label);
                 GUI.Label(new Rect(column.x + 10f, column.y + 34f, column.width - 20f, 22f), $"{rank} / {TraitTree.MaxRank}", label);
 
-                var bar = new Rect(column.x + 10f, column.y + 60f, column.width - 20f, 8f);
-                GUI.DrawTexture(bar, Texture2D.grayTexture);
-                GUI.color = new Color(1f, 0.85f, 0.4f);
-                GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * rank / TraitTree.MaxRank, bar.height), Texture2D.whiteTexture);
-                GUI.color = previous;
+                // 랭크 막대: gold 캡슐 바 (SkillHUD.Bars.cs, 빛 테두리 여백 BarGlow만큼 안쪽으로)
+                var bar = new Rect(column.x + 10f + BarGlow, column.y + 58f, column.width - 20f - 2f * BarGlow, BarHeight);
+                DrawCapsuleBar(bar, (float)rank / TraitTree.MaxRank, 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
 
-                GUI.Label(new Rect(column.x + 10f, column.y + 74f, column.width - 20f, 22f), TraitTree.PerPoint(trait), small);
+                GUI.Label(new Rect(column.x + 10f, column.y + 80f, column.width - 20f, 22f), TraitTree.PerPoint(trait), small);
 
                 float y = column.y + 104f;
                 foreach (int milestone in TraitTree.Milestones)
                 {
                     bool unlocked = rank >= milestone;
                     string color = unlocked ? "#ffd84d" : "#8a8a8a";
-                    GUI.Label(new Rect(column.x + 10f, y, column.width - 20f, 44f),
+                    DrawMilestoneStar(new Rect(column.x + 8f, y, 14f, 14f), unlocked);
+                    GUI.Label(new Rect(column.x + 24f, y, column.width - 32f, 44f),
                         $"<color={color}>{milestone}: {TraitTree.MilestoneText(trait, milestone)}</color>", small);
                     y += 44f;
                 }
 
                 GUI.enabled = progression.CanRaise(trait);
-                if (GUI.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기"))
+                if (GUI.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기", cardButton))
                     progression.Raise(trait);
                 GUI.enabled = true;
+                GUI.matrix = previousMatrix;
             }
         }
     }

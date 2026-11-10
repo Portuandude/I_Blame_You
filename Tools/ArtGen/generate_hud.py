@@ -15,6 +15,11 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/MapHelmet.png 16x16  미니맵 중간보스 방 투구
   Assets/Resources/UI/HUD/MapElite.png  16x16  미니맵 정예 방 보라 별
   Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
+  Assets/Resources/UI/HUD/Button.png         32x32  둥근 버튼 보통 (dusk→lilac 젤리 + 크림 테두리 + 아래 두께). 9분할 사방 10픽셀
+  Assets/Resources/UI/HUD/ButtonHover.png    32x32  마우스를 올렸을 때 (조금 밝게 + 빛 테두리)
+  Assets/Resources/UI/HUD/ButtonActive.png   32x32  누르고 있을 때 (아래 두께가 눌려 2픽셀 내려감, 조금 어둡게)
+  Assets/Resources/UI/HUD/CardFrame.png 32x32  특성·유물 카드 테두리 (흰 둥근 테두리 + 안쪽 옅은 빛, 코드가 소유자 색으로 물들임). 9분할 사방 10픽셀
+  Assets/Resources/UI/HUD/Pill.png      24x24  알림 피드 줄 배경 (반투명 night 알약 + 옅은 크림 테두리). 9분할 좌우 11픽셀
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
 """
@@ -185,6 +190,61 @@ def panel():
     return small(img, n, n)
 
 
+def button(state):
+    """둥근 젤리 버튼. state: normal / hover / active. 아래 3픽셀은 두께(누르면 납작해짐)."""
+    n = 32
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    body = {"normal": ("5a46a8", "8a70e0"), "hover": ("6e58c4", "a68cf0"), "active": ("4a3a90", "7058c0")}[state]
+    top = 2 if state == "active" else 0  # 눌리면 윗면이 내려간다
+    # 바깥 외곽선 + 아래 두께 (진한 보라)
+    d.rounded_rectangle([0, 0, n * SS - 1, n * SS - 1], radius=9 * SS, fill=OUTLINE)
+    d.rounded_rectangle([1 * SS, (1 + top) * SS, (n - 1) * SS - 1, (n - 1) * SS - 1], radius=8 * SS, fill=hexrgba("2a2150"))
+    # 크림 테두리 → 몸통 (아래쪽 진한 색, 위쪽 밝은 색)
+    face_bottom = n - 4 if state != "active" else n - 2
+    d.rounded_rectangle([1 * SS, (1 + top) * SS, (n - 1) * SS - 1, face_bottom * SS - 1], radius=8 * SS,
+                        fill=CREAM if state != "hover" else hexrgba("ffffff"))
+    d.rounded_rectangle([2.5 * SS, (2.5 + top) * SS, (n - 2.5) * SS - 1, (face_bottom - 1.5) * SS - 1], radius=6.5 * SS,
+                        fill=hexrgba(body[0]))
+    d.rounded_rectangle([2.5 * SS, (2.5 + top) * SS, (n - 2.5) * SS - 1, (face_bottom - 1.5) * SS * 0.62 + (2.5 + top) * SS * 0.38 - 1],
+                        radius=6.5 * SS, fill=hexrgba(body[1]))
+    # 위쪽 반짝 띠 + 왼쪽 위 반짝 점
+    d.rounded_rectangle([5 * SS, (4 + top) * SS, (n - 5) * SS - 1, (6.2 + top) * SS], radius=1.1 * SS,
+                        fill=hexrgba("fff4d6", 150 if state != "active" else 90))
+    d.ellipse([4.5 * SS, (4 + top) * SS, 6.8 * SS, (6.3 + top) * SS], fill=CREAM)
+    out = small(img, n, n)
+    if state == "hover":  # 바깥으로 살짝 번지는 빛 대신 테두리 안쪽을 더 밝게 (9분할이라 바깥 여백은 쓰지 않는다)
+        glow = big(n, n)
+        g = ImageDraw.Draw(glow)
+        g.rounded_rectangle([3 * SS, 3 * SS, (n - 3) * SS - 1, (n - 5) * SS - 1], radius=6 * SS,
+                            outline=hexrgba("ffffff", 110), width=2 * SS)
+        out = Image.alpha_composite(out, small(glow, n, n).filter(ImageFilter.GaussianBlur(0.8)))
+    return out
+
+
+def card_frame():
+    n = 32
+    ring = big(n, n)
+    d = ImageDraw.Draw(ring)
+    d.rounded_rectangle([0, 0, n * SS - 1, n * SS - 1], radius=8 * SS, outline=WHITE, width=int(2.2 * SS))
+    inner = big(n, n)
+    g = ImageDraw.Draw(inner)
+    g.rounded_rectangle([2 * SS, 2 * SS, (n - 2) * SS - 1, (n - 2) * SS - 1], radius=6.5 * SS,
+                        outline=(255, 255, 255, 120), width=int(2 * SS))
+    inner = small(inner, n, n).filter(ImageFilter.GaussianBlur(1.0))
+    return Image.alpha_composite(inner, small(ring, n, n))
+
+
+def pill():
+    n = 24
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    capsule(d, 0, 0, n, n, fill=hexrgba("fff4d6", 110))            # 옅은 크림 테두리
+    capsule(d, 1, 1, n - 1, n - 1, fill=hexrgba("1a1430", 185))    # 반투명 night 몸통
+    capsule(d, 3, 2.5, n - 3, 8, fill=hexrgba("a68cf0", 45))       # 위쪽 유리 반짝
+    return small(img, n, n)
+
+
 def room_tile():
     n = 16
     img = big(n, n)
@@ -243,6 +303,11 @@ def generate():
         "Crown": crown(),
         "Flag": flag(),
         "Panel": panel(),
+        "Button": button("normal"),
+        "ButtonHover": button("hover"),
+        "ButtonActive": button("active"),
+        "Pill": pill(),
+        "CardFrame": card_frame(),
         "RoomTile": room_tile(),
         "MapChest": map_chest(),
         "MapHelmet": map_helmet(),

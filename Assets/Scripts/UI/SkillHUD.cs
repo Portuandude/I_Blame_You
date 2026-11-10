@@ -28,6 +28,7 @@ namespace IBlameYou.UI
             public float Time;
             public string Text;
             public Color Color;
+            public bool Bad; // 실패 알림이면 왼쪽 띠가 berry
         }
 
         private struct SpendRecord
@@ -66,6 +67,8 @@ namespace IBlameYou.UI
         private GUIStyle big;
         private GUIStyle keyBox;
         private GUIStyle input;
+        private GUIStyle menuButton;  // 일시정지 메뉴 큰 버튼 (CuteButton.cs)
+        private GUIStyle cardButton;  // 유물·특성 창 작은 버튼
 
         private static readonly Color ColorA = new Color(0.45f, 0.85f, 1f);
         private static readonly Color ColorB = new Color(1f, 0.65f, 0.35f);
@@ -183,7 +186,7 @@ namespace IBlameYou.UI
             }
 
             var color = bad ? ColorBad : (who == ManaUser.PlayerA ? ColorA : ColorB);
-            feed.Add(new FeedEntry { Time = Time.time, Text = line, Color = color });
+            feed.Add(new FeedEntry { Time = Time.time, Text = line, Color = color, Bad = bad });
             if (feed.Count > MaxFeed) feed.RemoveAt(0);
         }
 
@@ -252,6 +255,19 @@ namespace IBlameYou.UI
                 keyBox.border = new RectOffset(10, 10, 10, 10);
             }
             input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
+            if (panelTexture != null) // 영창 입력 칸도 둥근 패널 (글자는 크림)
+            {
+                input.normal.background = panelTexture;
+                input.focused.background = panelTexture;
+                input.hover.background = panelTexture;
+                input.border = new RectOffset(10, 10, 10, 10);
+                input.padding = new RectOffset(12, 12, 4, 4);
+                input.normal.textColor = OutlinedLabel.Cream;
+                input.focused.textColor = OutlinedLabel.Cream;
+                input.hover.textColor = OutlinedLabel.Cream;
+            }
+            menuButton = CuteButton.Create(20);
+            cardButton = CuteButton.Create(15);
         }
 
         private void OnGUI()
@@ -296,27 +312,75 @@ namespace IBlameYou.UI
             GUILayout.EndArea();
         }
 
+        // 오른쪽 위 알림 피드: 줄마다 반투명 둥근 알약 배경 + 왼쪽 색 띠(실패 berry, 성공은 플레이어/항목 색).
+        // 새 줄은 오른쪽 화면 밖에서 살짝 튕기며 미끄러져 들어오고, 사라질 때는 흐려진다.
+        private const float FeedMaxWidth = 540f;
+        private const float FeedLineHeight = 26f;
+        private const float FeedSlideTime = 0.3f;
+        private static readonly Color FeedBadStripe = new Color(1f, 0.44f, 0.68f); // berry (palette.py)
+
+        private GUIStyle feedText;
+        private GUIStyle feedPill;
+
         private void DrawFeed()
         {
-            float width = 520f;
+            if (feedText == null)
+            {
+                feedText = new GUIStyle(label) { fontSize = 15, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0), clipping = TextClipping.Clip };
+                var pillTexture = Resources.Load<Texture2D>("UI/HUD/Pill");
+                feedPill = new GUIStyle();
+                feedPill.normal.background = pillTexture != null ? pillTexture : SolidTexture(new Color(0.1f, 0.08f, 0.19f, 0.7f));
+                if (pillTexture != null) feedPill.border = new RectOffset(11, 11, 0, 0);
+            }
+
             float y = 12f;
+            var previous = GUI.color;
             foreach (var entry in feed)
             {
-                float alpha = Mathf.Clamp01((FeedLifetime - (Time.time - entry.Time)) / 1.5f);
+                float age = Time.time - entry.Time;
+                float alpha = Mathf.Clamp01((FeedLifetime - age) / 1.5f);
+                var content = new GUIContent(entry.Text);
+                float textWidth = feedText.CalcSize(content).x;
+                float width = Mathf.Min(FeedMaxWidth, textWidth + 34f);
+                float slide = 1f - EaseOutBack(Mathf.Clamp01(age / FeedSlideTime));
+                var pill = new Rect(Screen.width - width - 12f + slide * (width + 24f), y, width, FeedLineHeight - 2f);
+
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                DrawStyle(feedPill, pill);
+
+                var stripe = entry.Bad ? FeedBadStripe : entry.Color;
+                stripe.a = alpha;
+                GUI.color = stripe;
+                GUI.DrawTexture(new Rect(pill.x + 7f, pill.y + 5f, 4f, pill.height - 10f), Texture2D.whiteTexture);
+
                 var color = entry.Color;
                 color.a = alpha;
-                var previous = GUI.color;
                 GUI.color = color;
-                GUI.Label(new Rect(Screen.width - width - 12f, y, width, 24f), entry.Text, label);
-                GUI.color = previous;
-                y += 24f;
+                GUI.Label(new Rect(pill.x + 17f, pill.y, pill.width - 26f, pill.height), content, feedText);
+                y += FeedLineHeight;
             }
+
+            GUI.color = previous;
+        }
+
+        // 0→1, 끝에서 살짝 넘쳤다가 돌아온다 (튕기는 느낌)
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            float u = t - 1f;
+            return 1f + c3 * u * u * u + c1 * u * u;
         }
 
         private void DrawShieldMinigame()
         {
-            if (shieldSkill == null || !shieldSkill.MinigameActive) return;
+            if (shieldSkill == null || !shieldSkill.MinigameActive)
+            {
+                keyLastProgress = -1; // 다음 미니게임에서 칸 기록을 새로 (SkillHUD.Minigame.cs)
+                return;
+            }
 
+            TrackShieldKeys(shieldSkill.Progress);
             string sequence = shieldSkill.Sequence;
             const float keySize = 70f;
             const float gap = 12f;
@@ -328,19 +392,12 @@ namespace IBlameYou.UI
                 $"<color=#73d9ff>A</color> {ElementInfo.KoreanName(shieldSkill.PendingElement)} 방어막 — 순서대로 입력!", big);
 
             for (int i = 0; i < sequence.Length; i++)
-            {
-                var previous = GUI.color;
-                GUI.color = i < shieldSkill.Progress ? new Color(0.4f, 1f, 0.5f) : (i == shieldSkill.Progress ? Color.yellow : Color.white);
-                GUI.Box(new Rect(x + i * (keySize + gap), y, keySize, keySize), sequence[i].ToString(), keyBox);
-                GUI.color = previous;
-            }
+                DrawShieldKey(new Rect(x + i * (keySize + gap), y, keySize, keySize), sequence[i].ToString(), i, shieldSkill.Progress);
 
+            // 남은 시간: 캡슐 바 (초록 → berry, SkillHUD.Bars.cs)
             float ratio = Mathf.Clamp01(shieldSkill.TimeLeft / shieldSkill.TimeLimit);
-            GUI.Box(new Rect(x, y + keySize + 10f, totalWidth, 10f), GUIContent.none);
-            var bar = GUI.color;
-            GUI.color = Color.Lerp(ColorBad, new Color(0.4f, 1f, 0.5f), ratio);
-            GUI.Box(new Rect(x, y + keySize + 10f, totalWidth * ratio, 10f), GUIContent.none);
-            GUI.color = bar;
+            var timeColor = Color.Lerp(KeyBerry, KeyLeaf, ratio);
+            DrawCapsuleBar(new Rect(x + BarGlow, y + keySize + 12f, totalWidth - 2f * BarGlow, BarHeight), ratio, 0f, timeColor, timeColor, null);
         }
 
         private void DrawChantInput()
@@ -385,10 +442,23 @@ namespace IBlameYou.UI
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
                 $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost:0}) — 영창하라:", label);
-            GUI.Label(new Rect(x, y - 30f, width, 30f), $"<b>{spell.Chant}</b>", big);
+            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
+
+            var field = new Rect(x, y + 8f, width, 40f);
+            if (mistake) // 틀린 글자가 있으면 입력 칸 둘레를 berry로 (Enter 누르기 전에 알아채게)
+            {
+                var previousColor = GUI.color;
+                GUI.color = KeyBerry;
+                // 테두리만 (입력 칸 배경이 반투명이라 통째로 깔면 칸 전체가 붉게 비친다 — 리뷰 MEDIUM)
+                GUI.DrawTexture(new Rect(field.x - 3f, field.y - 3f, field.width + 6f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.x - 3f, field.yMax, field.width + 6f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.x - 3f, field.y, 3f, field.height), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.xMax, field.y, 3f, field.height), Texture2D.whiteTexture);
+                GUI.color = previousColor;
+            }
 
             GUI.SetNextControlName("ChantField");
-            chantText = GUI.TextField(new Rect(x, y + 8f, width, 40f), chantText, 40, input);
+            chantText = GUI.TextField(field, chantText, 40, input);
             GUI.FocusControl("ChantField");
 
             // 스킬을 고른 숫자키가 그대로 입력창에 들어가지 않도록, 연 프레임에 들어온 글자는 버린다.
@@ -415,8 +485,9 @@ namespace IBlameYou.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
             var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 186f);
+            var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
-            GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", big);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
@@ -426,6 +497,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
+            GUI.matrix = previousMatrix;
         }
 
         private void DrawStageBar()
@@ -439,22 +511,13 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
         }
 
-        private void DrawNotice()
-        {
-            if (string.IsNullOrEmpty(notice) || Time.time - noticeTime > NoticeDuration) return;
-
-            float alpha = Mathf.Clamp01((NoticeDuration - (Time.time - noticeTime)) / 0.5f);
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, alpha);
-            GUI.Label(new Rect(0f, Screen.height * 0.16f, Screen.width, 40f), notice, big);
-            GUI.color = previous;
-        }
-
         private void DrawStageClear()
         {
+            DrawConfetti(); // 패널 뒤로 별·하트 색종이 (SkillHUD.EndScreen.cs)
             var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 186f);
+            var previousMatrix = BeginEndScreenPop(rect);
             GUI.Box(rect, GUIContent.none, panel);
-            GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
             string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
@@ -464,6 +527,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.matrix = previousMatrix;
         }
     }
 }
