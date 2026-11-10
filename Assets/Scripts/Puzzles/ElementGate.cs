@@ -21,6 +21,7 @@ namespace IBlameYou.Puzzles
         private const float SigilSpacing = 1f;
         private const float ShieldCheckInterval = 0.1f;
         private const float ShieldTouchReach = 1.3f; // 문 가운데에서 플레이어 가운데까지 가로 거리 (문 반폭 0.5 + 몸 반폭 + 여유)
+        private const float ShieldTouchHeight = 2.5f; // 문 바닥에서 이 높이까지만 본다 (윗 발판에서 켠 방어막은 닿은 것으로 치지 않음)
 
         private Element[] sequence;
         private int step;
@@ -200,8 +201,8 @@ namespace IBlameYou.Puzzles
             if (opened || !ShieldStep || Time.time < nextShieldCheck) return;
             nextShieldCheck = Time.time + ShieldCheckInterval;
 
-            Vector2 center = (Vector2)transform.position + Vector2.up * (height / 2f);
-            foreach (var hit in Physics2D.OverlapBoxAll(center, new Vector2(ShieldTouchReach * 2f, height), 0f))
+            Vector2 center = (Vector2)transform.position + Vector2.up * (ShieldTouchHeight / 2f);
+            foreach (var hit in Physics2D.OverlapBoxAll(center, new Vector2(ShieldTouchReach * 2f, ShieldTouchHeight), 0f))
             {
                 var player = TrapCommon.PlayerFrom(hit);
                 if (player != null && TryShield(player)) return;
