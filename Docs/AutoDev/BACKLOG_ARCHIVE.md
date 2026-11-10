@@ -2,6 +2,9 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-rumjet): 미니맵 돌파 표시 — 돌파한 전투·정예·중간보스 방 칸 오른쪽 아래 초록 체크(`generate_hud.py` MapCheck, 보스 방 제외), 큰 지도 범례 "돌파", `ChunkStreamer.HasClearedArena`
+- DONE (claude/project-thread-rumjet): 최근 클리어 기록 5개 — 클리어마다 걸린 시간·목표·방 수를 모드별 `PlayerPrefs`(`Recent.Clears.*`)에 최근 5개, 시작 화면 최고 기록 아래 "최근 N판 평균 … (목표 · 방 평균)" (`ClearPace.AddRecent/RecentSummary` + 테스트)
+- DONE (claude/project-thread-rumjet): 탐험가의 나침반 유물 — `RelicId.Compass`(15), 미니맵 `MinimapRules.Look`(나침반이면 안 가 본 방 흐린 칸 + 흐린 종류 아이콘, 실선 전체 연결) + 테스트, 아이콘 `generate_relic_icons.py`, 큰 지도 제목 설명
 - DONE (claude/project-thread-rumjet): 게임오버 창 도달 위치 — "쓰러진 곳: 주 경로 N/M번째 방 (곁방) · 진행도 P% · 버틴 시간" 크림색 한 줄 (`ClearPace.DescribeDefeat` + 테스트, `StageEvents.PathStep/InSideRoom`)
 - DONE (claude/project-thread-rumjet): 이어하기 시작 곡 — 이어하기면 `ArenaZone.StageMusicFor(resume.progress)`로 시작 곡 (지금은 이어하기 버튼이 없어 대비용)
 - DONE (claude/project-thread-rumjet): 결과 창 목표 시간 비교 — 클리어 창에 "목표 15분 00초보다 N분 SS초 빠름(초록)/느림(주황) · 방 N개 (주 경로 · 곁방)" 한 줄, `Chunks/ClearPace` + 테스트, `StageEvents.TargetSeconds/MainRooms/SideRooms`
