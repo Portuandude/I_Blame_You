@@ -11,6 +11,10 @@
 - TODO (사람 필요: 15분 플레이테스트 뒤 판단): 숨 고르기 방 채우기 — 체크포인트가 빠진 휴식(Rest) 방이 빈 평지가 됐다. 회복 없이 볼거리만(반짝이는 버섯·나비 장식, 다음 방 미리보기 표지판 등) 두거나, 방 리듬 완충을 이동 방으로 바꿀지 플레이테스트 뒤 판단. 회복 구슬을 두면 회복 수지가 다시 커지므로 넣지 않는다
 - DONE (claude/project-thread-6aea2a): 체크포인트 그림·소리 생성기 정리 — `generate_sprites.py`의 Checkpoint 프레임, `generate_vfx.py` CheckpointPillar, `generate_audio.py` Checkpoint 항목에 "제거됨(2026-11-10)" 표시하거나 샘 연출로 바꿔 쓰기 (`VfxPlayer.CheckpointPillar`는 쓰는 곳 없음)
 
+- DONE (claude/project-thread-6aea2a): 미니맵 새 방 발견 연출 — 처음 들어간 방의 칸이 작은 지도에서 0.3초 동안 커졌다 줄며 "톡" 나타나고(통통 튀는 크기 곡선), 통로 실선이 그 방 쪽으로 이어지는 느낌. 방 종류 아이콘은 칸이 다 커진 뒤 반짝 1회 (`MinimapUI`, 방문 시각은 `ChunkStreamer.RoomEntered`로 기록)
+- TODO: 결과 창 목표 시간 비교 — 클리어 결과 창에 "목표 15분" 대비 걸린 시간(빠름 초록·느림 주황)과 이번 시드의 방 수를 한 줄로. 15분 조정이 맞는지 사람이 플레이테스트로 바로 보게 (`SkillHUD.EndScreen`)
+- TODO: 이어하기 시작 곡 — 스테이지 전환 저장이 생기면 이어하기 때 `ArenaZone.StageMusicFor(진행도)`로 곡을 고른다 (`PlaytestBootstrap.BuildWorld`가 늘 Dungeon). 지금은 저장이 없어 우선순위 낮음
+
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
