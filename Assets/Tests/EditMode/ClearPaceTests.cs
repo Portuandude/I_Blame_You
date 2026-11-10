@@ -40,6 +40,27 @@ namespace IBlameYou.Tests.EditMode
         }
 
         [Test]
+        public void Recent_KeepsNewestFiveAndAverages()
+        {
+            string list = "";
+            for (int i = 1; i <= 7; i++) list = ClearPace.AddRecent(list, 800f + i * 10f, 900f, 20 + i);
+            // 최신 5개: 870, 860, 850, 840, 830 → 평균 850초 = 14분 10초, 방 27..23 → 평균 25
+            StringAssert.StartsWith("870,900,27;860,900,26", list);
+            Assert.AreEqual(5, list.Split(';').Length);
+            Assert.AreEqual("최근 5판 평균 14분 10초 (목표 15분 00초 · 방 평균 25개)", ClearPace.RecentSummary(list));
+        }
+
+        [Test]
+        public void Recent_IgnoresBrokenEntriesAndEmpty()
+        {
+            Assert.AreEqual("", ClearPace.RecentSummary(""));
+            Assert.AreEqual("", ClearPace.RecentSummary(null));
+            Assert.AreEqual("최근 1판 평균 10분 00초", ClearPace.RecentSummary("x,1;600,0,0;bad"));
+            Assert.AreEqual("abc", ClearPace.AddRecent("abc", 0f, 900f, 10));
+            Assert.AreEqual("600,900,19", ClearPace.AddRecent("broken", 600.9f, 900f, 19));
+        }
+
+        [Test]
         public void NoRooms_OmitsRoomPart_NoTarget_IsEmpty()
         {
             Assert.AreEqual("목표 15분 00초보다 0분 10초 느림", ClearPace.Describe(910f, 900f, 0, 0));
