@@ -255,7 +255,10 @@ namespace IBlameYou.Core
             int mask = SaveData.RelicCodexMask(devMode);
             int columns = Mathf.Clamp(Mathf.FloorToInt((Screen.width - 80f) / 96f), 3, 6);
             int rows = (all.Length + columns - 1) / columns;
-            const float cell = 96f, cellHeight = 84f;
+            const float cell = 96f;
+            // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄인다 (리뷰 LOW)
+            float cellHeight = Mathf.Clamp((Screen.height - 20f - 126f) / rows, 50f, 84f);
+            float iconSize = Mathf.Min(44f, cellHeight - 36f);
             float width = columns * cell + 40f;
             float height = 70f + rows * cellHeight + 56f;
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
@@ -282,10 +285,10 @@ namespace IBlameYou.Core
                 if (icon != null)
                 {
                     GUI.color = known ? Color.white : new Color(0.15f, 0.12f, 0.25f, 0.6f); // 모르는 유물은 어두운 실루엣
-                    GUI.DrawTexture(new Rect(cellRect.center.x - 22f, cellRect.y + 4f, 44f, 44f), icon, ScaleMode.ScaleToFit);
+                    GUI.DrawTexture(new Rect(cellRect.center.x - iconSize / 2f, cellRect.y + 4f, iconSize, iconSize), icon, ScaleMode.ScaleToFit);
                     GUI.color = previous;
                 }
-                GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + 50f, cellRect.width - 4f, 32f),
+                GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
             }
 
