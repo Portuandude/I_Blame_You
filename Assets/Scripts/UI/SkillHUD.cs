@@ -168,6 +168,7 @@ namespace IBlameYou.UI
             RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
+            SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms + StageEvents.SideRooms); // 시작 화면 최근 5판 평균
             if (progression != null) SaveData.RecordLevel(progression.Level);
             control.Locked = true;
         }
