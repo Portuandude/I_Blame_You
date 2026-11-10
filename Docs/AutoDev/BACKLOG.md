@@ -12,8 +12,10 @@
 
 - DONE (claude/project-thread-9z5dq9): 결과 창 최애 줄 속성 색 — "B 최애 마법: 불(12회)"에서 속성 이름만 그 속성 색(`ElementInfo.Color`)으로 칠한다 (rich text, `RunTally`에 색 태그 옵션 + 테스트)
 - DONE (claude/project-thread-9z5dq9): 유물 도감 — 지금까지 한 번이라도 고른 유물을 모드별로 저장(`SaveData`, 비트 마스크)하고 시작 화면에 "유물 도감 7/18" 한 줄. 새로 고른 유물이면 유물 창 카드에 "NEW" 표시
-- TODO: 시작 화면 기록 줄 접기 — 기록 줄이 넷(최고·최근 클리어·쓰러진 곳·탓)이라 좁은 창에서 버튼을 밀어낼 수 있다. 창 높이가 모자라면 작은 글씨로 줄이거나 "기록 보기(H)" 토글로 접는다 (`StartMenu`)
-
+- DONE (claude/project-thread-9z5dq9): 시작 화면 기록 줄 접기 — 기록 줄이 넷(최고·최근 클리어·쓰러진 곳·탓)이라 좁은 창에서 버튼을 밀어낼 수 있다. 창 높이가 모자라면 작은 글씨로 줄이거나 "기록 보기(H)" 토글로 접는다 (`StartMenu`)
+- DONE (claude/project-thread-9z5dq9): 결과 창 새 유물 한 줄 — 이번 판에 처음 도감에 오른 유물 수를 결과 창(클리어·게임오버)에 "새 유물 2개 도감에 등록!" 한 줄로 (`SaveData.RecordRelic` 반환값을 런 동안 셈, `RunStats`)
+- TODO: 유물 도감 창 — 시작 화면 "유물 도감 N/M"을 누르면 유물 아이콘 격자 창: 모은 것은 아이콘·이름, 못 모은 것은 흐린 아이콘 + "???". Esc/다시 누르면 닫힘 (`StartMenu`, 아이콘은 `Resources/UI/HUD/Relics`)
+- TODO: 유물 별똥 조각 — 적을 처치하면 15% 확률로 마나 +6 (`RelicId` 맨 뒤, 흡혈 송곳니의 마나 짝, 아이콘 `generate_relic_icons.py`, 테스트)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
