@@ -2,6 +2,13 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-6aea2a): 미니맵 던그리드 방식 — 가 본 방만 네모 칸으로 그린다. **안 가 본 방은 네모를 그리지 않고**, 가 본 방에서 이어지는 통로 실선만 남겨 "그쪽에 방이 더 있다"는 것만 보이게. 방 종류 아이콘·룬 점도 가 본 방에만. Tab 크게 보기도 같은 규칙. 표시 규칙은 순수 함수로 분리해 테스트
+- DONE (claude/project-thread-6aea2a): 체크포인트 제거, 스테이지 15분 내외 — 휴식 체크포인트(수정)를 없애고(코드는 Trash 규칙대로 이동, 런 진행 저장·이어하기는 스테이지 시작 지점 기준으로 정리하거나 함께 제거하고 문서에 이유 기록), 스테이지 1 목표 플레이 시간을 30분 → **15분 안팎**으로: 방 수·전투 방 비율·경로 길이 조정, 중간보스는 진행도 55% 유지. `StageValidator`의 예상 시간 규칙과 배치 테스트 갱신
+- DONE (claude/project-thread-6aea2a): 체크포인트 그림·소리 생성기 정리 — `generate_sprites.py`의 Checkpoint 프레임, `generate_vfx.py` CheckpointPillar, `generate_audio.py` Checkpoint 항목에 "제거됨(2026-11-10)" 표시하거나 샘 연출로 바꿔 쓰기 (`VfxPlayer.CheckpointPillar`는 쓰는 곳 없음)
+- DONE (claude/project-thread-6aea2a): 미니맵 새 방 발견 연출 — 처음 들어간 방의 칸이 작은 지도에서 0.3초 동안 커졌다 줄며 "톡" 나타나고(통통 튀는 크기 곡선), 통로 실선이 그 방 쪽으로 이어지는 느낌. 방 종류 아이콘은 칸이 다 커진 뒤 반짝 1회 (`MinimapUI`, 방문 시각은 `ChunkStreamer.RoomEntered`로 기록)
+- DONE (claude/project-thread-6aea2a): 후반 던전 곡 변주 — 진행도 50% 이후(중간보스 뒤) 같은 분위기지만 더 빠르고 화려한 `Dungeon2` 곡(`generate_audio.py`, 다른 조·멜로디)으로 바꿔 런 후반에 지루하지 않게. 보스 곡에서 돌아갈 때도 진행도에 맞는 곡으로 (`ArenaZone.LeaveBossMusic`의 StageMusic을 진행도로 고르기)
+- DONE (claude/project-thread-6aea2a): 착지·슬라임 피격 효과음 — 높은 곳에서 떨어져 착지할 때 폭신한 `Land`(낙하 속도 기준, 작은 점프는 소리 없음), 슬라임 무리가 맞을 때 말랑한 `SquishHit`(고블린은 기존 Hit_ 소리 유지). 너무 자주 울리지 않게 볼륨·쿨다운
+- DONE (claude/project-thread-6aea2a): 정예 등장 경고 — 정예(어미 슬라임·고블린 전사)가 나오는 전투 구역이 잠기면 낮은 경고음 `EliteWarn` + 화면 가장자리 보라 깜빡임 0.6초 + 안내 "정예 등장!" (`ArenaZone.Begin`, `IsBoss`처럼 `IsElite`)
 - DONE (claude/project-thread-4vxux1, 사람 결정 2026-11-10): 중간보스 처치 보상 — 체력 50% 즉시 회복 + 유물 상자 확정(회복 구슬 없음), `RoomShaper.IsMidBossArena` + 테스트
 - DONE (claude/project-thread-4vxux1, 사람 결정 2026-11-10: 허용): 낭떠러지 건너뛰기 정리 — 막지 않고 `Docs/LevelDesign.md`에 숙련자 지름길로 명시, `StageValidator.RunJumpReach` 등 참고 상수 (검증은 걷기 기준 유지)
 - DONE (claude/project-thread-4vxux1): 결과 징글 — `Jingle_Clear`(상승 셋잇단 + 화음 팡파르)·`Jingle_Defeat`(반음씩 처지는 와와와와), 결과 창이 처음 그려질 때 `GameAudio.StopMusic` + 징글 (`SkillHUD.MarkEndScreenShown`)
