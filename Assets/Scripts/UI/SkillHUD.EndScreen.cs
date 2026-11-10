@@ -107,13 +107,44 @@ namespace IBlameYou.UI
         }
 
         // 결과 창 "누구 탓?" 판정: 마나를 더 날린 쪽 이름 색(A/B), 반반·아무도 없음은 크림색 (Chunks/BlameVerdict).
+        // 연출: 창이 뜨고 BlameStampDelay 뒤 도장처럼 "쾅" 찍힌다 (1.6배 → 1배, 착지 때 쿵 소리·좌우 흔들림·흰색에서 제 색으로 번쩍).
+        private const float BlameStampDelay = 0.6f;
+        private const float BlameStampDrop = 0.18f;
+        private const float BlameStampShake = 0.3f;
+        private bool blameStamped;
+
         private void DrawBlameVerdict(Rect rect)
         {
+            if (endScreenShownAt < 0f) return;
+            float t = Time.unscaledTime - endScreenShownAt - BlameStampDelay;
+            if (t < 0f) return;
+
             float a = mana.WastedBy(ManaUser.PlayerA), b = mana.WastedBy(ManaUser.PlayerB);
             var who = BlameVerdict.Judge(a, b);
+            var color = who == BlameVerdict.Who.A ? ColorA : who == BlameVerdict.Who.B ? ColorB : OutlinedLabel.Cream;
+
+            var previous = GUI.matrix;
+            if (t < BlameStampDrop)
+            {
+                float k = t / BlameStampDrop;
+                GUIUtility.ScaleAroundPivot(Vector2.one * Mathf.Lerp(1.6f, 1f, k * k), rect.center);
+            }
+            else
+            {
+                if (!blameStamped)
+                {
+                    blameStamped = true;
+                    GameAudio.PlaySfx("ArenaLock", 0.55f, 0f); // 도장 쿵
+                }
+                float since = t - BlameStampDrop;
+                if (since < BlameStampShake) rect.x += Mathf.Sin(since * 70f) * 4f * (1f - since / BlameStampShake);
+                color = Color.Lerp(Color.white, color, Mathf.Clamp01(since / 0.35f));
+            }
+
             var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            style.normal.textColor = who == BlameVerdict.Who.A ? ColorA : who == BlameVerdict.Who.B ? ColorB : OutlinedLabel.Cream;
+            style.normal.textColor = color;
             GUI.Label(rect, BlameVerdict.Describe(a, b), style);
+            GUI.matrix = previous;
         }
 
         // 게임오버 결과 창: 쓰러진 곳(주 경로 몇 번째 방·곁방·진행도)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
