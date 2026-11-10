@@ -349,6 +349,58 @@ def switch_tick():
     return normalize(fade_edges(click + knock))
 
 
+def checkpoint():
+    """체크포인트 켜짐: 따뜻한 패드가 부풀며 맑은 종 아르페지오(C-E-G-C)가 올라가고 반짝이 꼬리, 1.3초."""
+    n = int(1.3 * SR)
+    out = np.zeros(n)
+    m = int(1.1 * SR)
+    pad = sum(osc("sine", note_hz(x), m) for x in ("C4", "E4", "G4")) / 3
+    mix_at(out, pad * env_adsr(m, 0.25, 0.3, 0.6, 0.5) * 0.35, 0)
+    for k, name in enumerate(["C5", "E5", "G5", "C6"]):
+        b = int(0.8 * SR)
+        f = note_hz(name)
+        bell = (osc("sine", f, b) * 0.5 + osc("sine", f * 2.76, b) * 0.15 * env_exp(b, 0.08)) * env_exp(b, 0.3)
+        mix_at(out, bell, int(k * 0.08 * SR))
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 0.35) * 0.06
+    return normalize(fade_edges(lowpass(out + tail, 9000)))
+
+
+def gate_open():
+    """봉인문 열림: 마력 벽이 풀리는 아래로 쓸리는 휘익(노이즈) + 낮은 웅 + 마지막에 밝은 종 두 음, 1.1초."""
+    n = int(1.1 * SR)
+    t = np.arange(n) / SR
+    sweep = lowpass(noise(n), 6000 * np.exp(-t * 3.0) + 300) * env_adsr(n, 0.02, 0.2, 0.5, 0.6) * 0.5
+    hum = osc("sine", 110 * np.exp(-t * 0.8), n) * env_exp(n, 0.35) * 0.5
+    out = sweep + hum
+    for k, name in enumerate(["A5", "E6"]):
+        m = int(0.6 * SR)
+        f = note_hz(name)
+        mix_at(out, osc("sine", f, m) * env_exp(m, 0.2) * 0.4, int((0.35 + k * 0.1) * SR))
+    return normalize(fade_edges(out))
+
+
+def pickup():
+    """보상 구슬·회복 줍기: 동글동글한 두 음 뽀록(위로 튀는 사인), 0.3초."""
+    n = int(0.3 * SR)
+    out = np.zeros(n)
+    for k, (lo, hi) in enumerate([(600, 900), (900, 1400)]):
+        m = int(0.14 * SR)
+        t = np.arange(m) / SR
+        f = lo + (hi - lo) * np.clip(t / 0.05, 0, 1)
+        mix_at(out, osc("sine", f, m) * env_adsr(m, 0.004, 0.04, 0.5, 0.08), int(k * 0.08 * SR))
+    return normalize(fade_edges(out))
+
+
+def arena_lock():
+    """전투 구역 잠김: 무거운 문이 쿵 내려앉는 소리 + 쇠 울림, 0.7초."""
+    n = int(0.7 * SR)
+    t = np.arange(n) / SR
+    thump = osc("sine", 90 * np.exp(-t * 8) + 40, n) * env_exp(n, 0.12)
+    crash = lowpass(noise(n), 2500) * env_exp(n, 0.05) * 0.6
+    clang = sum(osc("square", f, n, 0.3) * w for f, w in ((311, 0.15), (467, 0.1), (703, 0.06))) * env_exp(n, 0.18)
+    return normalize(fade_edges(thump + crash + lowpass(clang, 3000)))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -552,6 +604,7 @@ def main():
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
+        "Checkpoint": checkpoint, "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
