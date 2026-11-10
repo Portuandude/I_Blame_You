@@ -99,7 +99,17 @@ namespace IBlameYou.Systems
             CreateGate(area.xMax - 0.5f);
             LockCamera();
             GameAudio.PlaySfx("ArenaLock", 0.8f);
-            StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
+            if (!bossFight && spawns.Exists(IsElite))
+            {
+                // 정예 등장 경고: 낮은 경고음 + 화면 가장자리 보라 깜빡임 0.6초 + 안내
+                GameAudio.PlaySfx("EliteWarn", 0.85f, 0f);
+                ScreenFlash.EdgeWarn(EliteWarnColor, 0.6f);
+                StageEvents.PostNotice("정예 등장!");
+            }
+            else
+            {
+                StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
+            }
 
             foreach (var spawn in spawns)
             {
@@ -160,6 +170,10 @@ namespace IBlameYou.Systems
             if (follow == null || !previousCameraBounds.HasValue) return;
             follow.SetBounds(previousCameraBounds.Value);
         }
+
+        private static readonly Color EliteWarnColor = new Color(0.62f, 0.25f, 0.95f); // 정예 보라 (미니맵 정예 색과 같은 계열)
+
+        private static bool IsElite(Spawn spawn) => spawn.Kind == StageEnemy.MotherSlime || spawn.Kind == StageEnemy.GoblinWarrior;
 
         private static bool IsBoss(Spawn spawn) =>
             spawn.Kind == StageEnemy.SlimeKing || spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater;
