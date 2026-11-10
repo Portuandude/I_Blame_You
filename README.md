@@ -54,7 +54,7 @@ Play를 누르면 시작 화면이 뜬다. **개발자 모드**(기본 켜짐)�
 수치는 기획 스탯 문서를 옮긴 `Systems/Stats/StatTable.cs`가 기준이고, 피해는 비율식(`공격 × 100 / (100 + 방어)`)으로 계산한다.
 고블린 4종과 스킬 이펙트 그림은 `Tools/ArtGen/generate_sprites.py`로 만든 임시 아트다 (`python3 Tools/ArtGen/generate_sprites.py`로 다시 생성).
 함정/발판/체크포인트/출구 그림도 같은 스크립트가 `Assets/Resources/Stage/`에 만든다.
-배경음악(메뉴/던전), 마법 발동·적중 효과음, 동작 효과음(점프/대쉬/플레이어 피격/적 사망/레벨업)은 `Tools/AudioGen/generate_audio.py`로 합성한 임시 사운드다 (`python3 Tools/AudioGen/generate_audio.py`로 다시 생성).
+배경음악(메뉴/던전/보스 — 보스·중간보스 전투 구역이 잠기면 보스 곡, 돌파하면 던전 곡), 마법 발동·적중 효과음, 동작 효과음(점프/대쉬/플레이어 피격/적 사망/레벨업), 진행 효과음(체크포인트/봉인문 열림/보상 구슬/구역 잠김/스위치), 결과 징글(클리어 팡파르·게임오버, 이때 배경음악은 꺼짐)은 `Tools/AudioGen/generate_audio.py`로 합성한 임시 사운드다 (`python3 Tools/AudioGen/generate_audio.py`로 다시 생성).
 
 ## 폴더 구조
 
@@ -81,7 +81,7 @@ Assets/
   Resources/Effects/{Teleport,Shield,Slash}/ # 순간이동·방어막·베기 (Tools/ArtGen/generate_skill_fx.py, 없으면 LevelArtConfig 옛 프레임)
   Resources/Effects/StunStars/ # 적 경직 어질어질 별 12프레임 (generate_skill_fx.py, Systems/Effects/StunStars)
   Resources/UI/HUD/           # HUD 캡슐 바·빛 테두리·패널·하트·별·왕관·깃발 (Tools/ArtGen/generate_hud.py, UI/SkillHUD.Bars·UI/CapsuleBar)
-  Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp 효과음 (런타임 로드, Tools/AudioGen)
+  Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp·Checkpoint/GateOpen/Pickup/ArenaLock·Jingle_* 효과음 (런타임 로드, Tools/AudioGen)
   Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/체크포인트/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
