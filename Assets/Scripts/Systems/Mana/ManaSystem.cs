@@ -64,7 +64,7 @@ namespace IBlameYou.Systems
             SetCurrent(current + Mathf.Max(amount, 0f));
         }
 
-        // 체크포인트 등에서 마나를 채운다 (사용/낭비 기록에는 넣지 않는다).
+        // 회복 구슬 등에서 마나를 채운다 (사용/낭비 기록에는 넣지 않는다).
         public void Restore(float amount)
         {
             if (amount > 0f) SetCurrent(current + amount);

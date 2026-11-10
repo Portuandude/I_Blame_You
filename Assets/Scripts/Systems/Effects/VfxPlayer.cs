@@ -49,7 +49,7 @@ namespace IBlameYou.Systems
             visual.transform.localPosition = new Vector3(0f, height, 0f);
         }
 
-        // 체크포인트를 켤 때: 수정 발밑에서 aqua 빛기둥이 솟고 큰 반짝임 3개가 떠오른다 (그림은 레벨업 기둥과 같은 틀).
+        // (체크포인트 제거 2026-11-10 뒤로 쓰는 곳 없음 — 샘·구슬 연출에 다시 쓸 수 있게 남김) 수정 발밑에서 aqua 빛기둥이 솟고 큰 반짝임 3개가 떠오른다 (그림은 레벨업 기둥과 같은 틀).
         public static void CheckpointPillar(Vector3 feet)
         {
             var frames = EffectLibrary.LoadRuntimeFrames("Effects/CheckpointPillar");
