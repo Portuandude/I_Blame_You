@@ -630,6 +630,10 @@ namespace IBlameYou.Systems
                 follow.SnapToTarget();
             }
 
+            var entered = rooms.Rooms[index];
+            var pathRoom = !entered.MainPath && entered.ParentIndex >= 0 ? rooms.Rooms[entered.ParentIndex] : entered;
+            StageEvents.PathStep = pathRoom.PathIndex + 1; // 게임오버 창 "쓰러진 곳" (주 경로 몇 번째 방)
+            StageEvents.InSideRoom = !entered.MainPath;
             StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }

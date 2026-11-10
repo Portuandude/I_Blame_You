@@ -14,6 +14,9 @@ namespace IBlameYou.Systems
         public static float TargetSeconds { get; set; }
         public static int MainRooms { get; set; }
         public static int SideRooms { get; set; }
+        // 지금 방이 주 경로 몇 번째인지(1부터, 곁방이면 붙은 방 기준)와 곁방인지 (게임오버 결과 창 "쓰러진 곳"). 외길 모드면 0.
+        public static int PathStep { get; set; }
+        public static bool InSideRoom { get; set; }
 
         public static void PostNotice(string text) => Notice?.Invoke(text);
 
