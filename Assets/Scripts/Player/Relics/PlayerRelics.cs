@@ -50,10 +50,19 @@ namespace IBlameYou.Player
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
+        // 별똥 조각: 적을 쓰러뜨리면 가끔 마나 회복 (노란 글자).
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             var health = GetComponent<HealthSystem>();
-            if (health != null && !health.IsDead) health.Heal(RelicBook.VampireFangHeal);
+            if (health == null || health.IsDead) return;
+            if (Has(RelicId.VampireFang)) health.Heal(RelicBook.VampireFangHeal);
+            if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
+            {
+                var mana = GetComponent<ManaSystem>();
+                if (mana == null) return;
+                mana.Restore(RelicBook.StarShardMana);
+                DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
+            }
         }
 
         // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.
@@ -126,6 +135,7 @@ namespace IBlameYou.Player
                     if (fall != null) fall.DamageRatio = Mathf.Min(fall.DamageRatio, RelicBook.FeatherfallDamageRatio);
                     break;
                 case RelicId.VampireFang:
+                case RelicId.StarShard:
                     if (!listeningKills)
                     {
                         EnemyController.Killed += OnEnemyKilled;
