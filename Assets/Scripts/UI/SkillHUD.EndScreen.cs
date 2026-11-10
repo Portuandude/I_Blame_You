@@ -190,7 +190,10 @@ namespace IBlameYou.UI
             string line = RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames, elementColors);
             int fresh = IBlameYou.Core.RunStats.NewRelics; // 이번 판에 처음 도감에 오른 유물
             if (fresh <= 0) return line;
-            string news = $"<color=#7dff7a>새 유물 {fresh}개 도감 등록!</color>";
+            // 이번 판에 도감을 다 채웠으면 "새 유물 N개" 대신 금색 완성 문구 (한 줄 폭을 아낀다)
+            string news = IBlameYou.Core.RunStats.CodexCompleted
+                ? "<color=#ffd94d>★ 유물 도감 완성! ★</color>"
+                : $"<color=#7dff7a>새 유물 {fresh}개 도감 등록!</color>";
             return line.Length == 0 ? news : line + " · " + news;
         }
 
