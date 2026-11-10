@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-10 03:40 UTC
+- 브랜치/PR: `claude/project-thread-u6xniz` → #22 (develop 대상, 자동 머지 켜 둠)
+- 완료 (진행 중 갱신): 버튼 귀엽게(`UI/CuteButton.cs`), 알림 피드 알약·색 띠·미끄러짐, 가운데 안내 문구 gold 테두리 + 팝(`UI/SkillHUD.Notice.cs`) — 모두 적대적 리뷰 APPROVE. 백로그에 비주얼·유물 항목 5개 추가
+- 실패/보류: 없음
+- 다음 실행 메모: 플레이테스트 필요: 버튼 올림/누름 느낌, 28픽셀 "+ 찍기" 글자 잘림, 피드 미끄러짐 속도(0.3초), 안내 문구 팝 크기
+
 ## 2026-11-09 22:40 UTC
 - 브랜치/PR: `claude/project-thread-8rxr8x` → #21 (develop 대상, 자동 머지 켜 둠 — editmode CI 통과 시 머지)
 - 완료 (7개, 전부 적대적 리뷰 APPROVE): HUD 체력·마나 바(하트·별 아이콘 + 둥근 캡슐 9분할 + 빛 테두리 + 흰 잔상, 체력 낮으면 하트 두근 — `UI/SkillHUD.Bars.cs`), 보스 체력바(왕관 + 캡슐 + 잔상 + 큰 피해 흔들림, 보스 교체·분열 때 잔상 초기화), 레벨·스테이지 진행 바(lilac·gold 캡슐, 레벨업 반짝, 깃발), 머리 위 바·적 체력바(`UI/CapsuleBar` 런타임 Sliced 스프라이트 + 잔상, `BarTrail` 공용), HUD 패널(둥근 보라 반투명 + 크림 테두리 9분할), 적 경직 어질어질 별(`Systems/Effects/StunStars`, 12프레임 — 리뷰 MEDIUM 2건 수정), 미니맵(둥근 패널·방 칸·방 종류 아이콘·아이콘 범례). 그림은 전부 `Tools/ArtGen/generate_hud.py`(→ `Resources/UI/HUD`)와 `generate_skill_fx.py`(StunStars), 런타임 로드라 에디터 툴 재실행 불필요. 백로그가 비어 비주얼 항목 8개 추가(5개 처리)
