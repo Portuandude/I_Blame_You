@@ -138,6 +138,7 @@ class Pose:
         self.draw = 0.0           # 활 시위 당김 0~1
         self.arrow = True
         self.squint = False
+        self.x_eyes = False       # 피격: 눈 대신 X (질끈)
         self.__dict__.update(kw)
 
 
@@ -230,8 +231,12 @@ def draw_goblin(spec, pose):
     eye_y = hy + 0.5 * s  # 투구 챙(hy+2) 아래로 보이게
     # 큰 눈 + 반짝임 점 + 볼터치 (Docs/ArtStyle.md: 귀엽지만 화려하게)
     eye_h = 2.6 * s if pose.squint else 7 * s
-    c.ellipse(hx + 8 * s, eye_y, 6.2 * s, eye_h, rgba("fff8e6"), highlight=False)
-    if not pose.squint:
+    if pose.x_eyes:  # 피격: 질끈 감은 X 눈
+        c.limb((hx + 4.5 * s, eye_y - 3.5 * s), (hx + 11.5 * s, eye_y + 3.5 * s), 2.2 * s, OUTLINE, outline=False)
+        c.limb((hx + 4.5 * s, eye_y + 3.5 * s), (hx + 11.5 * s, eye_y - 3.5 * s), 2.2 * s, OUTLINE, outline=False)
+    else:
+        c.ellipse(hx + 8 * s, eye_y, 6.2 * s, eye_h, rgba("fff8e6"), highlight=False)
+    if not pose.squint and not pose.x_eyes:
         c.ellipse(hx + 10 * s, eye_y - 0.5 * s, 3.8 * s, 4.8 * s, OUTLINE, outline=False, highlight=False)
         c.ellipse(hx + 8.6 * s, eye_y + 1.6 * s, 1.5 * s, 1.5 * s, rgba("fff4d6"), outline=False, highlight=False)
         c.ellipse(hx + 11.4 * s, eye_y - 2.2 * s, 0.8 * s, 0.8 * s, rgba("fff4d6"), outline=False, highlight=False)
@@ -382,6 +387,52 @@ def die_frames(spec):
             img.putalpha(a)
         frames.append(img)
     return frames
+
+
+def hurt_poses(spec):
+    """피격 2프레임: 0 = 크게 젖힘(X 눈, 입 벌림, 팔 번쩍, 몸 찌그러짐), 1 = 반쯤 돌아옴(눈 찡그림)."""
+    big = Pose(lean=-7.0, bob=-2.5, x_eyes=True, mouth_open=True,
+               arm_front=140, fore_front=165, arm_back=-140, fore_back=-165,  # 두 팔 번쩍 (아래 기준 각도, 위쪽 ±140~165)
+               leg_front=14, leg_back=-10, knee_front=10, knee_back=10, weapon=200)
+    half = Pose(lean=-3.5, bob=-1.0, squint=True, mouth_open=True,
+                arm_front=80, fore_front=120, arm_back=-80, fore_back=-110,
+                leg_front=8, leg_back=-6, weapon=150)
+    if spec.kind == "archer":  # 활은 뒤손에 그대로 쥔 채
+        big.arm_back, big.fore_back = 40, 70
+        half.arm_back, half.fore_back = 55, 80
+        big.arrow = half.arrow = False
+    elif spec.kind == "soldier":
+        big.weapon, half.weapon = 170, 120
+    elif spec.kind == "warrior":
+        big.weapon, half.weapon = 190, 160
+    return [big, half]
+
+
+def squash(img, sx, sy):
+    """발밑(아래 가운데)을 고정하고 가로 sx, 세로 sy배로 (몸 찌그러짐)."""
+    w, h = img.size
+    nw, nh = max(1, int(round(w * sx))), max(1, int(round(h * sy)))
+    scaled = img.resize((nw, nh), Image.LANCZOS)
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    out.alpha_composite(scaled.crop((max(0, (nw - w) // 2), 0, max(0, (nw - w) // 2) + min(w, nw), nh)),
+                        (max(0, (w - nw) // 2), h - nh))
+    return out
+
+
+def generate_goblin_hurt():
+    """적 경직 그림 (런타임 로드: Assets/Resources/Enemies/<이름>/Hurt, 아래 가운데 피벗은 EnemyHurtPose가 맞춘다)."""
+    specs = [
+        GoblinSpec("Goblin", "goblin", 160, 128, 1.0, "goblin"),
+        GoblinSpec("GoblinArcher", "goblin_archer", 160, 128, 1.0, "archer"),
+        GoblinSpec("GoblinSoldier", "goblin_soldier", 256, 136, 1.08, "soldier"),
+        GoblinSpec("GoblinWarrior", "goblin_warrior", 300, 200, 1.45, "warrior"),
+    ]
+    out_root = os.path.join(ROOT, "Assets", "Resources", "Enemies")
+    for spec in specs:
+        folder = os.path.join(out_root, spec.name, "Hurt")
+        os.makedirs(folder, exist_ok=True)
+        for i, (pose, (sx, sy)) in enumerate(zip(hurt_poses(spec), [(1.08, 0.9), (1.03, 0.97)])):
+            squash(draw_goblin(spec, pose), sx, sy).save(os.path.join(folder, f"{spec.prefix}_hurt_{i:02d}.png"))
 
 
 def generate_goblins():
@@ -1441,7 +1492,12 @@ def generate_boss_art():
 if __name__ == "__main__":
     import sys
 
+    if "--hurt" in sys.argv:  # 적 경직 그림만 (다른 그림은 그대로)
+        generate_goblin_hurt()
+        print("hurt done")
+        sys.exit(0)
     generate_goblins()
+    generate_goblin_hurt()
     generate_effects()
     generate_status_icons()
     # 마법 비행/적중(+발사) 이펙트는 새 팔레트로 generate_magic_fx.py 가 그린다.
