@@ -6,7 +6,12 @@ Assets/Resources/Enemies/SlimeKnightFire, SlimeKnightWater 에 쓴다 (런타임
 원본은 Trash/Assets/Art/Sprites/Enemies/Slime 에 보존하고 거기서 읽어 Assets/Art/Sprites/Enemies/Slime 에 쓴다
 (여러 번 돌려도 눈이 겹치지 않게). 같은 .png 이름이라 .meta(GUID)와 애니메이션 클립은 그대로 이어진다.
 
+피격 2프레임(납작 찌그러짐 + 질끈 감은 눈)은 Assets/Resources/Enemies/Slime/Hurt/slime_hurt_0N.png 에 쓰고
+(EnemyHurtPose가 슬라임 무리 모두 이 폴더를 쓴다), 같은 이름의 회색판(SlimeGray)·기사판(SlimeKnightFire/Water)도 만든다
+(ElementRecolor가 원본 이름으로 바꿔 끼운다).
+
     python3 Tools/ArtGen/decorate_slime.py [미리보기.png]
+    python3 Tools/ArtGen/decorate_slime.py --hurt [미리보기.png]   # 피격 그림만
 """
 import glob
 import os
@@ -29,7 +34,7 @@ def body_box(image):
 
 
 def face(image, mode):
-    """mode: 'open'(기본), 'x'(쓰러지는 중), None(얼굴 없음)."""
+    """mode: 'open'(기본), 'x'(쓰러지는 중), 'hurt'(질끈 >< 눈 + 벌린 입), 'squint'(찡그린 눈), None(얼굴 없음)."""
     box = body_box(image)
     if box is None or mode is None:
         return image
@@ -48,7 +53,15 @@ def face(image, mode):
     def S(*v):
         return [x * SS for x in v]
 
-    for ex in (cx - gap, cx + gap):
+    for side, ex in ((-1, cx - gap), (1, cx + gap)):
+        if mode == "hurt":  # 질끈: 왼눈 '>' 오른눈 '<'
+            tip = ex - side * r * 0.55
+            back = ex + side * r * 0.75
+            d.line(S(back, cy - r * 0.8, tip, cy, back, cy + r * 0.8), fill=OUTLINE, width=int(2.4 * SS), joint="curve")
+            continue
+        if mode == "squint":  # 찡그림: 아래로 휜 짧은 선
+            d.arc(S(ex - r * 0.8, cy - r * 0.5, ex + r * 0.8, cy + r * 0.7), 200, 340, fill=OUTLINE, width=int(2.2 * SS))
+            continue
         if mode == "x":
             for dx, dy in ((1, 1), (1, -1)):
                 d.line(S(ex - r * 0.7 * dx, cy - r * 0.7 * dy, ex + r * 0.7 * dx, cy + r * 0.7 * dy), fill=OUTLINE, width=int(2.2 * SS))
@@ -65,6 +78,12 @@ def face(image, mode):
     blush = COLORS["berry"][:3] + (130,)
     for bx in (cx - gap * 1.9, cx + gap * 1.9):
         d.ellipse(S(bx - r * 0.7, cy + r * 1.1, bx + r * 0.7, cy + r * 1.55), fill=blush)
+    if mode == "hurt":  # 놀라 벌린 동그란 입
+        d.ellipse(S(cx - r * 0.42, cy + r * 0.75, cx + r * 0.42, cy + r * 1.55), fill=OUTLINE)
+        d.ellipse(S(cx - r * 0.22, cy + r * 1.1, cx + r * 0.22, cy + r * 1.45), fill=COLORS["berry"])
+    elif mode == "squint":  # 물결 입
+        d.arc(S(cx - r * 0.5, cy + r * 0.8, cx, cy + r * 1.3), 200, 340, fill=OUTLINE, width=int(1.6 * SS))
+        d.arc(S(cx, cy + r * 0.8, cx + r * 0.5, cy + r * 1.3), 20, 160, fill=OUTLINE, width=int(1.6 * SS))
     if mode == "open":
         d.arc(S(cx - r * 0.45, cy + r * 0.7, cx + r * 0.45, cy + r * 1.4), 20, 160, fill=OUTLINE, width=int(1.6 * SS))
 
@@ -144,6 +163,40 @@ def helmet(image, plume_element):
     return out  # 투구·깃털이 위로 나가므로 캔버스를 사방 pad만큼 넓힌 채로 둔다 (발 위치는 여전히 가운데 아래)
 
 
+HURT_SQUASH = [(1.05, 0.8, "hurt"), (1.03, 0.93, "squint")]  # 0 = 맞은 순간 납작, 1 = 반쯤 돌아옴
+
+
+def squash(img, sx, sy):
+    """발밑(아래 가운데)을 고정하고 가로 sx, 세로 sy배로. 캔버스는 그대로 (원본 몸 폭 108px이라 sx 1.05까지 114px 안에 들어간다)."""
+    w, h = img.size
+    nw, nh = max(1, int(round(w * sx))), max(1, int(round(h * sy)))
+    scaled = img.resize((nw, nh), Image.LANCZOS)
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    crop_x = max(0, (nw - w) // 2)
+    out.alpha_composite(scaled.crop((crop_x, 0, crop_x + min(w, nw), nh)), (max(0, (w - nw) // 2), h - nh))
+    return out
+
+
+def generate_hurt():
+    """슬라임 피격 2프레임 (원본 Idle 첫 프레임을 찌그러뜨리고 얼굴만 바꿈) + 회색판 + 기사판."""
+    from generate_sprites import slime_gray
+    base = sorted(glob.glob(os.path.join(SOURCE, "Idle", "*.png")))[0]
+    enemies = os.path.join(ROOT, "Assets", "Resources", "Enemies")
+    hurt_dir = os.path.join(enemies, "Slime", "Hurt")
+    os.makedirs(hurt_dir, exist_ok=True)
+    frames = []
+    for i, (sx, sy, mode) in enumerate(HURT_SQUASH):
+        name = f"slime_hurt_{i:02d}.png"
+        image = face(squash(Image.open(base).convert("RGBA"), sx, sy), mode)
+        path = os.path.join(hurt_dir, name)
+        image.save(path)
+        slime_gray(path).save(os.path.join(enemies, "SlimeGray", name))
+        for knight, (hue, plume) in KNIGHTS.items():
+            helmet(recolor(image, hue), plume).save(os.path.join(enemies, knight, name))
+        frames.append(image)
+    return frames
+
+
 def generate_knights():
     base = os.path.join(ROOT, "Assets", "Resources", "Enemies")
     result = {}
@@ -197,8 +250,19 @@ def preview(result, path):
 if __name__ == "__main__":
     if not os.path.isdir(SOURCE):
         sys.exit(f"원본이 없습니다: {SOURCE}")
+    if "--hurt" in sys.argv:
+        frames = generate_hurt()
+        args = [a for a in sys.argv[1:] if a != "--hurt"]
+        if args:
+            strip = Image.new("RGBA", (130 * len(frames), 100), COLORS["dusk"])
+            for c, f in enumerate(frames):
+                strip.alpha_composite(f, (c * 130, 100 - f.height))
+            strip.save(args[0])
+        print("hurt done")
+        sys.exit(0)
     out = generate()
     knights = generate_knights()
+    generate_hurt()
     if len(sys.argv) > 1:
         preview(out, sys.argv[1])
         strip = Image.new("RGBA", (180 * 9, 130 * 2), COLORS["dusk"])

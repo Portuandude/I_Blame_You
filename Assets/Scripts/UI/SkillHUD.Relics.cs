@@ -100,18 +100,7 @@ namespace IBlameYou.UI
         }
 
         // 유물 한 줄에 하나: "이름 — 효과".
-        private string RelicLines()
-        {
-            var lines = new System.Text.StringBuilder();
-            for (int i = 0; i < RelicCount; i++)
-            {
-                if (i > 0) lines.Append('\n');
-                var id = relics.Owned[i];
-                lines.Append($"{RelicBook.Name(id)} — {RelicBook.Description(id)}");
-            }
-
-            return lines.ToString();
-        }
+        private static string RelicLine(RelicId id) => $"{RelicBook.Name(id)} — {RelicBook.Description(id)}";
 
         // 결과 창용: 이름만 쉼표로.
         private string RelicNames()

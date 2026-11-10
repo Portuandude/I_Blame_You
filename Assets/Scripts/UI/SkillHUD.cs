@@ -485,7 +485,7 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 118f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
@@ -516,7 +516,7 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 90f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 118f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.matrix = previousMatrix;

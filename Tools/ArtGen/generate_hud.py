@@ -14,6 +14,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/MapChest.png  16x16  미니맵 보물 방 상자
   Assets/Resources/UI/HUD/MapHelmet.png 16x16  미니맵 중간보스 방 투구
   Assets/Resources/UI/HUD/MapElite.png  16x16  미니맵 정예 방 보라 별
+  Assets/Resources/UI/HUD/MapLock.png   16x16  미니맵 안 연 협동 봉인문 자물쇠 (방 칸 오른쪽 아래에 작게)
   Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/Button.png         32x32  둥근 버튼 보통 (dusk→lilac 젤리 + 크림 테두리 + 아래 두께). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/ButtonHover.png    32x32  마우스를 올렸을 때 (조금 밝게 + 빛 테두리)
@@ -292,6 +293,20 @@ def map_elite():
     return small(img, n, n)
 
 
+def map_lock():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.arc([3.6 * SS, 0.8 * SS, 12.4 * SS, 10.5 * SS], 180, 360, fill=OUTLINE, width=int(3.4 * SS))      # 고리 외곽선
+    d.arc([4.6 * SS, 1.8 * SS, 11.4 * SS, 9.5 * SS], 180, 360, fill=(205, 210, 225, 255), width=int(1.5 * SS))  # 은빛 고리
+    d.rounded_rectangle([1.5 * SS, 6 * SS, 14.5 * SS, 15.2 * SS], radius=2.4 * SS, fill=OUTLINE)
+    d.rounded_rectangle([2.7 * SS, 7.2 * SS, 13.3 * SS, 14 * SS], radius=1.6 * SS, fill=COLORS["gold"])
+    d.rectangle([2.7 * SS, 7.2 * SS, 13.3 * SS, 8.4 * SS], fill=COLORS["sand"])  # 윗면 빛
+    d.ellipse([6.8 * SS, 9 * SS, 9.2 * SS, 11.4 * SS], fill=OUTLINE)              # 열쇠 구멍
+    d.rectangle([7.5 * SS, 10.5 * SS, 8.5 * SS, 12.8 * SS], fill=OUTLINE)
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -312,6 +327,7 @@ def generate():
         "MapChest": map_chest(),
         "MapHelmet": map_helmet(),
         "MapElite": map_elite(),
+        "MapLock": map_lock(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))

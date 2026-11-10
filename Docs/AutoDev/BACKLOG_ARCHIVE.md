@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-ol1s9w): 미니맵 협동 봉인문 표시 — 아직 안 연 협동 봉인문이 있는 보물 곁방 칸의 보물 아이콘 옆에 작은 자물쇠(`generate_hud.py` Lock, 런타임 로드). 열면 사라짐. 겸사겸사 `ElementGate` 방어막 감지 박스를 바닥에서 키 높이(약 2.5칸)까지로 줄이기 (리뷰 LOW: 윗 발판에서 켜도 풀림)
+- DONE (claude/project-thread-ol1s9w): 결과 창 유물 아이콘 — 게임오버·클리어 창(`SkillHUD.EndScreen.cs`)의 "유물: 이름, 이름" 줄을 18px 아이콘 줄로 (`DrawRelicIcon`), 많으면 아이콘만
+- DONE (claude/project-thread-ol1s9w): 슬라임 킹 피격 그림 — `EnemyHurtPose.FolderFor`에 SlimeKing을 더하되 큰 피해(최대 체력 3% 이상)일 때만 보이게 (보스는 맞을 때마다 얼굴이 바뀌면 산만함). 킹 크기에 맞는지 확인
+- DONE (claude/project-thread-ol1s9w, A 방어막 → B 마법 협동 봉인문을 보물 곁방 상자 앞에): 봉인문 변형 (로드맵) — `Puzzles/ElementGate` 변형 1종: 속성 두 개를 정해진 순서로 맞춰야 열리는 이중 봉인문 (A 방어막 속성 → B 공격 속성처럼 둘이 같이 풀기), 방 격자 스테이지 곁방에 배치 + EditMode 테스트
+- DONE (claude/project-thread-ol1s9w, 슬라임·어미·기사 공용 Slime/Hurt + 회색판·투구판, 킹 제외): 슬라임 피격 그림 — 슬라임(원본 장식 그림 `decorate_slime.py`)도 피격 2프레임(납작 찌그러짐 + 질끈 눈)을 만들어 `Resources/Enemies/Slime/Hurt`에 두면 `EnemyHurtPose`가 그대로 쓴다 (어미 슬라임·슬라임 기사·킹은 오브젝트 이름 폴더로 따로)
+- DONE (claude/project-thread-ol1s9w): 일시정지 유물 요약에 아이콘 — `SkillHUD.Pause.cs`의 `RelicLines()` 글자 줄 앞에 `DrawRelicIcon`으로 18px 아이콘
 - DONE (claude/project-thread-c1p8f6): 아래 조작 도움말 줄 귀엽게 — `DrawHelp`의 키 이름(A/D, Space, Shift 등)을 작은 둥근 키캡(`CuteButton` 그림 재사용)으로, 줄 전체에 반투명 알약 배경(`Pill`)
 - DONE (claude/project-thread-c1p8f6): 특성 포인트 안내 강조 — 레벨 막대 아래 "특성 포인트 N (Tab)"을 gold 알약 배경 + 숨 쉬듯 밝아졌다 어두워짐, 포인트가 생긴 순간 한 번 팝
 - DONE (claude/project-thread-c1p8f6, 처치 회복은 흡혈 송곳니와 겹쳐 쓰러짐 1회 버티기로 대신): 유물 종류 늘리기 (로드맵) — 특수 효과 유물 3종을 `Player/Relics`에 추가 (예: 대쉬 뒤 0.5초 무적, 마나 부족 시 체력으로 대신 내기 1회/구역, 처치 시 작은 회복). `RelicBook` 이름·설명 + EditMode 테스트

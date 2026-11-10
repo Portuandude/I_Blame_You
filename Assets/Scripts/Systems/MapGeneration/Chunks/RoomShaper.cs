@@ -52,7 +52,36 @@ namespace IBlameYou.Systems
             }
 
             if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
+            if (HasPairGate(room)) AddPairGate(seed, room, geometry.Chunk);
             return geometry;
+        }
+
+        // 협동 봉인문 (A 방어막 속성 → B 마법 속성): 진행도 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
+        // - 좌우 곁방: 늘 오른쪽 문 하나뿐이고(부모의 왼쪽에 붙음) 바닥이 평평한 휴식 지형. 문(31열)과 상자(가운데 16열) 사이 24열.
+        // - 세로 곁방: 바닥 왼쪽 8열 (지그재그 10~21, 양 갈래 3~7·9~12 발판 사이, 옆 선반은 4~7로 당김). 상자는 그 왼쪽 ShaftPairChestX열.
+        //   위·아래 문(14~16열)과 도착 칸(11열)은 봉인문 오른쪽이다.
+        // 문 쪽은 막지 않으므로 못 열어도 갇히지 않는다 (검증기는 봉인문을 열린 것으로 본다).
+        public const float PairGateMinDifficulty = 0.25f;
+        public const int SidePairGateX = 24;
+        public const int ShaftPairGateX = 8;
+        public const int ShaftPairChestX = 4;
+
+        public static bool HasPairGate(RoomData room) =>
+            room.Kind == RoomKind.Treasure && room.Difficulty >= PairGateMinDifficulty;
+
+        public static int PairGateX(RoomData room) => room.IsVertical ? ShaftPairGateX : SidePairGateX;
+
+        private static void AddPairGate(int seed, RoomData room, ChunkData chunk)
+        {
+            var rng = new Random(unchecked(seed * 92821 + room.Index * 68917 + 3)); // 지형 난수열과 따로
+            int count = ChunkGenerator.GateElementCount;
+            int shield = rng.Next(count);
+            chunk.Features.Add(new ChunkFeature
+            {
+                Kind = FeatureKind.ElementGate, X = PairGateX(room), Y = room.IsVertical ? ShaftGround : chunk.ExitHeight, Width = 1,
+                ElementIndex = shield, HasSecondElement = true,
+                SecondElementIndex = (shield + 1 + rng.Next(count - 1)) % count, ShieldFirst = true
+            });
         }
 
         // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
@@ -203,7 +232,8 @@ namespace IBlameYou.Systems
         private static void AddShelves(ChunkData chunk, RoomData room, Random rng)
         {
             bool leftHigh = rng.Next(2) == 0;
-            chunk.SetRow(5, 8, leftHigh ? ShelfRowHigh : ShelfRowLow, StageTile.Platform);
+            int leftX0 = HasPairGate(room) ? 4 : 5; // 협동 봉인문(8열)과 겹치지 않게
+            chunk.SetRow(leftX0, leftX0 + 3, leftHigh ? ShelfRowHigh : ShelfRowLow, StageTile.Platform);
             chunk.SetRow(23, 26, leftHigh ? ShelfRowLow : ShelfRowHigh, StageTile.Platform);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= 0.35f)
                 chunk.AddEnemy(StageEnemy.GoblinArcher, leftHigh ? 6 : 25, ShelfRowHigh + 1);

@@ -247,5 +247,67 @@ namespace IBlameYou.Tests
 
             Assert.Greater(shelves, 0, "지름길 선반이 한 번도 안 나옴");
         }
+    
+        // 협동 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
+        // 첫 속성(A 방어막)과 둘째 속성(B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
+        [Test]
+        public void PairGatesGuardLateTreasureRooms()
+        {
+            int sideGates = 0, shaftGates = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    var geometry = RoomShaper.Build(seed, room);
+                    var chunk = geometry.Chunk;
+                    var gates = chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate && f.ShieldFirst);
+                    string where = $"seed {seed} room {room.Index} ({room.Kind}, {room.Doors}, {room.Difficulty:0.00})";
+                    bool expected = room.Kind == RoomKind.Treasure && room.Difficulty >= RoomShaper.PairGateMinDifficulty;
+                    Assert.AreEqual(expected ? 1 : 0, gates.Count, where);
+                    Assert.AreEqual(expected, RoomShaper.HasPairGate(room), where);
+                    if (!expected) continue;
+
+                    var gate = gates[0];
+                    Assert.AreEqual(1, chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate).Count, $"{where}: 봉인문은 방마다 하나 (열린 기록이 방 번호 기준)");
+                    Assert.IsTrue(gate.HasSecondElement, where);
+                    Assert.That(gate.ElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1), where);
+                    Assert.That(gate.SecondElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1), where);
+                    Assert.AreNotEqual(gate.ElementIndex, gate.SecondElementIndex, where);
+                    Assert.AreEqual(RoomShaper.PairGateX(room), gate.X, where);
+
+                    (int x, int y) chest;
+                    if (room.IsVertical)
+                    {
+                        shaftGates++;
+                        chest = (RoomShaper.ShaftPairChestX, RoomShaper.ShaftGround);
+                        Assert.Less(gate.X, RoomShaper.HoleX0 - 3, $"{where}: 위·아래 문과 도착 칸은 봉인문 오른쪽");
+                    }
+                    else
+                    {
+                        sideGates++;
+                        chest = (ChunkData.Width / 2, chunk.EntryHeight);
+                        Assert.AreEqual(DoorDir.Right, room.Doors, $"{where}: 좌우 곁방은 오른쪽 문 하나");
+                        Assert.Less(gate.X, ChunkData.Width - 2, $"{where}: 문 칸과 겹침");
+                    }
+                    Assert.Less(chest.x, gate.X, $"{where}: 상자는 봉인문 안쪽");
+                    Assert.AreEqual(chest.y, gate.Y, where);
+
+                    for (int y = gate.Y; y < ChunkData.Height - 1; y++)
+                        Assert.AreEqual(StageTile.Empty, chunk.Tiles[gate.X, y], $"{where}: 봉인문 열 ({gate.X},{y})");
+                    foreach (int x in new[] { gate.X - 1, gate.X + 1, chest.x })
+                        Assert.IsTrue(chunk.IsSolid(x, gate.Y - 1) && !chunk.IsSolid(x, gate.Y) && !chunk.IsSolid(x, gate.Y + 1), $"{where}: ({x}) 설 자리");
+
+                    var arrivals = new List<(int x, int y)>(geometry.Arrivals.Values);
+                    string reason;
+                    Assert.IsTrue(StageValidator.ValidateRoom(chunk, arrivals, new List<(int x, int y)> { chest }, out reason), $"{where}: 상자 칸에 못 감 ({reason})");
+                    // 열을 메우면 상자 칸으로 못 간다 = 봉인문을 돌아갈 길이 없다.
+                    for (int y = gate.Y; y < ChunkData.Height; y++) chunk.Tiles[gate.X, y] = StageTile.Solid;
+                    Assert.IsFalse(StageValidator.ValidateRoom(chunk, arrivals, new List<(int x, int y)> { chest }, out _), $"{where}: 봉인문을 우회할 수 있음");
+                }
+            }
+
+            Assert.Greater(shaftGates, 0, "세로 곁방 협동 봉인문이 한 번도 안 나옴");
+            Assert.Greater(sideGates + shaftGates, 5, "협동 봉인문이 너무 드묾");
+        }
     }
 }
