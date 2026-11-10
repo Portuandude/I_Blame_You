@@ -44,6 +44,9 @@ namespace IBlameYou.Systems
         // 배경음악을 바꾼다. 이미 같은 곡이 나오고 있으면 그대로 둔다.
         public static void PlayMusic(string name) => Instance.SwitchMusic(name);
 
+        // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
+        public static string CurrentMusic => instance != null ? instance.currentMusicName : null;
+
         // 효과음 한 번. pitchJitter만큼 음높이를 무작위로 흔들어 반복해도 덜 단조롭게 한다.
         public static void PlaySfx(string name, float volume = 1f, float pitchJitter = 0.06f) =>
             Instance.PlayOneShot(name, volume, pitchJitter);
