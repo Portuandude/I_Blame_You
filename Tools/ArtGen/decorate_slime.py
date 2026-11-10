@@ -163,11 +163,11 @@ def helmet(image, plume_element):
     return out  # 투구·깃털이 위로 나가므로 캔버스를 사방 pad만큼 넓힌 채로 둔다 (발 위치는 여전히 가운데 아래)
 
 
-HURT_SQUASH = [(1.16, 0.8, "hurt"), (1.06, 0.93, "squint")]  # 0 = 맞은 순간 납작, 1 = 반쯤 돌아옴
+HURT_SQUASH = [(1.05, 0.8, "hurt"), (1.03, 0.93, "squint")]  # 0 = 맞은 순간 납작, 1 = 반쯤 돌아옴
 
 
 def squash(img, sx, sy):
-    """발밑(아래 가운데)을 고정하고 가로 sx, 세로 sy배로. 캔버스는 그대로 (넘치면 잘림 — 원본 여백이 있어 안 넘침)."""
+    """발밑(아래 가운데)을 고정하고 가로 sx, 세로 sy배로. 캔버스는 그대로 (원본 몸 폭 108px이라 sx 1.05까지 114px 안에 들어간다)."""
     w, h = img.size
     nw, nh = max(1, int(round(w * sx))), max(1, int(round(h * sy)))
     scaled = img.resize((nw, nh), Image.LANCZOS)
