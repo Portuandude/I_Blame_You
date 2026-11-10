@@ -185,7 +185,7 @@ namespace IBlameYou.Player
         private void OnDeathPrevented()
         {
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, "버텨냈다!", new Color(1f, 0.5f, 0.5f), 1.1f);
-            SkillMessages.Post(ManaUser.Other, "생명 20: 쓰러질 피해를 버텨냈다", false);
+            SkillMessages.Post(ManaUser.Other, "쓰러질 피해를 버텨냈다 (생명 20·불사조 깃털)", false); // 버티기는 특성과 유물이 같이 쓴다
         }
     }
 }
