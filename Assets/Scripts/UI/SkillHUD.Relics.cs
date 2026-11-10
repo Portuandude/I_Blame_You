@@ -15,6 +15,7 @@ namespace IBlameYou.UI
         private Action<RelicId> relicChosen;
         private Action relicCancelled;
         private int relicOpenedFrame;
+        private int relicCodexAtOpen; // 창을 연 때의 유물 도감 (처음 보는 유물 카드에 NEW)
         private int relicUnlockFrame = -1; // 고른 키가 같은 프레임에 스킬 입력으로 새지 않게, 이 프레임부터 조작 잠금을 푼다
 
         private PlayerRelics relics;
@@ -50,6 +51,7 @@ namespace IBlameYou.UI
             relicChosen = onChosen;
             relicCancelled = onCancelled;
             relicOpenedFrame = Time.frameCount;
+            relicCodexAtOpen = IBlameYou.Core.SaveData.RelicCodexMask(IBlameYou.Core.GameSession.DevMode);
             relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
             control.Locked = true;
             Time.timeScale = 0f;
@@ -169,6 +171,9 @@ namespace IBlameYou.UI
                 DrawRelicIcon(id, new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f)); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
+                if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW
+                    GUI.Label(new Rect(card.xMax - 56f, card.y + 46f, 46f, 18f), "<b><color=#7dff7a>NEW</color></b>",
+                        new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
                 bool chosen = GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);

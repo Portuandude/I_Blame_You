@@ -88,6 +88,18 @@ namespace IBlameYou.Tests
             Assert.AreEqual(15, (int)RelicId.Compass);
             Assert.AreEqual(16, (int)RelicId.Clover);
             Assert.AreEqual(17, (int)RelicId.CheerRibbon);
+            Assert.AreEqual(18, (int)RelicId.StarShard);
+        }
+
+        [Test]
+        public void StarShard_ProcsBelowChance()
+        {
+            Assert.IsTrue(RelicBook.StarShardProcs(0f));
+            Assert.IsTrue(RelicBook.StarShardProcs(RelicBook.StarShardChance - 0.001f));
+            Assert.IsFalse(RelicBook.StarShardProcs(RelicBook.StarShardChance));
+            Assert.IsFalse(RelicBook.StarShardProcs(0.99f));
+            Assert.AreEqual("적 처치 시 15% 확률로 마나 +6", RelicBook.Description(RelicId.StarShard));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.StarShard));
         }
 
         [Test]

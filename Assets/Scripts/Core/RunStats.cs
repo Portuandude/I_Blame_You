@@ -7,6 +7,7 @@ namespace IBlameYou.Core
         public static float DamageTaken { get; set; }
         public static int ArenasCleared { get; set; }
         public static int GatesOpened { get; set; }
+        public static int NewRelics { get; set; } // 이번 판에 처음 유물 도감에 오른 유물 수 (결과 창 최애 줄 끝)
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
@@ -18,6 +19,7 @@ namespace IBlameYou.Core
             DamageTaken = 0f;
             ArenasCleared = 0;
             GatesOpened = 0;
+            NewRelics = 0;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
             System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
@@ -31,6 +33,11 @@ namespace IBlameYou.Core
         public static void AddGateOpened()
         {
             if (!Ended) GatesOpened++;
+        }
+
+        public static void AddNewRelic()
+        {
+            if (!Ended) NewRelics++;
         }
 
         public static void AddSpell(int element)

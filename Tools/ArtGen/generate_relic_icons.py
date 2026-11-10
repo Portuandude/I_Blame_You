@@ -1,4 +1,4 @@
-"""I Blame You! 유물 아이콘 15종 생성기 (귀엽지만 화려하게).
+"""I Blame You! 유물 아이콘 생성기 (귀엽지만 화려하게).
 
 유물마다 24x24 아이콘: 진한 외곽선 + 채도 높은 몸 + 크림 반짝임. 유물 상자 카드·HUD 유물 목록·일시정지 요약이
 이름 앞에 그린다 (SkillHUD.RelicIcons.cs). 파일 이름 = RelicId 이름.
@@ -246,6 +246,18 @@ def cheer_ribbon(d):
     d.polygon(star_points(4.0, 19.0, 1.8, 0.8), fill=CREAM)
 
 
+def star_shard(d):
+    # 떨어지는 별똥: 통통한 금별 + 오른쪽 위로 뻗는 크림·하늘 꼬리 세 줄, 주변 작은 반짝 (마나 회복)
+    sky = hexrgba("7fd8ff")
+    for dx, dy, w, col in [(0, 0, 2.6, CREAM), (-2.2, 2.6, 1.8, sky), (2.4, -2.0, 1.6, sky)]:
+        d.line(P((11 + dx, 13 + dy), (21 + dx, 3 + dy)), fill=col, width=int(w * SS))
+    star = [(x / SS, y / SS) for x, y in star_points(9.5, 14.5, 7.2, 3.4)]  # star_points는 SS 배율 좌표
+    outlined_poly(d, star, GOLD, 1.0)
+    shine(d, 7.6, 12.2, 0.9)
+    d.polygon(star_points(20.0, 18.0, 2.2, 0.9), fill=CREAM)
+    d.polygon(star_points(3.5, 4.5, 1.8, 0.8), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -265,6 +277,7 @@ ICONS = {
     "Compass": compass,
     "Clover": clover,
     "CheerRibbon": cheer_ribbon,
+    "StarShard": star_shard,
 }
 
 

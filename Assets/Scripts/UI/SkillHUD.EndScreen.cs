@@ -171,17 +171,27 @@ namespace IBlameYou.UI
             GUI.Label(rect, ClearPace.CompareDefeat(StageEvents.Progress, defeatUsualPercent), style);
         }
 
-        // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally). 없으면 빈 문자열.
+        // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally) + 이번 판 새 도감 유물 수. 없으면 빈 문자열.
         private static string[] elementNames;
+        private static string[] elementColors;   // 속성 이름만 그 속성 색으로 (rich text)
 
         private static string FavoriteLine()
         {
             if (elementNames == null)
             {
                 elementNames = new string[ElementInfo.Count];
-                for (int i = 0; i < elementNames.Length; i++) elementNames[i] = ElementInfo.KoreanName((Element)i);
+                elementColors = new string[ElementInfo.Count];
+                for (int i = 0; i < elementNames.Length; i++)
+                {
+                    elementNames[i] = ElementInfo.KoreanName((Element)i);
+                    elementColors[i] = ColorUtility.ToHtmlStringRGB(ElementInfo.Color((Element)i));
+                }
             }
-            return RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames);
+            string line = RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames, elementColors);
+            int fresh = IBlameYou.Core.RunStats.NewRelics; // 이번 판에 처음 도감에 오른 유물
+            if (fresh <= 0) return line;
+            string news = $"<color=#7dff7a>새 유물 {fresh}개 도감 등록!</color>";
+            return line.Length == 0 ? news : line + " · " + news;
         }
 
         // 최애 줄을 그리고, 그린 높이(없으면 0)를 돌려준다. 아래 줄은 그만큼 내린다.
@@ -189,7 +199,8 @@ namespace IBlameYou.UI
         {
             string text = FavoriteLine();
             if (string.IsNullOrEmpty(text)) return 0f;
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+            // 한 줄 높이(22)라 접히면 아랫줄이 잘린다: 줄바꿈 없이 그린다 (리뷰 LOW)
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(new Rect(x, y, width, 22f), text, style);
             return 22f;

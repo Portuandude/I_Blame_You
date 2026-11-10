@@ -25,7 +25,8 @@ namespace IBlameYou.Player
         TwinRing,    // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
         Compass,     // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
         Clover,      // 네잎 클로버: 다음 유물 상자부터 후보가 OfferSize → CloverOfferSize개
-        CheerRibbon  // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana (쌍둥이 반지의 B 쪽 짝)
+        CheerRibbon, // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana (쌍둥이 반지의 B 쪽 짝)
+        StarShard    // 별똥 조각: 적을 처치하면 StarShardChance 확률로 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -53,13 +54,15 @@ namespace IBlameYou.Player
         public const int HourglassFreeFalls = 2;
         public const float TwinRingMana = 5f;
         public const float CheerRibbonMana = 4f;
+        public const float StarShardChance = 0.15f;
+        public const float StarShardMana = 6f;
 
         public static readonly RelicId[] All =
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
-            RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon
+            RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard
         };
 
         public static string Name(RelicId id)
@@ -83,6 +86,7 @@ namespace IBlameYou.Player
                 case RelicId.Compass: return "탐험가의 나침반";
                 case RelicId.Clover: return "네잎 클로버";
                 case RelicId.CheerRibbon: return "응원 리본";
+                case RelicId.StarShard: return "별똥 조각";
                 default: return "집중 구슬";
             }
         }
@@ -108,6 +112,7 @@ namespace IBlameYou.Player
                 case RelicId.Compass: return "미니맵에 안 가 본 방도 흐리게 보인다";
                 case RelicId.Clover: return $"유물 상자 후보 {OfferSize}개 → {CloverOfferSize}개";
                 case RelicId.CheerRibbon: return $"B의 공격 마법이 발동하면 마나 +{CheerRibbonMana:0}";
+                case RelicId.StarShard: return $"적 처치 시 {StarShardChance * 100f:0}% 확률로 마나 +{StarShardMana:0}";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
@@ -130,6 +135,9 @@ namespace IBlameYou.Player
                 default: return "공용";
             }
         }
+
+        // 별똥 조각: 0~1 난수(roll)가 확률 밑이면 터진다. 난수는 부르는 쪽이 넘긴다 (테스트 고정용).
+        public static bool StarShardProcs(float roll) => roll < StarShardChance;
 
         // 피의 계약: 모자란 마나(shortfall)를 체력으로 낼 수 있으면 true와 그 체력 값을 돌려준다.
         // 낸 뒤에도 체력이 BloodPactMinHealthLeft 이상 남아야 한다 (이 유물로 쓰러지지 않는다). 재사용 대기는 부르는 쪽이 본다.
