@@ -3,13 +3,13 @@ using UnityEngine;
 
 namespace IBlameYou.Core
 {
-    // 런 진행 저장: 휴식 청크의 체크포인트를 처음 켤 때 한 번 저장하고, 시작 화면의 "이어하기"로 그 체크포인트에서 다시 시작한다.
-    // 쓰러지거나 클리어하거나 새 런을 시작하면 지운다. 쓰러진 뒤에는 이어 할 수 없지만, 쓰러지기 전에 일시정지 → 시작 화면 →
-    // 이어하기로 체크포인트 상태(체력 등)로 돌아가는 것은 막지 않는다 (걸린 시간은 시작 화면으로 나가거나 앱을 끌 때 갱신해 되돌아가지 않음). 막을지는 기획에서 정한다.
+    // 런 진행 저장: 시작 화면의 "이어하기"로 저장한 방에서 다시 시작한다. 쓰러지거나 클리어하거나 새 런을 시작하면 지운다.
+    // 2026-11-10 체크포인트 제거(사람 결정)로 지금은 저장하는 곳이 없다 (스테이지가 하나뿐이라 시작 지점 이어하기는 새 런과 같음).
+    // 스테이지 2가 생기면 스테이지 전환 때 저장하는 용도로 남긴다. Version 2: 옛 체크포인트 저장(1)은 읽지 않는다 → 이어하기 버튼 안 나옴.
     // PlayerPrefs 한 칸에 JSON으로 넣는다. 형식이 바뀌면 Version을 올리고, 버전이 다른 저장은 버린다.
     public static class RunSave
     {
-        public const int Version = 1;
+        public const int Version = 2;
         private const string Key = "Run.Save";
 
         [Serializable]
@@ -71,7 +71,7 @@ namespace IBlameYou.Core
         }
 
         // 일시정지에서 시작 화면으로 나갈 때: 걸린 시간은 되돌아가지 않게 지금 시간으로 올린다
-        // (체크포인트 시점으로 시간을 되감아 최고 클리어 기록이 짧아지는 것 방지).
+        // (저장 시점으로 시간을 되감아 최고 클리어 기록이 짧아지는 것 방지).
         public static void UpdateElapsed(float elapsed)
         {
             var data = Load();
