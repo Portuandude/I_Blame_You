@@ -22,6 +22,8 @@ namespace IBlameYou.Core
         private GUIStyle body;
         private GUIStyle recordSmall; // 창이 낮을 때 기록 줄용 작은 글씨
         private bool recordsExpanded; // 접힌 기록 줄을 펼쳤는지 (H 또는 클릭)
+        private Vector2 recordScroll;
+        private bool recordsTogglePending;
         private GUIStyle button;
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
@@ -186,9 +188,15 @@ namespace IBlameYou.Core
                 return;
             }
 
-            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.H)
+            // 펼침 상태는 Layout 이벤트에서만 바꾼다: 한 이벤트 안에서 Layout과 다른 컨트롤 구조가 되지 않게
+            if (Event.current.type == EventType.Layout && recordsTogglePending)
             {
                 recordsExpanded = !recordsExpanded;
+                recordsTogglePending = false;
+            }
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.H)
+            {
+                recordsTogglePending = true;
                 Event.current.Use();
             }
             int firstBreak = full.IndexOf('\n');
@@ -198,7 +206,15 @@ namespace IBlameYou.Core
                 return;
             }
             string shown = recordsExpanded ? full + "\n▲ 기록 접기 (H)" : full.Substring(0, firstBreak) + "\n▼ 기록 더 보기 (H)";
-            if (GUILayout.Button(shown, recordSmall)) recordsExpanded = !recordsExpanded;
+            if (!recordsExpanded)
+            {
+                if (GUILayout.Button(shown, recordSmall)) recordsTogglePending = true;
+                return;
+            }
+            // 펼쳐도 버튼을 밀어내지 않게 남는 높이 안에서 스크롤한다 (리뷰 MEDIUM)
+            recordScroll = GUILayout.BeginScrollView(recordScroll, GUILayout.Height(Mathf.Max(40f, available)));
+            if (GUILayout.Button(shown, recordSmall)) recordsTogglePending = true;
+            GUILayout.EndScrollView();
         }
 
         // 기록 줄을 뺀 나머지(제목·설명·토글·조작법·음량·버튼)가 차지하는 높이 어림값. GUILayout 기본 여백(줄마다 약 4px)까지 더한다.
