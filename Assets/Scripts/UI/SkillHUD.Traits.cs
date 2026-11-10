@@ -75,8 +75,7 @@ namespace IBlameYou.UI
 
             string points = progression.Points > 0 ? $"  <color=#ffd84d>+{progression.Points}</color>" : "";
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"레벨 {progression.Level}{points}", small);
-            if (progression.Points > 0)
-                GUI.Label(new Rect(rect.x, rect.y + 30f, rect.width, 20f), $"<color=#ffd84d>특성 포인트 {progression.Points} (Tab)</color>", small);
+            DrawTraitPointsPill(new Vector2(rect.x, rect.y + 31f)); // gold 알약 + 숨쉬기 + 팝 (SkillHUD.TraitPoints.cs)
         }
 
         private void DrawTraitWindow()
