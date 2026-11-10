@@ -288,6 +288,26 @@ def hurt():
     return normalize(fade_edges(thump + grit + snap))
 
 
+def land():
+    """높은 곳에서 떨어져 착지: 폭신한 '퐁' (낮은 사인 낙하 + 부드러운 흙먼지). 귀엽게, 아프지 않게."""
+    n = int(0.22 * SR)
+    t = np.arange(n) / SR
+    thud = osc("sine", 140 * np.exp(-t * 18) + 55, n) * env_exp(n, 0.07)
+    puff = lowpass(noise(n), 700) * env_adsr(n, 0.004, 0.05, 0.3, 0.08) * 0.35
+    pad = osc("tri", 330 * np.exp(-t * 9) + 180, n) * env_exp(n, 0.03) * 0.18  # 통통 튀는 느낌
+    return normalize(fade_edges(thud + puff + pad))
+
+
+def squish_hit():
+    """슬라임이 맞을 때: 말랑한 '뿌직' (아래로 휘는 블룹 + 젖은 물소리 잡음)."""
+    n = int(0.2 * SR)
+    t = np.arange(n) / SR
+    bloop = osc("sine", 520 * np.exp(-t * 14) + 160 + 60 * np.sin(2 * np.pi * 28 * t), n) * env_adsr(n, 0.003, 0.06, 0.4, 0.08)
+    wet = bandpass(noise(n), 500, 2200) * env_exp(n, 0.035) * 0.55
+    pop = osc("sine", 900 * np.exp(-t * 60) + 300, n) * env_exp(n, 0.012) * 0.3
+    return normalize(fade_edges(lowpass(bloop + wet + pop, 3500)))
+
+
 def enemy_die():
     n = int(0.55 * SR)
     t = np.arange(n) / SR
@@ -718,13 +738,14 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "Land": land, "SquishHit": squish_hit,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
