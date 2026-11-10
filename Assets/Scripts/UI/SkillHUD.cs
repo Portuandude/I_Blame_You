@@ -216,7 +216,8 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
-                SaveData.RecordRecentDefeat(StageEvents.Progress, StageEvents.PathStep, StageEvents.MainRooms); // 시작 화면 최근 쓰러진 곳 평균
+                // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
+                if (!stageCleared) SaveData.RecordRecentDefeat(StageEvents.Progress, StageEvents.PathStep, StageEvents.MainRooms);
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
