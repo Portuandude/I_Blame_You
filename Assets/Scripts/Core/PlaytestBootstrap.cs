@@ -59,7 +59,8 @@ namespace IBlameYou.Core
         // resume: 이어 할 저장 (null이면 새 런, 이전 저장은 지운다).
         private void BuildWorld(RunSave.Data resume)
         {
-            GameAudio.PlayMusic("Dungeon");
+            // 이어하기면 저장된 진행도에 맞는 곡 (진행도 50%+ → 후반 Dungeon2, ArenaZone.StageMusicFor). 새 런은 Dungeon.
+            GameAudio.PlayMusic(resume != null ? ArenaZone.StageMusicFor(resume.progress) : "Dungeon");
             // Tools/I Blame You/Generate Sprites And Animations로 미리 생성해둔 아트 설정.
             // 아직 생성 전이면 null이며, 이 경우 각 스포너가 단색 사각형으로 대체한다.
             var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
