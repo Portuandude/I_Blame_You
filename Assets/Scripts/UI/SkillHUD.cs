@@ -487,7 +487,8 @@ namespace IBlameYou.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
             float extra = HasDefeatCompare ? 24f : 0f; // 평소와 비교 줄이 있으면 아래 줄을 그만큼 내린다
-            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f + extra);
+            float fav = string.IsNullOrEmpty(FavoriteLine()) ? 0f : 22f; // 최애 마법 줄 (SkillHUD.EndScreen.cs)
+            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f + extra + fav);
             var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
@@ -499,6 +500,7 @@ namespace IBlameYou.UI
             DrawDefeatCompare(new Rect(rect.x, rect.y + 136f, rect.width, 24f)); // 평소보다 더/덜 갔다 (SkillHUD.EndScreen.cs)
             GUI.Label(new Rect(rect.x, rect.y + 140f + extra, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            extra += DrawFavoriteLine(rect.x, rect.y + 168f + extra, rect.width); // B 최애 마법 · A 최애 방어막
             DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f + extra, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
             GUI.Label(new Rect(rect.x, rect.y + 200f + extra, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
@@ -520,7 +522,8 @@ namespace IBlameYou.UI
         private void DrawStageClear()
         {
             DrawConfetti(); // 패널 뒤로 별·하트 색종이 (SkillHUD.EndScreen.cs)
-            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 240f);
+            float fav = string.IsNullOrEmpty(FavoriteLine()) ? 0f : 22f; // 최애 마법 줄 (SkillHUD.EndScreen.cs)
+            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 240f + fav);
             var previousMatrix = BeginEndScreenPop(rect);
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
@@ -532,8 +535,9 @@ namespace IBlameYou.UI
             DrawClearPace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 목표 시간 비교 (SkillHUD.EndScreen.cs)
             GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 200f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
+            float shift = DrawFavoriteLine(rect.x, rect.y + 168f, rect.width); // B 최애 마법 · A 최애 방어막
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f + shift, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 200f + shift, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.matrix = previousMatrix;
         }
