@@ -58,6 +58,9 @@ namespace IBlameYou.Systems
         public int CurrentRoom => currentRoom;
         public bool IsRoomMode => rooms != null;
         public bool HasVisited(int index) => visitedRooms.Contains(index);
+        // 미니맵 자물쇠: 아직 안 연 협동 봉인문이 있는 곁방 (RoomShaper.HasPairGate)
+        public bool HasClosedPairGate(int index) =>
+            rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
         public event Action<int> RoomEntered;
 
         public StageData Stage => stage;
