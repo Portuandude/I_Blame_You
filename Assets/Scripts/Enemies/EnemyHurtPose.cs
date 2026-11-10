@@ -1,0 +1,54 @@
+using IBlameYou.Systems;
+using UnityEngine;
+
+namespace IBlameYou.Enemies
+{
+    // 적 전용 피격 그림 (로드맵 "적별 전용 경직 그림"): 맞은 순간 X 눈 + 팔 번쩍 + 몸 찌그러짐 그림, 이어서 반쯤 돌아온 그림을 잠깐 보여 준다.
+    // 그림은 Resources/Enemies/<오브젝트 이름>/Hurt (Tools/ArtGen/generate_sprites.py --hurt, 고블린 4종). 다른 적 그림과 같은 아래 가운데 피벗.
+    // PlayerHurtPose처럼 Animator가 그림을 정한 뒤 LateUpdate에서 덮어쓴다 (애니메이터 클립·프리팹 재생성 불필요).
+    // HitStun의 몸 젖히기(Visual 회전)와 머리 위 별(StunStars)은 그대로 겹친다. 그림이 없는 적(슬라임·보스)은 아무것도 하지 않는다.
+    // 이름은 스폰 뒤에 정해지므로(EnemySpawner.Spawn) 처음 맞을 때 읽는다.
+    public class EnemyHurtPose : MonoBehaviour
+    {
+        private const float FirstFrameTime = 0.1f;
+        private const float TotalTime = 0.25f;
+
+        private HealthSystem health;
+        private SpriteRenderer spriteRenderer;
+        private Sprite[] frames;
+        private bool loaded;
+        private float elapsed = TotalTime;
+
+        private void Awake()
+        {
+            health = GetComponent<HealthSystem>();
+            var visual = transform.Find("Visual");
+            if (visual != null) spriteRenderer = visual.GetComponent<SpriteRenderer>();
+            if (health != null) health.Damaged += OnDamaged;
+        }
+
+        private void OnDestroy()
+        {
+            if (health != null) health.Damaged -= OnDamaged;
+        }
+
+        private void OnDamaged(float amount)
+        {
+            if (!loaded)
+            {
+                loaded = true;
+                frames = EffectLibrary.LoadRuntimeFrames($"Enemies/{name}/Hurt", new Vector2(0.5f, 0f));
+            }
+            if (health.IsDead || frames == null || frames.Length < 2 || spriteRenderer == null) return;
+            elapsed = 0f;
+        }
+
+        private void LateUpdate()
+        {
+            if (elapsed >= TotalTime || spriteRenderer == null) return;
+            elapsed += Time.deltaTime;
+            if (elapsed >= TotalTime || health.IsDead) return; // 다음 프레임부터 Animator 그림이 그대로 보인다
+            spriteRenderer.sprite = frames[elapsed < FirstFrameTime ? 0 : 1];
+        }
+    }
+}

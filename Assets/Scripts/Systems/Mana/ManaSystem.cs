@@ -28,6 +28,8 @@ namespace IBlameYou.Systems
         public float WastedRefundRatio { get; set; }
         public float Current => current;
         public bool Infinite { get; set; } // 개발자 모드 치트
+        // 마나가 모자랄 때 (쓰는 사람, 모자란 만큼)을 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약). 없으면 그냥 실패.
+        public Func<ManaUser, float, bool> ShortfallCover { get; set; }
         public event Action<float, float> ManaChanged;
 
         // (누가, 얼마나, 헛되이 날렸는지) — 서로 탓하기 로그/HUD용.
@@ -76,9 +78,15 @@ namespace IBlameYou.Systems
         {
             if (amount <= 0f) return true;
             amount *= CostMultiplier;
-            if (!HasEnough(amount)) return false;
-
-            if (!Infinite) SetCurrent(current - amount);
+            if (!HasEnough(amount))
+            {
+                if (ShortfallCover == null || !ShortfallCover(user, amount - current)) return false;
+                SetCurrent(0f); // 있던 마나는 다 쓰고 모자란 만큼은 대신 냈다
+            }
+            else if (!Infinite)
+            {
+                SetCurrent(current - amount);
+            }
             spentByUser[(int)user] += amount;
             ManaSpent?.Invoke(user, amount, false);
             return true;

@@ -30,6 +30,25 @@ namespace IBlameYou.Player
             if (health != null && !health.IsDead) health.Heal(RelicBook.VampireFangHeal);
         }
 
+        // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.
+        // 체력은 Drain으로 깎는다 (경직·피해 숫자 없이, 버티기도 쓰지 않음).
+        private float bloodPactReadyAt;
+
+        private bool PayWithHealth(ManaUser user, float shortfall)
+        {
+            var health = GetComponent<HealthSystem>();
+            if (health == null || health.IsDead || Time.time < bloodPactReadyAt) return false;
+            if (!RelicBook.BloodPactCost(health.Current, shortfall, out float cost)) return false;
+
+            health.Drain(cost);
+            bloodPactReadyAt = Time.time + RelicBook.BloodPactCooldown;
+            // 연출: berry 글자 + 작은 별·하트 펑 (체력이 마나로 바뀐 느낌)
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"체력 {cost:0} → 마나", new Color(1f, 0.44f, 0.68f), 0.9f);
+            VfxPlayer.DeathPop(transform.position + Vector3.up * 0.8f, 0.6f);
+            SkillMessages.Post(user, $"피의 계약: 체력 {cost:0}으로 모자란 마나를 냈다 ({RelicBook.BloodPactCooldown:0}초 뒤 다시)");
+            return true;
+        }
+
         // 플레이어 프리팹이 이 컴포넌트가 생기기 전에 구워졌어도 동작하도록, 없으면 붙여서 돌려준다.
         public static PlayerRelics For(GameObject player)
         {
@@ -89,6 +108,17 @@ namespace IBlameYou.Player
                     break;
                 case RelicId.FocusBead:
                     if (mana != null) mana.WastedRefundRatio = Mathf.Min(1f, mana.WastedRefundRatio + RelicBook.FocusBeadRefund);
+                    break;
+                case RelicId.ShadowVeil:
+                    var movement = GetComponent<PlayerMovement>();
+                    if (movement != null) movement.PostDashGrace = Mathf.Max(movement.PostDashGrace, RelicBook.ShadowVeilGrace);
+                    if (GetComponent<GraceBlink>() == null) gameObject.AddComponent<GraceBlink>(); // 무적 동안 보라 깜빡임 + 잔상
+                    break;
+                case RelicId.BloodPact:
+                    if (mana != null) mana.ShortfallCover = PayWithHealth;
+                    break;
+                case RelicId.PhoenixFeather:
+                    if (health != null) health.DeathSaves += RelicBook.PhoenixFeatherSaves;
                     break;
             }
         }

@@ -110,9 +110,13 @@ namespace IBlameYou.Systems
 
         // Resources/<path>/ 의 PNG를 이름순으로 읽어 중심 피벗 스프라이트로 만든다 (100px = 1유닛).
         // 텍스처로 읽어 직접 스프라이트를 만들기 때문에 임포트 설정(Sprite/Default)에 상관없이 동작한다.
-        public static Sprite[] LoadRuntimeFrames(string path)
+        public static Sprite[] LoadRuntimeFrames(string path) => LoadRuntimeFrames(path, new Vector2(0.5f, 0.5f));
+
+        // 피벗을 정해서 읽는다 (예: 적 그림처럼 발밑 = 아래 가운데 (0.5, 0)). 피벗마다 따로 기억한다.
+        public static Sprite[] LoadRuntimeFrames(string path, Vector2 pivot)
         {
-            if (RuntimeFrames.TryGetValue(path, out var cached)) return cached;
+            string key = pivot == new Vector2(0.5f, 0.5f) ? path : $"{path}|{pivot.x:0.###},{pivot.y:0.###}";
+            if (RuntimeFrames.TryGetValue(key, out var cached)) return cached;
 
             var textures = Resources.LoadAll<Texture2D>(path);
             Sprite[] frames = null;
@@ -123,13 +127,13 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < textures.Length; i++)
                 {
                     var texture = textures[i];
-                    frames[i] = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f),
+                    frames[i] = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), pivot,
                         RuntimePixelsPerUnit);
                     frames[i].name = texture.name;
                 }
             }
 
-            RuntimeFrames[path] = frames;
+            RuntimeFrames[key] = frames;
             return frames;
         }
 

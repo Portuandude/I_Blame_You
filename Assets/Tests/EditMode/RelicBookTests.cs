@@ -73,5 +73,39 @@ namespace IBlameYou.Tests
 
             Assert.AreEqual(System.Enum.GetValues(typeof(RelicId)).Length, RelicBook.All.Length);
         }
+
+        // 저장(RunSave)이 유물을 번호로 기억하므로 예전 유물 번호가 바뀌면 안 된다.
+        [Test]
+        public void RelicNumbersStayStable()
+        {
+            Assert.AreEqual(0, (int)RelicId.ManaCrystal);
+            Assert.AreEqual(9, (int)RelicId.FocusBead);
+            Assert.AreEqual(10, (int)RelicId.ShadowVeil);
+            Assert.AreEqual(11, (int)RelicId.BloodPact);
+            Assert.AreEqual(12, (int)RelicId.PhoenixFeather);
+        }
+
+        [Test]
+        public void BloodPactPaysShortfallWithHealth()
+        {
+            Assert.IsTrue(RelicBook.BloodPactCost(50f, 8f, out float cost));
+            Assert.AreEqual(8f * RelicBook.BloodPactHealthPerMana, cost, 0.001f);
+        }
+
+        // 피의 계약으로는 쓰러지지 않는다: 낸 뒤 체력이 1 미만이면 거절.
+        [Test]
+        public void BloodPactNeverKills()
+        {
+            Assert.IsFalse(RelicBook.BloodPactCost(8f, 8f, out _));
+            Assert.IsFalse(RelicBook.BloodPactCost(5f, 20f, out _));
+            Assert.IsTrue(RelicBook.BloodPactCost(9f, 8f, out _));
+        }
+
+        [Test]
+        public void BloodPactIgnoresNoShortfall()
+        {
+            Assert.IsFalse(RelicBook.BloodPactCost(50f, 0f, out float cost));
+            Assert.AreEqual(0f, cost);
+        }
     }
 }

@@ -13,6 +13,11 @@ namespace IBlameYou.Systems
         public float Current => current;
         public bool IsDead => current <= 0f;
         public bool Invulnerable { get; set; }
+        // Invulnerable(대쉬·순간이동·경직이 켜고 끄는 공용 스위치)과 별개로, 시간이 지나면 저절로 끝나는 짧은 무적 (유물 그림자 베일).
+        // 공용 스위치를 직접 끄지 않으므로 다른 무적을 일찍 끝내 버리지 않는다.
+        public bool IsInvulnerable => Invulnerable || Time.time < graceUntil;
+        public bool GraceActive => Time.time < graceUntil; // 시간 무적만 (깜빡임 연출용)
+        private float graceUntil = -1f;
         public event Action<float, float> HealthChanged;
         public event Action<float> Damaged; // 무적 등으로 무시되지 않고 실제로 데미지가 들어갔을 때만 발생
         public event Action DeathPrevented;
@@ -35,7 +40,7 @@ namespace IBlameYou.Systems
 
         public void TakeDamage(float amount)
         {
-            if (amount <= 0f || Invulnerable) return;
+            if (amount <= 0f || IsInvulnerable) return;
             if (current - amount <= 0f && DeathSaves > 0 && current > 0f)
             {
                 DeathSaves--;
@@ -47,6 +52,12 @@ namespace IBlameYou.Systems
 
             SetCurrent(current - amount);
             Damaged?.Invoke(amount);
+        }
+
+        // 지금부터 seconds초 동안 피해를 받지 않는다 (이미 더 긴 무적이 남아 있으면 그대로).
+        public void GrantGrace(float seconds)
+        {
+            if (seconds > 0f) graceUntil = Mathf.Max(graceUntil, Time.time + seconds);
         }
 
         // 최대 체력을 늘린다 (늘어난 만큼 현재 체력도 채운다).

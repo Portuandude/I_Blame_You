@@ -61,6 +61,7 @@ namespace IBlameYou.Player
         // 발밑 높이 (몸 기준). 발밑에 붙이는 효과(레벨업 빛기둥 등)가 쓴다.
         public float FeetLocalY => groundCheck != null ? groundCheck.localPosition.y : 0f;
         public bool IsDashing => isDashing;
+        public float PostDashGrace { get; set; } // 대쉬가 끝난 뒤 더 이어지는 무적 시간 (유물 그림자 베일)
         public float Facing => Mathf.Sign(transform.localScale.x);
 
         public float DashStaminaCost
@@ -194,6 +195,7 @@ namespace IBlameYou.Player
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
             health.Invulnerable = false;
+            if (PostDashGrace > 0f) health.GrantGrace(PostDashGrace);
         }
 
         private void FixedUpdate()
