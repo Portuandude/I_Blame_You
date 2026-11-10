@@ -38,6 +38,20 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 일시정지 창 "지금까지" 한 줄 (IMGUI rich text, A·B는 각자 색). 예: "날린 마나 A 12 · B 30 → 지금은 <color=#ffa659>B 탓</color>".
+        public static string Running(float wastedA, float wastedB)
+        {
+            string now;
+            switch (Judge(wastedA, wastedB))
+            {
+                case Who.A: now = "지금은 <color=#73d9ff>A 탓</color>"; break;
+                case Who.B: now = "지금은 <color=#ffa659>B 탓</color>"; break;
+                case Who.Even: now = "지금은 반반"; break;
+                default: now = "아직 아무 탓도 없음"; break;
+            }
+            return $"날린 마나 A {Whole(wastedA)} · B {Whole(wastedB)} → {now}";
+        }
+
         // 최근 탓 기록 (시작 화면에서 서로 놀릴 거리). 저장 문자열은 판정 글자(A·B·E 반반·N 없음)를 새 것부터 이어 붙인 것, RecentMax개.
         public const int RecentMax = 10;
 
