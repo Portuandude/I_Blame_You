@@ -37,8 +37,12 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.Restore(RelicBook.CheerRibbonMana);
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", new Color(1f, 0.65f, 0.35f), 0.8f);
+            var color = new Color(1f, 0.65f, 0.35f);
+            VfxPlayer.ManaRing(transform, RingOffset, color); // B색 고리
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", color, 0.8f);
         }
+
+        private static readonly Vector3 RingOffset = new Vector3(0f, 0.7f, 0f); // 마나 고리 가운데 (몸통 높이, 플레이어 로컬)
 
         // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
         private void OnShieldActivated(Element element)
@@ -46,7 +50,9 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.Restore(RelicBook.TwinRingMana);
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", new Color(0.37f, 0.82f, 1f), 0.8f);
+            var color = new Color(0.37f, 0.82f, 1f);
+            VfxPlayer.ManaRing(transform, RingOffset, color); // A색 고리
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
