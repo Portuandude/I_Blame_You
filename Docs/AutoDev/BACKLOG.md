@@ -15,7 +15,7 @@
 - DONE (claude/project-thread-5764qw): 결과 창 "누구 탓?" 판정 — 날린 마나가 더 많은 쪽 탓(차이 5 이하·10% 이하는 반반), 이름 색으로 한 줄 (`Chunks/BlameVerdict` + 테스트)
 - DONE (claude/project-thread-5764qw): 최근 탓 기록 — 판마다 판정(A/B/반반/없음)을 최근 10개 저장, 시작 화면에 "최근 10판 탓: A 4 · B 5 · 반반 1". 두 사람이 서로 놀릴 거리 (`BlameVerdict`, `SaveData`)
 - DONE (claude/project-thread-5764qw): 유물 네잎 클로버 — 유물 상자 후보가 3개 → 4개 (`RelicBook`, 유물 창 너비, 아이콘 `generate_relic_icons.py`)
-- TODO: 탓 판정 연출 — 게임오버 창에서 판정 줄이 0.6초 늦게 "쾅" 도장처럼 찍히고(크기 1.6→1, 흔들림), 탓 받은 쪽 이름 색으로 번쩍 (`SkillHUD.EndScreen`)
+- DONE (claude/project-thread-5764qw, 클리어 창에도 적용): 탓 판정 연출 — 게임오버 창에서 판정 줄이 0.6초 늦게 "쾅" 도장처럼 찍히고(크기 1.6→1, 흔들림), 탓 받은 쪽 이름 색으로 번쩍 (`SkillHUD.EndScreen`)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
