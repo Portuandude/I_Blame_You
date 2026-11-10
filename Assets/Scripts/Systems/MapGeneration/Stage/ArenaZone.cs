@@ -30,6 +30,10 @@ namespace IBlameYou.Systems
         private bool spawning;
         private readonly List<GameObject> gates = new List<GameObject>();
         private Rect? previousCameraBounds;
+        private bool bossFight; // 보스·중간보스가 나오는 구역: 문이 닫히는 동안 보스 곡 (Resources/Audio/Music/Boss)
+
+        private const string BossMusic = "Boss";
+        private const string StageMusic = "Dungeon";
 
         public bool IsCleared => cleared;
         public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
@@ -86,6 +90,8 @@ namespace IBlameYou.Systems
         {
             active = true;
             spawning = true;
+            bossFight = spawns.Exists(IsBoss);
+            if (bossFight) GameAudio.PlayMusic(BossMusic);
             CreateGate(area.xMin + 0.5f);
             CreateGate(area.xMax - 0.5f);
             LockCamera();
@@ -93,8 +99,7 @@ namespace IBlameYou.Systems
 
             foreach (var spawn in spawns)
             {
-                bool dropsIn = spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater
-                               || spawn.Kind == StageEnemy.SlimeKing; // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
+                bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
                 if (!dropsIn)
                     EffectLibrary.PlayOneShot(spawn.Position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.4f, 0.4f, 0.7f), 1.2f);
                 RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
@@ -114,6 +119,7 @@ namespace IBlameYou.Systems
             foreach (var gate in gates) if (gate != null) Destroy(gate);
             gates.Clear();
             UnlockCamera();
+            LeaveBossMusic();
             StageEvents.PostNotice("구역 돌파!");
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
@@ -149,9 +155,21 @@ namespace IBlameYou.Systems
             follow.SetBounds(previousCameraBounds.Value);
         }
 
+        private static bool IsBoss(Spawn spawn) =>
+            spawn.Kind == StageEnemy.SlimeKing || spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater;
+
+        // 보스 곡이 아직 나오고 있을 때만 스테이지 곡으로 (그사이 메뉴 곡 등으로 바뀌었으면 건드리지 않는다).
+        private void LeaveBossMusic()
+        {
+            if (!bossFight) return;
+            bossFight = false;
+            if (GameAudio.CurrentMusic == BossMusic) GameAudio.PlayMusic(StageMusic);
+        }
+
         private void OnDestroy()
         {
             if (active) UnlockCamera();
+            LeaveBossMusic(); // 싸우다 방을 떠나거나 구역이 치워지면
         }
     }
 }
