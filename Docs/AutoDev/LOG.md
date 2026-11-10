@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-10 09:00 UTC (진행 중)
+- 브랜치/PR: `claude/project-thread-b2uz39` → #25 (develop 대상, 자동 머지 켬)
+- 완료: 마법 스위치 발판(리뷰 APPROVE), 스위치 룬 그림·빛 고리. 백로그 3개 추가
+- 실패/보류: 없음
+- 다음 실행 메모: 플레이테스트 필요: 스위치 룬이 출발 쪽 절벽 끝에서 쏜 마법에 맞는지, 1.2초 안에 발판에 탈 수 있는지
+
 ## 2026-11-10 08:41 UTC
 - 브랜치/PR: `claude/project-thread-ol1s9w` → #24 (develop 대상)
 - 완료 (6개, 전부 적대적 리뷰 APPROVE): 협동 봉인문(진행도 25% 이후 보물 곁방 상자 앞, A 방어막 속성으로 아래 문양 → B 마법으로 위 문양, `RoomShaper.HasPairGate`·`ElementGate` shieldFirst, 테스트 `PairGatesGuardLateTreasureRooms`), 슬라임 피격 2프레임(`decorate_slime.py --hurt` → `Resources/Enemies/Slime/Hurt` + 회색판·기사 투구판, `EnemyHurtPose.FolderFor`), 일시정지 런 요약 유물 아이콘, 미니맵 자물쇠(안 연 협동 봉인문, `MapLock`)·방어막 감지 높이 2.5칸, 결과 창 유물 아이콘 줄, 슬라임 킹 피격 그림(최대 체력 3% 이상 피해만). 백로그 4개 추가(3개 처리)
