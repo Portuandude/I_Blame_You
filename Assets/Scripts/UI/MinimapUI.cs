@@ -5,7 +5,8 @@ using UnityEngine;
 namespace IBlameYou.UI
 {
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
-    // 방 칸 + 문 연결 통로를 그리고, 지금 방은 깜빡이는 흰 테두리, 가 본 방은 밝게, 안 가 본 방은 어둡게 둔다.
+    // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
+    // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
     // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 휴식·샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
     // 보물 상자, 휴식·샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
@@ -16,7 +17,6 @@ namespace IBlameYou.UI
         private const float SmallCell = 22f;
         private const float Margin = 12f;
 
-        private static readonly Color Unvisited = new Color(0.32f, 0.3f, 0.42f, 0.75f);
         private static readonly Color Visited = new Color(0.78f, 0.74f, 0.9f, 0.95f);
         private static readonly Color Link = new Color(0.95f, 0.92f, 1f, 0.85f);
         private static readonly Color Frame = new Color(0.094f, 0.078f, 0.102f, 0.7f); // ArtStyle outline
@@ -87,27 +87,26 @@ namespace IBlameYou.UI
             float link = Mathf.Max(3f, cell * 0.22f);
             float pad = Mathf.Max(2f, cell * 0.14f);
 
-            // 통로 (각 방의 오른쪽·위 문만 그려 두 번 그리지 않는다. 왼쪽·아래 이웃이 영역 밖이면 그 문도 그린다)
-            foreach (var room in layout.Rooms)
+            // 통로 실선 (던그리드 방식, MinimapRules): 가 본 두 방은 칸 가운데끼리 잇고, 안 가 본 쪽으로는 반 칸쯤만 뻗는다.
+            // 칸이 실선 위에 덮이므로 칸 사이에만 선이 보인다. 작은 지도는 GUI 그룹이 영역 밖을 잘라 준다.
+            foreach (var line in MinimapRules.Links(layout, i => IsShown(i, current)))
             {
-                if (!Inside(room.X, room.Y, left, top, area, cell)) continue;
-                var r = CellRect(room.X, room.Y, left, top, area, cell);
-                if ((room.Doors & DoorDir.Right) != 0)
-                    Fill(new Rect(r.xMax - pad, r.center.y - link / 2f, pad * 2f, link), Link);
-                if ((room.Doors & DoorDir.Up) != 0)
-                    Fill(new Rect(r.center.x - link / 2f, r.y - pad, link, pad * 2f), Link);
-                if ((room.Doors & DoorDir.Left) != 0 && !Inside(room.X - 1, room.Y, left, top, area, cell))
-                    Fill(new Rect(r.x, r.center.y - link / 2f, pad, link), Link);
-                if ((room.Doors & DoorDir.Down) != 0 && !Inside(room.X, room.Y - 1, left, top, area, cell))
-                    Fill(new Rect(r.center.x - link / 2f, r.yMax - pad, link, pad), Link);
+                if (!Near(line.From.X, line.From.Y, left, top, area, cell)) continue;
+                var c = CellRect(line.From.X, line.From.Y, left, top, area, cell).center;
+                var (dx, dy) = RoomLayout.Offset(line.Dir);
+                float length = line.Kind == MapLink.Full ? cell : cell * 0.85f;
+                var end = new Vector2(c.x + dx * length, c.y - dy * length);
+                Fill(Rect.MinMaxRect(Mathf.Min(c.x, end.x) - link / 2f, Mathf.Min(c.y, end.y) - link / 2f,
+                    Mathf.Max(c.x, end.x) + link / 2f, Mathf.Max(c.y, end.y) + link / 2f), Link);
             }
 
             foreach (var room in layout.Rooms)
             {
                 if (!Inside(room.X, room.Y, left, top, area, cell)) continue;
+                // 안 가 본 방은 칸·아이콘·점을 그리지 않는다 (통로 실선만 위에서 그렸다)
+                if (!IsShown(room.Index, current)) continue;
                 var r = CellRect(room.X, room.Y, left, top, area, cell);
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
-                bool seen = streamer.HasVisited(room.Index);
                 bool blink = room == current && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.55f;
                 if (art.Tile != null)
                 {
@@ -117,12 +116,12 @@ namespace IBlameYou.UI
                         float g = Mathf.Max(2f, cell * 0.12f);
                         DrawTile(new Rect(body.x - g, body.y - g, body.width + g * 2f, body.height + g * 2f), Color.white);
                     }
-                    DrawTile(body, seen ? Visited : Unvisited);
+                    DrawTile(body, Visited);
                 }
                 else
                 {
                     Fill(new Rect(body.x - 1f, body.y - 1f, body.width + 2f, body.height + 2f), Frame);
-                    Fill(body, seen ? Visited : Unvisited);
+                    Fill(body, Visited);
                 }
 
                 var mark = KindColor(room.Kind);
@@ -131,14 +130,13 @@ namespace IBlameYou.UI
                 {
                     float s = body.width * 0.82f;
                     var previous = GUI.color;
-                    GUI.color = new Color(1f, 1f, 1f, seen ? 1f : 0.6f);
+                    GUI.color = Color.white;
                     GUI.DrawTexture(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), icon, ScaleMode.ScaleToFit, true);
                     GUI.color = previous;
                 }
                 else if (mark.HasValue)
                 {
                     var c = mark.Value;
-                    if (!seen) c.a = 0.55f;
                     float s = body.width * 0.5f;
                     Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
                 }
@@ -148,7 +146,7 @@ namespace IBlameYou.UI
                 {
                     float s = body.width * 0.55f;
                     var previous = GUI.color;
-                    GUI.color = new Color(1f, 1f, 1f, seen ? 1f : 0.7f);
+                    GUI.color = Color.white;
                     GUI.DrawTexture(new Rect(body.xMax - s * 0.75f, body.yMax - s * 0.75f, s, s), art.Lock, ScaleMode.ScaleToFit, true);
                     GUI.color = previous;
                 }
@@ -162,7 +160,6 @@ namespace IBlameYou.UI
                     for (int i = 0; i < switches.Count; i++)
                     {
                         var c = ElementInfo.Color(switches[i]);
-                        c.a = seen ? 1f : 0.7f;
                         var dot = new Rect(body.x + 1f + i * (d * 0.8f), body.y + 1f, d, d);
                         if (art.Tile != null)
                         {
@@ -280,6 +277,16 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), name, legendLeft);
                 x += itemWidth;
             }
+        }
+
+        private bool IsShown(int index, RoomData current) =>
+            MinimapRules.ShowRoom(streamer.HasVisited(index), index == current.Index);
+
+        // 칸이 영역 안이거나 바로 옆(한 칸 밖)이면 실선을 그린다 (영역 밖에서 들어오는 실선도 보이게)
+        private static bool Near(int x, int y, int left, int top, Rect area, float cell)
+        {
+            float px = (x - left) * cell, py = (top - y) * cell;
+            return px >= -cell && py >= -cell && px <= area.width + 0.5f && py <= area.height + 0.5f;
         }
 
         private static bool Inside(int x, int y, int left, int top, Rect area, float cell)
