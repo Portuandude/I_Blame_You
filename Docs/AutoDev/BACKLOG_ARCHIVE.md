@@ -2,6 +2,13 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-u6xniz): 버튼 귀엽게 — `UI/CuteButton.cs` 둥근 젤리 버튼(보통/올림/누름 `generate_hud.py` Button*), 일시정지·유물·특성 창·시작 화면
+- DONE (claude/project-thread-u6xniz): 알림 피드 귀엽게 — 줄마다 반투명 알약(`Pill`) + 왼쪽 색 띠(실패 berry) + 오른쪽에서 튕기며 들어옴
+- DONE (claude/project-thread-u6xniz): 화면 가운데 안내 문구 귀엽게 — `UI/SkillHUD.Notice.cs` 외곽선 + gold 테두리 + 크림 글자, 0.35초 팝
+- DONE (claude/project-thread-u6xniz): 특성·유물 창 카드 귀엽게 — 카드 테두리를 소유자 색(A 하늘·B 주황·공용 크림)으로 물들인 둥근 패널, 특성 랭크 막대를 캡슐 바(`DrawCapsuleBar`)로, 마일스톤 달성 줄 앞에 작은 별, 창이 열릴 때 카드가 차례로 팝
+- DONE (claude/project-thread-u6xniz): 시작 화면 귀엽게 — 바탕 상자를 둥근 패널(`Panel`)로, 제목 "I Blame You!"를 gold 테두리 글자 + 위아래로 둥실, 제목 둘레 반짝이 별 몇 개 깜빡임
+- DONE (claude/project-thread-u6xniz): 게임오버·클리어 화면 귀엽게 — 패널이 팝으로 등장, 클리어는 화면 위에서 gold·berry·aqua 색종이(별·하트)가 떨어짐, 게임오버 제목 "누구 탓이지?"가 좌우로 갸우뚱
+- DONE (claude/project-thread-u6xniz, 틀리면 바로 실패로 창이 닫혀 흔들림 대신 영창 오타를 입력 칸 berry 테두리로 미리 표시): 방어막 미니게임·영창 입력 귀엽게 — 영창 입력 칸을 둥근 패널 스타일로, 화살표 칸을 맞출 때마다 칸이 aqua로 번쩍이며 살짝 커졌다 돌아옴, 틀리면 좌우 흔들림
 - DONE (claude/project-thread-8rxr8x): HUD 체력·마나 바 귀엽게 — `UI/SkillHUD.Bars.cs` 하트·별 아이콘 + 둥근 캡슐(9분할) + 빛 테두리 + 흰 잔상(0.45초 머문 뒤 줄어듦), 체력 낮으면 하트 두근. 그림 `Tools/ArtGen/generate_hud.py` → `Resources/UI/HUD`
 - DONE (claude/project-thread-8rxr8x): 보스 체력바 귀엽게 — 왕관 아이콘(`generate_hud.py` Crown) + 캡슐 바(보라, gold 빛) + 흰 잔상, 한 번에 5% 넘게 깎이면 0.25초 흔들림. 보스 교체·분열로 최대 체력이 바뀌면 잔상 초기화
 - DONE (claude/project-thread-8rxr8x): 레벨·스테이지 진행 바 귀엽게 — 캡슐 바(경험치 lilac, 진행도 gold), 레벨업 0.6초 gold 반짝, 진행 바 끝 깃발(`generate_hud.py` Flag)
