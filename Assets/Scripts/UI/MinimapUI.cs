@@ -153,6 +153,30 @@ namespace IBlameYou.UI
                     GUI.color = previous;
                 }
 
+                // 마법 스위치 퍼즐 방: 방 칸 왼쪽 위에 룬 속성 색 점 (룬마다 하나, 어떤 속성 마법이 필요한지 미리 보이게)
+                var switches = streamer.SwitchElements(room.Index);
+                if (switches.Count > 0)
+                {
+                    float d = Mathf.Max(4f, body.width * 0.26f);
+                    float o = Mathf.Max(1f, d * 0.2f);
+                    for (int i = 0; i < switches.Count; i++)
+                    {
+                        var c = ElementInfo.Color(switches[i]);
+                        c.a = seen ? 1f : 0.7f;
+                        var dot = new Rect(body.x + 1f + i * (d * 0.8f), body.y + 1f, d, d);
+                        if (art.Tile != null)
+                        {
+                            DrawTile(new Rect(dot.x - o, dot.y - o, dot.width + o * 2f, dot.height + o * 2f), new Color(Frame.r, Frame.g, Frame.b, c.a));
+                            DrawTile(dot, c);
+                        }
+                        else
+                        {
+                            Fill(new Rect(dot.x - 1f, dot.y - 1f, dot.width + 2f, dot.height + 2f), Frame);
+                            Fill(dot, c);
+                        }
+                    }
+                }
+
                 if (blink && art.Tile == null)
                 {
                     float t = Mathf.Max(2f, cell * 0.1f);
