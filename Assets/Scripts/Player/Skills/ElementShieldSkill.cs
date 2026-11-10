@@ -25,6 +25,9 @@ namespace IBlameYou.Player
         private ElementShield shield;
         private HealthSystem health;
 
+        // 방어막이 실제로 발동했을 때 (미니게임 성공, 개발 모드 바로 발동). 유물 쌍둥이 반지가 듣는다.
+        public event System.Action<Element> Activated;
+
         public bool MinigameActive { get; private set; }
         public Element PendingElement { get; private set; }
         public string Sequence => Sequences[(int)PendingElement];
@@ -115,6 +118,7 @@ namespace IBlameYou.Player
         {
             shield.Activate(element, shieldDuration);
             SkillMessages.Post(ManaUser.PlayerA, $"{ElementInfo.KoreanName(element)} 방어막 발동");
+            Activated?.Invoke(element);
         }
 
         private void Fail(string reason)
