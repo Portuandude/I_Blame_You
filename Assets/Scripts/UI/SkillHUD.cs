@@ -463,8 +463,9 @@ namespace IBlameYou.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
             var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 186f);
+            var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
-            GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", big);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
@@ -474,6 +475,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
+            GUI.matrix = previousMatrix;
         }
 
         private void DrawStageBar()
@@ -489,9 +491,11 @@ namespace IBlameYou.UI
 
         private void DrawStageClear()
         {
+            DrawConfetti(); // 패널 뒤로 별·하트 색종이 (SkillHUD.EndScreen.cs)
             var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 186f);
+            var previousMatrix = BeginEndScreenPop(rect);
             GUI.Box(rect, GUIContent.none, panel);
-            GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", big);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
             string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
@@ -501,6 +505,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 118f, rect.width, 26f), RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(rect.x, rect.y + 148f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            GUI.matrix = previousMatrix;
         }
     }
 }
