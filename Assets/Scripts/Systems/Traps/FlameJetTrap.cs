@@ -98,7 +98,7 @@ namespace IBlameYou.Systems
             if (player == null) return;
 
             var health = player.GetComponent<HealthSystem>();
-            if (health == null || health.IsDead || health.Invulnerable) return;
+            if (health == null || health.IsDead || health.IsInvulnerable) return;
 
             TrapCommon.Strike(player, DamageKind.Magic, Element.Fire, DamageMultiplier);
             StatusEffects.TryApply(player, StatusDebuff.Burn, TrapCommon.Source);
