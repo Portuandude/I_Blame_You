@@ -2,6 +2,9 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-4vxux1): 결과 징글 — `Jingle_Clear`(상승 셋잇단 + 화음 팡파르)·`Jingle_Defeat`(반음씩 처지는 와와와와), 결과 창이 처음 그려질 때 `GameAudio.StopMusic` + 징글 (`SkillHUD.MarkEndScreenShown`)
+- DONE (claude/project-thread-4vxux1): 진행 효과음 4종 — `Checkpoint`, `GateOpen`(봉인문 완전히 열릴 때), `Pickup`(보상 구슬), `ArenaLock`(구역 잠김)
+- DONE (claude/project-thread-4vxux1): 보스전 배경음악 — `Boss`(152 BPM D단조 16마디), 보스·중간보스 구역 잠기면 보스 곡, 돌파·방 이탈 시 보스 곡일 때만 던전 곡 (`GameAudio.CurrentMusic`)
 - DONE (claude/project-thread-4vxux1): 미니맵 스위치 퍼즐 표시 — 룬이 있는 방 칸 왼쪽 위에 룬 속성 색 점(룬마다 하나), `ChunkStreamer.SwitchElements`
 - DONE (claude/project-thread-4vxux1, 불사조는 생명 20 특성 버티기와 합친 값): HUD 유물 횟수 배지 — 모래시계 남은 무료 낙하·불사조 깃털 남은 버티기 숫자, 0이면 아이콘 어둡게
 - DONE (claude/project-thread-4vxux1): 모래시계 남은 횟수 저장 — `RunSave.Data.freeFalls`(옛 저장 -1 → 유물 기본값), 유물 Apply 뒤 덮어쓰기

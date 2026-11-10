@@ -9,11 +9,11 @@
 
 
 
-- TODO: 보스전 배경음악 (로드맵: 정식 사운드) — `generate_audio.py`에 빠르고 긴장감 있는 보스 곡 `Boss`(루프, 약 40초) 추가. 보스·중간보스 방에 들어가 전투가 잠기면 `GameAudio`로 Boss 곡, 처치하거나 방을 나가면 Dungeon으로 (페이드). 슬라임 킹·쌍둥이 기사 둘 다
+- TODO: 후반 던전 곡 변주 — 진행도 50% 이후(중간보스 뒤) 같은 분위기지만 더 빠르고 화려한 `Dungeon2` 곡(`generate_audio.py`, 다른 조·멜로디)으로 바꿔 런 후반에 지루하지 않게. 보스 곡에서 돌아갈 때도 진행도에 맞는 곡으로 (`ArenaZone.LeaveBossMusic`의 StageMusic을 진행도로 고르기)
 
-- TODO: 진행 효과음 4종 — 체크포인트 켜짐(`Checkpoint`), 봉인문 열림(`GateOpen`, 협동 봉인문 포함), 보상 구슬·회복 줍기(`Pickup`), 전투 구역 잠김(`ArenaLock`). `generate_audio.py` 이름 지정 생성 + 각 스크립트에서 재생
+- TODO: 착지·슬라임 피격 효과음 — 높은 곳에서 떨어져 착지할 때 폭신한 `Land`(낙하 속도 기준, 작은 점프는 소리 없음), 슬라임 무리가 맞을 때 말랑한 `SquishHit`(고블린은 기존 Hit_ 소리 유지). 너무 자주 울리지 않게 볼륨·쿨다운
 
-- TODO: 결과 징글 — 게임오버(내려가는 짧은 멜로디)·클리어(밝은 팡파르) 2~3초 효과음(`Jingle_Defeat`, `Jingle_Clear`)을 결과 창이 뜰 때 재생하고 그동안 배경음악을 줄였다가 끈다 (`SkillHUD.EndScreen.cs`)
+- TODO: 정예 등장 경고 — 정예(어미 슬라임·고블린 전사)가 나오는 전투 구역이 잠기면 낮은 경고음 `EliteWarn` + 화면 가장자리 보라 깜빡임 0.6초 + 안내 "정예 등장!" (`ArenaZone.Begin`, `IsBoss`처럼 `IsElite`)
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
