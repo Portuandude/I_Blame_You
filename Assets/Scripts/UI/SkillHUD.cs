@@ -449,7 +449,11 @@ namespace IBlameYou.UI
             {
                 var previousColor = GUI.color;
                 GUI.color = KeyBerry;
-                GUI.DrawTexture(new Rect(field.x - 3f, field.y - 3f, field.width + 6f, field.height + 6f), Texture2D.whiteTexture);
+                // 테두리만 (입력 칸 배경이 반투명이라 통째로 깔면 칸 전체가 붉게 비친다 — 리뷰 MEDIUM)
+                GUI.DrawTexture(new Rect(field.x - 3f, field.y - 3f, field.width + 6f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.x - 3f, field.yMax, field.width + 6f, 3f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.x - 3f, field.y, 3f, field.height), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(field.xMax, field.y, 3f, field.height), Texture2D.whiteTexture);
                 GUI.color = previousColor;
             }
 
