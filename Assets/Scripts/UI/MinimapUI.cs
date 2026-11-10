@@ -7,9 +7,9 @@ namespace IBlameYou.UI
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
     // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
     // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
-    // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 휴식·샘 하늘색, 시작 초록.
+    // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
-    // 보물 상자, 휴식·샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
+    // 보물 상자, 샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
     public class MinimapUI : MonoBehaviour
     {
         private const int SmallCols = 9;   // 작은 지도에 보이는 칸 수 (지금 방이 가운데)
@@ -225,8 +225,7 @@ namespace IBlameYou.UI
                 case RoomKind.MidBoss: return art.MidBoss;
                 case RoomKind.Elite: return art.Elite;
                 case RoomKind.Treasure: return art.Treasure;
-                case RoomKind.Rest:
-                case RoomKind.Spring: return art.Rest;
+                case RoomKind.Spring: return art.Rest; // 숨 고르기 방(Rest)은 체크포인트 제거(2026-11-10)로 표시 없음
                 case RoomKind.Start: return art.Start;
                 default: return null;
             }
@@ -260,14 +259,14 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 휴식·샘  <color=#99ff73>■</color> 시작", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작", legend);
                 return;
             }
 
             var items = new[]
             {
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "휴식·샘"), (art.Start, "시작")
+                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작")
             };
             float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
@@ -306,8 +305,7 @@ namespace IBlameYou.UI
                 case RoomKind.MidBoss: return MidBossColor;
                 case RoomKind.Elite: return EliteColor;
                 case RoomKind.Treasure: return TreasureColor;
-                case RoomKind.Rest:
-                case RoomKind.Spring: return RestColor;
+                case RoomKind.Spring: return RestColor; // 숨 고르기 방(Rest)은 표시 없음
                 case RoomKind.Start: return StartColor;
                 default: return null;
             }

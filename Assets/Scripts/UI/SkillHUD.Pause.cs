@@ -76,12 +76,12 @@ namespace IBlameYou.UI
             else if (GUI.Button(new Rect(x, rect.y + 248f, buttonWidth, 44f), "시작 화면", menuButton))
             {
                 ClosePauseMenu();
-                RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 체크포인트 시점으로 되감기지 않게
+                RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
                 restart?.Invoke(true);
             }
 
             GUI.Label(new Rect(rect.x + 10f, rect.y + 298f, rect.width - 20f, 50f),
-                "볼륨은 저장된다. 진행은 마지막으로 켠 체크포인트까지 저장되어 시작 화면에서 이어 할 수 있다 (다시 시작하면 지워짐)",
+                "볼륨은 저장된다. 스테이지 1은 15분 안팎이라 런 진행은 저장되지 않는다 (시작 화면으로 나가면 새로 시작)",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, 320f, height));

@@ -215,7 +215,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 RunStats.Ended = true;
-                RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (체크포인트로 되돌려 무르기 방지)
+                RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
                 BeginDeathSequence(); // 슬로모션, 회색으로 바래기, 화면 어두워짐 (SkillHUD.Death.cs)
             }
