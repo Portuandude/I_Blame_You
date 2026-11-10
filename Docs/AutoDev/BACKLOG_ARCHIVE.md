@@ -2,6 +2,7 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-rumjet): 게임오버 창 도달 위치 — "쓰러진 곳: 주 경로 N/M번째 방 (곁방) · 진행도 P% · 버틴 시간" 크림색 한 줄 (`ClearPace.DescribeDefeat` + 테스트, `StageEvents.PathStep/InSideRoom`)
 - DONE (claude/project-thread-rumjet): 이어하기 시작 곡 — 이어하기면 `ArenaZone.StageMusicFor(resume.progress)`로 시작 곡 (지금은 이어하기 버튼이 없어 대비용)
 - DONE (claude/project-thread-rumjet): 결과 창 목표 시간 비교 — 클리어 창에 "목표 15분 00초보다 N분 SS초 빠름(초록)/느림(주황) · 방 N개 (주 경로 · 곁방)" 한 줄, `Chunks/ClearPace` + 테스트, `StageEvents.TargetSeconds/MainRooms/SideRooms`
 - DONE (claude/project-thread-6aea2a): 미니맵 던그리드 방식 — 가 본 방만 네모 칸으로 그린다. **안 가 본 방은 네모를 그리지 않고**, 가 본 방에서 이어지는 통로 실선만 남겨 "그쪽에 방이 더 있다"는 것만 보이게. 방 종류 아이콘·룬 점도 가 본 방에만. Tab 크게 보기도 같은 규칙. 표시 규칙은 순수 함수로 분리해 테스트
