@@ -17,7 +17,7 @@
 
 
 
-- TODO: 후반 던전 곡 변주 — 진행도 50% 이후(중간보스 뒤) 같은 분위기지만 더 빠르고 화려한 `Dungeon2` 곡(`generate_audio.py`, 다른 조·멜로디)으로 바꿔 런 후반에 지루하지 않게. 보스 곡에서 돌아갈 때도 진행도에 맞는 곡으로 (`ArenaZone.LeaveBossMusic`의 StageMusic을 진행도로 고르기)
+- DONE (claude/project-thread-6aea2a): 후반 던전 곡 변주 — 진행도 50% 이후(중간보스 뒤) 같은 분위기지만 더 빠르고 화려한 `Dungeon2` 곡(`generate_audio.py`, 다른 조·멜로디)으로 바꿔 런 후반에 지루하지 않게. 보스 곡에서 돌아갈 때도 진행도에 맞는 곡으로 (`ArenaZone.LeaveBossMusic`의 StageMusic을 진행도로 고르기)
 
 - TODO: 착지·슬라임 피격 효과음 — 높은 곳에서 떨어져 착지할 때 폭신한 `Land`(낙하 속도 기준, 작은 점프는 소리 없음), 슬라임 무리가 맞을 때 말랑한 `SquishHit`(고블린은 기존 Hit_ 소리 유지). 너무 자주 울리지 않게 볼륨·쿨다운
 
