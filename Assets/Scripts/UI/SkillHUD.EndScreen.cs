@@ -106,6 +106,16 @@ namespace IBlameYou.UI
             GUI.Label(rect, text, style);
         }
 
+        // 결과 창 "누구 탓?" 판정: 마나를 더 날린 쪽 이름 색(A/B), 반반·아무도 없음은 크림색 (Chunks/BlameVerdict).
+        private void DrawBlameVerdict(Rect rect)
+        {
+            float a = mana.WastedBy(ManaUser.PlayerA), b = mana.WastedBy(ManaUser.PlayerB);
+            var who = BlameVerdict.Judge(a, b);
+            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            style.normal.textColor = who == BlameVerdict.Who.A ? ColorA : who == BlameVerdict.Who.B ? ColorB : OutlinedLabel.Cream;
+            GUI.Label(rect, BlameVerdict.Describe(a, b), style);
+        }
+
         // 게임오버 결과 창: 쓰러진 곳(주 경로 몇 번째 방·곁방·진행도)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
         private void DrawDefeatPlace(Rect rect)
         {
