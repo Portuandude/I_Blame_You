@@ -487,17 +487,6 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
         }
 
-        private void DrawNotice()
-        {
-            if (string.IsNullOrEmpty(notice) || Time.time - noticeTime > NoticeDuration) return;
-
-            float alpha = Mathf.Clamp01((NoticeDuration - (Time.time - noticeTime)) / 0.5f);
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, alpha);
-            GUI.Label(new Rect(0f, Screen.height * 0.16f, Screen.width, 40f), notice, big);
-            GUI.color = previous;
-        }
-
         private void DrawStageClear()
         {
             var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 186f);
