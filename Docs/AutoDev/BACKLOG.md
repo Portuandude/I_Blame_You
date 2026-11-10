@@ -14,8 +14,8 @@
 - DONE (claude/project-thread-stixme): 이번 판 vs 평소 — 게임오버 창 쓰러진 곳 줄 아래(또는 끝)에 최근 쓰러진 곳 평균과 비교 "평소보다 12%p 더 갔다"(초록)/"덜 갔다"(주황). 기록하기 전 평균과 비교 (`ClearPace`, `SkillHUD.EndScreen`)
 - DONE (claude/project-thread-stixme): 좁은 화면 유물 창 — 후보 4장(네잎 클로버)일 때 화면 너비가 모자라면 카드 폭을 줄이거나 2×2로 (1024px에서 여백 11px). `SkillHUD.Relics`
 - DONE (claude/project-thread-stixme, 옆 런 패널에): 일시정지 창 탓 미리보기 — 일시정지 창에 지금까지 날린 마나 "A 12 · B 30"과 지금 판정("지금은 B 탓")을 그 사람 색으로 한 줄. `BlameVerdict.Describe` 재사용 (`SkillHUD.Pause`)
-- TODO: 결과 창 가장 많이 쓴 마법 — 판마다 B 공격 스킬·A 방어막 속성별 사용 횟수를 세어(`RunStats`) 결과 창 요약 줄에 "B 최애 마법: 불(12회)"를 더한다. 0회면 뺀다 + 테스트
-- TODO: 유물 응원 리본 — A와 B가 4칸 안에 붙어 있으면 마나 재생 +15% (`RelicId` 새 번호, 아이콘, 설명). 둘이 떨어지면 바로 꺼진다
+- DONE (claude/project-thread-stixme, A 방어막 최애도 같은 줄에): 결과 창 가장 많이 쓴 마법 — 판마다 B 공격 스킬·A 방어막 속성별 사용 횟수를 세어(`RunStats`) 결과 창 요약 줄에 "B 최애 마법: 불(12회)"를 더한다. 0회면 뺀다 + 테스트
+- DOING: 유물 응원 리본 — B의 공격 마법이 발동하면 마나 +4 (쌍둥이 반지의 B 쪽 짝. A·B는 한 캐릭터를 같이 조종하므로 "가까이 붙기" 안은 뺐다). `RelicId.CheerRibbon`=17, 아이콘, 설명
 
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
