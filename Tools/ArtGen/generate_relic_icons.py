@@ -232,6 +232,20 @@ def clover(d):
     d.polygon(star_points(19.5, 4.5, 2.4, 1.0), fill=CREAM)
 
 
+def cheer_ribbon(d):
+    # 통통한 리본 매듭: 베리색 날개 두 장 + 꼬리 두 갈래, 가운데 금 매듭, 주변 반짝 (응원)
+    berry = hexrgba("ff6fae")
+    outlined_poly(d, [(12, 10), (3.5, 4.5), (2.5, 14.5)], berry, 1.0)       # 왼쪽 날개
+    outlined_poly(d, [(12, 10), (20.5, 4.5), (21.5, 14.5)], berry, 1.0)     # 오른쪽 날개
+    outlined_poly(d, [(11, 12), (7, 21.5), (9.8, 20), (11.6, 22)], berry, 1.0)   # 왼쪽 꼬리
+    outlined_poly(d, [(13, 12), (17, 21.5), (14.2, 20), (12.4, 22)], berry, 1.0) # 오른쪽 꼬리
+    outlined_ellipse(d, 9.5, 7.5, 14.5, 12.5, GOLD)                          # 매듭
+    shine(d, 5.2, 7.2, 0.9)
+    shine(d, 18.0, 7.2, 0.9)
+    d.polygon(star_points(19.5, 19.0, 2.4, 1.0), fill=CREAM)
+    d.polygon(star_points(4.0, 19.0, 1.8, 0.8), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -250,6 +264,7 @@ ICONS = {
     "TwinRing": twin_ring,
     "Compass": compass,
     "Clover": clover,
+    "CheerRibbon": cheer_ribbon,
 }
 
 
