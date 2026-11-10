@@ -93,6 +93,12 @@ namespace IBlameYou.Systems
             EffectLibrary.PlayOneShot(position, frames, 14f, Color.clear, 0f, false, 0.9f, sortingOrder: 7);
         }
 
+        // 별똥 조각: from(처치한 적)에서 금별이 target 쪽으로 날아가 닿을 때 onArrive. 그림이 없으면 바로 onArrive.
+        public static void StarShard(Vector3 from, Transform target, Vector3 targetOffset, System.Action onArrive)
+        {
+            StarShardFx.Launch(from, target, targetOffset, EffectLibrary.LoadRuntimeFrames("Effects/Sparkle"), onArrive);
+        }
+
         // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
         public static void AimGlint(Vector3 position)
         {
