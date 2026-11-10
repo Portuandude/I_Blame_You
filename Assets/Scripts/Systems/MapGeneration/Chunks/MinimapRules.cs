@@ -15,6 +15,14 @@ namespace IBlameYou.Systems
         Full
     }
 
+    // 방 칸을 어떻게 그릴지. Faint: 탐험가의 나침반 유물로 보이는 안 가 본 방 (흐린 칸 + 흐린 종류 아이콘만).
+    public enum RoomLook
+    {
+        Hidden,
+        Faint,
+        Full
+    }
+
     public struct MapLinkLine
     {
         public RoomData From;  // 늘 그려지는 방 (Stub이면 가 본 쪽)
@@ -25,6 +33,14 @@ namespace IBlameYou.Systems
     public static class MinimapRules
     {
         public static bool ShowRoom(bool visited, bool current) => visited || current;
+
+        // compass: 탐험가의 나침반 유물을 가졌는지. 가 본 방(과 지금 방)은 늘 Full, 나침반이 있으면 나머지는 Faint.
+        // 통로 실선은 Hidden이 아닌 방을 "보이는 방"으로 쳐서 Links에 넘긴다 (나침반이면 지도 전체가 실선으로 이어진다).
+        public static RoomLook Look(bool visited, bool current, bool compass)
+        {
+            if (ShowRoom(visited, current)) return RoomLook.Full;
+            return compass ? RoomLook.Faint : RoomLook.Hidden;
+        }
 
         public static MapLink Link(bool fromShown, bool toShown)
         {
