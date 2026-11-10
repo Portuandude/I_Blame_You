@@ -8,13 +8,15 @@ using UnityEngine;
 namespace IBlameYou.Core
 {
     // 빈 씬에 이 컴포넌트 하나만 두고 Play를 누르면: 시작 화면(개발자 모드 선택)을 띄우고, 시작하면
-    // 시드로 스테이지 1(청크를 가로로 이어 붙인 약 30분 분량의 맵)을 만들고, 시작 지점에 플레이어와 카메라를 준비한다.
+    // 시드로 스테이지 1(청크를 가로로 이어 붙인 약 15분 분량의 맵)을 만들고, 시작 지점에 플레이어와 카메라를 준비한다.
     // 청크는 ChunkStreamer가 플레이어 주변만 만들고 멀어지면 치운다. 쓰러지면 R로 새 맵 다시 시작, M으로 시작 화면.
-    // 휴식 체크포인트를 켜면 런 진행을 저장하고(RunSave), 시작 화면의 "이어하기"로 그 체크포인트부터 다시 시작한다.
+    // 런 진행 저장(RunSave)·이어하기: 체크포인트 제거(2026-11-10 사람 결정)로 지금은 저장하는 시점이 없다. 스테이지가 하나뿐이라
+    // "스테이지 시작 지점에서 이어하기"는 새 런과 다르지 않기 때문. 저장·복원 코드(SaveRun·ContinueWorld)는 스테이지 2가 생기면
+    // 스테이지 전환 때 저장하는 용도로 남긴다.
     public class PlaytestBootstrap : MonoBehaviour
     {
         [Header("Stage")]
-        [SerializeField] private float targetMinutes = 30f;
+        [SerializeField] private float targetMinutes = 15f; // 스테이지 1 목표 15분 안팎 (2026-11-10 사람 결정)
         [SerializeField] private bool randomSeedEachRun = true; // 끄면 아래 seed로 항상 같은 맵
         [SerializeField] private int seed = 0;
         [Tooltip("방 격자형 스테이지 (Docs/LevelDesign.md). 끄면 예전 외길 청크 스테이지")]
@@ -101,7 +103,6 @@ namespace IBlameYou.Core
             if (player.GetComponent<PlayerProgression>() == null) player.AddComponent<PlayerProgression>();
             if (resume != null) RestorePlayer(resume, start); // HUD를 붙이기 전에 (특성 다시 찍기가 HUD 알림으로 쏟아지지 않게)
             streamer.SetPlayer(player.transform);
-            streamer.CheckpointActivated += SaveRun;
 
             SetupCamera(streamer, movement);
 
@@ -118,7 +119,7 @@ namespace IBlameYou.Core
             if (resume != null)
             {
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
-                StageEvents.PostNotice($"이어하기: 체크포인트에서 다시 시작 (시드 {runSeed})");
+                StageEvents.PostNotice($"이어하기: 저장한 곳에서 다시 시작 (시드 {runSeed})");
             }
             else
             {
@@ -145,7 +146,8 @@ namespace IBlameYou.Core
             recovery.SetSafePoint(start);
         }
 
-        // 체크포인트를 처음 켰을 때 (체력·마나 회복 뒤) 런 진행을 저장한다.
+        // 런 진행 저장. 체크포인트 제거(2026-11-10) 뒤로는 부르는 곳이 없다 — 스테이지 전환 저장(스테이지 2)에서 다시 쓴다.
+        // checkpointChunk: 다시 시작할 방 번호, point: 다시 시작할 위치.
         private void SaveRun(int checkpointChunk, Vector3 point)
         {
             if (streamer == null || player == null || hud == null || RunStats.Ended) return;
@@ -186,7 +188,7 @@ namespace IBlameYou.Core
             });
         }
 
-        // 런 도중 앱을 꺼도: 이어 할 때 시간이 체크포인트 시점으로 되감기지 않게 하고, 모드 설정은 원래대로 남긴다.
+        // 런 도중 앱을 꺼도: 이어 할 때 시간이 저장 시점으로 되감기지 않게 하고, 모드 설정은 원래대로 남긴다.
         private void OnApplicationQuit()
         {
             if (hud != null && !RunStats.Ended) RunSave.UpdateElapsed(hud.RunElapsed);

@@ -65,7 +65,9 @@ namespace IBlameYou.Systems
             if (health != null && health.IsDead) return;
 
             collected = true;
-            if (health != null) health.Heal(health.Max * HealRatio);
+            var progression = player.GetComponent<IBlameYou.Player.PlayerProgression>();
+            float healRatio = progression != null ? progression.RewardHealRatio : HealRatio; // 생명 5 특성이면 45%
+            if (health != null) health.Heal(health.Max * healRatio);
             var mana = player.GetComponent<ManaSystem>();
             if (mana != null) mana.Restore(mana.Max * ManaRatio);
 
@@ -74,7 +76,7 @@ namespace IBlameYou.Systems
             if (pop != null) EffectLibrary.PlayOneShot(orbCenter, pop, 18f, Color.clear, 0f, false, 1.1f, sortingOrder: 7); // 하트·별이 톡톡
             else EffectLibrary.PlayHit(Element.Water, orbCenter, 1.2f);
             GameAudio.PlaySfx("Pickup", 0.7f);
-            StageEvents.PostNotice($"보상: 체력 {HealRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복");
+            StageEvents.PostNotice($"보상: 체력 {healRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복");
             onCollected?.Invoke();
             Destroy(gameObject);
         }

@@ -33,7 +33,10 @@ namespace IBlameYou.Systems
         private bool bossFight; // 보스·중간보스가 나오는 구역: 문이 닫히는 동안 보스 곡 (Resources/Audio/Music/Boss)
 
         private const string BossMusic = "Boss";
-        private const string StageMusic = "Dungeon";
+        public const float LateMusicProgress = 0.5f; // 진행도가 이만큼 넘으면(중간보스 뒤) 후반 던전 곡 Dungeon2
+
+        // 진행도에 맞는 스테이지 곡: 전반 Dungeon, 후반(50% 이후) 더 빠르고 화려한 Dungeon2 (Tools/AudioGen).
+        public static string StageMusicFor(float progress) => progress >= LateMusicProgress ? "Dungeon2" : "Dungeon";
 
         public bool IsCleared => cleared;
         public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
@@ -96,7 +99,17 @@ namespace IBlameYou.Systems
             CreateGate(area.xMax - 0.5f);
             LockCamera();
             GameAudio.PlaySfx("ArenaLock", 0.8f);
-            StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
+            if (!bossFight && spawns.Exists(IsElite))
+            {
+                // 정예 등장 경고: 낮은 경고음 + 화면 가장자리 보라 깜빡임 0.6초 + 안내
+                GameAudio.PlaySfx("EliteWarn", 0.85f, 0f);
+                ScreenFlash.EdgeWarn(EliteWarnColor, 0.6f);
+                StageEvents.PostNotice("정예 등장!");
+            }
+            else
+            {
+                StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
+            }
 
             foreach (var spawn in spawns)
             {
@@ -121,6 +134,8 @@ namespace IBlameYou.Systems
             gates.Clear();
             UnlockCamera();
             LeaveBossMusic();
+            // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 50%를 넘긴 구역을 돌파하면 바꾼다
+            if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Progress) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Progress));
             StageEvents.PostNotice("구역 돌파!");
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
@@ -156,6 +171,10 @@ namespace IBlameYou.Systems
             follow.SetBounds(previousCameraBounds.Value);
         }
 
+        private static readonly Color EliteWarnColor = new Color(0.62f, 0.25f, 0.95f); // 정예 보라 (미니맵 정예 색과 같은 계열)
+
+        private static bool IsElite(Spawn spawn) => spawn.Kind == StageEnemy.MotherSlime || spawn.Kind == StageEnemy.GoblinWarrior;
+
         private static bool IsBoss(Spawn spawn) =>
             spawn.Kind == StageEnemy.SlimeKing || spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater;
 
@@ -164,7 +183,7 @@ namespace IBlameYou.Systems
         {
             if (!bossFight) return;
             bossFight = false;
-            if (GameAudio.CurrentMusic == BossMusic) GameAudio.PlayMusic(StageMusic);
+            if (GameAudio.CurrentMusic == BossMusic) GameAudio.PlayMusic(StageMusicFor(StageEvents.Progress));
         }
 
         private void OnDestroy()

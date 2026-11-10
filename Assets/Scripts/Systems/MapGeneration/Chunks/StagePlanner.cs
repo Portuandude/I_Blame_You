@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace IBlameYou.Systems
 {
     // 스테이지에 어떤 청크를 어떤 순서로 놓을지 정한다 (마인크래프트처럼 시드 하나로 결정).
-    // 청크 종류마다 예상 플레이 시간을 두고, 합이 목표 시간(스테이지 1은 30분)에 닿을 때까지 이동 구간과 전투 구역을 번갈아 붙인다.
+    // 청크 종류마다 예상 플레이 시간을 두고, 합이 목표 시간(스테이지 1은 15분 안팎, 2026-11-10 사람 결정)에 닿을 때까지 이동 구간과 전투 구역을 번갈아 붙인다.
     public static class StagePlanner
     {
         // 청크 하나를 지나는 데 걸릴 것으로 보는 시간(초). 이동 구간은 32유닛을 걸으면 6초 남짓이지만
@@ -32,10 +32,10 @@ namespace IBlameYou.Systems
         }
 
         public const int ArenasPerRest = 3;            // 전투 구역 이만큼마다 휴식 (정예 뒤에는 항상)
-        private const int MaxGates = 2;                 // 스테이지당 봉인문 퍼즐 최대 개수
+        private const int MaxGates = 1;                 // 스테이지당 봉인문 퍼즐 최대 개수
         public const float GateMinProgress = 0.25f;     // 이 진행도 구간에서만 봉인문이 나온다 (초반 조작 연습 뒤, 보스 앞 휴식 전)
         public const float GateMaxProgress = 0.85f;
-        private static readonly float[] EliteAt = { 0.4f, 0.72f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예
+        private static readonly float[] EliteAt = { 0.3f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예 (15분: 정예 0.3 → 중간보스 0.55 → 보스)
         public static readonly IReadOnlyList<float> EliteProgress = Array.AsReadOnly(EliteAt);
 
         // 반환: (청크 종류, 그 청크가 시작될 때의 진행도 0~1) 목록.
@@ -62,7 +62,7 @@ namespace IBlameYou.Systems
 
             while (elapsed < targetSeconds - reserve)
             {
-                int travelCount = rng.Next(2, 4);
+                int travelCount = rng.Next(1, 4); // 전투 사이 이동 방 1~3개 (15분에서 전투 비율을 25% 안팎으로)
                 for (int i = 0; i < travelCount && elapsed < targetSeconds - reserve; i++)
                 {
                     var travel = PickTravel(rng, elapsed / targetSeconds, last, gatesPlaced < MaxGates);

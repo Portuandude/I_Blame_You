@@ -27,7 +27,7 @@ namespace IBlameYou.Systems
         MovingBridge,  // 컨트롤 퍼즐: 점프로 못 건너는 낭떠러지를 오가는 움직이는 발판을 타고 건넌다
         Arena,         // 들어가면 문이 닫히고 적이 나오는 전투 구역
         EliteArena,    // 정예 전투 구역
-        Rest,          // 체크포인트 (회복)
+        Rest,          // 숨 고르기 평지 (체크포인트는 2026-11-10 제거). 곁방 지형으로도 쓴다
         Boss           // 마지막 전투 + 출구
     }
 
@@ -38,7 +38,6 @@ namespace IBlameYou.Systems
         FlameJet,    // 바닥 분출구. (X, Y)는 분출구 칸
         ArrowTrap,   // 벽에 박힌 화살 발사대. Direction 쪽으로 쏜다
         Crumble,     // Width칸 무너지는 발판. (X, Y)는 발판이 차지하는 칸 (윗면 = Y + 1)
-        Checkpoint,
         PlayerStart,
         Arena,       // X ~ X + Width - 1 칸이 전투 구역. 이 청크의 Deferred 적이 그 안에서 나온다
         Exit,

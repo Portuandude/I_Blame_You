@@ -33,7 +33,7 @@ namespace IBlameYou.Player
         public float XpToNext => XpForLevel(Level);
 
         // 특성 효과 중 다른 시스템이 읽어 가는 값.
-        public float CheckpointHealRatio { get; private set; } = 0.5f;
+        public float RewardHealRatio { get; private set; } = ArenaReward.HealRatio; // 회복 구슬 체력 회복 비율 (생명 5: 45%)
 
         public event Action<int> LeveledUp;            // 새 레벨
         public event Action<Trait, int> TraitRaised;   // 특성, 새 단계
@@ -176,7 +176,7 @@ namespace IBlameYou.Player
                     if (rank == 20 && mana != null) mana.CostMultiplier *= 0.8f;
                     break;
                 case Trait.Vitality:
-                    if (rank == 5) CheckpointHealRatio = 0.75f;
+                    if (rank == 5) RewardHealRatio = 0.45f; // 체크포인트 제거(2026-11-10)로 회복 구슬 강화로 바꿈
                     if (rank == 20) health.DeathSaves++;
                     break; // 10: 처치 시 체력 (OnEnemyKilled)
             }

@@ -6,7 +6,7 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/LevelUp/00~09   레벨업 빛기둥 (120x240, 아래쪽 1/4 지점이 발밑)
   Assets/Resources/Effects/DeathPop/00~07  적 사망 별·하트 파편 (128x128)
   Assets/Resources/Effects/Sparkle/00~05   유물 상자 반짝임 반복 (96x96)
-  Assets/Resources/Effects/CheckpointPillar/00~09  체크포인트 켤 때 aqua 빛기둥 + 큰 반짝임 3개 (120x240, 아래쪽 1/4 지점이 수정 발밑)
+  (제거됨 2026-11-10, 예전 그림은 Trash/) CheckpointPillar/00~09  체크포인트 켤 때 aqua 빛기둥 + 큰 반짝임 3개 (120x240, 아래쪽 1/4 지점이 수정 발밑)
   Assets/Resources/Effects/ClearBurst/00~09        전투 구역 돌파 축하: 별·하트가 크게 터짐 (192x192)
   Assets/Resources/Effects/ChestOpen/00~11         유물 상자 열기: 뚜껑이 튀어 올라 별로 터지고 gold 빛기둥 + 별 (120x240,
                                                    상자 그림(72x64) 가운데가 캔버스 가운데보다 48px 아래 — VfxPlayer.ChestOpen)
@@ -437,7 +437,7 @@ def shield_shatter_frames():
 
 
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
-        "CheckpointPillar": checkpoint_frames, "ClearBurst": clearburst_frames,
+        "ClearBurst": clearburst_frames,
         "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames,
         "HeartOrb": heart_orb_frames, "HeartPop": heart_pop_frames,
         "ShieldShatter": shield_shatter_frames}

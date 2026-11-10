@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.UI
 {
-    // 화면 가운데 위 안내 문구 (레벨업·구역 돌파·체크포인트·보스 등장 등, StageEvents.PostNotice).
+    // 화면 가운데 위 안내 문구 (레벨업·구역 돌파·보스 등장 등, StageEvents.PostNotice).
     // 귀엽지만 화려하게: 진한 외곽선 → gold 테두리 → 크림 글자 3겹 (OutlinedLabel.cs) + 나타날 때 살짝 튀어 오르는(팝) 크기 애니메이션.
     // 크기 애니메이션은 GUI.matrix를 글자 가운데 기준으로 잠깐 바꿔서 그린다 (그린 뒤 원래대로).
     public partial class SkillHUD

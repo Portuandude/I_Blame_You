@@ -63,6 +63,23 @@ namespace IBlameYou.Enemies
 
             Health.HealthChanged += OnHealthChanged;
             Health.Damaged += OnDamagedShowHealthBar;
+            Health.Damaged += OnDamagedSquish; // 슬라임 무리(슬라임·어미·기사·킹)만 말랑한 소리 (아래)
+        }
+
+        // 슬라임 피격음 SquishHit: 마법 적중음(Hit_속성)에 겹쳐 말랑함을 더한다. 화상 같은 연속 피해·여러 마리 동시 적중에
+        // 너무 자주 울리지 않게 모든 슬라임이 쿨다운 하나를 같이 쓴다. 고블린은 기존 Hit_ 소리만.
+        private const float SquishCooldown = 0.12f;
+        private static float lastSquishTime = -1f;
+        private bool? squishy;
+
+        private void OnDamagedSquish(float amount)
+        {
+            // 이름은 스포너가 Instantiate(Awake) 뒤에 붙이므로 처음 맞을 때 정한다 (EnemyHurtPose와 같은 방식)
+            if (!squishy.HasValue) squishy = EnemyHurtPose.FolderFor(name) == "Slime";
+            if (!squishy.Value) return;
+            if (Time.time >= lastSquishTime && Time.time - lastSquishTime < SquishCooldown) return; // (도메인 리로드 없이 다시 플레이해 Time.time이 작아져도 막히지 않게)
+            lastSquishTime = Time.time;
+            GameAudio.PlaySfx("SquishHit", Health.IsDead ? 0.45f : 0.6f, 0.12f);
         }
 
         // 머리 위 체력 바 (맞았을 때 잠깐 보임). 보스는 화면 위 보스 체력바가 있으므로 끈다.

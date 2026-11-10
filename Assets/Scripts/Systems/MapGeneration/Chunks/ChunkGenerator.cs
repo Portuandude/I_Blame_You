@@ -543,7 +543,6 @@ namespace IBlameYou.Systems
         {
             Flat(heights, chunk.EntryHeight);
             ApplyHeights(chunk, heights);
-            chunk.AddFeature(FeatureKind.Checkpoint, W / 2, chunk.EntryHeight);
         }
 
         // 마지막 전투: 보스 슬라임 킹. 이기면 오른쪽 끝 출구가 열린다.

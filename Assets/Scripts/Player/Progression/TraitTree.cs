@@ -68,7 +68,7 @@ namespace IBlameYou.Player
                 case Trait.Mystic:
                     return milestone == 5 ? "마나 재생 +30%" : milestone == 10 ? "실패로 날린 마나 절반 돌려받기" : "모든 마나 소모 -20%";
                 default:
-                    return milestone == 5 ? "체크포인트 회복 50% → 75%" : milestone == 10 ? "적 처치 시 체력 +2" : "한 번 쓰러질 피해를 체력 30%로 버팀";
+                    return milestone == 5 ? "회복 구슬 체력 30% → 45%" : milestone == 10 ? "적 처치 시 체력 +2" : "한 번 쓰러질 피해를 체력 30%로 버팀";
             }
         }
     }

@@ -7,7 +7,7 @@ namespace IBlameYou.Tests
     // 청크식 스테이지 생성기(순수 C#) 검증. Tools/StageGen/StagePreview가 하던 검사를 CI에서도 돌린다.
     public class StageGeneratorTests
     {
-        private const float TargetSeconds = 30f * 60f;
+        private const float TargetSeconds = 15f * 60f; // 스테이지 1 목표 15분 (2026-11-10 사람 결정)
         private const int SeedCount = 40;
 
         [Test]
@@ -79,7 +79,8 @@ namespace IBlameYou.Tests
             for (int seed = 0; seed < SeedCount; seed++)
             {
                 var stage = StageGenerator.Generate(seed, TargetSeconds);
-                Assert.That(stage.EstimatedSeconds, Is.InRange(TargetSeconds * 0.9f, TargetSeconds * 1.1f), $"seed {seed}");
+                // 15분 안팎 = 13~17분: 마지막 청크가 넘치는 몫(최대 100초 남짓)이 15분에서는 10%를 넘을 수 있어 ±15%
+                Assert.That(stage.EstimatedSeconds, Is.InRange(TargetSeconds * 0.85f, TargetSeconds * 1.15f), $"seed {seed}");
             }
         }
 

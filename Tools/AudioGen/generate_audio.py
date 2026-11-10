@@ -288,6 +288,26 @@ def hurt():
     return normalize(fade_edges(thump + grit + snap))
 
 
+def land():
+    """높은 곳에서 떨어져 착지: 폭신한 '퐁' (낮은 사인 낙하 + 부드러운 흙먼지). 귀엽게, 아프지 않게."""
+    n = int(0.22 * SR)
+    t = np.arange(n) / SR
+    thud = osc("sine", 140 * np.exp(-t * 18) + 55, n) * env_exp(n, 0.07)
+    puff = lowpass(noise(n), 700) * env_adsr(n, 0.004, 0.05, 0.3, 0.08) * 0.35
+    pad = osc("tri", 330 * np.exp(-t * 9) + 180, n) * env_exp(n, 0.03) * 0.18  # 통통 튀는 느낌
+    return normalize(fade_edges(thud + puff + pad))
+
+
+def squish_hit():
+    """슬라임이 맞을 때: 말랑한 '뿌직' (아래로 휘는 블룹 + 젖은 물소리 잡음)."""
+    n = int(0.2 * SR)
+    t = np.arange(n) / SR
+    bloop = osc("sine", 520 * np.exp(-t * 14) + 160 + 60 * np.sin(2 * np.pi * 28 * t), n) * env_adsr(n, 0.003, 0.06, 0.4, 0.08)
+    wet = bandpass(noise(n), 500, 2200) * env_exp(n, 0.035) * 0.55
+    pop = osc("sine", 900 * np.exp(-t * 60) + 300, n) * env_exp(n, 0.012) * 0.3
+    return normalize(fade_edges(lowpass(bloop + wet + pop, 3500)))
+
+
 def enemy_die():
     n = int(0.55 * SR)
     t = np.arange(n) / SR
@@ -349,7 +369,7 @@ def switch_tick():
     return normalize(fade_edges(click + knock))
 
 
-def checkpoint():
+def checkpoint():  # 체크포인트 제거(2026-11-10)로 main()에서 뺐다. 샘 연출 등에 다시 쓸 수 있게 남김
     """체크포인트 켜짐: 따뜻한 패드가 부풀며 맑은 종 아르페지오(C-E-G-C)가 올라가고 반짝이 꼬리, 1.3초."""
     n = int(1.3 * SR)
     out = np.zeros(n)
@@ -399,6 +419,20 @@ def arena_lock():
     crash = lowpass(noise(n), 2500) * env_exp(n, 0.05) * 0.6
     clang = sum(osc("square", f, n, 0.3) * w for f, w in ((311, 0.15), (467, 0.1), (703, 0.06))) * env_exp(n, 0.18)
     return normalize(fade_edges(thump + crash + lowpass(clang, 3000)))
+
+
+def elite_warn():
+    """정예 등장 경고: 낮은 두 음 '둥-둥' (트레몰로 톱니 + 쿵), 무섭지만 귀엽게 짧게."""
+    n = int(0.75 * SR)
+    out = np.zeros(n)
+    for start, name in ((0.0, "A2"), (0.3, "D#2")):
+        m = int(0.42 * SR)
+        t = np.arange(m) / SR
+        body = osc("saw", note_hz(name), m) * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * t))
+        body = lowpass(body, 900) * env_adsr(m, 0.01, 0.1, 0.6, 0.15) * 0.6
+        boom = osc("sine", 90 * np.exp(-t * 10) + 40, m) * env_exp(m, 0.1)
+        mix_at(out, body + boom, int(start * SR))
+    return normalize(fade_edges(out))
 
 
 def jingle_clear():
@@ -551,6 +585,75 @@ def dungeon_theme():
     return normalize(music, 0.7)
 
 
+def dungeon2_theme():
+    """후반 던전 테마 (진행도 50% 이후, 중간보스 뒤): 138 BPM, E단조, 16마디 루프. 같은 분위기를 더 빠르고 화려하게:
+    16분 하이햇, 4박 킥 + 오프비트 베이스, 위쪽 반짝이 아르페지오, 후반 8마디는 3도 위 화음 멜로디.
+    Em-C-G-D ×3, 끝 4마디는 Em-C-D-B (B 화음으로 루프 처음 Em에 돌아온다)."""
+    bpm = 138
+    beat = 60 / bpm
+    progression = [
+        ("E", ["E4", "G4", "B4"]), ("C", ["C4", "E4", "G4"]), ("G", ["G3", "B3", "D4"]), ("D", ["D4", "F#4", "A4"]),
+    ] * 3 + [("E", ["E4", "G4", "B4"]), ("C", ["C4", "E4", "G4"]), ("D", ["D4", "F#4", "A4"]), ("B", ["B3", "D#4", "F#4"])]
+    bass_root = {"E": "E2", "C": "C2", "G": "G2", "D": "D2", "B": "B1"}
+    n = int(round(len(progression) * 4 * beat * SR))
+    music = np.zeros(n)
+
+    for bar, (root, chord) in enumerate(progression):
+        bar_start = bar * 4 * beat
+        mix_at(music, pad_chord(chord, 4 * beat) * 0.17, int(bar_start * SR))
+        # 베이스: 8분음표, 뒷박은 옥타브 위 (통통 튀게)
+        for k in range(8):
+            name = bass_root[root]
+            if k % 2 == 1:
+                name = name[:-1] + str(int(name[-1]) + 1)
+            b = tone("square", name, beat / 2 * 0.85, 0.004, 0.05, 0.5, 0.03, duty=0.25)
+            mix_at(music, lowpass(b, 1300) * 0.22, int((bar_start + k * beat / 2) * SR))
+        # 드럼: 킥 매 박, 스네어 2·4박, 하이햇 16분 (8마디마다 마지막 박 스네어 필)
+        for b_ in (0, 1, 2, 3):
+            mix_at(music, kick() * 0.5, int((bar_start + b_ * beat) * SR))
+        for b_ in (1, 3):
+            mix_at(music, snare() * 0.3, int((bar_start + b_ * beat) * SR))
+        if bar % 8 == 7:
+            for k in range(4):
+                mix_at(music, snare() * (0.12 + 0.05 * k), int((bar_start + (3 + k / 4) * beat) * SR))
+        for k in range(16):
+            mix_at(music, hat(k == 14) * (0.08 if k % 2 else 0.05), int((bar_start + k * beat / 4) * SR))
+        # 반짝이 아르페지오 (16분, 두 옥타브 위 — 화려하게)
+        up = [c[:-1] + str(int(c[-1]) + 1) for c in chord]
+        for k in range(16):
+            name = up[[0, 1, 2, 1, 2, 0, 1, 2][k % 8]]
+            a_ = tone("square", name, beat / 4 * 0.75, 0.002, 0.04, 0.3, 0.02, duty=0.125)
+            mix_at(music, a_ * 0.05, int((bar_start + k * beat / 4) * SR))
+
+    def lay_melody(notes, start_bar, volume, duty=0.5):
+        pos = start_bar * 4 * beat
+        for name, beats in notes:
+            if name:
+                m = tone("square", name, beats * beat * 0.93, 0.008, 0.08, 0.58, 0.05, duty=duty, vib=0.007)
+                mix_at(music, lowpass(m, 3400) * volume, int(pos * SR))
+            pos += beats * beat
+
+    melody_a = [("B4", 0.5), ("E5", 0.5), ("G5", 1), ("F#5", 0.5), ("E5", 0.5), ("B4", 1),
+                ("C5", 1), ("E5", 0.5), ("G5", 0.5), ("C6", 1), ("B5", 1),
+                ("D5", 1), ("G5", 1), ("F#5", 0.5), ("G5", 0.5), ("A5", 1),
+                ("F#5", 1.5), ("D5", 0.5), ("A5", 2)]
+    melody_b = [("G5", 1), ("B5", 1), ("A5", 0.5), ("G5", 0.5), ("E5", 1),
+                ("E5", 0.5), ("G5", 0.5), ("C6", 1), ("B5", 1), ("G5", 1),
+                ("B4", 0.5), ("D5", 0.5), ("G5", 1), ("A5", 1), ("B5", 1),
+                ("A5", 1), ("F#5", 1), ("D5", 1), ("F#5", 1)]
+    melody_end = [("E6", 2), ("B5", 1), ("G5", 1),
+                  ("C6", 1), ("G5", 1), ("E5", 2),
+                  ("D5", 1), ("F#5", 1), ("A5", 1), ("D6", 1),
+                  ("D#5", 1), ("F#5", 1), ("B5", 2)]
+    # 화음 멜로디 (3도 아래 부드러운 펄스): 후반 8마디만
+    harmony_b = [(None, 4), ("E5", 2), ("G5", 2), ("D5", 2), ("F#5", 2), ("D5", 2), ("A4", 2)]
+    lay_melody(melody_a, 4, 0.12)
+    lay_melody(melody_b, 8, 0.12)
+    lay_melody(harmony_b, 8, 0.06, duty=0.25)
+    lay_melody(melody_end, 12, 0.13)
+    return normalize(music, 0.7)
+
+
 def menu_theme():
     """메뉴 테마: 84 BPM, 잔잔한 벨 아르페지오 + 패드. Am-Em-F-G ×2, 끝 4마디 Dm-Am-F-E."""
     bpm = 84
@@ -648,14 +751,15 @@ def main():
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
-        "Checkpoint": checkpoint, "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
@@ -665,7 +769,7 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
-    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Boss": boss_theme}
+    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Dungeon2": dungeon2_theme, "Boss": boss_theme}
     if only:
         music = {k: v for k, v in music.items() if k in only}  # 곡 이름도 지정할 수 있다 (예: Boss)
     for name, fn in music.items():

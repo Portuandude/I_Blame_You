@@ -48,6 +48,9 @@ namespace IBlameYou.Player
         private float airMinVelocityY;    // 공중에서 가장 빨리 떨어진 속도 (착지 프레임에는 이미 0이라 따로 기억)
         private const float DustFallSpeed = 6f;   // 이보다 빨리 떨어져야 착지 먼지 (작은 턱은 먼지 없음)
         private const float DustFullSpeed = 18f;
+        private const float LandSoundSpeed = 11f;   // 이보다 빨리 떨어져야 착지음 Land (보통 점프 착지는 소리 없음)
+        private const float LandSoundCooldown = 0.25f;
+        private float lastLandSoundTime = -1f;
         private bool isRunning;
         private bool jumpQueued;
         private bool isDashing;
@@ -163,7 +166,15 @@ namespace IBlameYou.Player
         {
             if (!isGrounded) airMinVelocityY = Mathf.Min(airMinVelocityY, rb.linearVelocity.y);
             else if (!wasGrounded && airMinVelocityY < -DustFallSpeed)
+            {
                 VfxPlayer.Dust(groundCheck.position, Mathf.InverseLerp(DustFallSpeed, DustFullSpeed, -airMinVelocityY));
+                // 높은 곳에서 떨어진 착지만 폭신한 착지음 (세게 떨어질수록 조금 크게, 연달아 울리지 않게)
+                if (-airMinVelocityY > LandSoundSpeed && Time.time - lastLandSoundTime > LandSoundCooldown)
+                {
+                    lastLandSoundTime = Time.time;
+                    GameAudio.PlaySfx("Land", Mathf.Lerp(0.35f, 0.75f, Mathf.InverseLerp(LandSoundSpeed, DustFullSpeed, -airMinVelocityY)));
+                }
+            }
             if (isGrounded) airMinVelocityY = 0f;
             wasGrounded = isGrounded;
         }

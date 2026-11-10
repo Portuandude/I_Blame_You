@@ -1473,7 +1473,7 @@ def generate_stage_art():
         "Smoke": smoke_frames(),
         "ArrowTrap": [arrow_trap_sprite()],
         # Platform / Crumble 은 새 팔레트로 generate_terrain.py 가 그린다.
-        "Checkpoint": checkpoint_frames(),
+        # Checkpoint: 체크포인트 제거(2026-11-10)로 만들지 않는다 (checkpoint_frames는 남김, 예전 그림은 Trash/)
         "Gate": gate_frames(),
         "Exit": exit_frames(),
         "Reward": reward_frames(),

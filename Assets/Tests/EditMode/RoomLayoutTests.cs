@@ -8,7 +8,7 @@ namespace IBlameYou.Tests
     // 방 격자형 배치(RoomLayout) 규칙. Docs/LevelDesign.md의 "생성 규칙"을 고정한다.
     public class RoomLayoutTests
     {
-        private const float TargetSeconds = 30f * 60f;
+        private const float TargetSeconds = 15f * 60f; // 스테이지 1 목표 15분 (2026-11-10 사람 결정)
         private const int SeedCount = 60;
 
         private static IEnumerable<RoomLayoutData> Layouts()
@@ -93,7 +93,7 @@ namespace IBlameYou.Tests
         {
             foreach (var layout in Layouts())
             {
-                var plan = StagePlanner.Plan(layout.Seed, TargetSeconds);
+                var plan = StagePlanner.Plan(layout.Seed, RoomLayout.PlanSeconds(TargetSeconds));
                 var main = new List<RoomData>(layout.MainPathRooms());
                 // 계획 + 중간보스 1개 (+ 중간보스 뒤 휴식 방 1개, 계획에서 이미 휴식이 이어지면 없음)
                 bool restAdded = main.Count == plan.Count + 2;
@@ -124,6 +124,18 @@ namespace IBlameYou.Tests
             }
         }
 
+        // 15분 안팎 (사람 결정 2026-11-10): 주 경로 방들의 예상 시간 합(중간보스·숨 고르기 방 포함)이 목표 ±15%
+        [Test]
+        public void EstimatedTimeIsNearTarget()
+        {
+            foreach (var layout in Layouts())
+            {
+                float total = 0f;
+                foreach (var room in layout.MainPathRooms()) total += StagePlanner.EstimatedSeconds(room.Chunk);
+                Assert.That(total, Is.InRange(TargetSeconds * 0.85f, TargetSeconds * 1.15f), $"seed {layout.Seed}: {total}s");
+            }
+        }
+
         [Test]
         public void MidBossSitsAtFiftyFivePercentOfThePath()
         {
@@ -133,8 +145,8 @@ namespace IBlameYou.Tests
                 int index = layout.MidBossPathIndex;
                 Assert.AreEqual(RoomKind.MidBoss, main[index].Kind);
                 float progress = index / (float)(main.Count - 1);
-                // 55% 자리에서 리듬 때문에 조금 옮길 수 있다 (RoomLayout.PickMidBossIndex)
-                Assert.That(progress, Is.InRange(0.52f, 0.59f), $"seed {layout.Seed}: {progress}");
+                // 55% 자리에서 리듬 때문에 한 방까지 옮길 수 있다 (RoomLayout.PickMidBossIndex). 15분 경로는 방이 19개 안팎이라 한 방 = 약 5.5%
+                Assert.LessOrEqual(System.Math.Abs(progress - RoomLayout.MidBossProgress), 1f / (main.Count - 1) + 1e-4f, $"seed {layout.Seed}: {progress}");
                 int count = 0;
                 foreach (var room in layout.Rooms) if (room.Kind == RoomKind.MidBoss) count++;
                 Assert.AreEqual(1, count);

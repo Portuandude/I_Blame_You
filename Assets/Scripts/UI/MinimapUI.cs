@@ -7,9 +7,9 @@ namespace IBlameYou.UI
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
     // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
     // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
-    // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 휴식·샘 하늘색, 시작 초록.
+    // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
-    // 보물 상자, 휴식·샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
+    // 보물 상자, 샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
     public class MinimapUI : MonoBehaviour
     {
         private const int SmallCols = 9;   // 작은 지도에 보이는 칸 수 (지금 방이 가운데)
@@ -33,10 +33,52 @@ namespace IBlameYou.UI
         private GUIStyle legend;
         private GUIStyle legendLeft;
 
+        // 새 방 발견 연출: 처음 들어간 방의 칸이 RevealTime 동안 작게 시작해 살짝 커졌다 제자리로 "톡" 나타나고,
+        // 다 나타나면 칸 위에 흰 반짝임이 한 번 지나간다. 시작할 때 이미 가 본 방(시작 방·이어하기)은 연출 없이.
+        private const float RevealTime = 0.3f;
+        private const float RevealShine = 0.25f;
+        private readonly System.Collections.Generic.HashSet<int> known = new System.Collections.Generic.HashSet<int>();
+        private readonly System.Collections.Generic.Dictionary<int, float> revealStart = new System.Collections.Generic.Dictionary<int, float>();
+
         public void Initialize(ChunkStreamer stageStreamer, GameObject player)
         {
             streamer = stageStreamer;
             control = player != null ? player.GetComponent<PlayerControlState>() : null;
+            if (streamer == null || !streamer.IsRoomMode) return;
+            foreach (var room in streamer.Rooms.Rooms) if (streamer.HasVisited(room.Index)) known.Add(room.Index);
+            streamer.RoomEntered += OnRoomEntered;
+        }
+
+        private void OnDestroy()
+        {
+            if (streamer != null) streamer.RoomEntered -= OnRoomEntered;
+        }
+
+        private void OnRoomEntered(int index)
+        {
+            if (known.Add(index)) revealStart[index] = Time.unscaledTime;
+        }
+
+        // 발견 연출 크기 (0.2 → 1.2 → 1). 연출이 끝났거나 없으면 1.
+        private float RevealScale(int index)
+        {
+            if (!revealStart.TryGetValue(index, out float start)) return 1f;
+            float t = (Time.unscaledTime - start) / RevealTime;
+            if (t >= 1f) return 1f;
+            return t < 0.6f ? Mathf.Lerp(0.2f, 1.2f, t / 0.6f) : Mathf.Lerp(1.2f, 1f, (t - 0.6f) / 0.4f);
+        }
+
+        // 다 나타난 직후 흰 반짝임 알파 (0.55 → 0). 없으면 0.
+        private float RevealShineAlpha(int index)
+        {
+            if (!revealStart.TryGetValue(index, out float start)) return 0f;
+            float t = (Time.unscaledTime - start - RevealTime) / RevealShine;
+            if (t >= 1f)
+            {
+                revealStart.Remove(index); // 연출 끝 (OnGUI 안이지만 이 방 하나만 지운다)
+                return 0f;
+            }
+            return t < 0f ? 0f : 0.55f * (1f - t);
         }
 
         private void Update()
@@ -107,6 +149,13 @@ namespace IBlameYou.UI
                 if (!IsShown(room.Index, current)) continue;
                 var r = CellRect(room.X, room.Y, left, top, area, cell);
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
+                float reveal = RevealScale(room.Index);
+                if (reveal != 1f)
+                {
+                    var center = body.center;
+                    body.size *= reveal;
+                    body.center = center;
+                }
                 bool blink = room == current && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.55f;
                 if (art.Tile != null)
                 {
@@ -174,6 +223,14 @@ namespace IBlameYou.UI
                     }
                 }
 
+                // 새 방 발견 직후 흰 반짝임 한 번
+                float shine = RevealShineAlpha(room.Index);
+                if (shine > 0f)
+                {
+                    if (art.Tile != null) DrawTile(body, new Color(1f, 1f, 1f, shine));
+                    else Fill(body, new Color(1f, 1f, 1f, shine));
+                }
+
                 if (blink && art.Tile == null)
                 {
                     float t = Mathf.Max(2f, cell * 0.1f);
@@ -225,8 +282,7 @@ namespace IBlameYou.UI
                 case RoomKind.MidBoss: return art.MidBoss;
                 case RoomKind.Elite: return art.Elite;
                 case RoomKind.Treasure: return art.Treasure;
-                case RoomKind.Rest:
-                case RoomKind.Spring: return art.Rest;
+                case RoomKind.Spring: return art.Rest; // 숨 고르기 방(Rest)은 체크포인트 제거(2026-11-10)로 표시 없음
                 case RoomKind.Start: return art.Start;
                 default: return null;
             }
@@ -260,14 +316,14 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 휴식·샘  <color=#99ff73>■</color> 시작", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작", legend);
                 return;
             }
 
             var items = new[]
             {
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "휴식·샘"), (art.Start, "시작")
+                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작")
             };
             float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
@@ -306,8 +362,7 @@ namespace IBlameYou.UI
                 case RoomKind.MidBoss: return MidBossColor;
                 case RoomKind.Elite: return EliteColor;
                 case RoomKind.Treasure: return TreasureColor;
-                case RoomKind.Rest:
-                case RoomKind.Spring: return RestColor;
+                case RoomKind.Spring: return RestColor; // 숨 고르기 방(Rest)은 표시 없음
                 case RoomKind.Start: return StartColor;
                 default: return null;
             }
