@@ -8,7 +8,7 @@ namespace IBlameYou.Systems
     // 청크 데이터(StageData)는 시드로 미리 다 만들어져 있어서, 다시 다가가면 같은 지형이 그대로 다시 생긴다.
     // 방 격자 모드(InitializeRooms, Docs/LevelDesign.md): 청크 하나 = 방 하나. 지금 방만 만들어 두고, 문(방 가장자리·천장/바닥 구멍)을
     // 지나면 옆 방으로 옮긴다 (던그리드식). 방들은 월드에서 서로 떨어진 자리에 놓이고, 카메라는 지금 방 안에서만 움직인다.
-    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상과 유물 상자, 켠 체크포인트, 연 봉인문, 보스 돌파 여부.
+    // 청크를 치워도 남는 기록: 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상과 유물 상자, 연 봉인문, 보스 돌파 여부.
     public class ChunkStreamer : MonoBehaviour, IEnemyGroup
     {
         public const int LoadRadius = 2;   // 플레이어가 있는 청크 좌우로 몇 청크까지 만들어 둘지
@@ -34,7 +34,6 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
-        private readonly HashSet<int> activatedCheckpoints = new HashSet<int>();
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
@@ -83,8 +82,6 @@ namespace IBlameYou.Systems
 
         public StageData Stage => stage;
 
-        // 체크포인트를 처음 켰을 때 (청크 번호, 복귀 위치). 런 진행 저장이 듣는다.
-        public event Action<int, Vector3> CheckpointActivated;
         public Rect WorldBounds
         {
             get
@@ -167,7 +164,7 @@ namespace IBlameYou.Systems
             Initialize(data, ground, spawner);
         }
 
-        // 이어하기: 체크포인트가 있던 방에서 시작한다 (SetPlayer 전에 부를 것).
+        // 이어하기: 저장한 방에서 시작한다 (SetPlayer 전에 부를 것). 체크포인트 제거(2026-11-10) 뒤로는 저장 시점이 없어 쓰이지 않는다.
         public void SetCurrentRoom(int index)
         {
             if (rooms != null && index >= 0 && index < rooms.Rooms.Count) currentRoom = index;
@@ -283,15 +280,6 @@ namespace IBlameYou.Systems
                     case FeatureKind.Reward:
                         // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
                         SpawnReward(root, index, new Vector2(ox + f.X + 0.5f, oy + f.Y), false);
-                        break;
-                    case FeatureKind.Checkpoint:
-                        int checkpointChunk = index;
-                        var checkpointPoint = new Vector3(ox + f.X + 0.5f, oy + f.Y + SpawnLift, 0f);
-                        Checkpoint.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), activatedCheckpoints.Contains(index), () =>
-                        {
-                            activatedCheckpoints.Add(checkpointChunk);
-                            CheckpointActivated?.Invoke(checkpointChunk, checkpointPoint);
-                        });
                         break;
                     case FeatureKind.Exit:
                         exits[index] = StageExit.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), bossCleared);
@@ -441,7 +429,6 @@ namespace IBlameYou.Systems
                 clearedArenas = ToArray(clearedArenas),
                 collectedRewards = ToArray(collectedRewards),
                 takenRelics = ToArray(takenRelics),
-                activatedCheckpoints = ToArray(activatedCheckpoints),
                 openedGates = ToArray(openedGates),
                 gateStepChunks = new int[gateSteps.Count],
                 gateStepValues = new int[gateSteps.Count],
@@ -467,7 +454,6 @@ namespace IBlameYou.Systems
             Fill(clearedArenas, records.clearedArenas);
             Fill(collectedRewards, records.collectedRewards);
             Fill(takenRelics, records.takenRelics);
-            Fill(activatedCheckpoints, records.activatedCheckpoints);
             Fill(openedGates, records.openedGates);
             Fill(visitedRooms, records.visitedRooms);
             gateSteps.Clear();
