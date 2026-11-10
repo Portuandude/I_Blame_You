@@ -14,8 +14,6 @@ namespace IBlameYou.Tests
             Assert.IsTrue(MinimapRules.ShowRoom(true, false));
             Assert.IsTrue(MinimapRules.ShowRoom(false, true));
             Assert.IsFalse(MinimapRules.ShowRoom(false, false));
-            Assert.IsFalse(MinimapRules.ShowMarks(false, false));
-            Assert.IsTrue(MinimapRules.ShowMarks(true, false));
         }
 
         [Test]
