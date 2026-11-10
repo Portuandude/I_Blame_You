@@ -15,6 +15,7 @@ namespace IBlameYou.Core
         private const string KeyRecentClears = "Recent.Clears";
         private const string KeyRecentDefeats = "Recent.Defeats";
         private const string KeyRecentBlame = "Recent.Blame";
+        private const string KeyRelicCodex = "Codex.Relics";
 
         private static bool settingsLoaded;
 
@@ -100,6 +101,22 @@ namespace IBlameYou.Core
             PlayerPrefs.SetString(key, BlameVerdict.AddRecent(PlayerPrefs.GetString(key, ""), BlameVerdict.Judge(wastedA, wastedB)));
             PlayerPrefs.Save();
         }
+
+        // 유물 도감: 한 번이라도 고른 유물 (RelicCodex 비트 마스크). 모드별로 따로.
+        public static int RelicCodexMask(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyRelicCodex, devMode), 0);
+
+        // 유물을 고르면 도감에 남긴다. 처음 고른 유물이면 true.
+        public static bool RecordRelic(int relicId)
+        {
+            bool dev = GameSession.DevMode;
+            int mask = RelicCodexMask(dev);
+            if (RelicCodex.Has(mask, relicId)) return false;
+            PlayerPrefs.SetInt(ModeKey(KeyRelicCodex, dev), RelicCodex.With(mask, relicId));
+            PlayerPrefs.Save();
+            return true;
+        }
+
+        public static string RelicCodexSummary(bool devMode, int total) => RelicCodex.Summary(RelicCodexMask(devMode), total);
 
         // 시작 화면용 "최근 N판 탓: A a · B b — B: 마나 먹는 하마" 한 줄 (끝은 탓 칭호). 기록이 없으면 빈 문자열.
         public static string RecentBlameSummary(bool devMode)

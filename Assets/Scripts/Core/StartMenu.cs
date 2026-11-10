@@ -167,7 +167,7 @@ namespace IBlameYou.Core
         {
             int level = SaveData.BestLevel(dev);
             string mode = dev ? "개발자 모드" : "일반 모드";
-            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
+            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")} · {SaveData.RelicCodexSummary(dev, IBlameYou.Player.RelicBook.All.Length)}";
             string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
             if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
             string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 곳 평균 진행도 (어려운 구간 찾기용)
