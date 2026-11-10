@@ -71,6 +71,7 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.Restore(RelicBook.StarShardMana);
+            GameAudio.PlaySfx("StarShard", 0.6f, 0.08f); // 작고 맑은 띵 (Tools/AudioGen star_shard)
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
         }
 
