@@ -61,6 +61,8 @@ namespace IBlameYou.Systems
         // 미니맵 자물쇠: 아직 안 연 협동 봉인문이 있는 곁방 (RoomShaper.HasPairGate)
         public bool HasClosedPairGate(int index) =>
             rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
+        // 미니맵 돌파 체크: 그 방의 전투 구역을 돌파했는지 (방 격자 모드에서 청크 번호 = 방 번호)
+        public bool HasClearedArena(int index) => rooms != null && clearedArenas.Contains(index);
         public event Action<int> RoomEntered;
 
         // 미니맵 룬 점: 그 방에 선 마법 스위치 룬들의 속성 (청크 Features 순서). 없으면 빈 목록. 처음 물을 때 방마다 한 번 모은다.
@@ -630,6 +632,10 @@ namespace IBlameYou.Systems
                 follow.SnapToTarget();
             }
 
+            var entered = rooms.Rooms[index];
+            var pathRoom = !entered.MainPath && entered.ParentIndex >= 0 ? rooms.Rooms[entered.ParentIndex] : entered;
+            StageEvents.PathStep = pathRoom.PathIndex + 1; // 게임오버 창 "쓰러진 곳" (주 경로 몇 번째 방)
+            StageEvents.InSideRoom = !entered.MainPath;
             StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }

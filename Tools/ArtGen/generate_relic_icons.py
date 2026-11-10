@@ -201,6 +201,21 @@ def twin_ring(d):
     d.polygon(star_points(12, 12.5, 2.6, 1.1), fill=CREAM)
 
 
+def compass(d):
+    # 둥근 금테 나침반: 크림 판 위에 빨강(북)·하늘(남) 바늘, 위에 고리
+    d.ellipse(E(9.5, 0.8, 14.5, 5.8), fill=OUTLINE)
+    d.ellipse(E(10.7, 2.0, 13.3, 4.6), fill=GOLD)
+    outlined_ellipse(d, 3, 4, 21, 22, GOLD)
+    d.ellipse(E(5.2, 6.2, 18.8, 19.8), fill=CREAM)
+    for x, y in ((12, 7.3), (12, 18.7), (6.3, 13), (17.7, 13)):  # 방위 눈금
+        d.ellipse(E(x - 0.7, y - 0.7, x + 0.7, y + 0.7), fill=OUTLINE)
+    outlined_poly(d, [(12, 7.6), (14.2, 13), (9.8, 13)], hexrgba("ff4f6a"), 0.8)   # 북 바늘
+    outlined_poly(d, [(12, 18.4), (9.8, 13), (14.2, 13)], AQUA, 0.8)              # 남 바늘
+    d.ellipse(E(11, 12, 13, 14), fill=OUTLINE)
+    shine(d, 7.5, 8.5, 1.0)
+    d.polygon(star_points(19.5, 4.5, 2.4, 1.0), fill=CREAM)                       # 반짝
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -217,6 +232,7 @@ ICONS = {
     "PhoenixFeather": phoenix_feather,
     "Hourglass": hourglass,
     "TwinRing": twin_ring,
+    "Compass": compass,
 }
 
 

@@ -12,6 +12,7 @@ namespace IBlameYou.Core
         private const string KeySfxVolume = "Settings.SfxVolume";
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
+        private const string KeyRecentClears = "Recent.Clears";
 
         private static bool settingsLoaded;
 
@@ -60,6 +61,19 @@ namespace IBlameYou.Core
             PlayerPrefs.Save();
             return true;
         }
+
+        // 최근 클리어 기록 5개 (걸린 시간·목표 시간·방 수, ClearPace.AddRecent 형식). 모드별로 따로.
+        public static void RecordRecentClear(float seconds, float targetSeconds, int rooms)
+        {
+            if (seconds <= 0f) return;
+            string key = ModeKey(KeyRecentClears, GameSession.DevMode);
+            PlayerPrefs.SetString(key, ClearPace.AddRecent(PlayerPrefs.GetString(key, ""), seconds, targetSeconds, rooms));
+            PlayerPrefs.Save();
+        }
+
+        // 시작 화면용 "최근 N판 평균 ..." 한 줄. 기록이 없으면 빈 문자열.
+        public static string RecentClearSummary(bool devMode) =>
+            ClearPace.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentClears, devMode), ""));
 
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)

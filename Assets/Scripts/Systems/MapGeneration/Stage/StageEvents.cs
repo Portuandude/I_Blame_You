@@ -10,6 +10,13 @@ namespace IBlameYou.Systems
 
         public static float Progress { get; set; }   // 0 ~ 1 (플레이어가 스테이지 가로 길이의 어디쯤인지)
         public static string StageName { get; set; } = "스테이지 1";
+        // 이번 런의 목표 시간과 방 수 (클리어 결과 창의 목표 시간 비교, ClearPace). 외길 청크 스테이지면 방 수 0.
+        public static float TargetSeconds { get; set; }
+        public static int MainRooms { get; set; }
+        public static int SideRooms { get; set; }
+        // 지금 방이 주 경로 몇 번째인지(1부터, 곁방이면 붙은 방 기준)와 곁방인지 (게임오버 결과 창 "쓰러진 곳"). 외길 모드면 0.
+        public static int PathStep { get; set; }
+        public static bool InSideRoom { get; set; }
 
         public static void PostNotice(string text) => Notice?.Invoke(text);
 

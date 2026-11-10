@@ -20,6 +20,7 @@ namespace IBlameYou.UI
         };
 
         private float endScreenShownAt = -1f;
+        private float defeatTime; // 쓰러진 순간까지 걸린 시간 (Update에서 deathHandled를 세울 때)
         private GUIStyle endTitle;
 
         // 결과 창이 처음 그려지는 순간: 배경음악을 줄여 끄고 클리어 팡파르 / 게임오버 징글 (Tools/AudioGen Jingle_*).
@@ -91,6 +92,27 @@ namespace IBlameYou.UI
             }
 
             GUI.color = previous;
+        }
+
+        // 클리어 결과 창: 목표 시간(15분) 대비 걸린 시간과 이번 시드의 방 수 한 줄. 빠르면 초록, 느리면 주황 (Chunks/ClearPace).
+        private void DrawClearPace(Rect rect)
+        {
+            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms, StageEvents.SideRooms);
+            if (string.IsNullOrEmpty(text)) return;
+            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
+                ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 목표보다 빠름
+                : new Color(1f, 0.62f, 0.25f);    // 주황: 목표보다 느림
+            GUI.Label(rect, text, style);
+        }
+
+        // 게임오버 결과 창: 쓰러진 곳(주 경로 몇 번째 방·곁방·진행도)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
+        private void DrawDefeatPlace(Rect rect)
+        {
+            string text = ClearPace.DescribeDefeat(StageEvents.PathStep, StageEvents.MainRooms, StageEvents.InSideRoom, StageEvents.Progress, defeatTime);
+            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            style.normal.textColor = OutlinedLabel.Cream;
+            GUI.Label(rect, text, style);
         }
 
         private static float Hash01(int n)

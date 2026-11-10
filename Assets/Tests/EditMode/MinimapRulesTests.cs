@@ -16,6 +16,17 @@ namespace IBlameYou.Tests
             Assert.IsFalse(MinimapRules.ShowRoom(false, false));
         }
 
+        // 탐험가의 나침반: 안 가 본 방도 흐린 칸. 가 본 방·지금 방은 나침반과 상관없이 그대로.
+        [Test]
+        public void CompassShowsUnvisitedRoomsFaint()
+        {
+            Assert.AreEqual(RoomLook.Hidden, MinimapRules.Look(false, false, false));
+            Assert.AreEqual(RoomLook.Faint, MinimapRules.Look(false, false, true));
+            Assert.AreEqual(RoomLook.Full, MinimapRules.Look(true, false, true));
+            Assert.AreEqual(RoomLook.Full, MinimapRules.Look(false, true, false));
+            Assert.AreEqual(RoomLook.Full, MinimapRules.Look(true, false, false));
+        }
+
         [Test]
         public void LinkKindDependsOnWhichSideWasVisited()
         {

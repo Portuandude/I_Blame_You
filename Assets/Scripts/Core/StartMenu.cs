@@ -167,7 +167,9 @@ namespace IBlameYou.Core
         {
             int level = SaveData.BestLevel(dev);
             string mode = dev ? "개발자 모드" : "일반 모드";
-            return $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
+            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
+            string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
+            return string.IsNullOrEmpty(recent) ? line : line + "\n" + recent;
         }
 
         private const string DevModeHelp =

@@ -7,6 +7,7 @@ namespace IBlameYou.UI
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
     // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
     // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
+    // 탐험가의 나침반 유물이 있으면 안 가 본 방도 흐린 칸 + 흐린 종류 아이콘으로 보이고 통로 실선이 지도 전체를 잇는다 (MinimapRules.Look).
     // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
     // 보물 상자, 샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
@@ -18,6 +19,8 @@ namespace IBlameYou.UI
         private const float Margin = 12f;
 
         private static readonly Color Visited = new Color(0.78f, 0.74f, 0.9f, 0.95f);
+        private static readonly Color Faint = new Color(0.78f, 0.74f, 0.9f, 0.3f);  // 나침반으로 보이는 안 가 본 방
+        private const float FaintIconAlpha = 0.45f;
         private static readonly Color Link = new Color(0.95f, 0.92f, 1f, 0.85f);
         private static readonly Color Frame = new Color(0.094f, 0.078f, 0.102f, 0.7f); // ArtStyle outline
         private static readonly Color BossColor = new Color(1f, 0.32f, 0.3f);
@@ -29,6 +32,8 @@ namespace IBlameYou.UI
 
         private ChunkStreamer streamer;
         private PlayerControlState control;
+        private GameObject playerObject;
+        private PlayerRelics relics; // 탐험가의 나침반 확인용 (늦게 붙을 수 있어 처음 쓸 때 찾는다)
         private bool expanded;
         private GUIStyle legend;
         private GUIStyle legendLeft;
@@ -44,6 +49,7 @@ namespace IBlameYou.UI
         {
             streamer = stageStreamer;
             control = player != null ? player.GetComponent<PlayerControlState>() : null;
+            playerObject = player;
             if (streamer == null || !streamer.IsRoomMode) return;
             foreach (var room in streamer.Rooms.Rooms) if (streamer.HasVisited(room.Index)) known.Add(room.Index);
             streamer.RoomEntered += OnRoomEntered;
@@ -108,7 +114,9 @@ namespace IBlameYou.UI
                 Background(new Rect(area.x - 16f, area.y - 36f, area.width + 32f, area.height + 72f), new Color(0.05f, 0.04f, 0.1f, 0.85f));
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
                 EnsureStyle();
-                GUI.Label(new Rect(area.x, area.y - 30f, area.width, 24f), "지도 (` 키로 닫기)", legend);
+                // 나침반이 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다 (탐험가의 나침반)
+                string title = HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)";
+                GUI.Label(new Rect(area.x - 120f, area.y - 30f, area.width + 240f, 24f), title, legend);
                 DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
             }
             else
@@ -146,9 +154,15 @@ namespace IBlameYou.UI
             {
                 if (!Inside(room.X, room.Y, left, top, area, cell)) continue;
                 // 안 가 본 방은 칸·아이콘·점을 그리지 않는다 (통로 실선만 위에서 그렸다)
-                if (!IsShown(room.Index, current)) continue;
+                var look = LookOf(room.Index, current);
+                if (look == RoomLook.Hidden) continue;
                 var r = CellRect(room.X, room.Y, left, top, area, cell);
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
+                if (look == RoomLook.Faint)
+                {
+                    DrawFaintRoom(room, body);
+                    continue;
+                }
                 float reveal = RevealScale(room.Index);
                 if (reveal != 1f)
                 {
@@ -188,6 +202,16 @@ namespace IBlameYou.UI
                     var c = mark.Value;
                     float s = body.width * 0.5f;
                     Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
+                }
+
+                // 돌파한 전투·정예·중간보스 방: 방 칸 오른쪽 아래에 작은 초록 체크 (보스 방은 클리어 화면이 대신한다)
+                if (art.Check != null && room.Kind != RoomKind.Boss && streamer.HasClearedArena(room.Index))
+                {
+                    float s = body.width * 0.55f;
+                    var previous = GUI.color;
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(body.xMax - s * 0.75f, body.yMax - s * 0.75f, s, s), art.Check, ScaleMode.ScaleToFit, true);
+                    GUI.color = previous;
                 }
 
                 // 안 연 협동 봉인문: 방 칸 오른쪽 아래에 작은 자물쇠 (열면 사라짐)
@@ -245,7 +269,7 @@ namespace IBlameYou.UI
             public bool Loaded;
             public GUIStyle Tile;
             public GUIStyle Panel;
-            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock;
+            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock, Check;
         }
 
         private static MapArt art;
@@ -263,6 +287,7 @@ namespace IBlameYou.UI
             art.Rest = Resources.Load<Texture2D>("UI/HUD/Heart");
             art.Start = Resources.Load<Texture2D>("UI/HUD/Flag");
             art.Lock = Resources.Load<Texture2D>("UI/HUD/MapLock");
+            art.Check = Resources.Load<Texture2D>("UI/HUD/MapCheck");
         }
 
         private static GUIStyle NineSlice(string path, int border)
@@ -323,7 +348,7 @@ namespace IBlameYou.UI
             var items = new[]
             {
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작")
+                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Check, "돌파")
             };
             float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
@@ -335,8 +360,41 @@ namespace IBlameYou.UI
             }
         }
 
-        private bool IsShown(int index, RoomData current) =>
-            MinimapRules.ShowRoom(streamer.HasVisited(index), index == current.Index);
+        private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;
+
+        private RoomLook LookOf(int index, RoomData current) =>
+            MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass());
+
+        private bool HasCompass()
+        {
+            if (relics == null && playerObject != null) relics = playerObject.GetComponent<PlayerRelics>();
+            return relics != null && relics.Has(RelicId.Compass);
+        }
+
+        // 나침반으로 보이는 안 가 본 방: 흐린 칸 + 흐린 방 종류 아이콘(색 네모). 자물쇠·룬 점·발견 연출은 가 본 뒤에.
+        private void DrawFaintRoom(RoomData room, Rect body)
+        {
+            if (art.Tile != null) DrawTile(body, Faint);
+            else Fill(body, Faint);
+
+            var icon = KindIcon(room.Kind);
+            var mark = KindColor(room.Kind);
+            var previous = GUI.color;
+            if (icon != null)
+            {
+                float s = body.width * 0.82f;
+                GUI.color = new Color(1f, 1f, 1f, FaintIconAlpha);
+                GUI.DrawTexture(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), icon, ScaleMode.ScaleToFit, true);
+            }
+            else if (mark.HasValue)
+            {
+                var c = mark.Value;
+                c.a *= FaintIconAlpha;
+                float s = body.width * 0.5f;
+                Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
+            }
+            GUI.color = previous;
+        }
 
         // 칸이 영역 안이거나 바로 옆(한 칸 밖)이면 실선을 그린다 (영역 밖에서 들어오는 실선도 보이게)
         private static bool Near(int x, int y, int left, int top, Rect area, float cell)

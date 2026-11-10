@@ -59,7 +59,8 @@ namespace IBlameYou.Core
         // resume: 이어 할 저장 (null이면 새 런, 이전 저장은 지운다).
         private void BuildWorld(RunSave.Data resume)
         {
-            GameAudio.PlayMusic("Dungeon");
+            // 이어하기면 저장된 진행도에 맞는 곡 (진행도 50%+ → 후반 Dungeon2, ArenaZone.StageMusicFor). 새 런은 Dungeon.
+            GameAudio.PlayMusic(resume != null ? ArenaZone.StageMusicFor(resume.progress) : "Dungeon");
             // Tools/I Blame You/Generate Sprites And Animations로 미리 생성해둔 아트 설정.
             // 아직 생성 전이면 null이며, 이 경우 각 스포너가 단색 사각형으로 대체한다.
             var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
@@ -69,11 +70,18 @@ namespace IBlameYou.Core
             int runSeed = resume != null ? resume.seed : randomSeedEachRun ? Random.Range(1, 1000000) : seed;
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
+            StageEvents.TargetSeconds = targetSeconds;
+            StageEvents.MainRooms = 0;
+            StageEvents.SideRooms = 0;
+            StageEvents.PathStep = 0;
+            StageEvents.InSideRoom = false;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             if (roomGrid)
             {
                 var layout = RoomLayout.Generate(runSeed, targetSeconds);
+                StageEvents.MainRooms = System.Linq.Enumerable.Count(layout.MainPathRooms());
+                StageEvents.SideRooms = layout.Rooms.Count - StageEvents.MainRooms;
                 var geometries = new System.Collections.Generic.List<RoomGeometry>();
                 int invalid = 0;
                 foreach (var room in layout.Rooms)
