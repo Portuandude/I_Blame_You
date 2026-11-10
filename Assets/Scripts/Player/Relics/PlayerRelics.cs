@@ -50,7 +50,7 @@ namespace IBlameYou.Player
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
-        // 별똥 조각: 적을 쓰러뜨리면 가끔 마나 회복 (노란 글자).
+        // 별똥 조각: 적을 쓰러뜨리면 가끔 금별이 적 자리에서 날아와 닿을 때 마나 회복 (노란 글자).
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             var health = GetComponent<HealthSystem>();
@@ -58,11 +58,20 @@ namespace IBlameYou.Player
             if (Has(RelicId.VampireFang)) health.Heal(RelicBook.VampireFangHeal);
             if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
             {
-                var mana = GetComponent<ManaSystem>();
-                if (mana == null) return;
-                mana.Restore(RelicBook.StarShardMana);
-                DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
+                Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
+                VfxPlayer.StarShard(from, transform, Vector3.up * 0.8f, OnStarShardArrived);
             }
+        }
+
+        private void OnStarShardArrived()
+        {
+            if (this == null) return; // 별이 날아오는 사이 플레이어가 사라졌다
+            var health = GetComponent<HealthSystem>();
+            if (health == null || health.IsDead) return;
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            mana.Restore(RelicBook.StarShardMana);
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
         }
 
         // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.
