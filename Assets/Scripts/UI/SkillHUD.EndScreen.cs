@@ -199,7 +199,8 @@ namespace IBlameYou.UI
         {
             string text = FavoriteLine();
             if (string.IsNullOrEmpty(text)) return 0f;
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true };
+            // 한 줄 높이(22)라 접히면 아랫줄이 잘린다: 줄바꿈 없이 그린다 (리뷰 LOW)
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(new Rect(x, y, width, 22f), text, style);
             return 22f;
