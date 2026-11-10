@@ -187,7 +187,6 @@ namespace IBlameYou.Systems
                 geometry.Exits[DoorDir.Down] = (HoleX0 - 1, g);    // 구멍 바로 옆에서 걸어 들어가 떨어진다
             }
 
-            if (room.Kind == RoomKind.Rest) chunk.AddFeature(FeatureKind.Checkpoint, 6, g);
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
             if (!up && room.Kind == RoomKind.Travel) AddTeleportShelf(seed, room, chunk);
@@ -340,7 +339,7 @@ namespace IBlameYou.Systems
                     if (chunk.Get(x, y) == StageTile.Platform) Block(safe, x, x);
 
             foreach (var f in chunk.Features)
-                if ((f.Kind == FeatureKind.Enemy || f.Kind == FeatureKind.Checkpoint) && f.Y == g) Block(safe, f.X, f.X);
+                if (f.Kind == FeatureKind.Enemy && f.Y == g) Block(safe, f.X, f.X);
             return safe;
         }
 

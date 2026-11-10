@@ -24,7 +24,7 @@ namespace IBlameYou.Systems
         Puzzle,    // 봉인문·움직이는 발판
         Combat,    // 들어가면 문이 잠기는 전투 방
         Elite,     // 정예 전투 방 (유물 상자)
-        Rest,      // 체크포인트 (회복)
+        Rest,      // 숨 고르기 방 (전투 사이 완충. 체크포인트는 2026-11-10 제거)
         MidBoss,   // 중간보스 방 (경로의 55%)
         Boss,      // 마지막 방 + 출구
         Treasure,  // 막다른 곁방: 유물 상자
@@ -92,14 +92,14 @@ namespace IBlameYou.Systems
         // 주 경로 방 순서는 StagePlanner의 청크 순서를 그대로 쓰고, 55% 자리에 중간보스 방을 끼운다.
         public static RoomLayoutData Generate(int seed, float targetSeconds)
         {
-            var plan = StagePlanner.Plan(seed, targetSeconds);
+            var plan = StagePlanner.Plan(seed, PlanSeconds(targetSeconds));
             var path = new List<(RoomKind kind, ChunkKind chunk, float difficulty)>();
             foreach (var entry in plan) path.Add((KindOf(entry.Key), entry.Key, entry.Value));
 
             int midIndex = PickMidBossIndex(path);
             float midDifficulty = path[Math.Min(midIndex, path.Count - 1)].difficulty;
             path.Insert(midIndex, (RoomKind.MidBoss, ChunkKind.EliteArena, midDifficulty));
-            // 방 리듬: 중간보스 바로 뒤는 휴식 방 (체크포인트 + 숨 고르기). 이미 휴식이면 그대로
+            // 방 리듬: 중간보스 바로 뒤는 숨 고르기 방 (문 잠기는 방이 연달아 오지 않게). 이미 휴식이면 그대로
             if (path[midIndex + 1].kind != RoomKind.Rest)
                 path.Insert(midIndex + 1, (RoomKind.Rest, ChunkKind.Rest, midDifficulty));
 
@@ -110,6 +110,10 @@ namespace IBlameYou.Systems
             UpdateBounds(layout);
             return layout;
         }
+
+        // 방 격자 모드는 계획에 중간보스 방과 그 뒤 숨 고르기 방이 더 끼므로, 그 몫을 빼고 계획해 전체가 목표 시간에 맞게 한다.
+        public static float PlanSeconds(float targetSeconds) =>
+            targetSeconds - StagePlanner.EstimatedSeconds(ChunkKind.EliteArena) - StagePlanner.EstimatedSeconds(ChunkKind.Rest);
 
         // 방 count개짜리 주 경로에서 중간보스가 설 순번.
         public static int MidBossIndex(int count) => (int)Math.Round(MidBossProgress * (count - 1), MidpointRounding.AwayFromZero);
@@ -186,9 +190,12 @@ namespace IBlameYou.Systems
         // x는 줄지 않으므로 오른쪽 칸은 항상 비어 있다 (막다른 길이 생기지 않는다).
         private static void PlaceMainPath(RoomLayoutData layout, List<(RoomKind kind, ChunkKind chunk, float difficulty)> path, Random rng)
         {
-            int x = 0, y = 0, verticalRun = 0;
+            int x = 0, y = 0, verticalRun = 0, verticalSteps = 0;
             DoorDir lastVertical = DoorDir.None;
             RoomData previous = null;
+            int lastChance = -1; // 위/아래로 이을 수 있는 마지막 순번
+            for (int i = 2; i < path.Count; i++)
+                if (CanBeVertical(path[i - 1].kind) && CanBeVertical(path[i].kind) && path[i - 1].kind != RoomKind.Start) lastChance = i;
             for (int i = 0; i < path.Count; i++)
             {
                 var room = new RoomData
@@ -211,6 +218,9 @@ namespace IBlameYou.Systems
                         if (roll == 3 && upOk) step = DoorDir.Up;
                         else if (roll == 4 && downOk) step = DoorDir.Down;
                         else if (roll >= 3 && (upOk || downOk)) step = upOk ? DoorDir.Up : DoorDir.Down;
+                        // 짧은 스테이지(15분)에서 경로 1/3이 지나도록(또는 세로로 이을 수 있는 마지막 자리까지) 세로 방이 없으면 한 번은 오르내리게 한다 (세로 플레이 보장)
+                        if (step == DoorDir.Right && verticalSteps == 0 && (i >= path.Count / 3 || i == lastChance) && (upOk || downOk))
+                            step = upOk ? DoorDir.Up : DoorDir.Down;
                     }
 
                     var (dx, dy) = Offset(step);
@@ -224,6 +234,7 @@ namespace IBlameYou.Systems
                     else
                     {
                         verticalRun++;
+                        verticalSteps++;
                         lastVertical = step;
                     }
 
