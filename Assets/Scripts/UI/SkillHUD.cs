@@ -217,6 +217,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
+                defeatUsualPercent = SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다")
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
                 if (!stageCleared)
                 {
@@ -485,7 +486,8 @@ namespace IBlameYou.UI
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
-            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f);
+            float extra = HasDefeatCompare ? 24f : 0f; // 평소와 비교 줄이 있으면 아래 줄을 그만큼 내린다
+            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f + extra);
             var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
@@ -494,10 +496,11 @@ namespace IBlameYou.UI
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             DrawBlameVerdict(new Rect(rect.x, rect.y + 86f, rect.width, 26f)); // 누구 탓? 판정 (SkillHUD.EndScreen.cs)
             DrawDefeatPlace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 쓰러진 곳 (SkillHUD.EndScreen.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
+            DrawDefeatCompare(new Rect(rect.x, rect.y + 136f, rect.width, 24f)); // 평소보다 더/덜 갔다 (SkillHUD.EndScreen.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 140f + extra, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 200f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f + extra, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 200f + extra, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
             GUI.matrix = previousMatrix;
