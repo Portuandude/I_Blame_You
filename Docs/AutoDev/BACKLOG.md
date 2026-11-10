@@ -9,11 +9,11 @@
 
 
 
-- TODO: 모래시계 남은 횟수 저장 — `FallRecovery.FreeFalls`가 저장되지 않아 이어하기 하면 다시 2번이 된다. `SaveData`/`RunSave`에 남은 횟수를 넣고 복원 시 유물 Apply 뒤 덮어쓰기 (옛 저장은 필드 없음 → 유물 기본값)
+- TODO: 보스전 배경음악 (로드맵: 정식 사운드) — `generate_audio.py`에 빠르고 긴장감 있는 보스 곡 `Boss`(루프, 약 40초) 추가. 보스·중간보스 방에 들어가 전투가 잠기면 `GameAudio`로 Boss 곡, 처치하거나 방을 나가면 Dungeon으로 (페이드). 슬라임 킹·쌍둥이 기사 둘 다
 
-- TODO: HUD 유물 횟수 배지 — HUD 유물 아이콘 줄(`SkillHUD.RelicIcons.cs`)에서 되감기 모래시계는 남은 무료 낙하 횟수, 불사조 깃털은 남은 버티기(`HealthSystem.DeathSaves`) 를 아이콘 오른쪽 아래 작은 숫자 배지로. 0이면 아이콘을 어둡게
+- TODO: 진행 효과음 4종 — 체크포인트 켜짐(`Checkpoint`), 봉인문 열림(`GateOpen`, 협동 봉인문 포함), 보상 구슬·회복 줍기(`Pickup`), 전투 구역 잠김(`ArenaLock`). `generate_audio.py` 이름 지정 생성 + 각 스크립트에서 재생
 
-- TODO: 미니맵 스위치 퍼즐 표시 — 마법 스위치 발판이 있는 퍼즐 방 칸에 작은 룬 점(룬 속성 색)을 그려, 어떤 속성 마법이 필요한지 미리 보이게 (`MinimapUI`, 청크 Features에서 PlatformSwitch 찾기)
+- TODO: 결과 징글 — 게임오버(내려가는 짧은 멜로디)·클리어(밝은 팡파르) 2~3초 효과음(`Jingle_Defeat`, `Jingle_Clear`)을 결과 창이 뜰 때 재생하고 그동안 배경음악을 줄였다가 끈다 (`SkillHUD.EndScreen.cs`)
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
