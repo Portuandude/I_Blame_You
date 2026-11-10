@@ -281,7 +281,7 @@ namespace IBlameYou.Systems
                                 IBlameYou.Core.RunStats.AddGateOpened();
                             },
                             gateSteps.TryGetValue(index, out int gateStep) ? gateStep : 0,
-                            step => gateSteps[gateChunk] = step);
+                            step => gateSteps[gateChunk] = step, f.ShieldFirst);
                         break;
                     case FeatureKind.Arena:
                         int arenaChunk = index;
@@ -324,6 +324,9 @@ namespace IBlameYou.Systems
             var floor = floorSpot.HasValue
                 ? new Vector2(origin.x + floorSpot.Value.x + 2.5f, origin.y + floorSpot.Value.y)
                 : new Vector2(origin.x + ChunkData.Width / 2f, origin.y + stage.Chunks[index].EntryHeight);
+            // 협동 봉인문이 선 세로 곁방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
+            if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
+                floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (room.Kind == RoomKind.Treasure) SpawnRelicChest(root, index, floor, false);
             else if (room.Kind == RoomKind.Spring) SpawnReward(root, index, floor, false);
         }

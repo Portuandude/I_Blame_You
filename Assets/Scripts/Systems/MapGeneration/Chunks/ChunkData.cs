@@ -73,6 +73,7 @@ namespace IBlameYou.Systems
         public int ElementIndex; // ElementGate: 여는 속성 (Element 순서: 0 불, 1 물, 2 바람. 저장·생성 데이터라 int로 둔다. ChunkStreamer에서 Element로 바꾼다)
         public bool HasSecondElement;  // ElementGate: 두 속성 봉인문 (ElementIndex → SecondElementIndex 순서로 맞혀야 열림)
         public int SecondElementIndex; // ElementGate: 둘째 속성 (HasSecondElement일 때만, ElementIndex와 다름)
+        public bool ShieldFirst;       // ElementGate: 협동 봉인문. 첫 속성(ElementIndex)은 A가 그 속성 방어막을 두르고 문에 닿아서, 둘째(SecondElementIndex)는 B 마법으로 푼다
     }
 
     public class ChunkData
