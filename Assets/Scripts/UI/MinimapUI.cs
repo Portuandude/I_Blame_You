@@ -114,7 +114,9 @@ namespace IBlameYou.UI
                 Background(new Rect(area.x - 16f, area.y - 36f, area.width + 32f, area.height + 72f), new Color(0.05f, 0.04f, 0.1f, 0.85f));
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
                 EnsureStyle();
-                GUI.Label(new Rect(area.x, area.y - 30f, area.width, 24f), "지도 (` 키로 닫기)", legend);
+                // 나침반이 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다 (탐험가의 나침반)
+                string title = HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)";
+                GUI.Label(new Rect(area.x - 120f, area.y - 30f, area.width + 240f, 24f), title, legend);
                 DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
             }
             else
