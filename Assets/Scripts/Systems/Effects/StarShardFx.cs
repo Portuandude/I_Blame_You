@@ -77,7 +77,7 @@ namespace IBlameYou.Systems
             var callback = onArrive;
             onArrive = null;
             callback?.Invoke();
-            VfxPlayer.AimGlint(transform.position); // 닿은 자리에서 작게 반짝
+            if (target != null) VfxPlayer.AimGlint(transform.position); // 닿은 자리에서 작게 반짝 (장면 정리 중엔 건너뜀, 리뷰 LOW)
             Destroy(gameObject);
         }
     }
