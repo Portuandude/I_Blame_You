@@ -67,6 +67,7 @@ namespace IBlameYou.Core
 
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
+            GUILayout.Space(4f); // 예전 Label의 아래 여백 (리뷰 LOW)
             GUILayout.Label("한 마법사를 두 사람이 나눠 조작한다. A는 이동·방어, B는 공격. 마나는 하나뿐이다.", body);
             GUILayout.Space(12f);
 
