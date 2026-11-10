@@ -80,6 +80,7 @@ namespace IBlameYou.Core
             if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codexOpen && e.keyCode == KeyCode.Escape)))
             {
                 codexOpen = e.keyCode == KeyCode.C ? !codexOpen : false;
+                if (codexOpen) codexCursor = -1; // 다시 열면 고른 칸 없이 시작
                 e.Use();
             }
             bool wasEnabled = GUI.enabled;
@@ -101,7 +102,10 @@ namespace IBlameYou.Core
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
             if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
+            {
                 codexOpen = true;
+                codexCursor = -1;
+            }
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
@@ -296,7 +300,7 @@ namespace IBlameYou.Core
                     e.Use();
                 }
             }
-            bool mouseMoved = e.mousePosition != codexLastMouse;
+            bool mouseMoved = e.type != EventType.KeyDown && e.mousePosition != codexLastMouse; // 키 이벤트의 마우스 위치는 믿지 않는다 (리뷰 LOW)
             if (mouseMoved) codexLastMouse = e.mousePosition;
             if (codexCursor >= all.Length) codexCursor = -1;
 
