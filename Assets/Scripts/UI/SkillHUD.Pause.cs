@@ -116,7 +116,7 @@ namespace IBlameYou.UI
             float bottom = rect.yMax - 10f;
             var head = new GUIContent(text.ToString());
             float y = rect.y + 10f;
-            float headHeight = small.CalcHeight(head, width);
+            float headHeight = Mathf.Min(small.CalcHeight(head, width), bottom - y); // 패널을 넘치지 않게
             GUI.Label(new Rect(x, y, width, headHeight), head, small);
             y += headHeight + 2f;
 

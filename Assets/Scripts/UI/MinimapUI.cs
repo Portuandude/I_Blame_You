@@ -143,6 +143,16 @@ namespace IBlameYou.UI
                     Fill(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), c);
                 }
 
+                // 안 연 협동 봉인문: 방 칸 오른쪽 아래에 작은 자물쇠 (열면 사라짐)
+                if (art.Lock != null && streamer.HasClosedPairGate(room.Index))
+                {
+                    float s = body.width * 0.55f;
+                    var previous = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, seen ? 1f : 0.7f);
+                    GUI.DrawTexture(new Rect(body.xMax - s * 0.75f, body.yMax - s * 0.75f, s, s), art.Lock, ScaleMode.ScaleToFit, true);
+                    GUI.color = previous;
+                }
+
                 if (blink && art.Tile == null)
                 {
                     float t = Mathf.Max(2f, cell * 0.1f);
@@ -157,7 +167,7 @@ namespace IBlameYou.UI
             public bool Loaded;
             public GUIStyle Tile;
             public GUIStyle Panel;
-            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start;
+            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock;
         }
 
         private static MapArt art;
@@ -174,6 +184,7 @@ namespace IBlameYou.UI
             art.Treasure = Resources.Load<Texture2D>("UI/HUD/MapChest");
             art.Rest = Resources.Load<Texture2D>("UI/HUD/Heart");
             art.Start = Resources.Load<Texture2D>("UI/HUD/Flag");
+            art.Lock = Resources.Load<Texture2D>("UI/HUD/MapLock");
         }
 
         private static GUIStyle NineSlice(string path, int border)
