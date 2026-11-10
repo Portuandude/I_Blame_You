@@ -16,6 +16,7 @@ namespace IBlameYou.Systems
         // Invulnerable(대쉬·순간이동·경직이 켜고 끄는 공용 스위치)과 별개로, 시간이 지나면 저절로 끝나는 짧은 무적 (유물 그림자 베일).
         // 공용 스위치를 직접 끄지 않으므로 다른 무적을 일찍 끝내 버리지 않는다.
         public bool IsInvulnerable => Invulnerable || Time.time < graceUntil;
+        public bool GraceActive => Time.time < graceUntil; // 시간 무적만 (깜빡임 연출용)
         private float graceUntil = -1f;
         public event Action<float, float> HealthChanged;
         public event Action<float> Damaged; // 무적 등으로 무시되지 않고 실제로 데미지가 들어갔을 때만 발생
