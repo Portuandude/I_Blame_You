@@ -18,9 +18,22 @@ namespace IBlameYou.Player
 
         private bool listeningKills;
 
+        private bool listeningShield;
+
         private void OnDestroy()
         {
             if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
+            var shieldSkill = listeningShield ? GetComponent<ElementShieldSkill>() : null;
+            if (shieldSkill != null) shieldSkill.Activated -= OnShieldActivated;
+        }
+
+        // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
+        private void OnShieldActivated(Element element)
+        {
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            mana.Restore(RelicBook.TwinRingMana);
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", new Color(0.37f, 0.82f, 1f), 0.8f);
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
@@ -119,6 +132,18 @@ namespace IBlameYou.Player
                     break;
                 case RelicId.PhoenixFeather:
                     if (health != null) health.DeathSaves += RelicBook.PhoenixFeatherSaves;
+                    break;
+                case RelicId.Hourglass:
+                    var recovery = GetComponent<FallRecovery>();
+                    if (recovery != null) recovery.FreeFalls += RelicBook.HourglassFreeFalls;
+                    break;
+                case RelicId.TwinRing:
+                    var shieldSkill = GetComponent<ElementShieldSkill>();
+                    if (shieldSkill != null && !listeningShield)
+                    {
+                        shieldSkill.Activated += OnShieldActivated;
+                        listeningShield = true;
+                    }
                     break;
             }
         }
