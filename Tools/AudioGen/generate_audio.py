@@ -478,6 +478,72 @@ def menu_theme():
     return normalize(music, 0.6)
 
 
+def boss_theme():
+    """보스(중간보스·슬라임 킹) 테마: 152 BPM, D단조, 16마디 루프. 16분음표 베이스 질주 + 매 박 킥 + 반음 올라가는 긴장 멜로디.
+    Dm-Bb-C-A 진행 ×3, 끝 4마디는 Dm-Bb-Gm-A (A 화음으로 루프 처음 Dm에 돌아온다)."""
+    bpm = 152
+    beat = 60 / bpm
+    progression = [
+        ("D", ["D4", "F4", "A4"]), ("Bb", ["A#3", "D4", "F4"]), ("C", ["C4", "E4", "G4"]), ("A", ["A3", "C#4", "E4"]),
+    ] * 3 + [("D", ["D4", "F4", "A4"]), ("Bb", ["A#3", "D4", "F4"]), ("G", ["G3", "A#3", "D4"]), ("A", ["A3", "C#4", "E4"])]
+    bass_root = {"D": "D2", "Bb": "A#1", "C": "C2", "A": "A1", "G": "G1"}
+    n = int(round(len(progression) * 4 * beat * SR))
+    music = np.zeros(n)
+
+    for bar, (root, chord) in enumerate(progression):
+        bar_start = bar * 4 * beat
+        # 패드 (어둡게 낮춘 톱니)
+        mix_at(music, lowpass(pad_chord(chord, 4 * beat), 800) * 0.16, int(bar_start * SR))
+        # 베이스: 16분음표 질주, 4번째마다 옥타브 위
+        for k in range(16):
+            name = bass_root[root]
+            if k % 4 == 3:
+                name = name[:-1] + str(int(name[-1]) + 1)
+            b = tone("saw", name, beat / 4 * 0.85, 0.003, 0.04, 0.5, 0.02)
+            mix_at(music, lowpass(b, 900) * 0.2, int((bar_start + k * beat / 4) * SR))
+        # 드럼: 킥 매 박(+마지막 8분), 스네어 2·4박, 하이햇 16분
+        for b_ in (0, 1, 2, 3, 3.5):
+            mix_at(music, kick() * 0.6, int((bar_start + b_ * beat) * SR))
+        for b_ in (1, 3):
+            mix_at(music, snare() * 0.34, int((bar_start + b_ * beat) * SR))
+        if bar % 4 == 3:  # 4마디마다 스네어 필
+            for k in range(4):
+                mix_at(music, snare() * (0.14 + 0.05 * k), int((bar_start + (3 + k / 4) * beat) * SR))
+        for k in range(16):
+            mix_at(music, hat(False) * (0.09 if k % 2 else 0.05), int((bar_start + k * beat / 4) * SR))
+        # 위쪽 반짝이는 8분 아르페지오 (화려하게)
+        up = [c[:-1] + str(int(c[-1]) + 1) for c in chord]
+        for k in range(8):
+            name = up[[0, 1, 2, 1, 0, 2, 1, 2][k]]
+            a_ = tone("square", name, beat / 2 * 0.7, 0.002, 0.05, 0.25, 0.02, duty=0.125)
+            mix_at(music, a_ * 0.04, int((bar_start + k * beat / 2) * SR))
+
+    def lay_melody(notes, start_bar, volume):
+        pos = start_bar * 4 * beat
+        for name, beats in notes:
+            if name:
+                m = tone("square", name, beats * beat * 0.92, 0.008, 0.08, 0.6, 0.05, duty=0.25, vib=0.008)
+                mix_at(music, lowpass(m, 3500) * volume, int(pos * SR))
+            pos += beats * beat
+
+    melody_a = [("D5", 1), ("F5", 0.5), ("E5", 0.5), ("D5", 1), ("A4", 1),
+                ("A#4", 1), ("D5", 1), ("F5", 1.5), ("G5", 0.5),
+                ("E5", 1), ("G5", 1), ("C6", 1), ("A#5", 0.5), ("A5", 0.5),
+                ("A5", 1.5), ("G#5", 0.5), ("A5", 1), ("C#5", 1)]
+    melody_b = [("A5", 1), ("G5", 0.5), ("F5", 0.5), ("E5", 1), ("D5", 1),
+                ("F5", 1), ("A#5", 1), ("A5", 1), ("F5", 1),
+                ("G5", 0.5), ("A5", 0.5), ("A#5", 0.5), ("C6", 0.5), ("A#5", 1), ("G5", 1),
+                ("E5", 1), ("C#5", 1), ("E5", 1), ("A5", 1)]
+    melody_end = [("D6", 2), ("A5", 1), ("F5", 1),
+                  ("D5", 1), ("F5", 1), ("A#5", 2),
+                  ("A#5", 1), ("A5", 1), ("G5", 1), ("D5", 1),
+                  ("C#5", 1), ("E5", 1), ("G5", 1), ("A5", 1)]
+    lay_melody(melody_a, 4, 0.12)
+    lay_melody(melody_b, 8, 0.12)
+    lay_melody(melody_end, 12, 0.13)
+    return normalize(music, 0.72)
+
+
 def main():
     sfx = {
         "Cast_Fire": cast_fire, "Cast_Water": cast_water, "Cast_Wind": cast_wind, "Cast_Earth": cast_earth,
@@ -501,13 +567,12 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
+    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Boss": boss_theme}
     if only:
-        print("done")
-        return
-    reseed("Menu")
-    save_wav(menu_theme(), "Music", "Menu.wav")
-    reseed("Dungeon")
-    save_wav(dungeon_theme(), "Music", "Dungeon.wav")
+        music = {k: v for k, v in music.items() if k in only}  # 곡 이름도 지정할 수 있다 (예: Boss)
+    for name, fn in music.items():
+        reseed(name)
+        save_wav(fn(), "Music", f"{name}.wav")
     print("done")
 
 
