@@ -5,6 +5,7 @@ namespace IBlameYou.Systems
     // 마법이 적에게 맞는 순간 화면을 아주 살짝 하얗게 번쩍인다 (Docs/ArtStyle.md: 알파 0.08, 0.05초).
     // 여러 발이 한꺼번에 맞아도 눈이 아프지 않게 MinInterval 안의 번쩍임은 무시한다.
     // 방을 옮길 때는 RoomFade로 화면을 잠깐 어둡게 덮었다가 밝힌다 (Docs/LevelDesign.md 방 전환 연출).
+    // EdgeWarn: 화면 가장자리만 색으로 두 번 깜빡인다 (정예 등장 경고 — 가운데 싸움은 가리지 않게).
     public class ScreenFlash : MonoBehaviour
     {
         private const float DefaultAlpha = 0.08f;
@@ -21,6 +22,13 @@ namespace IBlameYou.Systems
         private static float lastPulse = -10f;
 
         private SpriteRenderer overlay;
+        private SpriteRenderer edge;
+        private float edgeStartedAt = -10f;
+        private float edgeDuration;
+        private Color edgeColor;
+        private const float EdgeAlpha = 0.7f;
+        private const int EdgeTextureSize = 64;
+        private static Sprite edgeSprite;
         private float startedAt = -10f;
         private float peak;
         private Color color = Color.white;
@@ -42,6 +50,65 @@ namespace IBlameYou.Systems
         {
             var flash = Find();
             if (flash != null) flash.Begin(RoomFadeColor, RoomFadeAlpha, RoomFadeHold, RoomFadeTime);
+        }
+
+        // 화면 가장자리를 color로 duration초 동안 두 번 깜빡인다 (가운데는 투명한 테두리 그림).
+        public static void EdgeWarn(Color color, float duration)
+        {
+            var flash = Find();
+            if (flash == null) return;
+            flash.edgeColor = color;
+            flash.edgeDuration = Mathf.Max(0.05f, duration);
+            flash.edgeStartedAt = Time.unscaledTime;
+            if (flash.edge == null)
+            {
+                var go = new GameObject("ScreenEdgeWarn");
+                go.transform.SetParent(flash.transform, false);
+                flash.edge = go.AddComponent<SpriteRenderer>();
+                flash.edge.sprite = EdgeSprite();
+                flash.edge.sortingOrder = SortingOrder - 1; // 방 전환 덮개 아래
+            }
+            flash.edge.enabled = true;
+            flash.UpdateEdge();
+        }
+
+        // 가장자리에서 진하고 안쪽 30% 너머는 투명한 테두리 (한 번 만들어 둔다). 1유닛 크기.
+        private static Sprite EdgeSprite()
+        {
+            if (edgeSprite != null) return edgeSprite;
+            int n = EdgeTextureSize;
+            var texture = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var pixels = new Color[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = Mathf.Min(x, n - 1 - x) / (float)(n - 1);
+                    float dy = Mathf.Min(y, n - 1 - y) / (float)(n - 1);
+                    float d = Mathf.Min(dx, dy); // 가장자리 0 ~ 가운데 0.5
+                    float a = Mathf.Clamp01(1f - d / 0.15f);
+                    pixels[y * n + x] = new Color(1f, 1f, 1f, a * a);
+                }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            edgeSprite = Sprite.Create(texture, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+            return edgeSprite;
+        }
+
+        private void UpdateEdge()
+        {
+            var cam = GetComponent<Camera>();
+            float t = (Time.unscaledTime - edgeStartedAt) / edgeDuration;
+            if (t >= 1f || cam == null)
+            {
+                edge.enabled = false;
+                return;
+            }
+
+            float blink = Mathf.Abs(Mathf.Sin(t * Mathf.PI * 2f)); // 두 번 깜빡임
+            float height = cam.orthographicSize * 2f;
+            edge.transform.localPosition = new Vector3(0f, 0f, 1f);
+            edge.transform.localScale = new Vector3(height * cam.aspect, height, 1f);
+            edge.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b, EdgeAlpha * blink);
         }
 
         private static ScreenFlash Find()
@@ -87,6 +154,7 @@ namespace IBlameYou.Systems
 
         private void LateUpdate()
         {
+            if (edge != null && edge.enabled) UpdateEdge();
             if (overlay == null || !overlay.enabled) return;
             UpdateOverlay();
         }
