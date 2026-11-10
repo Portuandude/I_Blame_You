@@ -44,6 +44,9 @@ namespace IBlameYou.Systems
         Exit,
         ElementGate,  // X 열을 바닥(Y)부터 천장까지 막는 봉인문 (씬에서만 생기는 벽이라 검증에서는 열린 것으로 본다). ElementIndex 속성 마법으로 열린다
         MovingPlatform, // Width칸 발판이 Y 행(윗면 = Y + 1)에서 X부터 오른쪽으로 Direction칸까지 오간다. 검증에서는 지나는 모든 칸을 발판으로 본다
+        PlatformSwitch, // 마법 스위치 룬. (X, Y)는 룬이 선 칸 (바닥 바로 위). ElementIndex 속성 마법을 맞히면 짝 발판이 잠시 움직인다.
+                        // 짝: 청크의 k번째 PlatformSwitch ↔ k번째 SwitchDriven MovingPlatform (Features 순서)
+                        // 몸이 지나가는 트리거라 길을 막지 않는다 (검증에서는 무시)
         Reward          // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
     }
 
@@ -73,6 +76,7 @@ namespace IBlameYou.Systems
         public int ElementIndex; // ElementGate: 여는 속성 (Element 순서: 0 불, 1 물, 2 바람. 저장·생성 데이터라 int로 둔다. ChunkStreamer에서 Element로 바꾼다)
         public bool HasSecondElement;  // ElementGate: 두 속성 봉인문 (ElementIndex → SecondElementIndex 순서로 맞혀야 열림)
         public int SecondElementIndex; // ElementGate: 둘째 속성 (HasSecondElement일 때만, ElementIndex와 다름)
+        public bool SwitchDriven;      // MovingPlatform: 처음엔 멈춰 있고 같은 청크의 PlatformSwitch를 맞혀야 움직인다
         public bool ShieldFirst;       // ElementGate: 협동 봉인문. 첫 속성(ElementIndex)은 A가 그 속성 방어막을 두르고 문에 닿아서, 둘째(SecondElementIndex)는 B 마법으로 푼다
     }
 

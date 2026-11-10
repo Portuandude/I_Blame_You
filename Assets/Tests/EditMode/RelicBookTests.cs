@@ -83,6 +83,8 @@ namespace IBlameYou.Tests
             Assert.AreEqual(10, (int)RelicId.ShadowVeil);
             Assert.AreEqual(11, (int)RelicId.BloodPact);
             Assert.AreEqual(12, (int)RelicId.PhoenixFeather);
+            Assert.AreEqual(13, (int)RelicId.Hourglass);
+            Assert.AreEqual(14, (int)RelicId.TwinRing);
         }
 
         [Test]

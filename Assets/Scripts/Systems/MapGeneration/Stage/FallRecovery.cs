@@ -28,6 +28,9 @@ namespace IBlameYou.Systems
         // 떨어졌을 때 잃는 체력 비율 (최대 체력 기준). 유물 깃털 부적이 낮춘다.
         public float DamageRatio { get; set; } = DefaultDamageRatio;
 
+        // 피해 없이 돌아오는 남은 횟수 (유물 되감기 모래시계).
+        public int FreeFalls { get; set; }
+
         private void Awake()
         {
             movement = GetComponent<PlayerMovement>();
@@ -77,7 +80,9 @@ namespace IBlameYou.Systems
 
         private void Recover()
         {
-            health.TakeDamage(health.Max * DamageRatio); // 무적(대쉬/치트) 중이면 피해 없이 돌아오기만 한다
+            bool free = FreeFalls > 0;
+            if (free) FreeFalls--;
+            else health.TakeDamage(health.Max * DamageRatio); // 무적(대쉬/치트) 중이면 피해 없이 돌아오기만 한다
             if (health.IsDead) return;
 
             rb.linearVelocity = Vector2.zero;
@@ -88,7 +93,9 @@ namespace IBlameYou.Systems
             health.Invulnerable = true;
             grantedInvulnerability = true;
             invulnerableUntil = Time.time + InvulnerableTime;
-            StageEvents.PostNotice("낭떠러지! 체력 -15%");
+            StageEvents.PostNotice(free
+                ? $"모래시계가 시간을 되감았다! 피해 없음 (남은 {FreeFalls}번)"
+                : $"낭떠러지! 체력 -{DamageRatio * 100f:0}%");
 
             var follow = Camera.main != null ? Camera.main.GetComponent<Core.CameraFollow>() : null;
             if (follow != null) follow.SnapToTarget();

@@ -20,7 +20,9 @@ namespace IBlameYou.Player
         FocusBead,   // 집중 구슬: 실패로 날린 마나 25% 돌려받기 (신비 10과 합산)
         ShadowVeil,  // 그림자 베일: 대쉬가 끝난 뒤 0.5초 더 무적
         BloodPact,   // 피의 계약: 마나가 모자라면 모자란 만큼 체력으로 대신 낸다 (40초에 한 번, 체력 1은 남긴다)
-        PhoenixFeather // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
+        PhoenixFeather, // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
+        Hourglass,   // 되감기 모래시계: 낭떠러지에 떨어져도 2번은 피해 없이 돌아온다
+        TwinRing     // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -44,12 +46,14 @@ namespace IBlameYou.Player
         public const float BloodPactCooldown = 40f;
         public const float BloodPactMinHealthLeft = 1f;
         public const int PhoenixFeatherSaves = 1;
+        public const int HourglassFreeFalls = 2;
+        public const float TwinRingMana = 5f;
 
         public static readonly RelicId[] All =
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
-            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather
+            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing
         };
 
         public static string Name(RelicId id)
@@ -68,6 +72,8 @@ namespace IBlameYou.Player
                 case RelicId.ShadowVeil: return "그림자 베일";
                 case RelicId.BloodPact: return "피의 계약";
                 case RelicId.PhoenixFeather: return "불사조 깃털";
+                case RelicId.Hourglass: return "되감기 모래시계";
+                case RelicId.TwinRing: return "쌍둥이 반지";
                 default: return "집중 구슬";
             }
         }
@@ -88,6 +94,8 @@ namespace IBlameYou.Player
                 case RelicId.ShadowVeil: return $"대쉬가 끝난 뒤 {ShadowVeilGrace:0.0}초 더 무적";
                 case RelicId.BloodPact: return $"마나가 모자라면 체력으로 대신 내기 ({BloodPactCooldown:0}초에 한 번)";
                 case RelicId.PhoenixFeather: return "쓰러질 피해를 한 번 버티고 체력 30%로";
+                case RelicId.Hourglass: return $"낭떠러지에 떨어져도 {HourglassFreeFalls}번은 피해 없이 복귀";
+                case RelicId.TwinRing: return $"A의 방어막이 발동하면 마나 +{TwinRingMana:0}";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
@@ -100,7 +108,9 @@ namespace IBlameYou.Player
                 case RelicId.IronCloak:
                 case RelicId.SwiftBoots:
                 case RelicId.Featherfall:
-                case RelicId.ShadowVeil: return "A";
+                case RelicId.ShadowVeil:
+                case RelicId.Hourglass:
+                case RelicId.TwinRing: return "A";
                 case RelicId.WrathCharm:
                 case RelicId.HawkEye:
                 case RelicId.VampireFang: return "B";

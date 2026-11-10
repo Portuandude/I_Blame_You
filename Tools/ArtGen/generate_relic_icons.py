@@ -1,4 +1,4 @@
-"""I Blame You! 유물 아이콘 13종 생성기 (귀엽지만 화려하게).
+"""I Blame You! 유물 아이콘 15종 생성기 (귀엽지만 화려하게).
 
 유물마다 24x24 아이콘: 진한 외곽선 + 채도 높은 몸 + 크림 반짝임. 유물 상자 카드·HUD 유물 목록·일시정지 요약이
 이름 앞에 그린다 (SkillHUD.RelicIcons.cs). 파일 이름 = RelicId 이름.
@@ -172,6 +172,35 @@ def phoenix_feather(d):
     shine(d, 13.5, 7.5, 1.3)
 
 
+def hourglass(d):
+    # 금 틀 + 하늘색 유리 + 아래로 떨어지는 금모래, 옆에 되감기 화살표
+    d.rectangle(E(4.5, 1.5, 17.5, 4.5), fill=OUTLINE)
+    d.rectangle(E(5.5, 2.3, 16.5, 3.7), fill=GOLD)
+    d.rectangle(E(4.5, 19.5, 17.5, 22.5), fill=OUTLINE)
+    d.rectangle(E(5.5, 20.3, 16.5, 21.7), fill=GOLD)
+    outlined_poly(d, [(6, 4.5), (16, 4.5), (12, 12), (16, 19.5), (6, 19.5), (10, 12)], hexrgba("bfe8ff"), 1.0)
+    d.polygon(P((8, 6), (14, 6), (11, 10)), fill=GOLD)       # 위 모래
+    d.polygon(P((11, 15), (15, 19.3), (7, 19.3)), fill=GOLD)  # 아래 모래
+    d.line(P((11, 11), (11, 15)), fill=GOLD, width=int(0.8 * SS))
+    # 되감기 화살 (오른쪽 위, 반시계)
+    d.arc(E(15, 7, 22.5, 14.5), 200, 110, fill=OUTLINE, width=int(2.4 * SS))
+    d.arc(E(15, 7, 22.5, 14.5), 200, 110, fill=AQUA, width=int(1.2 * SS))
+    outlined_poly(d, [(14, 9), (17.5, 9.5), (15, 12.5)], AQUA, 0.8)
+    shine(d, 8.5, 15.5, 1.0)
+
+
+def twin_ring(d):
+    # 겹친 반지 두 개: 하늘(A)·주황(B) 보석
+    for cx, gem in ((8.5, "5fd0ff"), (15.5, "ff9a3c")):
+        d.ellipse(E(cx - 6.5, 8, cx + 6.5, 21), fill=OUTLINE)
+        d.ellipse(E(cx - 5.2, 9.3, cx + 5.2, 19.7), fill=GOLD)
+        d.ellipse(E(cx - 3.3, 11.2, cx + 3.3, 17.8), fill=OUTLINE)
+        d.ellipse(E(cx - 2.2, 12.3, cx + 2.2, 16.7), fill=(0, 0, 0, 0))
+        outlined_poly(d, [(cx, 2), (cx + 3, 5.5), (cx, 9), (cx - 3, 5.5)], hexrgba(gem), 1.0)
+        shine(d, cx - 0.8, 4.6, 0.9)
+    d.polygon(star_points(12, 12.5, 2.6, 1.1), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -186,6 +215,8 @@ ICONS = {
     "ShadowVeil": shadow_veil,
     "BloodPact": blood_pact,
     "PhoenixFeather": phoenix_feather,
+    "Hourglass": hourglass,
+    "TwinRing": twin_ring,
 }
 
 

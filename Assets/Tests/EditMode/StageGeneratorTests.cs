@@ -317,5 +317,71 @@ namespace IBlameYou.Tests
             }
             Assert.Greater(doubles, 0, "갈아타기 변형이 한 번도 나오지 않음");
         }
+
+        // 마법 스위치 발판: 진행도 50% 이후 한 발판 낭떠러지, 80% 이후 갈아타기(이중 스위치)에도. k번째 룬은 k번째 스위치 발판의
+        // 건너편 첫 칸에 서고, 그 발판 출발 쪽 땅 끝에서 수평으로 쏜 마법이 닿는 거리·높이여야 한다 (사거리가 가장 짧은 물의 창 12칸).
+        [Test]
+        public void SwitchBridgeRuneIsReachableFromTheEntrySide()
+        {
+            int singles = 0, doubles = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (float difficulty in new[] { 0.3f, 0.49f, 0.5f, 0.6f, 0.79f, 0.8f, 0.9f })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 6, ChunkKind.MovingBridge, difficulty, 7, 0);
+                    var runes = chunk.Features.FindAll(f => f.Kind == FeatureKind.PlatformSwitch);
+                    var platforms = chunk.Features.FindAll(f => f.Kind == FeatureKind.MovingPlatform);
+                    var driven = platforms.FindAll(f => f.SwitchDriven);
+                    if (difficulty < ChunkGenerator.SwitchBridgeMinDifficulty)
+                    {
+                        Assert.AreEqual(0, runes.Count, $"seed {seed}: 50% 전에는 스위치 없음");
+                        continue;
+                    }
+                    Assert.AreEqual(runes.Count, driven.Count, $"seed {seed}: 룬 하나에 스위치 발판 하나");
+                    if (runes.Count == 0) continue;
+                    Assert.AreEqual(platforms.Count, driven.Count, $"seed {seed}: 스위치 변형이면 발판 모두 스위치");
+                    if (driven.Count == 2)
+                    {
+                        Assert.GreaterOrEqual(difficulty, ChunkGenerator.DoubleSwitchBridgeMinDifficulty, $"seed {seed}: 이중 스위치는 80% 이후");
+                        Assert.AreNotEqual(runes[0].ElementIndex, runes[1].ElementIndex, $"seed {seed}: 이중 스위치 룬 속성은 서로 다름");
+                        doubles++;
+                    }
+                    else singles++;
+                    Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"seed {seed}: {reason}");
+
+                    for (int k = 0; k < runes.Count; k++)
+                    {
+                        var rune = runes[k];
+                        var platform = driven[k];
+                        int farCliff = platform.X + platform.Width + platform.Direction; // 발판 건너편 첫 칸
+                        Assert.AreEqual(farCliff, rune.X, $"seed {seed}: {k}번 룬은 발판 건너편 첫 칸");
+                        Assert.AreEqual(Surface(chunk, rune.X), rune.Y, $"seed {seed}: {k}번 룬은 땅 위");
+                        Assert.That(rune.ElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1), $"seed {seed}");
+
+                        // 출발 쪽 땅 끝(발판 바로 왼쪽 칸 가운데)에서 룬 가운데까지 12칸 안.
+                        float distance = (rune.X + 0.5f) - (platform.X - 0.5f);
+                        Assert.LessOrEqual(distance, 12f - 0.5f, $"seed {seed}: {k}번 룬까지 거리");
+                        // 마법은 선 높이 + 약 0.7에서 수평으로 난다. 룬 트리거는 룬 바닥 + 0.1 ~ 1.8.
+                        float shot = Surface(chunk, platform.X - 1) + 0.7f;
+                        Assert.That(shot, Is.InRange(rune.Y + 0.1f, rune.Y + 1.8f), $"seed {seed}: {k}번 룬 높이");
+                    }
+
+                    // 발판이 없으면 건널 수 없다 (스위치를 안 맞히면 발판이 오지 않는다).
+                    var without = ChunkGenerator.Generate(seed, 6, ChunkKind.MovingBridge, difficulty, 7, 0);
+                    without.Features.RemoveAll(f => f.Kind == FeatureKind.MovingPlatform);
+                    Assert.IsFalse(StageValidator.Validate(without, out _), $"seed {seed}: 스위치 발판 없이도 건널 수 있음");
+                }
+            }
+            Assert.Greater(singles, 0, "마법 스위치 변형이 한 번도 나오지 않음");
+            Assert.Greater(doubles, 0, "이중 스위치 변형이 한 번도 나오지 않음");
+        }
+
+        // x열에서 땅 위 첫 빈 칸 높이 (서 있는 칸).
+        private static int Surface(ChunkData chunk, int x)
+        {
+            int y = 0;
+            while (y < ChunkData.Height && chunk.IsSolid(x, y)) y++;
+            return y;
+        }
     }
 }
