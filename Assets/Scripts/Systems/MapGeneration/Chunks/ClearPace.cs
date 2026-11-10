@@ -94,6 +94,58 @@ namespace IBlameYou.Systems
             return result;
         }
 
+        // 최근 쓰러진 곳 기록 (어려운 구간 찾기용). 저장 문자열은 "진행도%,주경로순번,주경로방수;..." (정수만), 새 기록이 맨 앞, RecentMax개.
+        // 진행도는 0~100으로 자른다. 순번·방 수가 없으면(외길 청크 스테이지) 0.
+        public static string AddRecentDefeat(string list, float progress, int pathStep, int mainRooms)
+        {
+            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
+            int main = Math.Max(0, mainRooms);
+            int step = main > 0 ? Math.Max(0, Math.Min(pathStep, main)) : 0;
+            var entries = new System.Collections.Generic.List<string> { $"{percent},{step},{main}" };
+            foreach (var e in ParseDefeats(list))
+            {
+                if (entries.Count >= RecentMax) break;
+                entries.Add($"{e.percent},{e.step},{e.main}");
+            }
+            return string.Join(";", entries);
+        }
+
+        // 시작 화면 한 줄. 예: "최근 쓰러진 곳 3판 평균 진행도 42% (주 경로 평균 8번째 방)". 기록이 없으면 빈 문자열.
+        // 순번이 0인 기록(외길 모드 등)은 방 평균에서 뺀다.
+        public static string RecentDefeatSummary(string list)
+        {
+            var entries = ParseDefeats(list);
+            if (entries.Count == 0) return "";
+            long percent = 0, step = 0;
+            int stepCount = 0;
+            foreach (var e in entries)
+            {
+                percent += e.percent;
+                if (e.step > 0) { step += e.step; stepCount++; }
+            }
+            int avgPercent = (int)Math.Round(percent / (double)entries.Count, MidpointRounding.AwayFromZero);
+            string tail = stepCount > 0
+                ? $" (주 경로 평균 {(int)Math.Round(step / (double)stepCount, MidpointRounding.AwayFromZero)}번째 방)"
+                : "";
+            return $"최근 쓰러진 곳 {entries.Count}판 평균 진행도 {avgPercent}%{tail}";
+        }
+
+        private static System.Collections.Generic.List<(int percent, int step, int main)> ParseDefeats(string list)
+        {
+            var result = new System.Collections.Generic.List<(int percent, int step, int main)>();
+            if (string.IsNullOrEmpty(list)) return result;
+            foreach (var entry in list.Split(';'))
+            {
+                var f = entry.Split(',');
+                if (f.Length != 3) continue;
+                if (!int.TryParse(f[0], out int p) || !int.TryParse(f[1], out int s) || !int.TryParse(f[2], out int m)) continue;
+                if (p < 0 || p > 100 || s < 0 || m < 0 || s > m) continue;
+                result.Add((p, s, m));
+                if (result.Count >= RecentMax) break;
+            }
+            return result;
+        }
+
         // SaveData.FormatTime과 같은 모양 ("N분 SS초").
         public static string Format(int seconds) => $"{seconds / 60}분 {seconds % 60:00}초";
     }

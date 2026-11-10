@@ -45,6 +45,16 @@ namespace IBlameYou.UI
         private readonly System.Collections.Generic.HashSet<int> known = new System.Collections.Generic.HashSet<int>();
         private readonly System.Collections.Generic.Dictionary<int, float> revealStart = new System.Collections.Generic.Dictionary<int, float>();
 
+        // 나침반 획득 연출: 나침반을 얻은 뒤 게임이 다시 흐르는 순간 큰 지도가 CompassShowTime 동안 저절로 펼쳐지고,
+        // 안 가 본 방의 흐린 칸이 지금 방에서 가까운 순서로 하나씩 "톡" 나타난다 (발견 연출 RevealScale 재사용).
+        private const float CompassShowTime = 1.5f;
+        private const float CompassFirstDelay = 0.15f;
+        private const float CompassSpread = 0.9f;   // 첫 칸부터 마지막 칸이 나타나기 시작할 때까지
+        private bool compassChecked;                // 처음 확인 때 이미 있던 나침반은 연출하지 않는다
+        private bool hadCompass;
+        private bool compassPending;                // 얻었지만 아직 일시정지(유물 창) 중
+        private float compassShowStart = -1f;
+
         public void Initialize(ChunkStreamer stageStreamer, GameObject player)
         {
             streamer = stageStreamer;
@@ -90,12 +100,40 @@ namespace IBlameYou.UI
         private void Update()
         {
             if (streamer == null || !streamer.IsRoomMode) return;
+            UpdateCompassShow();
             // B가 영창을 치는 중에는 글자 입력과 겹치지 않게 무시한다
             if (control != null && control.AKeyboardBlocked) return;
             // 일시정지 중에는 새로 펼치지 않는다 (펼친 지도는 닫을 수 있게 둔다)
             if (Time.timeScale == 0f && !expanded) return;
             if (Input.GetKeyDown(KeyCode.BackQuote)) expanded = !expanded;
         }
+
+        private void UpdateCompassShow()
+        {
+            bool has = HasCompass();
+            if (compassChecked && has && !hadCompass) compassPending = true;
+            compassChecked = playerObject != null;
+            hadCompass = has;
+            if (!compassPending || Time.timeScale == 0f) return;
+            compassPending = false;
+            compassShowStart = Time.unscaledTime;
+
+            // 안 가 본 방을 지금 방에서 가까운(격자 거리) 순서로 줄 세워 하나씩 나타나게 한다
+            var layout = streamer.Rooms;
+            var current = layout.Rooms[streamer.CurrentRoom];
+            var faint = new System.Collections.Generic.List<RoomData>();
+            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index) faint.Add(room);
+            faint.Sort((a, b) => (Mathf.Abs(a.X - current.X) + Mathf.Abs(a.Y - current.Y))
+                .CompareTo(Mathf.Abs(b.X - current.X) + Mathf.Abs(b.Y - current.Y)));
+            float step = faint.Count > 1 ? Mathf.Min(0.08f, CompassSpread / (faint.Count - 1)) : 0f;
+            for (int i = 0; i < faint.Count; i++) revealStart[faint[i].Index] = compassShowStart + CompassFirstDelay + i * step;
+        }
+
+        private bool CompassShowing => compassShowStart >= 0f && Time.unscaledTime - compassShowStart < CompassShowTime;
+
+        // 나침반 연출 중 아직 차례가 오지 않은 흐린 칸 (칸·실선 모두 숨긴다)
+        private bool WaitingReveal(int index) =>
+            revealStart.TryGetValue(index, out float start) && Time.unscaledTime < start;
 
         private void OnGUI()
         {
@@ -104,7 +142,7 @@ namespace IBlameYou.UI
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
 
-            if (expanded)
+            if (expanded || CompassShowing)
             {
                 int cols = layout.MaxX - layout.MinX + 1;
                 int rows = layout.MaxY - layout.MinY + 1;
@@ -115,7 +153,9 @@ namespace IBlameYou.UI
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
                 EnsureStyle();
                 // 나침반이 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다 (탐험가의 나침반)
-                string title = HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)";
+                string title = CompassShowing && !expanded
+                    ? "탐험가의 나침반! 안 가 본 방이 흐리게 보인다"
+                    : HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)";
                 GUI.Label(new Rect(area.x - 120f, area.y - 30f, area.width + 240f, 24f), title, legend);
                 DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
             }
@@ -160,6 +200,13 @@ namespace IBlameYou.UI
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
                 if (look == RoomLook.Faint)
                 {
+                    float faintReveal = RevealScale(room.Index); // 나침반 획득 연출 (차례 전 칸은 LookOf가 숨긴다)
+                    if (faintReveal != 1f)
+                    {
+                        var faintCenter = body.center;
+                        body.size *= faintReveal;
+                        body.center = faintCenter;
+                    }
                     DrawFaintRoom(room, body);
                     continue;
                 }
@@ -362,8 +409,11 @@ namespace IBlameYou.UI
 
         private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;
 
-        private RoomLook LookOf(int index, RoomData current) =>
-            MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass());
+        private RoomLook LookOf(int index, RoomData current)
+        {
+            var look = MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass());
+            return look == RoomLook.Faint && WaitingReveal(index) ? RoomLook.Hidden : look;
+        }
 
         private bool HasCompass()
         {

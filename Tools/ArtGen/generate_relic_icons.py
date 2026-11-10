@@ -216,6 +216,22 @@ def compass(d):
     d.polygon(star_points(19.5, 4.5, 2.4, 1.0), fill=CREAM)                       # 반짝
 
 
+def clover(d):
+    # 통통한 하트 잎 4장 + 줄기, 가운데 반짝 (행운)
+    leaf = COLORS["leaf_light"]
+    for cx, cy in ((12, 6.8), (12, 15.2), (7.8, 11), (16.2, 11)):
+        outlined_ellipse(d, cx - 3.6, cy - 3.6, cx + 3.6, cy + 3.6, leaf)
+    for cx, cy in ((12, 6.8), (12, 15.2), (7.8, 11), (16.2, 11)):
+        d.ellipse(E(cx - 2.6, cy - 2.6, cx + 2.6, cy + 2.6), fill=leaf)
+        shine(d, cx - 1.2, cy - 1.2, 0.8)
+    for dx, dy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):  # 잎 사이 홈
+        d.line(P((12, 11), (12 + dx * 4.2, 11 + dy * 4.2)), fill=OUTLINE, width=int(1.0 * SS))
+    d.line(P((12.5, 17.5), (14.5, 21.5)), fill=OUTLINE, width=int(3 * SS))
+    d.line(P((12.5, 17.5), (14.5, 21.5)), fill=COLORS["leaf"], width=int(1.4 * SS))
+    d.ellipse(E(10.6, 9.6, 13.4, 12.4), fill=GOLD)
+    d.polygon(star_points(19.5, 4.5, 2.4, 1.0), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -233,6 +249,7 @@ ICONS = {
     "Hourglass": hourglass,
     "TwinRing": twin_ring,
     "Compass": compass,
+    "Clover": clover,
 }
 
 

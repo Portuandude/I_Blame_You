@@ -13,6 +13,8 @@ namespace IBlameYou.Core
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
         private const string KeyRecentClears = "Recent.Clears";
+        private const string KeyRecentDefeats = "Recent.Defeats";
+        private const string KeyRecentBlame = "Recent.Blame";
 
         private static bool settingsLoaded;
 
@@ -74,6 +76,30 @@ namespace IBlameYou.Core
         // 시작 화면용 "최근 N판 평균 ..." 한 줄. 기록이 없으면 빈 문자열.
         public static string RecentClearSummary(bool devMode) =>
             ClearPace.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentClears, devMode), ""));
+
+        // 최근 쓰러진 곳 5개 (진행도·주 경로 순번·방 수, ClearPace.AddRecentDefeat 형식). 모드별로 따로. 어려운 구간 찾기용.
+        public static void RecordRecentDefeat(float progress, int pathStep, int mainRooms)
+        {
+            string key = ModeKey(KeyRecentDefeats, GameSession.DevMode);
+            PlayerPrefs.SetString(key, ClearPace.AddRecentDefeat(PlayerPrefs.GetString(key, ""), progress, pathStep, mainRooms));
+            PlayerPrefs.Save();
+        }
+
+        // 시작 화면용 "최근 쓰러진 곳 N판 평균 진행도 P%" 한 줄. 기록이 없으면 빈 문자열.
+        public static string RecentDefeatSummary(bool devMode) =>
+            ClearPace.RecentDefeatSummary(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
+
+        // 최근 10판 "누구 탓?" 판정 (BlameVerdict.AddRecent 형식). 모드별로 따로. 클리어·게임오버 모두.
+        public static void RecordBlame(float wastedA, float wastedB)
+        {
+            string key = ModeKey(KeyRecentBlame, GameSession.DevMode);
+            PlayerPrefs.SetString(key, BlameVerdict.AddRecent(PlayerPrefs.GetString(key, ""), BlameVerdict.Judge(wastedA, wastedB)));
+            PlayerPrefs.Save();
+        }
+
+        // 시작 화면용 "최근 N판 탓: A a · B b" 한 줄. 기록이 없으면 빈 문자열.
+        public static string RecentBlameSummary(bool devMode) =>
+            BlameVerdict.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), ""));
 
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)

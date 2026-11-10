@@ -110,5 +110,25 @@ namespace IBlameYou.Tests
             Assert.IsFalse(RelicBook.BloodPactCost(50f, 0f, out float cost));
             Assert.AreEqual(0f, cost);
         }
+
+        [Test]
+        public void Clover_OffersFour()
+        {
+            for (int seed = 0; seed < 50; seed++)
+            {
+                var plain = RelicBook.Offer(seed, 9, new[] { RelicId.IronCloak });
+                var lucky = RelicBook.Offer(seed, 9, new[] { RelicId.IronCloak, RelicId.Clover });
+                Assert.AreEqual(RelicBook.OfferSize, plain.Length);
+                Assert.AreEqual(RelicBook.CloverOfferSize, lucky.Length, $"seed {seed}");
+                CollectionAssert.DoesNotContain(lucky, RelicId.Clover);
+                CollectionAssert.AllItemsAreUnique(lucky);
+            }
+            // 남은 유물이 모자라면 남은 것만
+            var almostAll = new System.Collections.Generic.List<RelicId>(RelicBook.All);
+            almostAll.Remove(RelicId.SpringRing);
+            almostAll.Remove(RelicId.HawkEye);
+            Assert.AreEqual(2, RelicBook.Offer(3, 1, almostAll).Length);
+            Assert.AreEqual(0, RelicBook.Offer(3, 1, null, -1).Length);
+        }
     }
 }

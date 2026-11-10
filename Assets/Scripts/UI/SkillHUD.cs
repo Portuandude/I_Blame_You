@@ -169,6 +169,7 @@ namespace IBlameYou.UI
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
             SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms + StageEvents.SideRooms); // 시작 화면 최근 5판 평균
+            SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
             if (progression != null) SaveData.RecordLevel(progression.Level);
             control.Locked = true;
         }
@@ -216,6 +217,12 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
+                // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
+                if (!stageCleared)
+                {
+                    SaveData.RecordRecentDefeat(StageEvents.Progress, StageEvents.PathStep, StageEvents.MainRooms);
+                    SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
+                }
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
@@ -478,18 +485,19 @@ namespace IBlameYou.UI
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
-            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 214f);
+            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f);
             var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawDefeatPlace(new Rect(rect.x, rect.y + 88f, rect.width, 26f)); // 쓰러진 곳 (SkillHUD.EndScreen.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 116f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
+            DrawBlameVerdict(new Rect(rect.x, rect.y + 86f, rect.width, 26f)); // 누구 탓? 판정 (SkillHUD.EndScreen.cs)
+            DrawDefeatPlace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 쓰러진 곳 (SkillHUD.EndScreen.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 146f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 176f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 200f, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
             GUI.matrix = previousMatrix;
@@ -509,7 +517,7 @@ namespace IBlameYou.UI
         private void DrawStageClear()
         {
             DrawConfetti(); // 패널 뒤로 별·하트 색종이 (SkillHUD.EndScreen.cs)
-            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 214f);
+            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 240f);
             var previousMatrix = BeginEndScreenPop(rect);
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
@@ -517,11 +525,12 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawClearPace(new Rect(rect.x, rect.y + 88f, rect.width, 26f)); // 목표 시간 비교 (SkillHUD.EndScreen.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 116f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
+            DrawBlameVerdict(new Rect(rect.x, rect.y + 86f, rect.width, 26f)); // 누구 탓? 판정 (SkillHUD.EndScreen.cs)
+            DrawClearPace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 목표 시간 비교 (SkillHUD.EndScreen.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 146f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 176f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
+            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            GUI.Label(new Rect(rect.x, rect.y + 200f, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.matrix = previousMatrix;
         }

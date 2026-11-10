@@ -169,7 +169,11 @@ namespace IBlameYou.Core
             string mode = dev ? "개발자 모드" : "일반 모드";
             string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
             string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
-            return string.IsNullOrEmpty(recent) ? line : line + "\n" + recent;
+            if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
+            string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 곳 평균 진행도 (어려운 구간 찾기용)
+            if (!string.IsNullOrEmpty(defeats)) line += "\n" + defeats;
+            string blame = SaveData.RecentBlameSummary(dev); // 최근 10판 누구 탓 (서로 놀릴 거리)
+            return string.IsNullOrEmpty(blame) ? line : line + "\n" + blame;
         }
 
         private const string DevModeHelp =
