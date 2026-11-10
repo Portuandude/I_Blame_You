@@ -44,6 +44,14 @@ namespace IBlameYou.Systems
         // 배경음악을 바꾼다. 이미 같은 곡이 나오고 있으면 그대로 둔다.
         public static void PlayMusic(string name) => Instance.SwitchMusic(name);
 
+        // 배경음악을 줄여서 끈다 (결과 징글 동안). 다음 PlayMusic이 다시 튼다.
+        public static void StopMusic()
+        {
+            if (instance == null) return;
+            instance.currentMusic = null;
+            instance.currentMusicName = null;
+        }
+
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
         public static string CurrentMusic => instance != null ? instance.currentMusicName : null;
 
