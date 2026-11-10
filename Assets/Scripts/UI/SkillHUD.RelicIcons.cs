@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using IBlameYou.Player;
+using IBlameYou.Systems;
 using UnityEngine;
 
 namespace IBlameYou.UI
@@ -13,6 +14,8 @@ namespace IBlameYou.UI
 
         private readonly Dictionary<RelicId, Texture2D> relicIcons = new Dictionary<RelicId, Texture2D>();
         private GUIStyle relicListText;
+        private GUIStyle relicBadgeText;
+        private FallRecovery fallRecovery;
 
         private Texture2D RelicIcon(RelicId id)
         {
@@ -28,6 +31,43 @@ namespace IBlameYou.UI
         {
             var icon = RelicIcon(id);
             if (icon != null) GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
+        }
+
+        // 횟수가 있는 유물의 남은 횟수: 되감기 모래시계 = 남은 무료 낙하 복귀, 불사조 깃털 = 남은 쓰러짐 버티기
+        // (생명 20 특성의 버티기와 합친 값). 횟수가 없는 유물은 -1.
+        private int RelicCharges(RelicId id)
+        {
+            switch (id)
+            {
+                case RelicId.Hourglass:
+                    if (fallRecovery == null && health != null) fallRecovery = health.GetComponent<FallRecovery>();
+                    return fallRecovery != null ? fallRecovery.FreeFalls : -1;
+                case RelicId.PhoenixFeather:
+                    return health != null ? health.DeathSaves : -1;
+                default:
+                    return -1;
+            }
+        }
+
+        // HUD 유물 목록 아이콘: 횟수 유물은 오른쪽 아래에 테두리 숫자 배지, 다 쓰면(0) 아이콘을 어둡게.
+        private void DrawRelicIconWithCharges(RelicId id, Rect rect)
+        {
+            int charges = RelicCharges(id);
+            var previous = GUI.color;
+            if (charges == 0) GUI.color = new Color(0.4f, 0.4f, 0.45f, previous.a * 0.7f);
+            DrawRelicIcon(id, rect);
+            GUI.color = previous;
+            if (charges < 0) return;
+
+            if (relicBadgeText == null)
+                relicBadgeText = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 11, fontStyle = FontStyle.Bold, richText = false, wordWrap = false,
+                    alignment = TextAnchor.LowerRight, padding = new RectOffset(0, 0, 0, 0), clipping = TextClipping.Overflow
+                };
+            var badge = new Rect(rect.x + rect.width * 0.3f, rect.y + rect.height * 0.35f, rect.width * 0.7f, rect.height * 0.8f);
+            var fill = charges > 0 ? OutlinedLabel.Cream : new Color(0.75f, 0.75f, 0.78f);
+            OutlinedLabel.Draw(badge, charges.ToString(), relicBadgeText, fill, charges > 0 ? OutlinedLabel.Gold : new Color(0.35f, 0.35f, 0.4f), 1f, 1f);
         }
 
         // 게임오버·클리어 창: 가운데 정렬로 [아이콘 이름] 줄. 넓이를 넘으면 이름은 빼고 아이콘만, 그래도 넘으면 글자 목록(RelicNames)으로.
@@ -114,7 +154,7 @@ namespace IBlameYou.UI
                 bool hasIcon = RelicIcon(id) != null;
                 if (hasIcon)
                 {
-                    DrawRelicIcon(id, new Rect(x, RelicListY + (height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize));
+                    DrawRelicIconWithCharges(id, new Rect(x, RelicListY + (height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize));
                     x += RelicListIconSize + 3f;
                 }
                 if (iconsOnly && hasIcon) continue;

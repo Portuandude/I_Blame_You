@@ -2,6 +2,14 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-4vxux1, 사람 결정 2026-11-10): 중간보스 처치 보상 — 체력 50% 즉시 회복 + 유물 상자 확정(회복 구슬 없음), `RoomShaper.IsMidBossArena` + 테스트
+- DONE (claude/project-thread-4vxux1, 사람 결정 2026-11-10: 허용): 낭떠러지 건너뛰기 정리 — 막지 않고 `Docs/LevelDesign.md`에 숙련자 지름길로 명시, `StageValidator.RunJumpReach` 등 참고 상수 (검증은 걷기 기준 유지)
+- DONE (claude/project-thread-4vxux1): 결과 징글 — `Jingle_Clear`(상승 셋잇단 + 화음 팡파르)·`Jingle_Defeat`(반음씩 처지는 와와와와), 결과 창이 처음 그려질 때 `GameAudio.StopMusic` + 징글 (`SkillHUD.MarkEndScreenShown`)
+- DONE (claude/project-thread-4vxux1): 진행 효과음 4종 — `Checkpoint`, `GateOpen`(봉인문 완전히 열릴 때), `Pickup`(보상 구슬), `ArenaLock`(구역 잠김)
+- DONE (claude/project-thread-4vxux1): 보스전 배경음악 — `Boss`(152 BPM D단조 16마디), 보스·중간보스 구역 잠기면 보스 곡, 돌파·방 이탈 시 보스 곡일 때만 던전 곡 (`GameAudio.CurrentMusic`)
+- DONE (claude/project-thread-4vxux1): 미니맵 스위치 퍼즐 표시 — 룬이 있는 방 칸 왼쪽 위에 룬 속성 색 점(룬마다 하나), `ChunkStreamer.SwitchElements`
+- DONE (claude/project-thread-4vxux1, 불사조는 생명 20 특성 버티기와 합친 값): HUD 유물 횟수 배지 — 모래시계 남은 무료 낙하·불사조 깃털 남은 버티기 숫자, 0이면 아이콘 어둡게
+- DONE (claude/project-thread-4vxux1): 모래시계 남은 횟수 저장 — `RunSave.Data.freeFalls`(옛 저장 -1 → 유물 기본값), 유물 Apply 뒤 덮어쓰기
 - DONE (claude/project-thread-b2uz39, 모래시계는 낙하 피해 0 두 번으로 — 깃털 부적과 겹치지 않게): 유물 2종 추가 — 되감기 모래시계(`FallRecovery.FreeFalls`), 쌍둥이 반지(`ElementShieldSkill.Activated` → 마나 +5), 아이콘 2종, 번호 13·14 고정 테스트
 - DONE (claude/project-thread-b2uz39, 짝은 새 필드 대신 Features 순서): 이중 스위치 발판 — 진행도 80% 이후 갈아타기 절반, 기둥 첫 칸·건너편 첫 칸에 서로 다른 속성 룬, 투사체는 쏜 자리에서 겹친 트리거를 건너뜀
 - DONE (claude/project-thread-b2uz39): 스위치 효과음 — `generate_audio.py Switch_On Switch_Tick`(이름 지정 시 그 소리만), 룬 켜짐 종 두 음 차임, 남은 2.5초 동안 0.5초마다 똑딱

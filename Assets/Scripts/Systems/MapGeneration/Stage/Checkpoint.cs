@@ -58,7 +58,7 @@ namespace IBlameYou.Systems
 
             EffectLibrary.PlayHit(Element.Water, transform.position + Vector3.up, 1.5f);
             VfxPlayer.CheckpointPillar(transform.position); // aqua 빛기둥 + 반짝임 3개
-            GameAudio.PlaySfx("Hit_Water", 0.7f);
+            GameAudio.PlaySfx("Checkpoint", 0.8f, 0f);
             StageEvents.PostNotice("체크포인트: 체력과 마나 회복");
             onActivated?.Invoke();
         }

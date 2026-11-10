@@ -124,6 +124,8 @@ namespace IBlameYou.Tests
                             knights.Add(f);
                     }
 
+                    Assert.AreEqual(room.Kind == RoomKind.MidBoss, RoomShaper.IsMidBossArena(chunk),
+                        $"seed {seed} room {room.Index}: 중간보스 보상 판정(IsMidBossArena)이 방 종류와 다름");
                     if (room.Kind != RoomKind.MidBoss)
                     {
                         Assert.AreEqual(0, knights.Count, $"seed {seed} room {room.Index}: 중간보스 방이 아닌데 기사가 있음");

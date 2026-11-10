@@ -73,7 +73,7 @@ namespace IBlameYou.Systems
             var pop = EffectLibrary.LoadRuntimeFrames("Effects/HeartPop");
             if (pop != null) EffectLibrary.PlayOneShot(orbCenter, pop, 18f, Color.clear, 0f, false, 1.1f, sortingOrder: 7); // 하트·별이 톡톡
             else EffectLibrary.PlayHit(Element.Water, orbCenter, 1.2f);
-            GameAudio.PlaySfx("Hit_Water", 0.6f);
+            GameAudio.PlaySfx("Pickup", 0.7f);
             StageEvents.PostNotice($"보상: 체력 {HealRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복");
             onCollected?.Invoke();
             Destroy(gameObject);

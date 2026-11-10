@@ -349,6 +349,102 @@ def switch_tick():
     return normalize(fade_edges(click + knock))
 
 
+def checkpoint():
+    """체크포인트 켜짐: 따뜻한 패드가 부풀며 맑은 종 아르페지오(C-E-G-C)가 올라가고 반짝이 꼬리, 1.3초."""
+    n = int(1.3 * SR)
+    out = np.zeros(n)
+    m = int(1.1 * SR)
+    pad = sum(osc("sine", note_hz(x), m) for x in ("C4", "E4", "G4")) / 3
+    mix_at(out, pad * env_adsr(m, 0.25, 0.3, 0.6, 0.5) * 0.35, 0)
+    for k, name in enumerate(["C5", "E5", "G5", "C6"]):
+        b = int(0.8 * SR)
+        f = note_hz(name)
+        bell = (osc("sine", f, b) * 0.5 + osc("sine", f * 2.76, b) * 0.15 * env_exp(b, 0.08)) * env_exp(b, 0.3)
+        mix_at(out, bell, int(k * 0.08 * SR))
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 0.35) * 0.06
+    return normalize(fade_edges(lowpass(out + tail, 9000)))
+
+
+def gate_open():
+    """봉인문 열림: 마력 벽이 풀리는 아래로 쓸리는 휘익(노이즈) + 낮은 웅 + 마지막에 밝은 종 두 음, 1.1초."""
+    n = int(1.1 * SR)
+    t = np.arange(n) / SR
+    sweep = lowpass(noise(n), 6000 * np.exp(-t * 3.0) + 300) * env_adsr(n, 0.02, 0.2, 0.5, 0.6) * 0.5
+    hum = osc("sine", 110 * np.exp(-t * 0.8), n) * env_exp(n, 0.35) * 0.5
+    out = sweep + hum
+    for k, name in enumerate(["A5", "E6"]):
+        m = int(0.6 * SR)
+        f = note_hz(name)
+        mix_at(out, osc("sine", f, m) * env_exp(m, 0.2) * 0.4, int((0.35 + k * 0.1) * SR))
+    return normalize(fade_edges(out))
+
+
+def pickup():
+    """보상 구슬·회복 줍기: 동글동글한 두 음 뽀록(위로 튀는 사인), 0.3초."""
+    n = int(0.3 * SR)
+    out = np.zeros(n)
+    for k, (lo, hi) in enumerate([(600, 900), (900, 1400)]):
+        m = int(0.14 * SR)
+        t = np.arange(m) / SR
+        f = lo + (hi - lo) * np.clip(t / 0.05, 0, 1)
+        mix_at(out, osc("sine", f, m) * env_adsr(m, 0.004, 0.04, 0.5, 0.08), int(k * 0.08 * SR))
+    return normalize(fade_edges(out))
+
+
+def arena_lock():
+    """전투 구역 잠김: 무거운 문이 쿵 내려앉는 소리 + 쇠 울림, 0.7초."""
+    n = int(0.7 * SR)
+    t = np.arange(n) / SR
+    thump = osc("sine", 90 * np.exp(-t * 8) + 40, n) * env_exp(n, 0.12)
+    crash = lowpass(noise(n), 2500) * env_exp(n, 0.05) * 0.6
+    clang = sum(osc("square", f, n, 0.3) * w for f, w in ((311, 0.15), (467, 0.1), (703, 0.06))) * env_exp(n, 0.18)
+    return normalize(fade_edges(thump + crash + lowpass(clang, 3000)))
+
+
+def jingle_clear():
+    """클리어 팡파르: 빠른 상승 C-E-G-C 셋잇단 + 길게 끄는 C장조 화음(나팔 같은 사각파 + 종), 반짝이 꼬리, 약 2.8초."""
+    n = int(2.8 * SR)
+    out = np.zeros(n)
+    step = 0.11
+    for k, name in enumerate(["C5", "E5", "G5"]):
+        m = int(step * 1.1 * SR)
+        mix_at(out, lowpass(tone("square", name, step * 1.1, 0.005, 0.03, 0.6, 0.02, duty=0.25), 3500) * 0.35, int(k * step * SR))
+    hold = 1.9
+    start = int(3 * step * SR)
+    for name, w in (("C6", 0.32), ("G5", 0.2), ("E5", 0.2), ("C4", 0.25)):
+        brass = lowpass(tone("square", name, hold, 0.02, 0.2, 0.55, 0.9, duty=0.3, vib=0.01), 3000) * w
+        mix_at(out, brass, start)
+    for k, name in enumerate(["C6", "E6", "G6", "C7"]):
+        m = int(0.9 * SR)
+        f = note_hz(name)
+        mix_at(out, osc("sine", f, m) * env_exp(m, 0.25) * 0.18, start + int((0.15 + k * 0.07) * SR))
+    for b_ in (0, 3 * step):
+        mix_at(out, snare() * 0.25, int(b_ * SR))
+    mix_at(out, kick() * 0.5, start)
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 0.8) * 0.04
+    return normalize(fade_edges(out + tail))
+
+
+def jingle_defeat():
+    """게임오버: 느리게 내려가는 단조 멜로디(E-D#-D-C#… 반음씩 처지는 '와와와와') + 낮은 A 빈 5도 화음으로 끝, 약 2.6초."""
+    n = int(2.6 * SR)
+    out = np.zeros(n)
+    notes = [("E4", 0.3), ("D#4", 0.3), ("D4", 0.3), ("C#4", 1.4)]
+    pos = 0.0
+    for name, length in notes:
+        f = note_hz(name)
+        m = int(length * SR)
+        t = np.arange(m) / SR
+        wah = osc("tri", f * (1 + 0.012 * np.sin(2 * np.pi * 6 * t)), m) * 0.6 + osc("square", f, m, 0.5) * 0.15
+        mix_at(out, lowpass(wah, 1800) * env_adsr(m, 0.02, 0.1, 0.7, min(0.4, length * 0.6)) * 0.5, int(pos * SR))
+        pos += length
+    chord_start = int(1.2 * SR)
+    m = n - chord_start
+    for name in ("A2", "E3", "A3"):
+        mix_at(out, osc("sine", note_hz(name), m) * env_adsr(m, 0.05, 0.3, 0.5, 0.9) * 0.18, chord_start)
+    return normalize(fade_edges(out))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -478,6 +574,72 @@ def menu_theme():
     return normalize(music, 0.6)
 
 
+def boss_theme():
+    """보스(중간보스·슬라임 킹) 테마: 152 BPM, D단조, 16마디 루프. 16분음표 베이스 질주 + 매 박 킥 + 반음 올라가는 긴장 멜로디.
+    Dm-Bb-C-A 진행 ×3, 끝 4마디는 Dm-Bb-Gm-A (A 화음으로 루프 처음 Dm에 돌아온다)."""
+    bpm = 152
+    beat = 60 / bpm
+    progression = [
+        ("D", ["D4", "F4", "A4"]), ("Bb", ["A#3", "D4", "F4"]), ("C", ["C4", "E4", "G4"]), ("A", ["A3", "C#4", "E4"]),
+    ] * 3 + [("D", ["D4", "F4", "A4"]), ("Bb", ["A#3", "D4", "F4"]), ("G", ["G3", "A#3", "D4"]), ("A", ["A3", "C#4", "E4"])]
+    bass_root = {"D": "D2", "Bb": "A#1", "C": "C2", "A": "A1", "G": "G1"}
+    n = int(round(len(progression) * 4 * beat * SR))
+    music = np.zeros(n)
+
+    for bar, (root, chord) in enumerate(progression):
+        bar_start = bar * 4 * beat
+        # 패드 (어둡게 낮춘 톱니)
+        mix_at(music, lowpass(pad_chord(chord, 4 * beat), 800) * 0.16, int(bar_start * SR))
+        # 베이스: 16분음표 질주, 4번째마다 옥타브 위
+        for k in range(16):
+            name = bass_root[root]
+            if k % 4 == 3:
+                name = name[:-1] + str(int(name[-1]) + 1)
+            b = tone("saw", name, beat / 4 * 0.85, 0.003, 0.04, 0.5, 0.02)
+            mix_at(music, lowpass(b, 900) * 0.2, int((bar_start + k * beat / 4) * SR))
+        # 드럼: 킥 매 박(+마지막 8분), 스네어 2·4박, 하이햇 16분
+        for b_ in (0, 1, 2, 3, 3.5):
+            mix_at(music, kick() * 0.6, int((bar_start + b_ * beat) * SR))
+        for b_ in (1, 3):
+            mix_at(music, snare() * 0.34, int((bar_start + b_ * beat) * SR))
+        if bar % 4 == 3:  # 4마디마다 스네어 필
+            for k in range(4):
+                mix_at(music, snare() * (0.14 + 0.05 * k), int((bar_start + (3 + k / 4) * beat) * SR))
+        for k in range(16):
+            mix_at(music, hat(False) * (0.09 if k % 2 else 0.05), int((bar_start + k * beat / 4) * SR))
+        # 위쪽 반짝이는 8분 아르페지오 (화려하게)
+        up = [c[:-1] + str(int(c[-1]) + 1) for c in chord]
+        for k in range(8):
+            name = up[[0, 1, 2, 1, 0, 2, 1, 2][k]]
+            a_ = tone("square", name, beat / 2 * 0.7, 0.002, 0.05, 0.25, 0.02, duty=0.125)
+            mix_at(music, a_ * 0.04, int((bar_start + k * beat / 2) * SR))
+
+    def lay_melody(notes, start_bar, volume):
+        pos = start_bar * 4 * beat
+        for name, beats in notes:
+            if name:
+                m = tone("square", name, beats * beat * 0.92, 0.008, 0.08, 0.6, 0.05, duty=0.25, vib=0.008)
+                mix_at(music, lowpass(m, 3500) * volume, int(pos * SR))
+            pos += beats * beat
+
+    melody_a = [("D5", 1), ("F5", 0.5), ("E5", 0.5), ("D5", 1), ("A4", 1),
+                ("A#4", 1), ("D5", 1), ("F5", 1.5), ("G5", 0.5),
+                ("E5", 1), ("G5", 1), ("C6", 1), ("A#5", 0.5), ("A5", 0.5),
+                ("A5", 1.5), ("G#5", 0.5), ("A5", 1), ("C#5", 1)]
+    melody_b = [("A5", 1), ("G5", 0.5), ("F5", 0.5), ("E5", 1), ("D5", 1),
+                ("F5", 1), ("A#5", 1), ("A5", 1), ("F5", 1),
+                ("G5", 0.5), ("A5", 0.5), ("A#5", 0.5), ("C6", 0.5), ("A#5", 1), ("G5", 1),
+                ("E5", 1), ("C#5", 1), ("E5", 1), ("A5", 1)]
+    melody_end = [("D6", 2), ("A5", 1), ("F5", 1),
+                  ("D5", 1), ("F5", 1), ("A#5", 2),
+                  ("A#5", 1), ("A5", 1), ("G5", 1), ("D5", 1),
+                  ("C#5", 1), ("E5", 1), ("G5", 1), ("A5", 1)]
+    lay_melody(melody_a, 4, 0.12)
+    lay_melody(melody_b, 8, 0.12)
+    lay_melody(melody_end, 12, 0.13)
+    return normalize(music, 0.72)
+
+
 def main():
     sfx = {
         "Cast_Fire": cast_fire, "Cast_Water": cast_water, "Cast_Wind": cast_wind, "Cast_Earth": cast_earth,
@@ -486,6 +648,8 @@ def main():
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
+        "Checkpoint": checkpoint, "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
@@ -501,13 +665,12 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
+    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Boss": boss_theme}
     if only:
-        print("done")
-        return
-    reseed("Menu")
-    save_wav(menu_theme(), "Music", "Menu.wav")
-    reseed("Dungeon")
-    save_wav(dungeon_theme(), "Music", "Dungeon.wav")
+        music = {k: v for k, v in music.items() if k in only}  # 곡 이름도 지정할 수 있다 (예: Boss)
+    for name, fn in music.items():
+        reseed(name)
+        save_wav(fn(), "Music", f"{name}.wav")
     print("done")
 
 

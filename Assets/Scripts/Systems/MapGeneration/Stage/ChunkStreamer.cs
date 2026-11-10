@@ -14,6 +14,7 @@ namespace IBlameYou.Systems
         public const int LoadRadius = 2;   // 플레이어가 있는 청크 좌우로 몇 청크까지 만들어 둘지
         public const int UnloadRadius = 3; // 이보다 멀어지면 치운다 (경계에서 만들고 치우기를 반복하지 않게 한 칸 여유)
         private const float SweepInterval = 0.5f;
+        private const float MidBossHealRatio = 0.5f; // 중간보스 처치 보상 회복 (최대 체력의 50%)
         private const float RelicChestOffset = 3f; // 유물 상자는 회복 구슬에서 왼쪽으로 이만큼
         public const float SpawnLift = 1.2f; // 서 있는 칸 바닥에서 이만큼 띄워 만들고 떨어뜨린다 (몸이 땅에 박히지 않게)
         public const float RoomGap = 8f;     // 방 격자 모드: 월드에서 방 사이 빈 간격 (이웃 방 지형이 겹치지 않게)
@@ -62,6 +63,23 @@ namespace IBlameYou.Systems
         public bool HasClosedPairGate(int index) =>
             rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
         public event Action<int> RoomEntered;
+
+        // 미니맵 룬 점: 그 방에 선 마법 스위치 룬들의 속성 (청크 Features 순서). 없으면 빈 목록. 처음 물을 때 방마다 한 번 모은다.
+        private List<Element>[] switchElements;
+        private static readonly List<Element> NoSwitches = new List<Element>();
+        public IReadOnlyList<Element> SwitchElements(int index)
+        {
+            if (rooms == null || stage == null || index < 0 || index >= stage.Chunks.Count) return NoSwitches;
+            if (switchElements == null) switchElements = new List<Element>[stage.Chunks.Count];
+            if (switchElements[index] == null)
+            {
+                var list = new List<Element>();
+                foreach (var f in stage.Chunks[index].Features)
+                    if (f.Kind == FeatureKind.PlatformSwitch) list.Add((Element)f.ElementIndex);
+                switchElements[index] = list;
+            }
+            return switchElements[index];
+        }
 
         public StageData Stage => stage;
 
@@ -297,6 +315,7 @@ namespace IBlameYou.Systems
                         int arenaChunk = index;
                         bool boss = chunk.Kind == ChunkKind.Boss;
                         bool elite = chunk.Kind == ChunkKind.EliteArena;
+                        bool midBoss = RoomShaper.IsMidBossArena(chunk); // 보상: 체력 50% 즉시 회복 + 유물 상자 확정 (회복 구슬 없음, 2026-11-10 사람 결정)
                         var arenaRoot = root;
                         var rewardPosition = new Vector2(ox + f.X + f.Width / 2f, oy + f.Y);
                         var relicPosition = rewardPosition + Vector2.left * RelicChestOffset; // 구역 가운데 발판(7~11, 20~24칸) 사이 바닥
@@ -305,11 +324,19 @@ namespace IBlameYou.Systems
                             {
                                 OnArenaCleared(arenaChunk, boss);
                                 if (boss || arenaRoot == null) return;
+                                if (midBoss)
+                                {
+                                    HealPlayer(MidBossHealRatio, "중간보스 처치! 체력 50% 회복, 유물 상자가 나타났다");
+                                    SpawnRelicChest(arenaRoot, arenaChunk, rewardPosition, true);
+                                    return;
+                                }
                                 SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
                                 if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
-                        if (!boss && clearedArenas.Contains(index))
+                        if (midBoss && clearedArenas.Contains(index))
+                            SpawnRelicChest(root, index, rewardPosition, false); // 회복은 처치 순간에 이미 받았다
+                        else if (!boss && clearedArenas.Contains(index))
                         {
                             SpawnReward(root, index, rewardPosition, false);
                             if (elite) SpawnRelicChest(root, index, relicPosition, false);
@@ -385,6 +412,17 @@ namespace IBlameYou.Systems
         {
             if (collectedRewards.Contains(chunkIndex)) return;
             ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
+        }
+
+        // 중간보스 처치 즉시 회복 (최대 체력 비율). 쓰러진 뒤면 아무 일도 하지 않는다.
+        private void HealPlayer(float ratio, string notice)
+        {
+            var health = player != null ? player.GetComponent<HealthSystem>() : null;
+            if (health == null || health.IsDead) return;
+            health.Heal(health.Max * ratio);
+            EffectLibrary.PlayHit(Element.Water, player.position + Vector3.up, 1.5f);
+            GameAudio.PlaySfx("Pickup", 0.8f);
+            StageEvents.PostNotice(notice);
         }
 
         // 정예 구역 유물 상자. 이미 유물을 골랐으면 만들지 않는다.

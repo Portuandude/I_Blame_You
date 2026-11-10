@@ -12,6 +12,13 @@ namespace IBlameYou.Systems
         private const int W = ChunkData.Width;
         private const int H = ChunkData.Height;
 
+        // 숙련자 지름길 거리 (2026-11-10 사람 결정: 달리기·대쉬로 발판 없이 건너는 것을 허용한다). 검증에는 쓰지 않는다:
+        // 검증기는 아래 걷기 점프 기준으로 "반드시 갈 수 있는 길"만 보장하고, 이 거리들은 낭떠러지·발판 퍼즐을 설계할 때
+        // "이 폭이면 숙련자가 건너뛸 수 있다"를 판단하는 참고값이다 (같은 높이, 가로 칸 수, 여유 없이 잰 값의 내림).
+        public const int RunJumpReach = 7;       // 달리기 점프 약 7.3칸
+        public const int WalkJumpDashReach = 8;  // 걷기 점프 + 공중 대쉬 약 8.1칸
+        public const int RunJumpDashReach = 11;  // 달리기 점프 + 공중 대쉬 약 11칸
+
         // 위로 dy칸 오르며(음수면 내려가며) 건널 수 있는 최대 가로 칸 수 (걷기 속도 기준, 여유를 둔 값).
         private static int JumpReach(int dy)
         {
