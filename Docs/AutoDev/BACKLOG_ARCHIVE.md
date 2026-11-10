@@ -2,6 +2,9 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-gb0nu0): 별똥 조각 반짝 소리 — 금별이 플레이어에 닿을 때 작고 맑은 "띵" 효과음 (`Tools/AudioGen`에 합성음 추가 → `GameAudio.PlaySfx`, `PlayerRelics.OnStarShardArrived`)
+- DONE (claude/project-thread-gb0nu0): 도감 창 키보드로 보기 — 마우스 없이도 방향키/WASD로 칸을 골라 설명 줄을 볼 수 있게 (고른 칸 테두리 강조, `StartMenu.DrawCodex`, 마우스를 움직이면 마우스 쪽이 우선)
+- DONE (claude/project-thread-gb0nu0): 반지·리본 마나 연출 — 쌍둥이 반지(A 방어막)·응원 리본(B 마법) 마나 회복 때 글자만 뜨는 걸, 플레이어 둘레에 A색/B색 작은 빛 고리가 퍼지게 (`VfxPlayer`, 기존 Sparkle/HeartPop 그림 재사용)
 - DONE (claude/project-thread-gb0nu0): 유물 도감 설명 보기 — 도감 창에서 모은 유물 칸에 마우스를 올리면 아래에 설명 한 줄(`RelicBook.Description`)과 A/B/공용 표시 (`StartMenu.DrawCodex`)
 - DONE (claude/project-thread-gb0nu0): 도감 완성 축하 — 유물 도감을 처음 다 모으면 결과 창에 금색 "유물 도감 완성!" 줄 + 시작 화면 도감 줄 끝 별 (`SaveData`, `RelicCodex.Count == total`, 테스트)
 - DONE (claude/project-thread-gb0nu0): 별똥 조각 연출 — 별똥 조각이 터지면 처치한 적 자리에서 플레이어 쪽으로 작은 금별이 날아와 닿을 때 마나가 찬다 (`VfxPlayer`, 지금은 즉시 회복 + 글자)

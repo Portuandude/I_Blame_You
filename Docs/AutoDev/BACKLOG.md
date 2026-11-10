@@ -9,9 +9,9 @@
 
 ## 다음 (2026-11-10 자동 실행이 추가)
 
-- TODO: 별똥 조각 반짝 소리 — 금별이 플레이어에 닿을 때 작고 맑은 "띵" 효과음 (`Tools/AudioGen`에 합성음 추가 → `GameAudio.PlaySfx`, `PlayerRelics.OnStarShardArrived`)
-- TODO: 도감 창 키보드로 보기 — 마우스 없이도 방향키/WASD로 칸을 골라 설명 줄을 볼 수 있게 (고른 칸 테두리 강조, `StartMenu.DrawCodex`, 마우스를 움직이면 마우스 쪽이 우선)
-- TODO: 반지·리본 마나 연출 — 쌍둥이 반지(A 방어막)·응원 리본(B 마법) 마나 회복 때 글자만 뜨는 걸, 플레이어 둘레에 A색/B색 작은 빛 고리가 퍼지게 (`VfxPlayer`, 기존 Sparkle/HeartPop 그림 재사용)
+- TODO: 도감 창 다른 모드 보기 — 도감 창에서 Tab으로 일반/개발자 모드 도감을 바꿔 본다 (지금은 메뉴의 개발자 모드 토글 쪽만 보인다, `StartMenu.DrawCodex`)
+- TODO: 유물 획득 소리 차등 — 도감에 처음 오른 유물을 고를 때는 `RelicOpen` 뒤에 짧은 반짝 화음을 한 번 더 (`RelicChest`, `Tools/AudioGen`)
+- TODO: 결과 창 이번 판 유물 줄 — 결과 창에 이번 판에 얻은 유물 아이콘을 작게 한 줄로 (일시정지 창 아이콘 재사용, 600px 높이 안에 들어오는지 확인, `SkillHUD.EndScreen`)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
