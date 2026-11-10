@@ -421,6 +421,20 @@ def arena_lock():
     return normalize(fade_edges(thump + crash + lowpass(clang, 3000)))
 
 
+def elite_warn():
+    """정예 등장 경고: 낮은 두 음 '둥-둥' (트레몰로 톱니 + 쿵), 무섭지만 귀엽게 짧게."""
+    n = int(0.75 * SR)
+    out = np.zeros(n)
+    for start, name in ((0.0, "A2"), (0.3, "D#2")):
+        m = int(0.42 * SR)
+        t = np.arange(m) / SR
+        body = osc("saw", note_hz(name), m) * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * t))
+        body = lowpass(body, 900) * env_adsr(m, 0.01, 0.1, 0.6, 0.15) * 0.6
+        boom = osc("sine", 90 * np.exp(-t * 10) + 40, m) * env_exp(m, 0.1)
+        mix_at(out, body + boom, int(start * SR))
+    return normalize(fade_edges(out))
+
+
 def jingle_clear():
     """클리어 팡파르: 빠른 상승 C-E-G-C 셋잇단 + 길게 끄는 C장조 화음(나팔 같은 사각파 + 종), 반짝이 꼬리, 약 2.8초."""
     n = int(2.8 * SR)
@@ -738,7 +752,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
-        "Land": land, "SquishHit": squish_hit,
+        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
