@@ -20,6 +20,8 @@ namespace IBlameYou.Core
         private float sfxVolume;
         private GUIStyle title;
         private GUIStyle body;
+        private GUIStyle recordSmall; // 창이 낮을 때 기록 줄용 작은 글씨
+        private bool recordsExpanded; // 접힌 기록 줄을 펼쳤는지 (H 또는 클릭)
         private GUIStyle button;
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
@@ -51,6 +53,8 @@ namespace IBlameYou.Core
             sparkle = Resources.Load<Texture2D>("UI/HUD/Star");
             body = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = true };
             body.normal.textColor = Color.white;
+            recordSmall = new GUIStyle(body) { fontSize = 13 };
+            recordSmall.hover.textColor = new Color(1f, 0.92f, 0.6f); // 접힌 줄은 버튼처럼 눌리니 올리면 노랗게
             button = CuteButton.Create(20); // 둥근 젤리 버튼 (UI/CuteButton.cs)
             toggle = new GUIStyle(GUI.skin.toggle) { fontSize = 20 };
         }
@@ -68,7 +72,7 @@ namespace IBlameYou.Core
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
             GUILayout.Space(4f); // 예전 Label의 아래 여백 (리뷰 LOW)
-            GUILayout.Label("한 마법사를 두 사람이 나눠 조작한다. A는 이동·방어, B는 공격. 마나는 하나뿐이다.", body);
+            GUILayout.Label(IntroText, body);
             GUILayout.Space(12f);
 
             devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
@@ -80,7 +84,7 @@ namespace IBlameYou.Core
             GameAudio.MusicVolume = musicVolume; // 메뉴 음악에 바로 반영
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
-            GUILayout.Label(RecordLine(devMode), body);
+            DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
             if (saved != null)
@@ -161,6 +165,52 @@ namespace IBlameYou.Core
             value = GUILayout.HorizontalSlider(value, 0f, 1f, GUILayout.Height(24f));
             GUILayout.EndHorizontal();
             return value;
+        }
+
+        private const string IntroText = "한 마법사를 두 사람이 나눠 조작한다. A는 이동·방어, B는 공격. 마나는 하나뿐이다.";
+
+        // 기록 줄(최고·최근 클리어·쓰러진 곳·탓)이 늘어 낮은 창에서 버튼을 밀어내지 않게:
+        // 다 들어가면 보통 글씨, 모자라면 작은 글씨, 그래도 모자라면 첫 줄만 두고 "기록 더 보기 (H)"로 접는다.
+        private void DrawRecords(float innerWidth, float innerHeight)
+        {
+            string full = RecordLine(devMode);
+            float available = innerHeight - FixedContentHeight(innerWidth);
+            if (body.CalcHeight(new GUIContent(full), innerWidth) <= available)
+            {
+                GUILayout.Label(full, body);
+                return;
+            }
+            if (recordSmall.CalcHeight(new GUIContent(full), innerWidth) <= available)
+            {
+                GUILayout.Label(full, recordSmall);
+                return;
+            }
+
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.H)
+            {
+                recordsExpanded = !recordsExpanded;
+                Event.current.Use();
+            }
+            int firstBreak = full.IndexOf('\n');
+            if (firstBreak < 0) // 한 줄뿐이면 접을 것이 없다
+            {
+                GUILayout.Label(full, recordSmall);
+                return;
+            }
+            string shown = recordsExpanded ? full + "\n▲ 기록 접기 (H)" : full.Substring(0, firstBreak) + "\n▼ 기록 더 보기 (H)";
+            if (GUILayout.Button(shown, recordSmall)) recordsExpanded = !recordsExpanded;
+        }
+
+        // 기록 줄을 뺀 나머지(제목·설명·토글·조작법·음량·버튼)가 차지하는 높이 어림값. GUILayout 기본 여백(줄마다 약 4px)까지 더한다.
+        private float FixedContentHeight(float innerWidth)
+        {
+            float h = 60f + 4f + body.CalcHeight(new GUIContent(IntroText), innerWidth) + 12f;
+            h += toggle.CalcHeight(new GUIContent("  개발자 모드"), innerWidth) + 8f;
+            h += body.CalcHeight(new GUIContent(devMode ? DevModeHelp : NormalModeHelp), innerWidth) + 12f;
+            h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
+            if (saved != null) h += 44f + 4f;         // 이어하기 버튼
+            h += 48f + 40f;                           // 시작·온라인 버튼
+            return h + 12f * 4f;                      // 요소 사이 기본 여백
         }
 
         private static string RecordLine(bool dev)
