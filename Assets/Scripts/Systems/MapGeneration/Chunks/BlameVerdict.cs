@@ -78,5 +78,37 @@ namespace IBlameYou.Systems
             if (none > 0) text += $" · 탓 없음 {none}";
             return text;
         }
+
+        // 탓 칭호: 최근 기록에서 탓을 더 많이 받은 쪽에 붙이는 장난 칭호. 횟수 차이가 클수록 센 칭호.
+        // 예: "B: 마나 먹는 하마", 같으면 "환상의 짝꿍". 기록이 없으면 빈 문자열.
+        public static readonly string[] Titles = { "마나 흘리개", "마나 먹는 하마", "마나 블랙홀", "전설의 탓받이" };
+        public const string EvenTitle = "환상의 짝꿍";
+
+        // 차이 1 → 0번, 2~3 → 1번, 4~6 → 2번, 7 이상 → 3번.
+        public static string TitleFor(int gap)
+        {
+            if (gap <= 0) return EvenTitle;
+            if (gap == 1) return Titles[0];
+            if (gap <= 3) return Titles[1];
+            if (gap <= 6) return Titles[2];
+            return Titles[3];
+        }
+
+        public static string RecentTitle(string list)
+        {
+            int a = 0, b = 0, count = 0;
+            if (!string.IsNullOrEmpty(list))
+                foreach (char c in list)
+                {
+                    if (count >= RecentMax) break;
+                    if (c == 'A') a++;
+                    else if (c == 'B') b++;
+                    else if (c != 'E' && c != 'N') continue;
+                    count++;
+                }
+            if (count == 0) return "";
+            if (a == b) return EvenTitle;
+            return (a > b ? "A: " : "B: ") + TitleFor(Math.Abs(a - b));
+        }
     }
 }
