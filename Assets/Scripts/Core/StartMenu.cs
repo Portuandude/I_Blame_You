@@ -24,6 +24,9 @@ namespace IBlameYou.Core
         private bool recordsExpanded; // 접힌 기록 줄을 펼쳤는지 (H 또는 클릭)
         private Vector2 recordScroll;
         private bool recordsTogglePending;
+        private bool codexOpen; // 유물 도감 창 (C 또는 도감 줄 클릭)
+        private readonly System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons =
+            new System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D>();
         private GUIStyle button;
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
@@ -71,6 +74,15 @@ namespace IBlameYou.Core
             GUI.Box(area, GUIContent.none, panel);
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
+            var e = Event.current;
+            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codexOpen && e.keyCode == KeyCode.Escape)))
+            {
+                codexOpen = e.keyCode == KeyCode.C ? !codexOpen : false;
+                e.Use();
+            }
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = !codexOpen; // 도감 창이 열려 있으면 뒤 메뉴는 누를 수 없게
+
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
             GUILayout.Space(4f); // 예전 Label의 아래 여백 (리뷰 LOW)
@@ -86,6 +98,8 @@ namespace IBlameYou.Core
             GameAudio.MusicVolume = musicVolume; // 메뉴 음악에 바로 반영
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
+            if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
+                codexOpen = true;
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
@@ -127,6 +141,8 @@ namespace IBlameYou.Core
             GUILayout.Button("온라인 (데디케이티드 서버) — 준비 중", button, GUILayout.Height(40f));
             GUI.enabled = true;
             GUILayout.EndArea();
+            GUI.enabled = wasEnabled;
+            if (codexOpen) DrawCodex();
         }
 
         // 제목: 진한 외곽선 + gold 테두리 + 크림 글자, 위아래로 둥실, 둘레에 반짝이 별 4개가 번갈아 깜빡임.
@@ -179,11 +195,13 @@ namespace IBlameYou.Core
             float available = innerHeight - FixedContentHeight(innerWidth);
             if (body.CalcHeight(new GUIContent(full), innerWidth) <= available)
             {
+                recordsTogglePending = false; // 접을 필요가 없어졌으면 남은 전환 요청은 버린다 (리뷰 LOW)
                 GUILayout.Label(full, body);
                 return;
             }
             if (recordSmall.CalcHeight(new GUIContent(full), innerWidth) <= available)
             {
+                recordsTogglePending = false;
                 GUILayout.Label(full, recordSmall);
                 return;
             }
@@ -224,16 +242,71 @@ namespace IBlameYou.Core
             h += toggle.CalcHeight(new GUIContent("  개발자 모드"), innerWidth) + 8f;
             h += body.CalcHeight(new GUIContent(devMode ? DevModeHelp : NormalModeHelp), innerWidth) + 12f;
             h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
+            h += 22f;                                 // 유물 도감 줄
             if (saved != null) h += 44f + 4f;         // 이어하기 버튼
             h += 48f + 40f;                           // 시작·온라인 버튼
             return h + 12f * 4f;                      // 요소 사이 기본 여백
+        }
+
+        // 유물 도감 창: 모든 유물을 격자로. 한 번이라도 고른 유물은 아이콘·이름, 아직이면 흐린 아이콘 + "???". C/Esc/닫기로 닫는다.
+        private void DrawCodex()
+        {
+            var all = IBlameYou.Player.RelicBook.All;
+            int mask = SaveData.RelicCodexMask(devMode);
+            int columns = Mathf.Clamp(Mathf.FloorToInt((Screen.width - 80f) / 96f), 3, 6);
+            int rows = (all.Length + columns - 1) / columns;
+            const float cell = 96f, cellHeight = 84f;
+            float width = columns * cell + 40f;
+            float height = 70f + rows * cellHeight + 56f;
+            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
+
+            var previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+            GUI.Box(rect, GUIContent.none, panel);
+            GUI.Box(rect, GUIContent.none, panel);
+
+            var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), $"유물 도감 ({(devMode ? "개발자 모드" : "일반 모드")})", head);
+            GUI.Label(new Rect(rect.x, rect.y + 42f, rect.width, 22f), SaveData.RelicCodexSummary(devMode, all.Length),
+                new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
+
+            var name = new GUIStyle(recordSmall) { alignment = TextAnchor.UpperCenter, fontSize = 12 };
+            for (int i = 0; i < all.Length; i++)
+            {
+                var id = all[i];
+                bool known = RelicCodex.Has(mask, (int)id);
+                var cellRect = new Rect(rect.x + 20f + (i % columns) * cell, rect.y + 70f + (i / columns) * cellHeight, cell, cellHeight);
+                var icon = CodexIcon(id);
+                if (icon != null)
+                {
+                    GUI.color = known ? Color.white : new Color(0.15f, 0.12f, 0.25f, 0.6f); // 모르는 유물은 어두운 실루엣
+                    GUI.DrawTexture(new Rect(cellRect.center.x - 22f, cellRect.y + 4f, 44f, 44f), icon, ScaleMode.ScaleToFit);
+                    GUI.color = previous;
+                }
+                GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + 50f, cellRect.width - 4f, 32f),
+                    known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
+            }
+
+            if (GUI.Button(new Rect(rect.center.x - 70f, rect.yMax - 48f, 140f, 36f), "닫기 (C)", button)) codexOpen = false;
+        }
+
+        private Texture2D CodexIcon(IBlameYou.Player.RelicId id)
+        {
+            if (!codexIcons.TryGetValue(id, out var icon))
+            {
+                icon = Resources.Load<Texture2D>("UI/HUD/Relics/" + id);
+                codexIcons[id] = icon; // 없어도(null) 기억해서 매 프레임 다시 찾지 않는다
+            }
+            return icon;
         }
 
         private static string RecordLine(bool dev)
         {
             int level = SaveData.BestLevel(dev);
             string mode = dev ? "개발자 모드" : "일반 모드";
-            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")} · {SaveData.RelicCodexSummary(dev, IBlameYou.Player.RelicBook.All.Length)}";
+            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
             string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
             if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
             string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 곳 평균 진행도 (어려운 구간 찾기용)
