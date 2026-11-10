@@ -121,6 +121,7 @@ namespace IBlameYou.Player
             float facing = Mathf.Sign(transform.localScale.x);
             if (combat != null) combat.PlayCastAnimation(origin + Vector2.right * facing); // 방향은 그대로 두고 동작만
             GameAudio.PlaySfx($"Cast_{spell.Element}");
+            RunStats.AddSpell((int)spell.Element); // 결과 창 B 최애 마법
 
             if (spell.Shape == SpellShape.GroundSpike)
             {
