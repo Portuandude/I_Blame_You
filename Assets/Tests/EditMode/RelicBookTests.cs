@@ -85,6 +85,7 @@ namespace IBlameYou.Tests
             Assert.AreEqual(12, (int)RelicId.PhoenixFeather);
             Assert.AreEqual(13, (int)RelicId.Hourglass);
             Assert.AreEqual(14, (int)RelicId.TwinRing);
+            Assert.AreEqual(15, (int)RelicId.Compass);
         }
 
         [Test]
