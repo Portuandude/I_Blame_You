@@ -38,6 +38,62 @@ namespace IBlameYou.Systems
             return $"쓰러진 곳: {where}{time}";
         }
 
+        // 최근 클리어 기록 (15분 조정 판단용). 저장 문자열은 "걸린초,목표초,방수;..." (정수만이라 문화권 영향 없음), 새 기록이 맨 앞.
+        public const int RecentMax = 5;
+
+        // 새 기록을 맨 앞에 더하고 RecentMax개만 남긴 문자열. 걸린 시간이 0 이하면 그대로 돌려준다. 깨진 항목은 버린다.
+        public static string AddRecent(string list, float clearSeconds, float targetSeconds, int rooms)
+        {
+            if (clearSeconds <= 0f) return list ?? "";
+            var entries = new System.Collections.Generic.List<string>
+            {
+                $"{(int)Math.Floor(clearSeconds)},{(int)Math.Floor(Math.Max(0f, targetSeconds))},{Math.Max(0, rooms)}"
+            };
+            foreach (var e in ParseRecent(list))
+            {
+                if (entries.Count >= RecentMax) break;
+                entries.Add($"{e.clear},{e.target},{e.rooms}");
+            }
+            return string.Join(";", entries);
+        }
+
+        // 시작 화면 한 줄. 예: "최근 3판 평균 14분 32초 (목표 15분 00초 · 방 평균 22개)". 기록이 없으면 빈 문자열.
+        // 목표·방 수가 0인 기록(외길 모드 등)은 그 평균에서 뺀다.
+        public static string RecentSummary(string list)
+        {
+            var entries = ParseRecent(list);
+            if (entries.Count == 0) return "";
+            long clear = 0, target = 0, rooms = 0;
+            int targetCount = 0, roomCount = 0;
+            foreach (var e in entries)
+            {
+                clear += e.clear;
+                if (e.target > 0) { target += e.target; targetCount++; }
+                if (e.rooms > 0) { rooms += e.rooms; roomCount++; }
+            }
+            var extra = new System.Collections.Generic.List<string>();
+            if (targetCount > 0) extra.Add($"목표 {Format((int)(target / targetCount))}");
+            if (roomCount > 0) extra.Add($"방 평균 {(int)Math.Round(rooms / (double)roomCount, MidpointRounding.AwayFromZero)}개");
+            string tail = extra.Count > 0 ? $" ({string.Join(" · ", extra)})" : "";
+            return $"최근 {entries.Count}판 평균 {Format((int)(clear / entries.Count))}{tail}";
+        }
+
+        private static System.Collections.Generic.List<(int clear, int target, int rooms)> ParseRecent(string list)
+        {
+            var result = new System.Collections.Generic.List<(int clear, int target, int rooms)>();
+            if (string.IsNullOrEmpty(list)) return result;
+            foreach (var entry in list.Split(';'))
+            {
+                var f = entry.Split(',');
+                if (f.Length != 3) continue;
+                if (!int.TryParse(f[0], out int c) || !int.TryParse(f[1], out int t) || !int.TryParse(f[2], out int r)) continue;
+                if (c <= 0) continue;
+                result.Add((c, t, r));
+                if (result.Count >= RecentMax) break;
+            }
+            return result;
+        }
+
         // SaveData.FormatTime과 같은 모양 ("N분 SS초").
         public static string Format(int seconds) => $"{seconds / 60}분 {seconds % 60:00}초";
     }
