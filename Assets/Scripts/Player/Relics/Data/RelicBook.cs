@@ -23,13 +23,15 @@ namespace IBlameYou.Player
         PhoenixFeather, // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
         Hourglass,   // 되감기 모래시계: 낭떠러지에 떨어져도 2번은 피해 없이 돌아온다
         TwinRing,    // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
-        Compass      // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
+        Compass,     // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
+        Clover       // 네잎 클로버: 다음 유물 상자부터 후보가 OfferSize → CloverOfferSize개
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
     public static class RelicBook
     {
         public const int OfferSize = 3;
+        public const int CloverOfferSize = 4; // 네잎 클로버가 있으면
 
         // 효과 수치 (PlayerRelics가 적용한다).
         public const float ManaCrystalMana = 20f;
@@ -55,7 +57,7 @@ namespace IBlameYou.Player
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
-            RelicId.Compass
+            RelicId.Compass, RelicId.Clover
         };
 
         public static string Name(RelicId id)
@@ -77,6 +79,7 @@ namespace IBlameYou.Player
                 case RelicId.Hourglass: return "되감기 모래시계";
                 case RelicId.TwinRing: return "쌍둥이 반지";
                 case RelicId.Compass: return "탐험가의 나침반";
+                case RelicId.Clover: return "네잎 클로버";
                 default: return "집중 구슬";
             }
         }
@@ -100,6 +103,7 @@ namespace IBlameYou.Player
                 case RelicId.Hourglass: return $"낭떠러지에 떨어져도 {HourglassFreeFalls}번은 피해 없이 복귀";
                 case RelicId.TwinRing: return $"A의 방어막이 발동하면 마나 +{TwinRingMana:0}";
                 case RelicId.Compass: return "미니맵에 안 가 본 방도 흐리게 보인다";
+                case RelicId.Clover: return $"유물 상자 후보 {OfferSize}개 → {CloverOfferSize}개";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
@@ -132,7 +136,14 @@ namespace IBlameYou.Player
 
         // 상자 하나가 보여 줄 후보. 시드와 상자가 놓인 청크로 정해지므로 같은 맵·같은 보유 유물이면 늘 같은 후보가 나온다.
         // 이미 가진 유물은 빼고, 남은 게 OfferSize보다 적으면 남은 것만 돌려준다 (다 가졌으면 빈 배열).
+        // 네잎 클로버를 가졌으면 CloverOfferSize개 (클로버 자신은 이미 가졌으므로 후보에서 빠진다).
         public static RelicId[] Offer(int seed, int chunkIndex, IEnumerable<RelicId> owned)
+        {
+            var have = owned != null ? new HashSet<RelicId>(owned) : new HashSet<RelicId>();
+            return Offer(seed, chunkIndex, have, have.Contains(RelicId.Clover) ? CloverOfferSize : OfferSize);
+        }
+
+        public static RelicId[] Offer(int seed, int chunkIndex, IEnumerable<RelicId> owned, int size)
         {
             var have = owned != null ? new HashSet<RelicId>(owned) : new HashSet<RelicId>();
             var pool = new List<RelicId>();
@@ -150,7 +161,7 @@ namespace IBlameYou.Player
                 pool[j] = swap;
             }
 
-            int count = Math.Min(OfferSize, pool.Count);
+            int count = Math.Min(Math.Max(0, size), pool.Count);
             var offer = new RelicId[count];
             for (int i = 0; i < count; i++) offer[i] = pool[i];
             return offer;
