@@ -19,7 +19,10 @@ namespace IBlameYou.Systems
             return count;
         }
 
-        // 시작 화면 한 줄 조각: "유물 도감 7/18"
-        public static string Summary(int mask, int total) => $"유물 도감 {Count(mask, total)}/{total}";
+        // 전체 유물(번호 0..total-1)을 다 모았는가. 31종을 넘으면 담을 수 없으니 완성도 없다.
+        public static bool Complete(int mask, int total) => total > 0 && total <= MaxRelics && Count(mask, total) == total;
+
+        // 시작 화면 한 줄 조각: "유물 도감 7/18", 다 모으면 끝에 별 "유물 도감 18/18 ★"
+        public static string Summary(int mask, int total) => $"유물 도감 {Count(mask, total)}/{total}" + (Complete(mask, total) ? " ★" : "");
     }
 }
