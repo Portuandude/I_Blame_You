@@ -9,8 +9,6 @@
 
 
 
-- TODO: 스위치 효과음 — `Tools/AudioGen`으로 룬이 켜질 때 맑은 차임(`Switch_On`), 가동 시간이 끝나 갈 때(남은 2.5초) 짧은 똑딱 경고음(`Switch_Tick`)을 합성해 `PlatformSwitch`에서 재생. 지금은 `Hit_{속성}` 재사용
-
 - TODO: 이중 스위치 발판 — 진행도 80% 이후 갈아타기(발판 2개) 변형의 절반을 스위치판으로: 각 발판마다 서로 다른 속성 룬(첫 룬은 기둥 첫 칸, 둘째 룬은 건너편 절벽 첫 칸). 기둥(2칸)에서 둘째 룬을 맞힐 수 있는지, 사거리 12칸 안인지 테스트. `ChunkStreamer`가 룬과 발판을 짝지어야 함 (지금은 청크의 모든 스위치 발판을 한 룬에 잇는다 → `ChunkFeature`에 짝 번호 필요)
 
 - TODO: 유물 2종 추가 (로드맵, MetaProgressionDraft 예시) — "되감기 모래시계": 낭떠러지 낙하 피해(체력 15%)를 스테이지마다 1회 0으로, "쌍둥이 반지": A가 방어막 미니게임 성공 시 B 마나 +5. `Player/Relics/Data/RelicBook` + 효과 훅 + `generate_relic_icons.py` 아이콘 + `RelicTests`
