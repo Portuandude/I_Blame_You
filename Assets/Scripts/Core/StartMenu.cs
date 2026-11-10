@@ -257,10 +257,10 @@ namespace IBlameYou.Core
             int rows = (all.Length + columns - 1) / columns;
             const float cell = 96f;
             // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄인다 (리뷰 LOW)
-            float cellHeight = Mathf.Clamp((Screen.height - 20f - 126f) / rows, 50f, 84f);
+            float cellHeight = Mathf.Clamp((Screen.height - 20f - 162f) / rows, 50f, 84f);
             float iconSize = Mathf.Min(44f, cellHeight - 36f);
             float width = columns * cell + 40f;
-            float height = 70f + rows * cellHeight + 56f;
+            float height = 70f + rows * cellHeight + 36f + 56f; // 36: 마우스 올린 유물 설명 (좁은 창에선 두 줄)
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
 
             var previous = GUI.color;
@@ -276,11 +276,13 @@ namespace IBlameYou.Core
                 new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
 
             var name = new GUIStyle(recordSmall) { alignment = TextAnchor.UpperCenter, fontSize = 12 };
+            int hovered = -1;
             for (int i = 0; i < all.Length; i++)
             {
                 var id = all[i];
                 bool known = RelicCodex.Has(mask, (int)id);
                 var cellRect = new Rect(rect.x + 20f + (i % columns) * cell, rect.y + 70f + (i / columns) * cellHeight, cell, cellHeight);
+                if (cellRect.Contains(Event.current.mousePosition)) hovered = i;
                 var icon = CodexIcon(id);
                 if (icon != null)
                 {
@@ -291,6 +293,16 @@ namespace IBlameYou.Core
                 GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
             }
+
+            // 마우스를 올린 칸의 설명 한 줄: 모은 유물이면 "[A] 설명", 아직이면 "아직 모르는 유물". 안 올렸으면 안내 문구.
+            string info = hovered < 0 ? "유물 칸에 마우스를 올리면 설명이 보인다"
+                : RelicCodex.Has(mask, (int)all[hovered])
+                    ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
+                    : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
+            var infoStyle = new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter, wordWrap = true, clipping = TextClipping.Clip };
+            GUI.color = hovered >= 0 && RelicCodex.Has(mask, (int)all[hovered]) ? OutlinedLabel.Cream : new Color(1f, 1f, 1f, 0.6f);
+            GUI.Label(new Rect(rect.x + 10f, rect.yMax - 90f, rect.width - 20f, 36f), info, infoStyle);
+            GUI.color = previous;
 
             if (GUI.Button(new Rect(rect.center.x - 70f, rect.yMax - 48f, 140f, 36f), "닫기 (C)", button)) codexOpen = false;
         }
