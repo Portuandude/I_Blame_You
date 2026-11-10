@@ -93,6 +93,18 @@ namespace IBlameYou.UI
             GUI.color = previous;
         }
 
+        // 클리어 결과 창: 목표 시간(15분) 대비 걸린 시간과 이번 시드의 방 수 한 줄. 빠르면 초록, 느리면 주황 (Chunks/ClearPace).
+        private void DrawClearPace(Rect rect)
+        {
+            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms, StageEvents.SideRooms);
+            if (string.IsNullOrEmpty(text)) return;
+            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
+                ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 목표보다 빠름
+                : new Color(1f, 0.62f, 0.25f);    // 주황: 목표보다 느림
+            GUI.Label(rect, text, style);
+        }
+
         private static float Hash01(int n)
         {
             unchecked
