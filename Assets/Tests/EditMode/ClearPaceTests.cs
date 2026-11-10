@@ -29,6 +29,17 @@ namespace IBlameYou.Tests.EditMode
         }
 
         [Test]
+        public void Defeat_ShowsPathStepSideRoomProgressAndTime()
+        {
+            Assert.AreEqual("쓰러진 곳: 주 경로 7/19번째 방 (곁방) · 진행도 33% · 버틴 시간 5분 12초",
+                ClearPace.DescribeDefeat(7, 19, true, 0.3333f, 312.9f));
+            Assert.AreEqual("쓰러진 곳: 주 경로 19/19번째 방 · 진행도 100%",
+                ClearPace.DescribeDefeat(25, 19, false, 1.2f, 0f));
+            Assert.AreEqual("쓰러진 곳: 진행도 40% · 버틴 시간 1분 00초",
+                ClearPace.DescribeDefeat(0, 0, false, 0.4f, 60f));
+        }
+
+        [Test]
         public void NoRooms_OmitsRoomPart_NoTarget_IsEmpty()
         {
             Assert.AreEqual("목표 15분 00초보다 0분 10초 느림", ClearPace.Describe(910f, 900f, 0, 0));
