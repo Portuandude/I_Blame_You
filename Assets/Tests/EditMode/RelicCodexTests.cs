@@ -34,5 +34,18 @@ namespace IBlameYou.Tests.EditMode
             Assert.AreEqual("유물 도감 2/18", RelicCodex.Summary(mask, 18));
             Assert.AreEqual("유물 도감 0/18", RelicCodex.Summary(0, 18));
         }
+
+        [Test]
+        public void Complete_Needs_Every_Relic()
+        {
+            int all3 = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 1), 2);
+            Assert.IsTrue(RelicCodex.Complete(all3, 3));
+            Assert.IsFalse(RelicCodex.Complete(all3, 4), "하나 빠지면 미완성");
+            Assert.IsTrue(RelicCodex.Complete(all3 | (1 << 9), 3), "전체 수 밖의 번호는 상관없다");
+            Assert.IsFalse(RelicCodex.Complete(0, 0), "유물이 없으면 완성도 없다");
+            Assert.IsFalse(RelicCodex.Complete(-1, 32), "31종을 넘으면 담을 수 없다");
+            Assert.AreEqual("유물 도감 3/3 ★", RelicCodex.Summary(all3, 3));
+            Assert.AreEqual("유물 도감 3/4", RelicCodex.Summary(all3, 4));
+        }
     }
 }

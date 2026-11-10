@@ -411,6 +411,15 @@ def pickup():
     return normalize(fade_edges(out))
 
 
+def star_shard():
+    """별똥 조각이 플레이어에 닿을 때: 작고 맑은 "띵" (높은 사인 + 5도 위 배음, 빠른 감쇠), 0.35초."""
+    n = int(0.35 * SR)
+    out = osc("sine", 1568.0, n) * env_exp(n, 0.08)            # G6
+    out += 0.45 * osc("sine", 2349.0, n) * env_exp(n, 0.05)   # D7
+    out += 0.2 * osc("sine", 3136.0, n) * env_exp(n, 0.03)    # G7 반짝임
+    return normalize(fade_edges(out))
+
+
 def arena_lock():
     """전투 구역 잠김: 무거운 문이 쿵 내려앉는 소리 + 쇠 울림, 0.7초."""
     n = int(0.7 * SR)
@@ -751,7 +760,7 @@ def main():
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
-        "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -759,7 +768,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()

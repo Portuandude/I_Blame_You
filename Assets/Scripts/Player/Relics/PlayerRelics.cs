@@ -37,8 +37,12 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.Restore(RelicBook.CheerRibbonMana);
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", new Color(1f, 0.65f, 0.35f), 0.8f);
+            var color = new Color(1f, 0.65f, 0.35f);
+            VfxPlayer.ManaRing(transform, RingOffset, color); // B색 고리
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", color, 0.8f);
         }
+
+        private static readonly Vector3 RingOffset = new Vector3(0f, 0.7f, 0f); // 마나 고리 가운데 (몸통 높이, 플레이어 로컬)
 
         // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
         private void OnShieldActivated(Element element)
@@ -46,11 +50,13 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.Restore(RelicBook.TwinRingMana);
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", new Color(0.37f, 0.82f, 1f), 0.8f);
+            var color = new Color(0.37f, 0.82f, 1f);
+            VfxPlayer.ManaRing(transform, RingOffset, color); // A색 고리
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
-        // 별똥 조각: 적을 쓰러뜨리면 가끔 마나 회복 (노란 글자).
+        // 별똥 조각: 적을 쓰러뜨리면 가끔 금별이 적 자리에서 날아와 닿을 때 마나 회복 (노란 글자).
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             var health = GetComponent<HealthSystem>();
@@ -58,11 +64,21 @@ namespace IBlameYou.Player
             if (Has(RelicId.VampireFang)) health.Heal(RelicBook.VampireFangHeal);
             if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
             {
-                var mana = GetComponent<ManaSystem>();
-                if (mana == null) return;
-                mana.Restore(RelicBook.StarShardMana);
-                DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
+                Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
+                VfxPlayer.StarShard(from, transform, Vector3.up * 0.8f, OnStarShardArrived);
             }
+        }
+
+        private void OnStarShardArrived()
+        {
+            if (this == null) return; // 별이 날아오는 사이 플레이어가 사라졌다
+            var health = GetComponent<HealthSystem>();
+            if (health == null || health.IsDead) return;
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            mana.Restore(RelicBook.StarShardMana);
+            GameAudio.PlaySfx("StarShard", 0.6f, 0.08f); // 작고 맑은 띵 (Tools/AudioGen star_shard)
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
         }
 
         // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.

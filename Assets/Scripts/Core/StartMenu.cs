@@ -25,6 +25,8 @@ namespace IBlameYou.Core
         private Vector2 recordScroll;
         private bool recordsTogglePending;
         private bool codexOpen; // 유물 도감 창 (C 또는 도감 줄 클릭)
+        private int codexCursor = -1;   // 도감 창에서 고른 칸 (방향키/WASD 또는 마우스). -1이면 없음
+        private Vector2 codexLastMouse; // 마우스가 움직였는지 보려고 (움직이면 마우스 쪽이 우선)
         private readonly System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons =
             new System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D>();
         private GUIStyle button;
@@ -78,6 +80,7 @@ namespace IBlameYou.Core
             if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codexOpen && e.keyCode == KeyCode.Escape)))
             {
                 codexOpen = e.keyCode == KeyCode.C ? !codexOpen : false;
+                if (codexOpen) codexCursor = -1; // 다시 열면 고른 칸 없이 시작
                 e.Use();
             }
             bool wasEnabled = GUI.enabled;
@@ -99,7 +102,10 @@ namespace IBlameYou.Core
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
             if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
+            {
                 codexOpen = true;
+                codexCursor = -1;
+            }
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
@@ -257,10 +263,10 @@ namespace IBlameYou.Core
             int rows = (all.Length + columns - 1) / columns;
             const float cell = 96f;
             // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄인다 (리뷰 LOW)
-            float cellHeight = Mathf.Clamp((Screen.height - 20f - 126f) / rows, 50f, 84f);
+            float cellHeight = Mathf.Clamp((Screen.height - 20f - 162f) / rows, 50f, 84f);
             float iconSize = Mathf.Min(44f, cellHeight - 36f);
             float width = columns * cell + 40f;
-            float height = 70f + rows * cellHeight + 56f;
+            float height = 70f + rows * cellHeight + 36f + 56f; // 36: 마우스 올린 유물 설명 (좁은 창에선 두 줄)
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
 
             var previous = GUI.color;
@@ -275,12 +281,37 @@ namespace IBlameYou.Core
             GUI.Label(new Rect(rect.x, rect.y + 42f, rect.width, 22f), SaveData.RelicCodexSummary(devMode, all.Length),
                 new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
 
+            // 칸 고르기: 방향키/WASD로 옮기고, 마우스를 움직이면 마우스가 올라간 칸(칸 밖이면 없음)으로 바뀐다.
+            var e = Event.current;
+            if (e.type == EventType.KeyDown)
+            {
+                int step = 0;
+                switch (e.keyCode)
+                {
+                    case KeyCode.LeftArrow: case KeyCode.A: step = -1; break;
+                    case KeyCode.RightArrow: case KeyCode.D: step = 1; break;
+                    case KeyCode.UpArrow: case KeyCode.W: step = -columns; break;
+                    case KeyCode.DownArrow: case KeyCode.S: step = columns; break;
+                }
+                if (step != 0)
+                {
+                    int next = codexCursor < 0 ? 0 : codexCursor + step;
+                    if (next >= 0 && next < all.Length) codexCursor = next; // 가장자리에서는 멈춘다
+                    e.Use();
+                }
+            }
+            bool mouseMoved = e.type != EventType.KeyDown && e.mousePosition != codexLastMouse; // 키 이벤트의 마우스 위치는 믿지 않는다 (리뷰 LOW)
+            if (mouseMoved) codexLastMouse = e.mousePosition;
+            if (codexCursor >= all.Length) codexCursor = -1;
+
             var name = new GUIStyle(recordSmall) { alignment = TextAnchor.UpperCenter, fontSize = 12 };
+            int mouseCell = -1;
             for (int i = 0; i < all.Length; i++)
             {
                 var id = all[i];
                 bool known = RelicCodex.Has(mask, (int)id);
                 var cellRect = new Rect(rect.x + 20f + (i % columns) * cell, rect.y + 70f + (i / columns) * cellHeight, cell, cellHeight);
+                if (cellRect.Contains(e.mousePosition)) mouseCell = i;
                 var icon = CodexIcon(id);
                 if (icon != null)
                 {
@@ -292,7 +323,35 @@ namespace IBlameYou.Core
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
             }
 
+            if (mouseMoved) codexCursor = mouseCell;
+            int hovered = codexCursor;
+            if (hovered >= 0)
+                DrawCellFrame(new Rect(rect.x + 20f + (hovered % columns) * cell, rect.y + 70f + (hovered / columns) * cellHeight, cell, cellHeight), previous);
+
+            // 고른 칸의 설명 한 줄: 모은 유물이면 "[A] 설명", 아직이면 "아직 모르는 유물". 안 골랐으면 안내 문구.
+            string info = hovered < 0 ? "유물 칸에 마우스를 올리거나 방향키로 고르면 설명이 보인다"
+                : RelicCodex.Has(mask, (int)all[hovered])
+                    ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
+                    : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
+            var infoStyle = new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter, wordWrap = true, clipping = TextClipping.Clip };
+            GUI.color = hovered >= 0 && RelicCodex.Has(mask, (int)all[hovered]) ? OutlinedLabel.Cream : new Color(1f, 1f, 1f, 0.6f);
+            GUI.Label(new Rect(rect.x + 10f, rect.yMax - 90f, rect.width - 20f, 36f), info, infoStyle);
+            GUI.color = previous;
+
             if (GUI.Button(new Rect(rect.center.x - 70f, rect.yMax - 48f, 140f, 36f), "닫기 (C)", button)) codexOpen = false;
+        }
+
+        // 고른 칸 둘레에 금색 테두리 (2px, 칸 안쪽으로 조금 들여서).
+        private static void DrawCellFrame(Rect cellRect, Color restore)
+        {
+            var r = new Rect(cellRect.x + 4f, cellRect.y + 1f, cellRect.width - 8f, cellRect.height - 2f);
+            const float t = 2f;
+            GUI.color = OutlinedLabel.Gold;
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.yMax - t, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.xMax - t, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.color = restore;
         }
 
         private Texture2D CodexIcon(IBlameYou.Player.RelicId id)
