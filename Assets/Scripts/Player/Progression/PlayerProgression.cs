@@ -184,7 +184,6 @@ namespace IBlameYou.Player
 
         private void OnDeathPrevented()
         {
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, "버텨냈다!", new Color(1f, 0.5f, 0.5f), 1.1f);
             // 화려하게: 흰 번쩍임 + 발밑에서 gold 빛기둥(레벨업 그림) + 머리 위 "버텼다!" 띠
             ScreenFlash.Pulse();
             var movement = GetComponent<PlayerMovement>();
