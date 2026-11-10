@@ -131,7 +131,7 @@ namespace IBlameYou.UI
                 }
 
                 GUI.enabled = progression.CanRaise(trait);
-                if (GUI.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기"))
+                if (GUI.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기", cardButton))
                     progression.Raise(trait);
                 GUI.enabled = true;
             }

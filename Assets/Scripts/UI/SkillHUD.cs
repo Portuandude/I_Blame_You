@@ -66,6 +66,8 @@ namespace IBlameYou.UI
         private GUIStyle big;
         private GUIStyle keyBox;
         private GUIStyle input;
+        private GUIStyle menuButton;  // 일시정지 메뉴 큰 버튼 (CuteButton.cs)
+        private GUIStyle cardButton;  // 유물·특성 창 작은 버튼
 
         private static readonly Color ColorA = new Color(0.45f, 0.85f, 1f);
         private static readonly Color ColorB = new Color(1f, 0.65f, 0.35f);
@@ -252,6 +254,8 @@ namespace IBlameYou.UI
                 keyBox.border = new RectOffset(10, 10, 10, 10);
             }
             input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
+            menuButton = CuteButton.Create(20);
+            cardButton = CuteButton.Create(15);
         }
 
         private void OnGUI()

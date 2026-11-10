@@ -174,7 +174,7 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
-                if (GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기"))
+                if (GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton))
                 {
                     ChooseRelic(i);
                     break;

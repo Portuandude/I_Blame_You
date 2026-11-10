@@ -58,23 +58,22 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "일시정지", big);
 
-            var button = new GUIStyle(GUI.skin.button) { fontSize = 20 };
             float x = rect.x + 40f;
             float buttonWidth = rect.width - 80f;
 
             GameAudio.MusicVolume = PauseVolumeSlider(new Rect(x, rect.y + 64f, buttonWidth, 28f), "배경음악", GameAudio.MusicVolume);
             GameAudio.SfxVolume = PauseVolumeSlider(new Rect(x, rect.y + 96f, buttonWidth, 28f), "효과음", GameAudio.SfxVolume);
 
-            if (GUI.Button(new Rect(x, rect.y + 140f, buttonWidth, 44f), "계속하기 (Esc)", button))
+            if (GUI.Button(new Rect(x, rect.y + 140f, buttonWidth, 44f), "계속하기 (Esc)", menuButton))
             {
                 ClosePauseMenu();
             }
-            else if (GUI.Button(new Rect(x, rect.y + 194f, buttonWidth, 44f), "다시 시작 (새 맵)", button))
+            else if (GUI.Button(new Rect(x, rect.y + 194f, buttonWidth, 44f), "다시 시작 (새 맵)", menuButton))
             {
                 ClosePauseMenu();
                 restart?.Invoke(false);
             }
-            else if (GUI.Button(new Rect(x, rect.y + 248f, buttonWidth, 44f), "시작 화면", button))
+            else if (GUI.Button(new Rect(x, rect.y + 248f, buttonWidth, 44f), "시작 화면", menuButton))
             {
                 ClosePauseMenu();
                 RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 체크포인트 시점으로 되감기지 않게
