@@ -18,6 +18,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/Button.png         32x32  둥근 버튼 보통 (dusk→lilac 젤리 + 크림 테두리 + 아래 두께). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/ButtonHover.png    32x32  마우스를 올렸을 때 (조금 밝게 + 빛 테두리)
   Assets/Resources/UI/HUD/ButtonActive.png   32x32  누르고 있을 때 (아래 두께가 눌려 2픽셀 내려감, 조금 어둡게)
+  Assets/Resources/UI/HUD/Pill.png      24x24  알림 피드 줄 배경 (반투명 night 알약 + 옅은 크림 테두리). 9분할 좌우 11픽셀
 
     python3 Tools/ArtGen/generate_hud.py [미리보기.png]
 """
@@ -220,6 +221,16 @@ def button(state):
     return out
 
 
+def pill():
+    n = 24
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    capsule(d, 0, 0, n, n, fill=hexrgba("fff4d6", 110))            # 옅은 크림 테두리
+    capsule(d, 1, 1, n - 1, n - 1, fill=hexrgba("1a1430", 185))    # 반투명 night 몸통
+    capsule(d, 3, 2.5, n - 3, 8, fill=hexrgba("a68cf0", 45))       # 위쪽 유리 반짝
+    return small(img, n, n)
+
+
 def room_tile():
     n = 16
     img = big(n, n)
@@ -281,6 +292,7 @@ def generate():
         "Button": button("normal"),
         "ButtonHover": button("hover"),
         "ButtonActive": button("active"),
+        "Pill": pill(),
         "RoomTile": room_tile(),
         "MapChest": map_chest(),
         "MapHelmet": map_helmet(),
