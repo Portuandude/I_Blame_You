@@ -50,6 +50,7 @@ namespace IBlameYou.UI
             relicChosen = onChosen;
             relicCancelled = onCancelled;
             relicOpenedFrame = Time.frameCount;
+            relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
             control.Locked = true;
             Time.timeScale = 0f;
             return true;
@@ -166,15 +167,18 @@ namespace IBlameYou.UI
             {
                 var id = relicOffer[i];
                 var card = new Rect(rect.x + 20f + i * (cardWidth + gap), rect.y + 80f, cardWidth, rect.height - 100f);
-                GUI.Box(card, GUIContent.none, panel);
-
+                var previousMatrix = BeginCardPop(card, relicWindowOpenedAt, i);
                 string owner = RelicBook.Owner(id);
+                DrawCard(card, owner);
+
                 string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 20f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
-                if (GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton))
+                bool chosen = GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);
+                GUI.matrix = previousMatrix;
+                if (chosen)
                 {
                     ChooseRelic(i);
                     break;
