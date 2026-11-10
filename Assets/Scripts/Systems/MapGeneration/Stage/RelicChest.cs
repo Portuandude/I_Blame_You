@@ -111,7 +111,7 @@ namespace IBlameYou.Systems
             {
                 waiting = false;
                 if (taken || relics == null || !relics.Add(chosen)) return;
-                SaveData.RecordRelic((int)chosen); // 유물 도감 (시작 화면 "유물 도감 N/M", 카드 NEW)
+                if (SaveData.RecordRelic((int)chosen)) RunStats.AddNewRelic(); // 유물 도감 (시작 화면 "유물 도감 N/M", 카드 NEW, 결과 창 새 유물)
                 GameAudio.PlaySfx("RelicOpen", 0.7f);
                 StageEvents.PostNotice($"유물: {RelicBook.Name(chosen)} ({RelicBook.Description(chosen)})");
                 VfxPlayer.RelicBanner(transform.position + Vector3.up * BannerHeight, RelicBook.Name(chosen));
