@@ -97,9 +97,13 @@ namespace IBlameYou.Core
             PlayerPrefs.Save();
         }
 
-        // 시작 화면용 "최근 N판 탓: A a · B b" 한 줄. 기록이 없으면 빈 문자열.
-        public static string RecentBlameSummary(bool devMode) =>
-            BlameVerdict.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), ""));
+        // 시작 화면용 "최근 N판 탓: A a · B b — B: 마나 먹는 하마" 한 줄 (끝은 탓 칭호). 기록이 없으면 빈 문자열.
+        public static string RecentBlameSummary(bool devMode)
+        {
+            string list = PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), "");
+            string summary = BlameVerdict.RecentSummary(list);
+            return string.IsNullOrEmpty(summary) ? "" : summary + " — " + BlameVerdict.RecentTitle(list);
+        }
 
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)
