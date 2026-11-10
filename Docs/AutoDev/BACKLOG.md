@@ -12,7 +12,7 @@
 
 - DONE (claude/project-thread-stixme): 탓 칭호 — 시작 화면 최근 탓 줄에서 탓을 더 많이 받은 쪽에 장난 칭호("마나 먹는 하마" 등, 3~4개 중 횟수 차이로 고름)를 붙인다. 같으면 "환상의 짝꿍" (`BlameVerdict` + 테스트)
 - DONE (claude/project-thread-stixme): 이번 판 vs 평소 — 게임오버 창 쓰러진 곳 줄 아래(또는 끝)에 최근 쓰러진 곳 평균과 비교 "평소보다 12%p 더 갔다"(초록)/"덜 갔다"(주황). 기록하기 전 평균과 비교 (`ClearPace`, `SkillHUD.EndScreen`)
-- TODO: 좁은 화면 유물 창 — 후보 4장(네잎 클로버)일 때 화면 너비가 모자라면 카드 폭을 줄이거나 2×2로 (1024px에서 여백 11px). `SkillHUD.Relics`
+- DONE (claude/project-thread-stixme): 좁은 화면 유물 창 — 후보 4장(네잎 클로버)일 때 화면 너비가 모자라면 카드 폭을 줄이거나 2×2로 (1024px에서 여백 11px). `SkillHUD.Relics`
 
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
