@@ -33,10 +33,52 @@ namespace IBlameYou.UI
         private GUIStyle legend;
         private GUIStyle legendLeft;
 
+        // 새 방 발견 연출: 처음 들어간 방의 칸이 RevealTime 동안 작게 시작해 살짝 커졌다 제자리로 "톡" 나타나고,
+        // 다 나타나면 칸 위에 흰 반짝임이 한 번 지나간다. 시작할 때 이미 가 본 방(시작 방·이어하기)은 연출 없이.
+        private const float RevealTime = 0.3f;
+        private const float RevealShine = 0.25f;
+        private readonly System.Collections.Generic.HashSet<int> known = new System.Collections.Generic.HashSet<int>();
+        private readonly System.Collections.Generic.Dictionary<int, float> revealStart = new System.Collections.Generic.Dictionary<int, float>();
+
         public void Initialize(ChunkStreamer stageStreamer, GameObject player)
         {
             streamer = stageStreamer;
             control = player != null ? player.GetComponent<PlayerControlState>() : null;
+            if (streamer == null || !streamer.IsRoomMode) return;
+            foreach (var room in streamer.Rooms.Rooms) if (streamer.HasVisited(room.Index)) known.Add(room.Index);
+            streamer.RoomEntered += OnRoomEntered;
+        }
+
+        private void OnDestroy()
+        {
+            if (streamer != null) streamer.RoomEntered -= OnRoomEntered;
+        }
+
+        private void OnRoomEntered(int index)
+        {
+            if (known.Add(index)) revealStart[index] = Time.unscaledTime;
+        }
+
+        // 발견 연출 크기 (0.2 → 1.2 → 1). 연출이 끝났거나 없으면 1.
+        private float RevealScale(int index)
+        {
+            if (!revealStart.TryGetValue(index, out float start)) return 1f;
+            float t = (Time.unscaledTime - start) / RevealTime;
+            if (t >= 1f) return 1f;
+            return t < 0.6f ? Mathf.Lerp(0.2f, 1.2f, t / 0.6f) : Mathf.Lerp(1.2f, 1f, (t - 0.6f) / 0.4f);
+        }
+
+        // 다 나타난 직후 흰 반짝임 알파 (0.55 → 0). 없으면 0.
+        private float RevealShineAlpha(int index)
+        {
+            if (!revealStart.TryGetValue(index, out float start)) return 0f;
+            float t = (Time.unscaledTime - start - RevealTime) / RevealShine;
+            if (t >= 1f)
+            {
+                revealStart.Remove(index); // 연출 끝 (OnGUI 안이지만 이 방 하나만 지운다)
+                return 0f;
+            }
+            return t < 0f ? 0f : 0.55f * (1f - t);
         }
 
         private void Update()
@@ -107,6 +149,13 @@ namespace IBlameYou.UI
                 if (!IsShown(room.Index, current)) continue;
                 var r = CellRect(room.X, room.Y, left, top, area, cell);
                 var body = new Rect(r.x + pad, r.y + pad, r.width - pad * 2f, r.height - pad * 2f);
+                float reveal = RevealScale(room.Index);
+                if (reveal != 1f)
+                {
+                    var center = body.center;
+                    body.size *= reveal;
+                    body.center = center;
+                }
                 bool blink = room == current && Mathf.Repeat(Time.unscaledTime, 0.8f) < 0.55f;
                 if (art.Tile != null)
                 {
@@ -172,6 +221,14 @@ namespace IBlameYou.UI
                             Fill(dot, c);
                         }
                     }
+                }
+
+                // 새 방 발견 직후 흰 반짝임 한 번
+                float shine = RevealShineAlpha(room.Index);
+                if (shine > 0f)
+                {
+                    if (art.Tile != null) DrawTile(body, new Color(1f, 1f, 1f, shine));
+                    else Fill(body, new Color(1f, 1f, 1f, shine));
                 }
 
                 if (blink && art.Tile == null)
