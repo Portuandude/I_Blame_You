@@ -175,6 +175,7 @@ namespace IBlameYou.Puzzles
             }
 
             opened = true;
+            GameAudio.PlaySfx("GateOpen", 0.85f, 0f);
             StageEvents.PostNotice("봉인이 풀렸다!");
             onOpened?.Invoke();
             Destroy(gameObject);
