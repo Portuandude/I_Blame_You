@@ -24,6 +24,7 @@ namespace IBlameYou.Player
         public SpellDefinition PendingSpell { get; private set; }
         public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
+        public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (영창 일치·개발자 모드 즉시 발동). 응원 리본 유물
         private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
 
@@ -122,6 +123,7 @@ namespace IBlameYou.Player
             if (combat != null) combat.PlayCastAnimation(origin + Vector2.right * facing); // 방향은 그대로 두고 동작만
             GameAudio.PlaySfx($"Cast_{spell.Element}");
             RunStats.AddSpell((int)spell.Element); // 결과 창 B 최애 마법
+            Casted?.Invoke(spell.Element);
 
             if (spell.Shape == SpellShape.GroundSpike)
             {
