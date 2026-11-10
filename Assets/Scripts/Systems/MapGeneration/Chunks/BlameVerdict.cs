@@ -38,6 +38,20 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 일시정지 창 "지금까지" 한 줄 (IMGUI rich text, A·B는 각자 색). 예: "날린 마나 A 12 · B 30 → 지금은 <color=#ffa659>B 탓</color>".
+        public static string Running(float wastedA, float wastedB)
+        {
+            string now;
+            switch (Judge(wastedA, wastedB))
+            {
+                case Who.A: now = "지금은 <color=#73d9ff>A 탓</color>"; break;
+                case Who.B: now = "지금은 <color=#ffa659>B 탓</color>"; break;
+                case Who.Even: now = "지금은 반반"; break;
+                default: now = "아직 아무 탓도 없음"; break;
+            }
+            return $"날린 마나 A {Whole(wastedA)} · B {Whole(wastedB)} → {now}";
+        }
+
         // 최근 탓 기록 (시작 화면에서 서로 놀릴 거리). 저장 문자열은 판정 글자(A·B·E 반반·N 없음)를 새 것부터 이어 붙인 것, RecentMax개.
         public const int RecentMax = 10;
 
@@ -77,6 +91,38 @@ namespace IBlameYou.Systems
             if (even > 0) text += $" · 반반 {even}";
             if (none > 0) text += $" · 탓 없음 {none}";
             return text;
+        }
+
+        // 탓 칭호: 최근 기록에서 탓을 더 많이 받은 쪽에 붙이는 장난 칭호. 횟수 차이가 클수록 센 칭호.
+        // 예: "B: 마나 먹는 하마", 같으면 "환상의 짝꿍". 기록이 없으면 빈 문자열.
+        public static readonly string[] Titles = { "마나 흘리개", "마나 먹는 하마", "마나 블랙홀", "전설의 탓받이" };
+        public const string EvenTitle = "환상의 짝꿍";
+
+        // 차이 1 → 0번, 2~3 → 1번, 4~6 → 2번, 7 이상 → 3번.
+        public static string TitleFor(int gap)
+        {
+            if (gap <= 0) return EvenTitle;
+            if (gap == 1) return Titles[0];
+            if (gap <= 3) return Titles[1];
+            if (gap <= 6) return Titles[2];
+            return Titles[3];
+        }
+
+        public static string RecentTitle(string list)
+        {
+            int a = 0, b = 0, count = 0;
+            if (!string.IsNullOrEmpty(list))
+                foreach (char c in list)
+                {
+                    if (count >= RecentMax) break;
+                    if (c == 'A') a++;
+                    else if (c == 'B') b++;
+                    else if (c != 'E' && c != 'N') continue;
+                    count++;
+                }
+            if (count == 0) return "";
+            if (a == b) return EvenTitle;
+            return (a > b ? "A: " : "B: ") + TitleFor(Math.Abs(a - b));
         }
     }
 }

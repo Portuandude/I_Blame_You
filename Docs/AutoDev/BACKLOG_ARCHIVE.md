@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-stixme): 탓 칭호 — 시작 화면 최근 탓 줄에서 탓을 더 많이 받은 쪽에 장난 칭호("마나 먹는 하마" 등, 3~4개 중 횟수 차이로 고름)를 붙인다. 같으면 "환상의 짝꿍" (`BlameVerdict` + 테스트)
+- DONE (claude/project-thread-stixme): 이번 판 vs 평소 — 게임오버 창 쓰러진 곳 줄 아래(또는 끝)에 최근 쓰러진 곳 평균과 비교 "평소보다 12%p 더 갔다"(초록)/"덜 갔다"(주황). 기록하기 전 평균과 비교 (`ClearPace`, `SkillHUD.EndScreen`)
+- DONE (claude/project-thread-stixme): 좁은 화면 유물 창 — 후보 4장(네잎 클로버)일 때 화면 너비가 모자라면 카드 폭을 줄이거나 2×2로 (1024px에서 여백 11px). `SkillHUD.Relics`
+- DONE (claude/project-thread-stixme, 옆 런 패널에): 일시정지 창 탓 미리보기 — 일시정지 창에 지금까지 날린 마나 "A 12 · B 30"과 지금 판정("지금은 B 탓")을 그 사람 색으로 한 줄. `BlameVerdict.Describe` 재사용 (`SkillHUD.Pause`)
+- DONE (claude/project-thread-stixme, A 방어막 최애도 같은 줄에): 결과 창 가장 많이 쓴 마법 — 판마다 B 공격 스킬·A 방어막 속성별 사용 횟수를 세어(`RunStats`) 결과 창 요약 줄에 "B 최애 마법: 불(12회)"를 더한다. 0회면 뺀다 + 테스트
+- DONE (claude/project-thread-stixme): 유물 응원 리본 — B의 공격 마법이 발동하면 마나 +4 (쌍둥이 반지의 B 쪽 짝. A·B는 한 캐릭터를 같이 조종하므로 "가까이 붙기" 안은 뺐다). `RelicId.CheerRibbon`=17, 아이콘, 설명
 - DONE (claude/project-thread-5764qw): 최근 쓰러진 곳 기록 — 게임오버 때 진행도·주 경로 순번을 최근 5개 저장(`ClearPace` 형식 재사용), 시작 화면 최근 기록 줄 아래에 "최근 쓰러진 곳 평균 진행도 P%". 어려운 구간 찾기용
 - DONE (claude/project-thread-5764qw): 나침반 획득 연출 — 나침반을 고르는 순간 큰 지도가 1.5초 자동으로 펼쳐지며 흐린 칸들이 차례로 나타난다 (`MinimapUI`, 발견 연출 재사용)
 - DONE (claude/project-thread-5764qw): 결과 창 "누구 탓?" 판정 — 날린 마나가 더 많은 쪽 탓(차이 5 이하·10% 이하는 반반), 이름 색으로 한 줄 (`Chunks/BlameVerdict` + 테스트)

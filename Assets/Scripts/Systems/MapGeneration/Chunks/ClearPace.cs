@@ -130,6 +130,35 @@ namespace IBlameYou.Systems
             return $"최근 쓰러진 곳 {entries.Count}판 평균 진행도 {avgPercent}%{tail}";
         }
 
+        // 최근 쓰러진 곳 평균 진행도(0~100, 반올림). 기록이 없으면 -1.
+        public static int RecentDefeatAverage(string list)
+        {
+            var entries = ParseDefeats(list);
+            if (entries.Count == 0) return -1;
+            long percent = 0;
+            foreach (var e in entries) percent += e.percent;
+            return (int)Math.Round(percent / (double)entries.Count, MidpointRounding.AwayFromZero);
+        }
+
+        // 게임오버 창 "이번 판 vs 평소" 한 줄. usualPercent는 이번 판을 기록하기 전의 평균(RecentDefeatAverage), -1이면 빈 문자열.
+        // 예: "평소보다 12%p 더 갔다 (최근 평균 30%)" / "평소보다 5%p 덜 갔다 (최근 평균 40%)" / "평소만큼 갔다 (최근 평균 33%)".
+        public static string CompareDefeat(float progress, int usualPercent)
+        {
+            if (usualPercent < 0) return "";
+            int diff = DefeatGap(progress, usualPercent);
+            string usual = $"(최근 평균 {Math.Min(100, usualPercent)}%)";
+            if (diff > 0) return $"평소보다 {diff}%p 더 갔다 {usual}";
+            if (diff < 0) return $"평소보다 {-diff}%p 덜 갔다 {usual}";
+            return $"평소만큼 갔다 {usual}";
+        }
+
+        // 이번 진행도(DescribeDefeat와 같은 반올림) − 평소 평균. 양수면 더 갔다 (초록), 음수면 덜 갔다 (주황).
+        public static int DefeatGap(float progress, int usualPercent)
+        {
+            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
+            return percent - Math.Max(0, Math.Min(100, usualPercent));
+        }
+
         private static System.Collections.Generic.List<(int percent, int step, int main)> ParseDefeats(string list)
         {
             var result = new System.Collections.Generic.List<(int percent, int step, int main)>();

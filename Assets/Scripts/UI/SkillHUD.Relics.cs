@@ -123,11 +123,26 @@ namespace IBlameYou.UI
         {
             if (!relicWindowOpen || relicOffer == null) return;
 
-            const float cardWidth = 230f;
+            const float fullCardWidth = 230f;
+            const float minCardWidth = 180f; // 이보다 좁으면 설명이 너무 접혀서 2×2로 바꾼다
+            const float cardHeight = 200f;
             const float gap = 14f;
+            const float edge = 16f;          // 화면 가장자리 최소 여백
             int count = relicOffer.Length;
-            float width = count * cardWidth + (count - 1) * gap + 40f;
-            var rect = new Rect((Screen.width - width) / 2f, Screen.height * 0.22f, width, 300f);
+            // 한 줄로 화면에 들어가면 그대로, 모자라면 카드 폭을 줄이고, 그래도 180px 밑이면 2열로 (네잎 클로버 4장, 좁은 화면).
+            float available = Screen.width - edge * 2f - 40f;
+            int columns = count;
+            float cardWidth = Mathf.Min(fullCardWidth, (available - (columns - 1) * gap) / columns);
+            if (cardWidth < minCardWidth && count >= 4)
+            {
+                columns = 2;
+                cardWidth = Mathf.Min(fullCardWidth, (available - gap) / columns);
+            }
+            int rows = (count + columns - 1) / columns;
+            float width = columns * cardWidth + (columns - 1) * gap + 40f;
+            float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f;
+            float top = Mathf.Max(edge, Mathf.Min(Screen.height * 0.22f, (Screen.height - height) / 2f));
+            var rect = new Rect((Screen.width - width) / 2f, top, width, height);
 
             var previous = GUI.color;
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
@@ -144,7 +159,8 @@ namespace IBlameYou.UI
             for (int i = 0; i < count; i++)
             {
                 var id = relicOffer[i];
-                var card = new Rect(rect.x + 20f + i * (cardWidth + gap), rect.y + 80f, cardWidth, rect.height - 100f);
+                int col = i % columns, row = i / columns;
+                var card = new Rect(rect.x + 20f + col * (cardWidth + gap), rect.y + 80f + row * (cardHeight + gap), cardWidth, cardHeight);
                 var previousMatrix = BeginCardPop(card, relicWindowOpenedAt, i);
                 string owner = RelicBook.Owner(id);
                 DrawCard(card, owner);

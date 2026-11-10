@@ -119,6 +119,7 @@ namespace IBlameYou.Player
             shield.Activate(element, shieldDuration);
             SkillMessages.Post(ManaUser.PlayerA, $"{ElementInfo.KoreanName(element)} 방어막 발동");
             Activated?.Invoke(element);
+            RunStats.AddShield((int)element); // 결과 창 A 최애 방어막
         }
 
         private void Fail(string reason)

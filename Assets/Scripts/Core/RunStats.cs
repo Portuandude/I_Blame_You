@@ -8,6 +8,9 @@ namespace IBlameYou.Core
         public static int ArenasCleared { get; set; }
         public static int GatesOpened { get; set; }
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
+        // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
+        public static readonly int[] SpellCasts = new int[5];
+        public static readonly int[] ShieldCasts = new int[5];
 
         public static void Reset()
         {
@@ -15,6 +18,8 @@ namespace IBlameYou.Core
             DamageTaken = 0f;
             ArenasCleared = 0;
             GatesOpened = 0;
+            System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
+            System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
         }
 
@@ -26,6 +31,16 @@ namespace IBlameYou.Core
         public static void AddGateOpened()
         {
             if (!Ended) GatesOpened++;
+        }
+
+        public static void AddSpell(int element)
+        {
+            if (!Ended && element >= 0 && element < SpellCasts.Length) SpellCasts[element]++;
+        }
+
+        public static void AddShield(int element)
+        {
+            if (!Ended && element >= 0 && element < ShieldCasts.Length) ShieldCasts[element]++;
         }
 
         public static string Summary(int level, int relics = 0) =>

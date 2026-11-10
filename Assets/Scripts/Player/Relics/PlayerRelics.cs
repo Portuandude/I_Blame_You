@@ -20,11 +20,24 @@ namespace IBlameYou.Player
 
         private bool listeningShield;
 
+        private bool listeningSpells;
+
         private void OnDestroy()
         {
             if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
             var shieldSkill = listeningShield ? GetComponent<ElementShieldSkill>() : null;
             if (shieldSkill != null) shieldSkill.Activated -= OnShieldActivated;
+            var caster = listeningSpells ? GetComponent<SpellCaster>() : null;
+            if (caster != null) caster.Casted -= OnSpellCasted;
+        }
+
+        // 응원 리본: B의 공격 마법이 발동하면 마나를 조금 돌려받는다 (쌍둥이 반지의 B 쪽 짝, 주황 글자).
+        private void OnSpellCasted(Element element)
+        {
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            mana.Restore(RelicBook.CheerRibbonMana);
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", new Color(1f, 0.65f, 0.35f), 0.8f);
         }
 
         // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
@@ -143,6 +156,14 @@ namespace IBlameYou.Player
                     {
                         shieldSkill.Activated += OnShieldActivated;
                         listeningShield = true;
+                    }
+                    break;
+                case RelicId.CheerRibbon:
+                    var caster = GetComponent<SpellCaster>();
+                    if (caster != null && !listeningSpells)
+                    {
+                        caster.Casted += OnSpellCasted;
+                        listeningSpells = true;
                     }
                     break;
             }

@@ -21,6 +21,7 @@ namespace IBlameYou.UI
 
         private float endScreenShownAt = -1f;
         private float defeatTime; // 쓰러진 순간까지 걸린 시간 (Update에서 deathHandled를 세울 때)
+        private int defeatUsualPercent = -1; // 이번 판 전 최근 쓰러진 곳 평균 진행도 (없으면 -1)
         private GUIStyle endTitle;
 
         // 결과 창이 처음 그려지는 순간: 배경음악을 줄여 끄고 클리어 팡파르 / 게임오버 징글 (Tools/AudioGen Jingle_*).
@@ -154,6 +155,44 @@ namespace IBlameYou.UI
             var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(rect, text, style);
+        }
+
+        // 게임오버 결과 창: 이번 판 진행도를 최근 쓰러진 곳 평균과 비교. 더 갔으면 초록, 덜 갔으면 주황, 같으면 크림색 (Chunks/ClearPace.CompareDefeat).
+        private bool HasDefeatCompare => defeatUsualPercent >= 0;
+
+        private void DrawDefeatCompare(Rect rect)
+        {
+            if (!HasDefeatCompare) return;
+            int gap = ClearPace.DefeatGap(StageEvents.Progress, defeatUsualPercent);
+            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            style.normal.textColor = gap > 0 ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 평소보다 더 갔다
+                : gap < 0 ? new Color(1f, 0.62f, 0.25f)                          // 주황: 덜 갔다
+                : OutlinedLabel.Cream;
+            GUI.Label(rect, ClearPace.CompareDefeat(StageEvents.Progress, defeatUsualPercent), style);
+        }
+
+        // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally). 없으면 빈 문자열.
+        private static string[] elementNames;
+
+        private static string FavoriteLine()
+        {
+            if (elementNames == null)
+            {
+                elementNames = new string[ElementInfo.Count];
+                for (int i = 0; i < elementNames.Length; i++) elementNames[i] = ElementInfo.KoreanName((Element)i);
+            }
+            return RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames);
+        }
+
+        // 최애 줄을 그리고, 그린 높이(없으면 0)를 돌려준다. 아래 줄은 그만큼 내린다.
+        private float DrawFavoriteLine(float x, float y, float width)
+        {
+            string text = FavoriteLine();
+            if (string.IsNullOrEmpty(text)) return 0f;
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+            style.normal.textColor = OutlinedLabel.Cream;
+            GUI.Label(new Rect(x, y, width, 22f), text, style);
+            return 22f;
         }
 
         private static float Hash01(int n)

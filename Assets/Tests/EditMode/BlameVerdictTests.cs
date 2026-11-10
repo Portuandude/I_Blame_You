@@ -45,6 +45,30 @@ namespace IBlameYou.Tests.EditMode
         }
 
         [Test]
+        public void Running_ShowsNowVerdict()
+        {
+            Assert.AreEqual("날린 마나 A 12 · B 30 → 지금은 <color=#ffa659>B 탓</color>", BlameVerdict.Running(12.4f, 29.5f));
+            Assert.AreEqual("날린 마나 A 40 · B 0 → 지금은 <color=#73d9ff>A 탓</color>", BlameVerdict.Running(40f, -1f));
+            Assert.AreEqual("날린 마나 A 10 · B 13 → 지금은 반반", BlameVerdict.Running(10f, 13f));
+            Assert.AreEqual("날린 마나 A 0 · B 0 → 아직 아무 탓도 없음", BlameVerdict.Running(0f, 0f));
+        }
+
+        [Test]
+        public void Title_ByGap()
+        {
+            Assert.AreEqual("", BlameVerdict.RecentTitle(""));
+            Assert.AreEqual("", BlameVerdict.RecentTitle("xyz"));
+            Assert.AreEqual("환상의 짝꿍", BlameVerdict.RecentTitle("ABEN"));
+            Assert.AreEqual("환상의 짝꿍", BlameVerdict.RecentTitle("EN"));
+            Assert.AreEqual("B: 마나 흘리개", BlameVerdict.RecentTitle("BAB"));
+            Assert.AreEqual("A: 마나 먹는 하마", BlameVerdict.RecentTitle("AAAB"));
+            Assert.AreEqual("B: 마나 블랙홀", BlameVerdict.RecentTitle("BBBBNE"));
+            Assert.AreEqual("A: 전설의 탓받이", BlameVerdict.RecentTitle("AAAAAAAAAA"));
+            // 최근 10개만 센다: 11번째 B는 무시.
+            Assert.AreEqual("A: 전설의 탓받이", BlameVerdict.RecentTitle("AAAAAAAAAAB"));
+        }
+
+        [Test]
         public void Recent_IgnoresBrokenAndEmpty()
         {
             Assert.AreEqual("", BlameVerdict.RecentSummary(null));

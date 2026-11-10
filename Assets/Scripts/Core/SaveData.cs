@@ -89,6 +89,10 @@ namespace IBlameYou.Core
         public static string RecentDefeatSummary(bool devMode) =>
             ClearPace.RecentDefeatSummary(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
 
+        // 최근 쓰러진 곳 평균 진행도(0~100). 기록이 없으면 -1. 게임오버 창 "평소보다 더/덜 갔다" 비교용 (기록하기 전에 읽는다).
+        public static int RecentDefeatAverage(bool devMode) =>
+            ClearPace.RecentDefeatAverage(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
+
         // 최근 10판 "누구 탓?" 판정 (BlameVerdict.AddRecent 형식). 모드별로 따로. 클리어·게임오버 모두.
         public static void RecordBlame(float wastedA, float wastedB)
         {
@@ -97,9 +101,13 @@ namespace IBlameYou.Core
             PlayerPrefs.Save();
         }
 
-        // 시작 화면용 "최근 N판 탓: A a · B b" 한 줄. 기록이 없으면 빈 문자열.
-        public static string RecentBlameSummary(bool devMode) =>
-            BlameVerdict.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), ""));
+        // 시작 화면용 "최근 N판 탓: A a · B b — B: 마나 먹는 하마" 한 줄 (끝은 탓 칭호). 기록이 없으면 빈 문자열.
+        public static string RecentBlameSummary(bool devMode)
+        {
+            string list = PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), "");
+            string summary = BlameVerdict.RecentSummary(list);
+            return string.IsNullOrEmpty(summary) ? "" : summary + " — " + BlameVerdict.RecentTitle(list);
+        }
 
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)
