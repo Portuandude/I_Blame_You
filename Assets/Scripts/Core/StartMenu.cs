@@ -1,5 +1,6 @@
 using System;
 using IBlameYou.Systems;
+using IBlameYou.UI;
 using UnityEngine;
 
 namespace IBlameYou.Core
@@ -7,7 +8,7 @@ namespace IBlameYou.Core
     // 게임 시작 전 화면 (기획서 2.8/2.9). 개발자 모드를 켜고 끄고, 볼륨을 맞추고, 로컬 테스트를 시작한다.
     // 설정과 최고 기록은 SaveData(PlayerPrefs)에 남는다.
     // 온라인(데디케이티드 서버)은 아직 없어 버튼만 자리를 잡아 둔다.
-    // 테스트 단계라 UI 에셋 없이 IMGUI로 그린다.
+    // IMGUI로 그린다 (버튼은 UI/CuteButton.cs의 둥근 그림).
     public class StartMenu : MonoBehaviour
     {
         private Action onStart;
@@ -40,7 +41,7 @@ namespace IBlameYou.Core
             title.normal.textColor = new Color(1f, 0.85f, 0.4f);
             body = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = true };
             body.normal.textColor = Color.white;
-            button = new GUIStyle(GUI.skin.button) { fontSize = 20 };
+            button = CuteButton.Create(20); // 둥근 젤리 버튼 (UI/CuteButton.cs)
             toggle = new GUIStyle(GUI.skin.toggle) { fontSize = 20 };
         }
 
