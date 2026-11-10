@@ -467,15 +467,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(x, y + 54f, width, 24f), "똑같이 입력하고 Enter (오타면 마나만 소모) · Esc 취소", small);
         }
 
-        private void DrawHelp()
-        {
-            string help = GameSession.DevMode
-                ? "A: A/D 이동 · Space 점프 · Shift 달리기 · L.Ctrl 대쉬 · 방향키+Enter 순간이동 · 1~5 방어막    " +
-                  "B: 좌클릭 마력탄(마나 5) · 6~9 공격 스킬    F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복    Esc 일시정지"
-                : "A: A/D 이동 · Space 점프 · Shift 달리기 · L.Ctrl 대쉬 · 방향키+Enter 순간이동 · 넘패드 1~5 방어막(→W/A/S/D)    " +
-                  "B: 좌클릭 마력탄(마나 5) · 1~4 공격 스킬(→영창 타이핑+Enter)    Esc 일시정지";
-            GUI.Label(new Rect(12f, Screen.height - 30f, Screen.width - 24f, 24f), help, small);
-        }
+        // DrawHelp: 아래 조작 도움말 줄 (SkillHUD.Help.cs)
 
         private void DrawGameOver()
         {
