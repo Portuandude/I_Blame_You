@@ -140,7 +140,9 @@ namespace IBlameYou.Core
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
             if (health != null && data.deathSaves >= 0) health.DeathSaves = data.deathSaves; // 특성 다시 찍기로 되살아난 버티기를 저장값으로
-            player.GetComponent<FallRecovery>().SetSafePoint(start);
+            var recovery = player.GetComponent<FallRecovery>();
+            if (data.freeFalls >= 0) recovery.FreeFalls = data.freeFalls; // 유물 Apply가 다시 채운 모래시계 횟수를 저장값으로
+            recovery.SetSafePoint(start);
         }
 
         // 체크포인트를 처음 켰을 때 (체력·마나 회복 뒤) 런 진행을 저장한다.
@@ -152,6 +154,7 @@ namespace IBlameYou.Core
 
             var progression = player.GetComponent<PlayerProgression>();
             var relics = player.GetComponent<PlayerRelics>();
+            var recovery = player.GetComponent<FallRecovery>();
             var relicIds = new System.Collections.Generic.List<int>();
             if (relics != null) foreach (var id in relics.Owned) relicIds.Add((int)id);
 
@@ -174,6 +177,7 @@ namespace IBlameYou.Core
                 relics = relicIds.ToArray(),
                 health = health.Current,
                 deathSaves = health.DeathSaves,
+                freeFalls = recovery != null ? recovery.FreeFalls : -1,
                 kills = RunStats.Kills,
                 damageTaken = RunStats.DamageTaken,
                 arenasCleared = RunStats.ArenasCleared,

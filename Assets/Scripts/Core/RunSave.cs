@@ -34,6 +34,7 @@ namespace IBlameYou.Core
             public int[] relics = new int[0];
             public float health;
             public int deathSaves = -1;     // 남은 "쓰러짐 버티기" 횟수 (생명 20). -1이면 모름(특성대로 둔다)
+            public int freeFalls = -1;      // 남은 무료 낙하 복귀 횟수 (되감기 모래시계). -1이면 모름(옛 저장 → 유물 기본값)
 
             public int kills;
             public float damageTaken;
