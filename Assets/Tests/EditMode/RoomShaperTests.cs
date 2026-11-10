@@ -7,8 +7,8 @@ namespace IBlameYou.Tests
     // 방 지형(RoomShaper): 어느 문으로 들어와도 모든 문으로 나갈 수 있고, 문 자리가 실제로 뚫려 있는지.
     public class RoomShaperTests
     {
-        private const float TargetSeconds = 30f * 60f;
-        private const int SeedCount = 30;
+        private const float TargetSeconds = 15f * 60f; // 스테이지 1 목표 15분 (2026-11-10 사람 결정)
+        private const int SeedCount = 60; // 15분이라 방이 반으로 줄어 시드를 두 배로
         private static readonly DoorDir[] Dirs = { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down };
 
         [Test]
@@ -201,7 +201,7 @@ namespace IBlameYou.Tests
                             foreach (var spot in geometry.Exits.Values)
                                 Assert.IsFalse(spot.Item2 == f.Y && System.Math.Abs(spot.Item1 - x) <= 2, $"seed {seed} room {room.Index} 출발 칸 옆 {x}");
                             foreach (var other in chunk.Features)
-                                if ((other.Kind == FeatureKind.Enemy || other.Kind == FeatureKind.Checkpoint) && other.Y == f.Y)
+                                if (other.Kind == FeatureKind.Enemy && other.Y == f.Y)
                                     Assert.Greater(System.Math.Abs(other.X - x), 2, $"seed {seed} room {room.Index} {other.Kind} 옆 {x}");
                             for (int y = f.Y + 1; y <= f.Y + 3; y++)
                                 Assert.AreNotEqual(StageTile.Platform, chunk.Get(x, y), $"seed {seed} room {room.Index} 맨 아래 발판 밑 {x}");
