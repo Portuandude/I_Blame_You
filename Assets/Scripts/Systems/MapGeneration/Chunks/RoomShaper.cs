@@ -84,6 +84,16 @@ namespace IBlameYou.Systems
             });
         }
 
+        // 중간보스 전투 구역인지 (구역 적에 쌍둥이 기사가 있음). 처치 보상(체력 50% 즉시 회복 + 유물 상자 확정)을 고를 때 쓴다.
+        public static bool IsMidBossArena(ChunkData chunk)
+        {
+            foreach (var f in chunk.Features)
+                if (f.Kind == FeatureKind.Enemy && f.Deferred &&
+                    (f.Enemy == StageEnemy.SlimeKnightFire || f.Enemy == StageEnemy.SlimeKnightWater))
+                    return true;
+            return false;
+        }
+
         // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
         private static void ArmMidBoss(ChunkData chunk)
         {
