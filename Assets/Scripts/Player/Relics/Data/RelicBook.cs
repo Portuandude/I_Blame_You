@@ -22,7 +22,8 @@ namespace IBlameYou.Player
         BloodPact,   // 피의 계약: 마나가 모자라면 모자란 만큼 체력으로 대신 낸다 (40초에 한 번, 체력 1은 남긴다)
         PhoenixFeather, // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
         Hourglass,   // 되감기 모래시계: 낭떠러지에 떨어져도 2번은 피해 없이 돌아온다
-        TwinRing     // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
+        TwinRing,    // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
+        Compass      // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -53,7 +54,8 @@ namespace IBlameYou.Player
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
-            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing
+            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
+            RelicId.Compass
         };
 
         public static string Name(RelicId id)
@@ -74,6 +76,7 @@ namespace IBlameYou.Player
                 case RelicId.PhoenixFeather: return "불사조 깃털";
                 case RelicId.Hourglass: return "되감기 모래시계";
                 case RelicId.TwinRing: return "쌍둥이 반지";
+                case RelicId.Compass: return "탐험가의 나침반";
                 default: return "집중 구슬";
             }
         }
@@ -96,6 +99,7 @@ namespace IBlameYou.Player
                 case RelicId.PhoenixFeather: return "쓰러질 피해를 한 번 버티고 체력 30%로";
                 case RelicId.Hourglass: return $"낭떠러지에 떨어져도 {HourglassFreeFalls}번은 피해 없이 복귀";
                 case RelicId.TwinRing: return $"A의 방어막이 발동하면 마나 +{TwinRingMana:0}";
+                case RelicId.Compass: return "미니맵에 안 가 본 방도 흐리게 보인다";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
