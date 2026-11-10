@@ -28,6 +28,7 @@ namespace IBlameYou.UI
             public float Time;
             public string Text;
             public Color Color;
+            public bool Bad; // 실패 알림이면 왼쪽 띠가 berry
         }
 
         private struct SpendRecord
@@ -185,7 +186,7 @@ namespace IBlameYou.UI
             }
 
             var color = bad ? ColorBad : (who == ManaUser.PlayerA ? ColorA : ColorB);
-            feed.Add(new FeedEntry { Time = Time.time, Text = line, Color = color });
+            feed.Add(new FeedEntry { Time = Time.time, Text = line, Color = color, Bad = bad });
             if (feed.Count > MaxFeed) feed.RemoveAt(0);
         }
 
@@ -300,21 +301,64 @@ namespace IBlameYou.UI
             GUILayout.EndArea();
         }
 
+        // 오른쪽 위 알림 피드: 줄마다 반투명 둥근 알약 배경 + 왼쪽 색 띠(실패 berry, 성공은 플레이어/항목 색).
+        // 새 줄은 오른쪽 화면 밖에서 살짝 튕기며 미끄러져 들어오고, 사라질 때는 흐려진다.
+        private const float FeedMaxWidth = 540f;
+        private const float FeedLineHeight = 26f;
+        private const float FeedSlideTime = 0.3f;
+        private static readonly Color FeedBadStripe = new Color(1f, 0.44f, 0.68f); // berry (palette.py)
+
+        private GUIStyle feedText;
+        private GUIStyle feedPill;
+
         private void DrawFeed()
         {
-            float width = 520f;
+            if (feedText == null)
+            {
+                feedText = new GUIStyle(label) { fontSize = 15, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0), clipping = TextClipping.Clip };
+                var pillTexture = Resources.Load<Texture2D>("UI/HUD/Pill");
+                feedPill = new GUIStyle();
+                feedPill.normal.background = pillTexture != null ? pillTexture : SolidTexture(new Color(0.1f, 0.08f, 0.19f, 0.7f));
+                if (pillTexture != null) feedPill.border = new RectOffset(11, 11, 0, 0);
+            }
+
             float y = 12f;
+            var previous = GUI.color;
             foreach (var entry in feed)
             {
-                float alpha = Mathf.Clamp01((FeedLifetime - (Time.time - entry.Time)) / 1.5f);
+                float age = Time.time - entry.Time;
+                float alpha = Mathf.Clamp01((FeedLifetime - age) / 1.5f);
+                var content = new GUIContent(entry.Text);
+                float textWidth = feedText.CalcSize(content).x;
+                float width = Mathf.Min(FeedMaxWidth, textWidth + 34f);
+                float slide = 1f - EaseOutBack(Mathf.Clamp01(age / FeedSlideTime));
+                var pill = new Rect(Screen.width - width - 12f + slide * (width + 24f), y, width, FeedLineHeight - 2f);
+
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                DrawStyle(feedPill, pill);
+
+                var stripe = entry.Bad ? FeedBadStripe : entry.Color;
+                stripe.a = alpha;
+                GUI.color = stripe;
+                GUI.DrawTexture(new Rect(pill.x + 7f, pill.y + 5f, 4f, pill.height - 10f), Texture2D.whiteTexture);
+
                 var color = entry.Color;
                 color.a = alpha;
-                var previous = GUI.color;
                 GUI.color = color;
-                GUI.Label(new Rect(Screen.width - width - 12f, y, width, 24f), entry.Text, label);
-                GUI.color = previous;
-                y += 24f;
+                GUI.Label(new Rect(pill.x + 17f, pill.y, pill.width - 26f, pill.height), content, feedText);
+                y += FeedLineHeight;
             }
+
+            GUI.color = previous;
+        }
+
+        // 0→1, 끝에서 살짝 넘쳤다가 돌아온다 (튕기는 느낌)
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            float u = t - 1f;
+            return 1f + c3 * u * u * u + c1 * u * u;
         }
 
         private void DrawShieldMinigame()

@@ -28,7 +28,7 @@ namespace IBlameYou.UI
             if (normal == null) return style;
 
             style.border = new RectOffset(10, 10, 10, 10);
-            style.padding = new RectOffset(12, 12, 4, 7); // 아래 3픽셀은 버튼 두께라 글자를 살짝 위로
+            style.padding = new RectOffset(12, 12, 2, 5); // 아래 3픽셀은 버튼 두께라 글자를 살짝 위로 (28픽셀 버튼에도 15pt가 들어가게)
             style.normal.background = normal;
             style.hover.background = hover != null ? hover : normal;
             style.active.background = active != null ? active : normal;
