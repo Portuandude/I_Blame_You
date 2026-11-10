@@ -217,7 +217,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
-                defeatUsualPercent = SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다")
+                defeatUsualPercent = stageCleared ? -1 : SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다"), 클리어 뒤 쓰러짐은 비교 안 함
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
                 if (!stageCleared)
                 {
