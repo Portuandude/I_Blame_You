@@ -173,15 +173,21 @@ namespace IBlameYou.UI
 
         // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally). 없으면 빈 문자열.
         private static string[] elementNames;
+        private static string[] elementColors;   // 속성 이름만 그 속성 색으로 (rich text)
 
         private static string FavoriteLine()
         {
             if (elementNames == null)
             {
                 elementNames = new string[ElementInfo.Count];
-                for (int i = 0; i < elementNames.Length; i++) elementNames[i] = ElementInfo.KoreanName((Element)i);
+                elementColors = new string[ElementInfo.Count];
+                for (int i = 0; i < elementNames.Length; i++)
+                {
+                    elementNames[i] = ElementInfo.KoreanName((Element)i);
+                    elementColors[i] = ColorUtility.ToHtmlStringRGB(ElementInfo.Color((Element)i));
+                }
             }
-            return RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames);
+            return RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames, elementColors);
         }
 
         // 최애 줄을 그리고, 그린 높이(없으면 0)를 돌려준다. 아래 줄은 그만큼 내린다.
@@ -189,7 +195,7 @@ namespace IBlameYou.UI
         {
             string text = FavoriteLine();
             if (string.IsNullOrEmpty(text)) return 0f;
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true };
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(new Rect(x, y, width, 22f), text, style);
             return 22f;
