@@ -2,6 +2,7 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-b2uz39, 모래시계는 낙하 피해 0 두 번으로 — 깃털 부적과 겹치지 않게): 유물 2종 추가 — 되감기 모래시계(`FallRecovery.FreeFalls`), 쌍둥이 반지(`ElementShieldSkill.Activated` → 마나 +5), 아이콘 2종, 번호 13·14 고정 테스트
 - DONE (claude/project-thread-b2uz39, 짝은 새 필드 대신 Features 순서): 이중 스위치 발판 — 진행도 80% 이후 갈아타기 절반, 기둥 첫 칸·건너편 첫 칸에 서로 다른 속성 룬, 투사체는 쏜 자리에서 겹친 트리거를 건너뜀
 - DONE (claude/project-thread-b2uz39): 스위치 효과음 — `generate_audio.py Switch_On Switch_Tick`(이름 지정 시 그 소리만), 룬 켜짐 종 두 음 차임, 남은 2.5초 동안 0.5초마다 똑딱
 - DONE (claude/project-thread-b2uz39): 스위치 룬 그림 — 돌 기둥 + 둥근 문양 받침(`generate_sprites.py --switch` → `Stage/RuneSwitch`), 켜진 동안 문양 둘레를 도는 빛 고리(`RuneSwitchGlow` 8프레임, 속성 색), 남은 가동 2.5초부터 빠르게 깜빡임

@@ -9,7 +9,11 @@
 
 
 
-- TODO: 유물 2종 추가 (로드맵, MetaProgressionDraft 예시) — "되감기 모래시계": 낭떠러지 낙하 피해(체력 15%)를 스테이지마다 1회 0으로, "쌍둥이 반지": A가 방어막 미니게임 성공 시 B 마나 +5. `Player/Relics/Data/RelicBook` + 효과 훅 + `generate_relic_icons.py` 아이콘 + `RelicTests`
+- TODO: 모래시계 남은 횟수 저장 — `FallRecovery.FreeFalls`가 저장되지 않아 이어하기 하면 다시 2번이 된다. `SaveData`/`RunSave`에 남은 횟수를 넣고 복원 시 유물 Apply 뒤 덮어쓰기 (옛 저장은 필드 없음 → 유물 기본값)
+
+- TODO: HUD 유물 횟수 배지 — HUD 유물 아이콘 줄(`SkillHUD.RelicIcons.cs`)에서 되감기 모래시계는 남은 무료 낙하 횟수, 불사조 깃털은 남은 버티기(`HealthSystem.DeathSaves`) 를 아이콘 오른쪽 아래 작은 숫자 배지로. 0이면 아이콘을 어둡게
+
+- TODO: 미니맵 스위치 퍼즐 표시 — 마법 스위치 발판이 있는 퍼즐 방 칸에 작은 룬 점(룬 속성 색)을 그려, 어떤 속성 마법이 필요한지 미리 보이게 (`MinimapUI`, 청크 Features에서 PlatformSwitch 찾기)
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
 
