@@ -65,7 +65,7 @@ namespace IBlameYou.UI
                     fontSize = 11, fontStyle = FontStyle.Bold, richText = false, wordWrap = false,
                     alignment = TextAnchor.LowerRight, padding = new RectOffset(0, 0, 0, 0), clipping = TextClipping.Overflow
                 };
-            var badge = new Rect(rect.x + rect.width * 0.3f, rect.y + rect.height * 0.35f, rect.width * 0.8f, rect.height * 0.8f);
+            var badge = new Rect(rect.x + rect.width * 0.3f, rect.y + rect.height * 0.35f, rect.width * 0.7f, rect.height * 0.8f);
             var fill = charges > 0 ? OutlinedLabel.Cream : new Color(0.75f, 0.75f, 0.78f);
             OutlinedLabel.Draw(badge, charges.ToString(), relicBadgeText, fill, charges > 0 ? OutlinedLabel.Gold : new Color(0.35f, 0.35f, 0.4f), 1f, 1f);
         }
