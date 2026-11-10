@@ -72,6 +72,21 @@ namespace IBlameYou.Tests.EditMode
         }
 
         [Test]
+        public void DefeatCompare_AgainstRecentAverage()
+        {
+            Assert.AreEqual(-1, ClearPace.RecentDefeatAverage(""));
+            Assert.AreEqual(-1, ClearPace.RecentDefeatAverage("broken"));
+            Assert.AreEqual(35, ClearPace.RecentDefeatAverage("30,5,19;40,8,19"));
+            Assert.AreEqual("", ClearPace.CompareDefeat(0.5f, -1));
+            Assert.AreEqual("평소보다 12%p 더 갔다 (최근 평균 30%)", ClearPace.CompareDefeat(0.42f, 30));
+            Assert.AreEqual("평소보다 5%p 덜 갔다 (최근 평균 40%)", ClearPace.CompareDefeat(0.35f, 40));
+            Assert.AreEqual("평소만큼 갔다 (최근 평균 33%)", ClearPace.CompareDefeat(0.334f, 33));
+            Assert.AreEqual(12, ClearPace.DefeatGap(0.42f, 30));
+            Assert.AreEqual(-5, ClearPace.DefeatGap(0.35f, 40));
+            Assert.AreEqual(0, ClearPace.DefeatGap(1.5f, 100));
+        }
+
+        [Test]
         public void RecentDefeats_ClampsAndIgnoresBroken()
         {
             Assert.AreEqual("", ClearPace.RecentDefeatSummary(""));
