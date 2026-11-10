@@ -468,7 +468,24 @@ namespace IBlameYou.Systems
 
             int row = Math.Max(ground, far) - 1; // 발판 윗면 = 더 높은 쪽 절벽 높이 (낮은 쪽에서는 한 칸 올라탄다)
             chunk.AddFeature(FeatureKind.MovingPlatform, MovingBridgeLeft, row, MovingPlatformWidth, gap - MovingPlatformWidth);
+
+            // 변형: 마법 스위치 발판. 발판은 멈춰 있고, 건너편 절벽 첫 칸에 선 룬에 B가 같은 속성 마법을 맞히면 잠시 오간다.
+            // 룬은 몸이 지나가는 트리거라 길을 막지 않고, 출발 쪽 절벽 끝에서 수평으로 쏜 마법(서 있는 높이 +0.7)이 닿는 높이에 있다.
+            if (chunk.Difficulty >= SwitchBridgeMinDifficulty && rng.Next(SwitchBridgeOneIn) == 0)
+            {
+                int last = chunk.Features.Count - 1;
+                var platform = chunk.Features[last];
+                platform.SwitchDriven = true;
+                chunk.Features[last] = platform;
+                chunk.Features.Add(new ChunkFeature
+                {
+                    Kind = FeatureKind.PlatformSwitch, X = right, Y = far, Width = 1, ElementIndex = rng.Next(GateElementCount)
+                });
+            }
         }
+
+        public const float SwitchBridgeMinDifficulty = 0.5f;
+        public const int SwitchBridgeOneIn = 2; // 진행도 50% 이후 한 발판 낭떠러지의 절반
 
         public const float DoubleBridgeMinDifficulty = 0.7f;
         public const int DoubleBridgePillarWidth = 2;

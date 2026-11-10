@@ -235,6 +235,8 @@ namespace IBlameYou.Systems
             }
 
             int platformOrdinal = 0;
+            var switchPlatforms = new List<MovingPlatform>();
+            var switchFeatures = new List<ChunkFeature>();
             foreach (var f in chunk.Features)
             {
                 switch (f.Kind)
@@ -249,8 +251,13 @@ namespace IBlameYou.Systems
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f), f.Direction);
                         break;
                     case FeatureKind.MovingPlatform:
-                        // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다.
-                        MovingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width, f.Direction, index * 0.37f + platformOrdinal++ * 0.5f);
+                        // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다. 스위치 발판은 멈춘 채로 만들고 아래에서 룬에 잇는다.
+                        var moving = MovingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width, f.Direction,
+                            index * 0.37f + platformOrdinal++ * 0.5f, f.SwitchDriven);
+                        if (f.SwitchDriven) switchPlatforms.Add(moving);
+                        break;
+                    case FeatureKind.PlatformSwitch:
+                        switchFeatures.Add(f);
                         break;
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width);
@@ -313,6 +320,10 @@ namespace IBlameYou.Systems
                         break;
                 }
             }
+
+            // 마법 스위치 룬: 같은 청크의 스위치 발판을 움직인다 (발판을 먼저 다 만든 뒤에 잇는다).
+            foreach (var f in switchFeatures)
+                IBlameYou.Puzzles.PlatformSwitch.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), (Element)f.ElementIndex, switchPlatforms);
 
             if (rooms != null) LoadRoomExtras(index, root, origin);
         }
