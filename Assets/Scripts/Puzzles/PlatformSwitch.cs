@@ -21,6 +21,9 @@ namespace IBlameYou.Puzzles
         private SpriteRenderer sigil;
         private Color sigilColor;
         private Vector3 sigilScale = Vector3.one;
+        private SpriteRenderer halo;
+        private Color haloColor;
+        private const float WarnTime = 2.5f; // 남은 가동 시간이 이보다 적으면 빛 고리가 빠르게 깜빡인다
         private float nextHintTime;
         private float nextApproachCheck;
         private bool approachHinted;
@@ -49,9 +52,16 @@ namespace IBlameYou.Puzzles
                     }
 
             var color = ElementInfo.Color(element);
-            // 받침 기둥 (그림 없이 어두운 돌색 사각형) + 위에 속성 문양.
-            TrapCommon.AddSprite(go.transform, "Post", null, new Vector2(0f, 0.4f), new Vector2(0.35f, 0.8f),
-                new Color(0.32f, 0.3f, 0.4f), 1);
+            // 받침 기둥(RuneSwitch 그림 1 × 1.8유닛, 없으면 어두운 돌색 사각형) + 위 둥근 받침에 속성 문양.
+            var postSprite = TrapCommon.Frame("RuneSwitch");
+            TrapCommon.AddSprite(go.transform, "Post", postSprite, new Vector2(0f, postSprite != null ? 0.9f : 0.4f),
+                new Vector2(0.35f, 0.8f), new Color(0.32f, 0.3f, 0.4f), 1);
+            // 켜져 있는 동안 문양 둘레를 도는 빛 고리 (흰 그림을 속성 색으로 물들인다).
+            rune.halo = EffectLibrary.CreateVisual(go.transform, "Halo", TrapCommon.Frames("RuneSwitchGlow"), 12f, true,
+                new Color(color.r, color.g, color.b, 0.35f), 1f, 4);
+            rune.halo.transform.localPosition = new Vector3(0f, SigilHeight, 0f);
+            rune.haloColor = new Color(Mathf.Lerp(color.r, 1f, 0.3f), Mathf.Lerp(color.g, 1f, 0.3f), Mathf.Lerp(color.b, 1f, 0.3f), 1f);
+            rune.halo.gameObject.SetActive(false);
             var sigilSprite = TrapCommon.Frame($"RuneSigil_{element}");
             rune.sigil = TrapCommon.AddSprite(go.transform, "Sigil", sigilSprite,
                 new Vector2(0f, SigilHeight), new Vector2(0.7f, 0.7f), color, 3);
@@ -68,6 +78,17 @@ namespace IBlameYou.Puzzles
                 foreach (var platform in platforms)
                     if (platform != null && !platform.Idle) return true;
                 return false;
+            }
+        }
+
+        private float Remaining
+        {
+            get
+            {
+                float remaining = 0f;
+                foreach (var platform in platforms)
+                    if (platform != null) remaining = Mathf.Max(remaining, platform.ActiveRemaining);
+                return remaining;
             }
         }
 
@@ -101,6 +122,14 @@ namespace IBlameYou.Puzzles
                 float pulse = 0.85f + 0.15f * Mathf.Sin(Time.time * 8f);
                 sigil.transform.localScale = sigilScale * pulse;
             }
+            if (active && halo != null)
+            {
+                // 가동 시간이 끝나 가면 빛 고리가 빠르게 깜빡여 알린다 (끝나면 발판은 끝점까지 가서 멈춘다).
+                float remaining = Remaining;
+                float alpha = remaining <= 0f ? 0.35f
+                    : remaining < WarnTime ? 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 12f)) : 1f;
+                halo.color = new Color(haloColor.r, haloColor.g, haloColor.b, alpha);
+            }
 
             if (approachHinted || platforms.Count == 0 || platforms[0] == null || Time.time < nextApproachCheck) return;
             nextApproachCheck = Time.time + ApproachCheckInterval;
@@ -124,6 +153,7 @@ namespace IBlameYou.Puzzles
         private void ApplyGlow(bool active)
         {
             wasActive = active;
+            if (halo != null) halo.gameObject.SetActive(active);
             if (sigil == null) return;
             sigil.transform.localScale = sigilScale;
             float k = active ? 1f : 0.55f;
