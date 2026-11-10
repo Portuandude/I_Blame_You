@@ -26,6 +26,18 @@ namespace IBlameYou.Systems
             return $"{pace} · 방 {mainRooms + Math.Max(0, sideRooms)}개 (주 경로 {mainRooms} · 곁방 {Math.Max(0, sideRooms)})";
         }
 
+        // 게임오버 결과 창의 "쓰러진 곳" 한 줄. 예: "쓰러진 곳: 주 경로 7/19번째 방 (곁방) · 진행도 33% · 버틴 시간 5분 12초".
+        // pathStep: 주 경로 몇 번째 방인지(1부터, 곁방이면 붙은 방 기준). mainRooms가 0이면(외길 청크 스테이지) 방 부분을 뺀다.
+        public static string DescribeDefeat(int pathStep, int mainRooms, bool sideRoom, float progress, float seconds)
+        {
+            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
+            string where = mainRooms > 0 && pathStep > 0
+                ? $"주 경로 {Math.Min(pathStep, mainRooms)}/{mainRooms}번째 방{(sideRoom ? " (곁방)" : "")} · 진행도 {percent}%"
+                : $"진행도 {percent}%";
+            string time = seconds > 0f ? $" · 버틴 시간 {Format((int)Math.Floor(seconds))}" : "";
+            return $"쓰러진 곳: {where}{time}";
+        }
+
         // SaveData.FormatTime과 같은 모양 ("N분 SS초").
         public static string Format(int seconds) => $"{seconds / 60}분 {seconds % 60:00}초";
     }
