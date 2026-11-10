@@ -23,6 +23,8 @@ namespace IBlameYou.Puzzles
         private Vector3 sigilScale = Vector3.one;
         private SpriteRenderer halo;
         private Color haloColor;
+        private const float TickInterval = 0.5f;
+        private int lastTick = -1;
         private const float WarnTime = 2.5f; // 남은 가동 시간이 이보다 적으면 빛 고리가 빠르게 깜빡인다
         private float nextHintTime;
         private float nextApproachCheck;
@@ -105,7 +107,8 @@ namespace IBlameYou.Puzzles
                 if (platform != null) platform.Activate(ActiveTime);
 
             EffectLibrary.PlayHit(required, transform.position + Vector3.up * SigilHeight, 1.5f);
-            GameAudio.PlaySfx($"Hit_{required}", 0.8f);
+            GameAudio.PlaySfx($"Hit_{required}", 0.6f);
+            GameAudio.PlaySfx("Switch_On", 0.8f, 0f);
             ApplyGlow(true);
             approachHinted = true;
             nextHintTime = 0f;
@@ -129,6 +132,18 @@ namespace IBlameYou.Puzzles
                 float alpha = remaining <= 0f ? 0.35f
                     : remaining < WarnTime ? 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 12f)) : 1f;
                 halo.color = new Color(haloColor.r, haloColor.g, haloColor.b, alpha);
+
+                // 끝나 가는 동안 0.5초마다 똑딱 소리.
+                if (remaining > 0f && remaining < WarnTime)
+                {
+                    int tick = Mathf.CeilToInt(remaining / TickInterval);
+                    if (tick != lastTick)
+                    {
+                        lastTick = tick;
+                        GameAudio.PlaySfx("Switch_Tick", 0.7f, 0f);
+                    }
+                }
+                else lastTick = -1;
             }
 
             if (approachHinted || platforms.Count == 0 || platforms[0] == null || Time.time < nextApproachCheck) return;
