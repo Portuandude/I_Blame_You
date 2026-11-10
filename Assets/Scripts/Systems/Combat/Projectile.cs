@@ -86,6 +86,19 @@ namespace IBlameYou.Systems
 
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, radius))
             {
+                // 길을 막지 않는 트리거 속성 장치 (마법 스위치 룬). 플레이어 마법만 전달하고 사라진다.
+                if (hitsEnemies && hit.isTrigger)
+                {
+                    var trigger = hit.GetComponent<IElementReceiver>();
+                    if (trigger != null)
+                    {
+                        trigger.ReceiveElement(element);
+                        Impact?.Invoke(transform.position);
+                        Destroy(gameObject);
+                        return;
+                    }
+                }
+
                 var health = hit.GetComponentInParent<HealthSystem>();
                 if (health == null || health.IsDead || !alreadyHit.Add(health)) continue;
                 if (owner != null && health.gameObject == owner.gameObject) continue;
