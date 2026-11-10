@@ -2,6 +2,7 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-4vxux1, 사람 결정 2026-11-10: 허용): 낭떠러지 건너뛰기 정리 — 막지 않고 `Docs/LevelDesign.md`에 숙련자 지름길로 명시, `StageValidator.RunJumpReach` 등 참고 상수 (검증은 걷기 기준 유지)
 - DONE (claude/project-thread-4vxux1): 결과 징글 — `Jingle_Clear`(상승 셋잇단 + 화음 팡파르)·`Jingle_Defeat`(반음씩 처지는 와와와와), 결과 창이 처음 그려질 때 `GameAudio.StopMusic` + 징글 (`SkillHUD.MarkEndScreenShown`)
 - DONE (claude/project-thread-4vxux1): 진행 효과음 4종 — `Checkpoint`, `GateOpen`(봉인문 완전히 열릴 때), `Pickup`(보상 구슬), `ArenaLock`(구역 잠김)
 - DONE (claude/project-thread-4vxux1): 보스전 배경음악 — `Boss`(152 BPM D단조 16마디), 보스·중간보스 구역 잠기면 보스 곡, 돌파·방 이탈 시 보스 곡일 때만 던전 곡 (`GameAudio.CurrentMusic`)
