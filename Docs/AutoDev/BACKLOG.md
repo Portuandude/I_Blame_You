@@ -21,4 +21,4 @@
 
 - DONE (claude/project-thread-6aea2a): 착지·슬라임 피격 효과음 — 높은 곳에서 떨어져 착지할 때 폭신한 `Land`(낙하 속도 기준, 작은 점프는 소리 없음), 슬라임 무리가 맞을 때 말랑한 `SquishHit`(고블린은 기존 Hit_ 소리 유지). 너무 자주 울리지 않게 볼륨·쿨다운
 
-- TODO: 정예 등장 경고 — 정예(어미 슬라임·고블린 전사)가 나오는 전투 구역이 잠기면 낮은 경고음 `EliteWarn` + 화면 가장자리 보라 깜빡임 0.6초 + 안내 "정예 등장!" (`ArenaZone.Begin`, `IsBoss`처럼 `IsElite`)
+- DONE (claude/project-thread-6aea2a): 정예 등장 경고 — 정예(어미 슬라임·고블린 전사)가 나오는 전투 구역이 잠기면 낮은 경고음 `EliteWarn` + 화면 가장자리 보라 깜빡임 0.6초 + 안내 "정예 등장!" (`ArenaZone.Begin`, `IsBoss`처럼 `IsElite`)
