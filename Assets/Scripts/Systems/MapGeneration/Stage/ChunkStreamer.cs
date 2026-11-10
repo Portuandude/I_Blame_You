@@ -63,6 +63,23 @@ namespace IBlameYou.Systems
             rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
         public event Action<int> RoomEntered;
 
+        // 미니맵 룬 점: 그 방에 선 마법 스위치 룬들의 속성 (청크 Features 순서). 없으면 빈 목록. 처음 물을 때 방마다 한 번 모은다.
+        private List<Element>[] switchElements;
+        private static readonly List<Element> NoSwitches = new List<Element>();
+        public IReadOnlyList<Element> SwitchElements(int index)
+        {
+            if (rooms == null || stage == null || index < 0 || index >= stage.Chunks.Count) return NoSwitches;
+            if (switchElements == null) switchElements = new List<Element>[stage.Chunks.Count];
+            if (switchElements[index] == null)
+            {
+                var list = new List<Element>();
+                foreach (var f in stage.Chunks[index].Features)
+                    if (f.Kind == FeatureKind.PlatformSwitch) list.Add((Element)f.ElementIndex);
+                switchElements[index] = list;
+            }
+            return switchElements[index];
+        }
+
         public StageData Stage => stage;
 
         // 체크포인트를 처음 켰을 때 (청크 번호, 복귀 위치). 런 진행 저장이 듣는다.
