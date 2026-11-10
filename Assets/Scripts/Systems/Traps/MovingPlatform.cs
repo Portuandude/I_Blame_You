@@ -34,6 +34,7 @@ namespace IBlameYou.Systems
         public bool SwitchDriven => switchDriven;
         public bool Idle => switchDriven && Time.time >= activeUntil && AtEnd(clock);
         public Vector2 StartCenter => start;
+        public float ActiveRemaining => switchDriven ? Mathf.Max(0f, activeUntil - Time.time) : 0f;
 
         // topLeft: 출발 위치에서 발판 윗면의 왼쪽 끝 (월드), width: 칸 수, travel: 오른쪽으로 움직이는 칸 수.
         // phaseOffset: 같은 스테이지의 발판들이 같은 박자로 움직이지 않게 (청크 번호로 정한다).
