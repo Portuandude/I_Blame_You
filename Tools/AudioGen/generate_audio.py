@@ -401,6 +401,50 @@ def arena_lock():
     return normalize(fade_edges(thump + crash + lowpass(clang, 3000)))
 
 
+def jingle_clear():
+    """클리어 팡파르: 빠른 상승 C-E-G-C 셋잇단 + 길게 끄는 C장조 화음(나팔 같은 사각파 + 종), 반짝이 꼬리, 약 2.8초."""
+    n = int(2.8 * SR)
+    out = np.zeros(n)
+    step = 0.11
+    for k, name in enumerate(["C5", "E5", "G5"]):
+        m = int(step * 1.1 * SR)
+        mix_at(out, lowpass(tone("square", name, step * 1.1, 0.005, 0.03, 0.6, 0.02, duty=0.25), 3500) * 0.35, int(k * step * SR))
+    hold = 1.9
+    start = int(3 * step * SR)
+    for name, w in (("C6", 0.32), ("G5", 0.2), ("E5", 0.2), ("C4", 0.25)):
+        brass = lowpass(tone("square", name, hold, 0.02, 0.2, 0.55, 0.9, duty=0.3, vib=0.01), 3000) * w
+        mix_at(out, brass, start)
+    for k, name in enumerate(["C6", "E6", "G6", "C7"]):
+        m = int(0.9 * SR)
+        f = note_hz(name)
+        mix_at(out, osc("sine", f, m) * env_exp(m, 0.25) * 0.18, start + int((0.15 + k * 0.07) * SR))
+    for b_ in (0, 3 * step):
+        mix_at(out, snare() * 0.25, int(b_ * SR))
+    mix_at(out, kick() * 0.5, start)
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 0.8) * 0.04
+    return normalize(fade_edges(out + tail))
+
+
+def jingle_defeat():
+    """게임오버: 느리게 내려가는 단조 멜로디(E-D#-D-C#… 반음씩 처지는 '와와와와') + 낮은 A 빈 5도 화음으로 끝, 약 2.6초."""
+    n = int(2.6 * SR)
+    out = np.zeros(n)
+    notes = [("E4", 0.3), ("D#4", 0.3), ("D4", 0.3), ("C#4", 1.4)]
+    pos = 0.0
+    for name, length in notes:
+        f = note_hz(name)
+        m = int(length * SR)
+        t = np.arange(m) / SR
+        wah = osc("tri", f * (1 + 0.012 * np.sin(2 * np.pi * 6 * t)), m) * 0.6 + osc("square", f, m, 0.5) * 0.15
+        mix_at(out, lowpass(wah, 1800) * env_adsr(m, 0.02, 0.1, 0.7, min(0.4, length * 0.6)) * 0.5, int(pos * SR))
+        pos += length
+    chord_start = int(1.2 * SR)
+    m = n - chord_start
+    for name in ("A2", "E3", "A3"):
+        mix_at(out, osc("sine", note_hz(name), m) * env_adsr(m, 0.05, 0.3, 0.5, 0.9) * 0.18, chord_start)
+    return normalize(fade_edges(out))
+
+
 # ---------------------------------------------------------------------------
 # 배경음악
 
@@ -605,6 +649,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "Checkpoint": checkpoint, "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock,
+        "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
