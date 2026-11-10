@@ -69,11 +69,16 @@ namespace IBlameYou.Core
             int runSeed = resume != null ? resume.seed : randomSeedEachRun ? Random.Range(1, 1000000) : seed;
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
+            StageEvents.TargetSeconds = targetSeconds;
+            StageEvents.MainRooms = 0;
+            StageEvents.SideRooms = 0;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             if (roomGrid)
             {
                 var layout = RoomLayout.Generate(runSeed, targetSeconds);
+                StageEvents.MainRooms = System.Linq.Enumerable.Count(layout.MainPathRooms());
+                StageEvents.SideRooms = layout.Rooms.Count - StageEvents.MainRooms;
                 var geometries = new System.Collections.Generic.List<RoomGeometry>();
                 int invalid = 0;
                 foreach (var room in layout.Rooms)
