@@ -61,6 +61,31 @@ namespace IBlameYou.Tests.EditMode
         }
 
         [Test]
+        public void RecentDefeats_KeepNewestFiveAndAverageProgress()
+        {
+            string list = "";
+            for (int i = 1; i <= 7; i++) list = ClearPace.AddRecentDefeat(list, i * 0.1f, i * 2, 19);
+            // 최신 5개: 70%·14, 60%·12, 50%·10, 40%·8, 30%·6 → 평균 50%, 10번째
+            StringAssert.StartsWith("70,14,19;60,12,19", list);
+            Assert.AreEqual(5, list.Split(';').Length);
+            Assert.AreEqual("최근 쓰러진 곳 5판 평균 진행도 50% (주 경로 평균 10번째 방)", ClearPace.RecentDefeatSummary(list));
+        }
+
+        [Test]
+        public void RecentDefeats_ClampsAndIgnoresBroken()
+        {
+            Assert.AreEqual("", ClearPace.RecentDefeatSummary(""));
+            Assert.AreEqual("", ClearPace.RecentDefeatSummary(null));
+            // 진행도 0%도 기록한다. 순번은 방 수 안으로, 방 수가 없으면 0.
+            Assert.AreEqual("0,0,19", ClearPace.AddRecentDefeat(null, -0.5f, 0, 19));
+            Assert.AreEqual("100,19,19", ClearPace.AddRecentDefeat("bad;150,1,19;5,9,3", 1.4f, 25, 19));
+            Assert.AreEqual("40,0,0", ClearPace.AddRecentDefeat("", 0.4f, 7, 0));
+            // 순번 0인 기록은 방 평균에서 빠지고, 모두 0이면 괄호를 뺀다.
+            Assert.AreEqual("최근 쓰러진 곳 2판 평균 진행도 25%", ClearPace.RecentDefeatSummary("40,0,0;10,0,0"));
+            Assert.AreEqual("최근 쓰러진 곳 2판 평균 진행도 35% (주 경로 평균 7번째 방)", ClearPace.RecentDefeatSummary("30,7,19;40,0,0;x"));
+        }
+
+        [Test]
         public void NoRooms_OmitsRoomPart_NoTarget_IsEmpty()
         {
             Assert.AreEqual("목표 15분 00초보다 0분 10초 느림", ClearPace.Describe(910f, 900f, 0, 0));
