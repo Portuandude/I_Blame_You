@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace IBlameYou.UI
 {
-    // 유물 고르기 창: 정예 구역의 유물 상자(RelicChest)에 닿으면 열린다. 후보 3개 중 하나를 1/2/3 키나 클릭으로 고른다.
+    // 유물 고르기 창: 정예 구역의 유물 상자(RelicChest)에 닿으면 열린다. 후보 3개(네잎 클로버면 4개) 중 하나를 숫자 키나 클릭으로 고른다.
     // 열려 있는 동안 게임이 멈추고 조작이 잠긴다 (특성 창과 같은 방식). 유물은 A/B 공용이라 누가 고르든 둘 다 갖는다.
     // 영창·방어막 미니게임·특성 창·일시정지 중에는 열지 않고, 상자가 다시 물어 올 때까지 기다린다.
     public partial class SkillHUD
@@ -138,7 +138,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                "하나만 고를 수 있다 · A와 B가 함께 갖는다 · 1/2/3 키 또는 클릭",
+                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키 또는 클릭",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             for (int i = 0; i < count; i++)
