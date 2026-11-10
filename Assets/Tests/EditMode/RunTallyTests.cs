@@ -25,7 +25,7 @@ namespace IBlameYou.Tests.EditMode
             Assert.AreEqual("B 최애 마법: 물(1회)", RunTally.Line(new[] { 0, 1, 0, 0, 0 }, new int[5], Names));
             Assert.AreEqual("", RunTally.Line(new int[5], new int[5], Names));
         }
-    
+
         [Test]
         public void Colors_WrapOnlyElementName()
         {
