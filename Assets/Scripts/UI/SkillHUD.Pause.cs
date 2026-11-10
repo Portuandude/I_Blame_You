@@ -108,9 +108,30 @@ namespace IBlameYou.UI
                 if (progression.Points > 0) text.Append($"\n<color=#ffd84d>남은 포인트 {progression.Points} (Tab)</color>");
             }
 
-            text.Append("\n\n<b>유물</b>\n");
-            text.Append(RelicCount > 0 ? RelicLines() : "<color=#8a8a8a>없음 (정예 구역 돌파 보상)</color>");
-            GUI.Label(new Rect(rect.x + 12f, rect.y + 10f, rect.width - 24f, rect.height - 20f), text.ToString(), small);
+            text.Append("\n\n<b>유물</b>");
+            if (RelicCount == 0) text.Append("\n<color=#8a8a8a>없음 (정예 구역 돌파 보상)</color>");
+
+            float x = rect.x + 12f;
+            float width = rect.width - 24f;
+            float bottom = rect.yMax - 10f;
+            var head = new GUIContent(text.ToString());
+            float y = rect.y + 10f;
+            float headHeight = small.CalcHeight(head, width);
+            GUI.Label(new Rect(x, y, width, headHeight), head, small);
+            y += headHeight + 2f;
+
+            // 유물 줄: 18px 아이콘 + "이름 — 설명" (아이콘이 없으면 글자만 같은 들여쓰기로). 칸을 넘으면 거기서 자른다.
+            for (int i = 0; i < RelicCount && y < bottom; i++)
+            {
+                var id = relics.Owned[i];
+                var line = new GUIContent(RelicLine(id));
+                float textX = x + RelicListIconSize + 4f;
+                float textWidth = width - RelicListIconSize - 4f;
+                float lineHeight = Mathf.Min(small.CalcHeight(line, textWidth), bottom - y);
+                DrawRelicIcon(id, new Rect(x, y + 1f, RelicListIconSize, RelicListIconSize));
+                GUI.Label(new Rect(textX, y, textWidth, lineHeight), line, small);
+                y += Mathf.Max(lineHeight, RelicListIconSize + 2f) + 2f;
+            }
         }
 
         private float PauseVolumeSlider(Rect rect, string name, float value)
