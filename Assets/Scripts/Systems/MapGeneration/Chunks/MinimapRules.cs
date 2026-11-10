@@ -7,7 +7,7 @@ namespace IBlameYou.Systems
     // - 가 본 방(과 지금 방)만 네모 칸으로 그린다. 안 가 본 방은 칸을 그리지 않는다.
     // - 통로 실선: 두 방 모두 가 봤으면 칸과 칸을 잇는 실선(Full), 한쪽만 가 봤으면 가 본 방에서 안 가 본 쪽으로
     //   반 칸쯤 뻗은 실선(Stub)만 그려 "그쪽에 방이 더 있다"는 것만 보이게 한다. 둘 다 안 가 봤으면 그리지 않는다.
-    // - 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만 그린다.
+    // - 방 종류 아이콘·룬 점·자물쇠는 칸 위에 그리므로 ShowRoom을 따라 가 본 방에만 나온다.
     public enum MapLink
     {
         None,
@@ -25,9 +25,6 @@ namespace IBlameYou.Systems
     public static class MinimapRules
     {
         public static bool ShowRoom(bool visited, bool current) => visited || current;
-
-        // 방 종류 아이콘·룬 점·자물쇠
-        public static bool ShowMarks(bool visited, bool current) => ShowRoom(visited, current);
 
         public static MapLink Link(bool fromShown, bool toShown)
         {
