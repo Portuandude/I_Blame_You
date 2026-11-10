@@ -9,7 +9,7 @@ using IBlameYou.Systems;
 
 public static class StagePreview
 {
-    private const float TargetSeconds = 30f * 60f;
+    private const float TargetSeconds = 15f * 60f; // 스테이지 1 목표 15분 (2026-11-10)
 
     public static int Main(string[] args)
     {
@@ -83,7 +83,6 @@ public static class StagePreview
                     case FeatureKind.Crumble: for (int i = 0; i < f.Width; i++) grid[ox + f.X + i, f.Y] = '~'; break;
                     case FeatureKind.FlameJet: grid[ox + f.X, f.Y] = 'F'; break;
                     case FeatureKind.ArrowTrap: grid[ox + f.X, f.Y] = f.Direction < 0 ? '<' : '>'; break;
-                    case FeatureKind.Checkpoint: grid[ox + f.X, f.Y] = 'C'; break;
                     case FeatureKind.PlayerStart: grid[ox + f.X, f.Y] = 'P'; break;
                     case FeatureKind.Exit: grid[ox + f.X, f.Y] = 'X'; break;
                     case FeatureKind.MovingPlatform:
