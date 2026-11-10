@@ -185,6 +185,11 @@ namespace IBlameYou.Player
         private void OnDeathPrevented()
         {
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, "버텨냈다!", new Color(1f, 0.5f, 0.5f), 1.1f);
+            // 화려하게: 흰 번쩍임 + 발밑에서 gold 빛기둥(레벨업 그림) + 머리 위 "버텼다!" 띠
+            ScreenFlash.Pulse();
+            var movement = GetComponent<PlayerMovement>();
+            VfxPlayer.LevelUp(transform, movement != null ? movement.FeetLocalY : 0f);
+            VfxPlayer.RelicBanner(transform.position + Vector3.up * 2.4f, "버텼다!");
             SkillMessages.Post(ManaUser.Other, "쓰러질 피해를 버텨냈다 (생명 20·불사조 깃털)", false); // 버티기는 특성과 유물이 같이 쓴다
         }
     }

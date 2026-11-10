@@ -42,6 +42,9 @@ namespace IBlameYou.Player
 
             health.Drain(cost);
             bloodPactReadyAt = Time.time + RelicBook.BloodPactCooldown;
+            // 연출: berry 글자 + 작은 별·하트 펑 (체력이 마나로 바뀐 느낌)
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"체력 {cost:0} → 마나", new Color(1f, 0.44f, 0.68f), 0.9f);
+            VfxPlayer.DeathPop(transform.position + Vector3.up * 0.8f, 0.6f);
             SkillMessages.Post(user, $"피의 계약: 체력 {cost:0}으로 모자란 마나를 냈다 ({RelicBook.BloodPactCooldown:0}초 뒤 다시)");
             return true;
         }
@@ -109,6 +112,7 @@ namespace IBlameYou.Player
                 case RelicId.ShadowVeil:
                     var movement = GetComponent<PlayerMovement>();
                     if (movement != null) movement.PostDashGrace = Mathf.Max(movement.PostDashGrace, RelicBook.ShadowVeilGrace);
+                    if (GetComponent<GraceBlink>() == null) gameObject.AddComponent<GraceBlink>(); // 무적 동안 보라 깜빡임 + 잔상
                     break;
                 case RelicId.BloodPact:
                     if (mana != null) mana.ShortfallCover = PayWithHealth;
