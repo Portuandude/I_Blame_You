@@ -255,6 +255,17 @@ namespace IBlameYou.UI
                 keyBox.border = new RectOffset(10, 10, 10, 10);
             }
             input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
+            if (panelTexture != null) // 영창 입력 칸도 둥근 패널 (글자는 크림)
+            {
+                input.normal.background = panelTexture;
+                input.focused.background = panelTexture;
+                input.hover.background = panelTexture;
+                input.border = new RectOffset(10, 10, 10, 10);
+                input.padding = new RectOffset(12, 12, 4, 4);
+                input.normal.textColor = OutlinedLabel.Cream;
+                input.focused.textColor = OutlinedLabel.Cream;
+                input.hover.textColor = OutlinedLabel.Cream;
+            }
             menuButton = CuteButton.Create(20);
             cardButton = CuteButton.Create(15);
         }
@@ -363,8 +374,13 @@ namespace IBlameYou.UI
 
         private void DrawShieldMinigame()
         {
-            if (shieldSkill == null || !shieldSkill.MinigameActive) return;
+            if (shieldSkill == null || !shieldSkill.MinigameActive)
+            {
+                keyLastProgress = -1; // 다음 미니게임에서 칸 기록을 새로 (SkillHUD.Minigame.cs)
+                return;
+            }
 
+            TrackShieldKeys(shieldSkill.Progress);
             string sequence = shieldSkill.Sequence;
             const float keySize = 70f;
             const float gap = 12f;
@@ -376,19 +392,12 @@ namespace IBlameYou.UI
                 $"<color=#73d9ff>A</color> {ElementInfo.KoreanName(shieldSkill.PendingElement)} 방어막 — 순서대로 입력!", big);
 
             for (int i = 0; i < sequence.Length; i++)
-            {
-                var previous = GUI.color;
-                GUI.color = i < shieldSkill.Progress ? new Color(0.4f, 1f, 0.5f) : (i == shieldSkill.Progress ? Color.yellow : Color.white);
-                GUI.Box(new Rect(x + i * (keySize + gap), y, keySize, keySize), sequence[i].ToString(), keyBox);
-                GUI.color = previous;
-            }
+                DrawShieldKey(new Rect(x + i * (keySize + gap), y, keySize, keySize), sequence[i].ToString(), i, shieldSkill.Progress);
 
+            // 남은 시간: 캡슐 바 (초록 → berry, SkillHUD.Bars.cs)
             float ratio = Mathf.Clamp01(shieldSkill.TimeLeft / shieldSkill.TimeLimit);
-            GUI.Box(new Rect(x, y + keySize + 10f, totalWidth, 10f), GUIContent.none);
-            var bar = GUI.color;
-            GUI.color = Color.Lerp(ColorBad, new Color(0.4f, 1f, 0.5f), ratio);
-            GUI.Box(new Rect(x, y + keySize + 10f, totalWidth * ratio, 10f), GUIContent.none);
-            GUI.color = bar;
+            var timeColor = Color.Lerp(KeyBerry, KeyLeaf, ratio);
+            DrawCapsuleBar(new Rect(x + BarGlow, y + keySize + 12f, totalWidth - 2f * BarGlow, BarHeight), ratio, 0f, timeColor, timeColor, null);
         }
 
         private void DrawChantInput()
@@ -433,10 +442,19 @@ namespace IBlameYou.UI
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
                 $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost:0}) — 영창하라:", label);
-            GUI.Label(new Rect(x, y - 30f, width, 30f), $"<b>{spell.Chant}</b>", big);
+            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
+
+            var field = new Rect(x, y + 8f, width, 40f);
+            if (mistake) // 틀린 글자가 있으면 입력 칸 둘레를 berry로 (Enter 누르기 전에 알아채게)
+            {
+                var previousColor = GUI.color;
+                GUI.color = KeyBerry;
+                GUI.DrawTexture(new Rect(field.x - 3f, field.y - 3f, field.width + 6f, field.height + 6f), Texture2D.whiteTexture);
+                GUI.color = previousColor;
+            }
 
             GUI.SetNextControlName("ChantField");
-            chantText = GUI.TextField(new Rect(x, y + 8f, width, 40f), chantText, 40, input);
+            chantText = GUI.TextField(field, chantText, 40, input);
             GUI.FocusControl("ChantField");
 
             // 스킬을 고른 숫자키가 그대로 입력창에 들어가지 않도록, 연 프레임에 들어온 글자는 버린다.
