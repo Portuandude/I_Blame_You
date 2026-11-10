@@ -1,3 +1,4 @@
+using IBlameYou.Systems;
 using UnityEngine;
 
 namespace IBlameYou.UI
@@ -21,10 +22,19 @@ namespace IBlameYou.UI
         private float endScreenShownAt = -1f;
         private GUIStyle endTitle;
 
+        // 결과 창이 처음 그려지는 순간: 배경음악을 줄여 끄고 클리어 팡파르 / 게임오버 징글 (Tools/AudioGen Jingle_*).
+        private void MarkEndScreenShown()
+        {
+            if (endScreenShownAt >= 0f) return;
+            endScreenShownAt = Time.unscaledTime;
+            GameAudio.StopMusic();
+            GameAudio.PlaySfx(deathHandled ? "Jingle_Defeat" : "Jingle_Clear", 0.9f, 0f);
+        }
+
         // 패널을 그리기 전에 부른다. 돌려받은 행렬을 다 그린 뒤 GUI.matrix에 되돌린다.
         private Matrix4x4 BeginEndScreenPop(Rect rect)
         {
-            if (endScreenShownAt < 0f) endScreenShownAt = Time.unscaledTime;
+            MarkEndScreenShown();
             var previous = GUI.matrix;
             float t = (Time.unscaledTime - endScreenShownAt) / EndPopTime;
             if (t >= 1f) return previous;
@@ -55,7 +65,7 @@ namespace IBlameYou.UI
         {
             EnsureBarArt();
             if (starIcon == null && heartIcon == null) return;
-            if (endScreenShownAt < 0f) endScreenShownAt = Time.unscaledTime;
+            MarkEndScreenShown();
             float elapsed = Time.unscaledTime - endScreenShownAt;
             var previous = GUI.color;
 
