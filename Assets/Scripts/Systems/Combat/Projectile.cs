@@ -19,6 +19,8 @@ namespace IBlameYou.Systems
         private float lifeRemaining;
         private LayerMask groundMask;
         private readonly HashSet<HealthSystem> alreadyHit = new HashSet<HealthSystem>();
+        private Vector2 launchPosition;
+        private bool launchKnown;
 
         private const float RetargetInterval = 0.1f;
         private float homingTurnRate;
@@ -65,6 +67,11 @@ namespace IBlameYou.Systems
         private void FixedUpdate()
         {
             Vector2 position = transform.position;
+            if (!launchKnown)
+            {
+                launchPosition = position;
+                launchKnown = true;
+            }
             if (homingTurnRate > 0f) Steer(position);
             Vector2 step = velocity * Time.fixedDeltaTime;
 
@@ -87,10 +94,14 @@ namespace IBlameYou.Systems
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, radius))
             {
                 // 길을 막지 않는 트리거 속성 장치 (마법 스위치 룬). 플레이어 마법만 전달하고 사라진다.
+                // 쏜 자리에서 이미 겹쳐 있던 장치(룬 위에 서서 다른 룬을 쏠 때)는 건너뛴다: 쏜 방향으로 장치 반폭보다 앞에 있어야 한다.
                 if (hitsEnemies && hit.isTrigger)
                 {
                     var trigger = hit.GetComponent<IElementReceiver>();
-                    if (trigger != null)
+                    var bounds = hit.bounds;
+                    bool ahead = velocity.x == 0f
+                        || (bounds.center.x - launchPosition.x) * Mathf.Sign(velocity.x) > bounds.extents.x;
+                    if (trigger != null && ahead)
                     {
                         trigger.ReceiveElement(element);
                         Impact?.Invoke(transform.position);
