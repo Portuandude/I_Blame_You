@@ -7,8 +7,8 @@
 
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
 
-- TODO: 아래 조작 도움말 줄 귀엽게 — `DrawHelp`의 키 이름(A/D, Space, Shift 등)을 작은 둥근 키캡(`CuteButton` 그림 재사용)으로, 줄 전체에 반투명 알약 배경(`Pill`)
-- TODO: 특성 포인트 안내 강조 — 레벨 막대 아래 "특성 포인트 N (Tab)"을 gold 알약 배경 + 숨 쉬듯 밝아졌다 어두워짐, 포인트가 생긴 순간 한 번 팝
+- DONE (claude/project-thread-c1p8f6): 아래 조작 도움말 줄 귀엽게 — `DrawHelp`의 키 이름(A/D, Space, Shift 등)을 작은 둥근 키캡(`CuteButton` 그림 재사용)으로, 줄 전체에 반투명 알약 배경(`Pill`)
+- DONE (claude/project-thread-c1p8f6): 특성 포인트 안내 강조 — 레벨 막대 아래 "특성 포인트 N (Tab)"을 gold 알약 배경 + 숨 쉬듯 밝아졌다 어두워짐, 포인트가 생긴 순간 한 번 팝
 - TODO: 유물 종류 늘리기 (로드맵) — 특수 효과 유물 3종을 `Player/Relics`에 추가 (예: 대쉬 뒤 0.5초 무적, 마나 부족 시 체력으로 대신 내기 1회/구역, 처치 시 작은 회복). `RelicBook` 이름·설명 + EditMode 테스트
 
 - BLOCKED (사람 결정: 회복만 / 특성 포인트 +1 / 다음 구간 지도 공개 등): 중간보스 처치 보상 — 지금은 정예와 같은 회복 구슬 + 유물 상자. `Docs/MidBossDraft.md` "사람이 정할 것"
