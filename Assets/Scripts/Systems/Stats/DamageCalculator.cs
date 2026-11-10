@@ -78,7 +78,7 @@ namespace IBlameYou.Systems
 
             if (damage <= 0f) return 0f;
 
-            bool applied = !health.Invulnerable;
+            bool applied = !health.IsInvulnerable;
             health.TakeDamage(damage);
             if (applied)
             {
