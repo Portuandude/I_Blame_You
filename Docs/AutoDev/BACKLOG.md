@@ -10,12 +10,10 @@
 
 ## 다음 (2026-11-10 자동 실행이 추가)
 
-- DONE (claude/project-thread-5764qw): 최근 쓰러진 곳 기록 — 게임오버 때 진행도·주 경로 순번을 최근 5개 저장(`ClearPace` 형식 재사용), 시작 화면 최근 기록 줄 아래에 "최근 쓰러진 곳 평균 진행도 P%". 어려운 구간 찾기용
-- DONE (claude/project-thread-5764qw): 나침반 획득 연출 — 나침반을 고르는 순간 큰 지도가 1.5초 자동으로 펼쳐지며 흐린 칸들이 차례로 나타난다 (`MinimapUI`, 발견 연출 재사용)
-- DONE (claude/project-thread-5764qw): 결과 창 "누구 탓?" 판정 — 날린 마나가 더 많은 쪽 탓(차이 5 이하·10% 이하는 반반), 이름 색으로 한 줄 (`Chunks/BlameVerdict` + 테스트)
-- DONE (claude/project-thread-5764qw): 최근 탓 기록 — 판마다 판정(A/B/반반/없음)을 최근 10개 저장, 시작 화면에 "최근 10판 탓: A 4 · B 5 · 반반 1". 두 사람이 서로 놀릴 거리 (`BlameVerdict`, `SaveData`)
-- DONE (claude/project-thread-5764qw): 유물 네잎 클로버 — 유물 상자 후보가 3개 → 4개 (`RelicBook`, 유물 창 너비, 아이콘 `generate_relic_icons.py`)
-- DONE (claude/project-thread-5764qw, 클리어 창에도 적용): 탓 판정 연출 — 게임오버 창에서 판정 줄이 0.6초 늦게 "쾅" 도장처럼 찍히고(크기 1.6→1, 흔들림), 탓 받은 쪽 이름 색으로 번쩍 (`SkillHUD.EndScreen`)
+- TODO: 탓 칭호 — 시작 화면 최근 탓 줄에서 탓을 더 많이 받은 쪽에 장난 칭호("마나 먹는 하마" 등, 3~4개 중 횟수 차이로 고름)를 붙인다. 같으면 "환상의 짝꿍" (`BlameVerdict` + 테스트)
+- TODO: 이번 판 vs 평소 — 게임오버 창 쓰러진 곳 줄 아래(또는 끝)에 최근 쓰러진 곳 평균과 비교 "평소보다 12%p 더 갔다"(초록)/"덜 갔다"(주황). 기록하기 전 평균과 비교 (`ClearPace`, `SkillHUD.EndScreen`)
+- TODO: 좁은 화면 유물 창 — 후보 4장(네잎 클로버)일 때 화면 너비가 모자라면 카드 폭을 줄이거나 2×2로 (1024px에서 여백 11px). `SkillHUD.Relics`
+
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
