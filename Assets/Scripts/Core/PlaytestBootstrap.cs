@@ -73,6 +73,8 @@ namespace IBlameYou.Core
             StageEvents.TargetSeconds = targetSeconds;
             StageEvents.MainRooms = 0;
             StageEvents.SideRooms = 0;
+            StageEvents.PathStep = 0;
+            StageEvents.InSideRoom = false;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             if (roomGrid)
