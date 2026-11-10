@@ -8,7 +8,7 @@ namespace IBlameYou.Systems
     {
         private const float Lifetime = 0.4f;
         private const float StartScale = 0.35f;
-        private const float EndScale = 1.5f;   // 고리 지름 = EndScale 유닛 (텍스처 64px, ppu 64)
+        private const float EndScale = 1.5f;   // 스프라이트 크기 (텍스처 64px, ppu 64). 보이는 고리 지름은 0.78배 ≈ 1.2유닛 (리뷰 LOW)
         private const int TextureSize = 64;
 
         private static Sprite ringSprite;
