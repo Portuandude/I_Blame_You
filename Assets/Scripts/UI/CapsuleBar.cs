@@ -31,7 +31,7 @@ namespace IBlameYou.UI
             }
 
             if (ratio < Last - 0.0001f) DropTime = now;
-            if (ratio > Last + 0.0001f)
+            if (ratio > Last + 0.005f) // 아주 작은 변화(재생 등)로 반짝임이 계속 켜지지 않게 (리뷰 LOW)
             {
                 // 반짝이는 중에 또 차면 구간을 이어 붙인다 (처음 시작점 유지)
                 GainFrom = GainAlpha(now) > 0f ? Mathf.Min(GainFrom, Last) : Last;
