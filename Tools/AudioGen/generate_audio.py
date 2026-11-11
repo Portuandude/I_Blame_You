@@ -420,6 +420,16 @@ def star_shard():
     return normalize(fade_edges(out))
 
 
+def vampire_heart():
+    """흡혈 하트가 플레이어에 닿을 때: 작고 말랑한 "뽁" (아래→위로 튀는 둥근 사인 + 살짝 낮은 몸통), 0.18초."""
+    n = int(0.18 * SR)
+    t = np.arange(n) / SR
+    f = 380.0 + 520.0 * (1 - np.exp(-t / 0.025))               # 380 → 900Hz로 빠르게 튀어 오르는 물방울
+    out = osc("sine", f, n) * env_adsr(n, a=0.003, d=0.05, s=0.3, r=0.1)
+    out += 0.35 * osc("sine", 190.0, n) * env_exp(n, 0.03)     # 말랑한 몸통
+    return normalize(fade_edges(lowpass(out, 5000)))
+
+
 def crumble():
     """무너지는 발판: 나무가 삐걱(아래로 처지는 톱니 마찰음) 하다가 '툭' 빠지는 소리 + 부스러기 잡음, 0.45초."""
     n = int(0.45 * SR)
@@ -799,7 +809,7 @@ def main():
         "Hit_Neutral": hit_neutral,
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
-        "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard,
+        "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
@@ -808,7 +818,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "Crumble_Back": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
