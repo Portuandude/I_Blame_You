@@ -69,12 +69,13 @@ namespace IBlameYou.Player
         {
             var health = GetComponent<HealthSystem>();
             if (health == null || health.IsDead) return;
+            float before = health.Current;
             health.Heal(RelicBook.AcornPouchHeal);
             // 한 번에 여러 레벨이 오르면 도토리 연출은 한 번만, 글자는 레벨마다 조금씩 위로 쌓는다 (겹치지 않게, 리뷰 LOW)
             acornStack = acornFrame == Time.frameCount ? acornStack + 1 : 0;
             acornFrame = Time.frameCount;
             if (acornStack == 0) VfxPlayer.AcornGlint(transform, AcornGlintOffset); // 레벨업 빛기둥 위로 도토리 주머니가 톡
-            DamageNumbers.ShowText(transform.position + Vector3.up * (2f + 0.4f * acornStack), $"체력 +{RelicBook.AcornPouchHeal:0}", new Color(0.55f, 0.9f, 0.45f), 0.8f);
+            DamageNumbers.ShowHeal(transform.position, health.Current - before, "체력 "); // 실제 찬 만큼, 같은 프레임이면 위로 쌓인다
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
@@ -83,7 +84,12 @@ namespace IBlameYou.Player
         {
             var health = GetComponent<HealthSystem>();
             if (health == null || health.IsDead) return;
-            if (Has(RelicId.VampireFang)) health.Heal(RelicBook.VampireFangHeal);
+            if (Has(RelicId.VampireFang))
+            {
+                float before = health.Current;
+                health.Heal(RelicBook.VampireFangHeal);
+                DamageNumbers.ShowHeal(transform.position, health.Current - before);
+            }
             if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
             {
                 Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
