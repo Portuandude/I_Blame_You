@@ -391,8 +391,9 @@ namespace IBlameYou.Systems
             clearedArenas.Add(chunkIndex);
             IBlameYou.Core.RunStats.AddArenaCleared();
             var relics = player != null ? IBlameYou.Player.PlayerRelics.For(player.gameObject) : null;
-            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal)) // 용사의 훈장: 돌파 보상 회복
-                HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, $"용사의 훈장: 체력 +{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}%");
+            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 돌파 보상 회복 + 머리 위 금 메달
+                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, $"용사의 훈장: 체력 +{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}%"))
+                VfxPlayer.MedalGlint(player, MedalGlintOffset);
             if (!boss) return;
 
             bossCleared = true;
@@ -407,16 +408,19 @@ namespace IBlameYou.Systems
             ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
         }
 
-        // 중간보스 처치 즉시 회복 (최대 체력 비율). 쓰러진 뒤면 아무 일도 하지 않는다.
-        private void HealPlayer(float ratio, string notice)
+        // 중간보스 처치 즉시 회복 (최대 체력 비율). 쓰러진 뒤면 아무 일도 하지 않고 false.
+        private bool HealPlayer(float ratio, string notice)
         {
             var health = player != null ? player.GetComponent<HealthSystem>() : null;
-            if (health == null || health.IsDead) return;
+            if (health == null || health.IsDead) return false;
             health.Heal(health.Max * ratio);
             EffectLibrary.PlayHit(Element.Water, player.position + Vector3.up, 1.5f);
             GameAudio.PlaySfx("Pickup", 0.8f);
             StageEvents.PostNotice(notice);
+            return true;
         }
+
+        private static readonly Vector3 MedalGlintOffset = new Vector3(0f, 1.5f, 0f); // 용사의 훈장 메달 시작 높이 (발밑 기준, 머리 위)
 
         // 정예 구역 유물 상자. 이미 유물을 골랐으면 만들지 않는다.
         private void SpawnRelicChest(Transform root, int chunkIndex, Vector2 position, bool dropped)
