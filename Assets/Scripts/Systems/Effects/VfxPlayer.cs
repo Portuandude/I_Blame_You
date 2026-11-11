@@ -99,6 +99,14 @@ namespace IBlameYou.Systems
             StarShardFx.Launch(from, target, targetOffset, EffectLibrary.LoadRuntimeFrames("Effects/Sparkle"), onArrive);
         }
 
+        // 흡혈 송곳니: 처치한 적 자리에서 작은 붉은 하트가 톡 튀었다 target으로 빨려 들어가고, 닿으면 onArrive (회복).
+        // 보상 구슬 그림(HeartOrb)을 작게, 붉게 물들여 쓴다. 그림이 없으면 바로 onArrive.
+        public static void VampireHeart(Vector3 from, Transform target, Vector3 targetOffset, System.Action onArrive)
+        {
+            StarShardFx.Launch(from, target, targetOffset, EffectLibrary.LoadRuntimeFrames("Effects/HeartOrb"), onArrive,
+                0.3f, new Color(1f, 0.45f, 0.5f));
+        }
+
         // 마나 고리: follow(플레이어) 둘레에 color 빛 고리가 퍼진다 (쌍둥이 반지·응원 리본). offset은 follow 기준 고리 가운데.
         public static void ManaRing(Transform follow, Vector3 offset, Color color) => ManaRingFx.Create(follow, offset, color);
 

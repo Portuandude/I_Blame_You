@@ -6,6 +6,7 @@ namespace IBlameYou.Systems
     // 별똥 조각 연출 (VfxPlayer.StarShard): 처치한 적 자리에서 작은 금별이 위로 톡 튀었다가 플레이어 쪽으로 빨려 들어간다.
     // 닿으면(또는 대상이 사라지거나 MaxLifetime이 지나면) onArrive를 한 번 부르고 작게 반짝이며 사라진다.
     // 그림은 Resources/Effects/Sparkle (유물 상자 반짝임)을 작게 돌려 쓴다.
+    // 흡혈 송곳니 하트(VfxPlayer.VampireHeart)도 같은 움직임으로 HeartOrb 그림을 붉게 물들여 쓴다.
     public class StarShardFx : MonoBehaviour
     {
         private const float PopTime = 0.18f;      // 위로 튀는 시간
@@ -24,7 +25,9 @@ namespace IBlameYou.Systems
         private bool arrived;
 
         // 그림이 없으면 연출 없이 바로 onArrive (마나는 그대로 찬다).
-        public static void Launch(Vector3 from, Transform target, Vector3 targetOffset, Sprite[] frames, Action onArrive)
+        // scale: 크기 (기본 별 0.45), tint: 그림에 곱할 색 (기본 흰색 = 그대로).
+        public static void Launch(Vector3 from, Transform target, Vector3 targetOffset, Sprite[] frames, Action onArrive,
+            float scale = Scale, Color? tint = null)
         {
             if (frames == null || frames.Length == 0 || target == null)
             {
@@ -34,8 +37,9 @@ namespace IBlameYou.Systems
 
             var go = new GameObject("StarShard");
             go.transform.position = from;
-            go.transform.localScale = new Vector3(Scale, Scale, 1f);
-            EffectLibrary.CreateVisual(go.transform, "Visual", frames, 16f, true, Color.clear, 0f, 8);
+            go.transform.localScale = new Vector3(scale, scale, 1f);
+            var renderer = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 16f, true, Color.clear, 0f, 8);
+            if (tint.HasValue) renderer.color = tint.Value;
             var fx = go.AddComponent<StarShardFx>();
             fx.target = target;
             fx.targetOffset = targetOffset;

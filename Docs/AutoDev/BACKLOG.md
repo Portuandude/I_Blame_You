@@ -9,9 +9,9 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 무너지는 발판 소리 — 무너질 때 나무 삐걱·툭 효과음, 다시 생길 때 작은 톡 (`Tools/AudioGen` crumble/crumble_back, `CrumblingPlatform.Crumble`, 플레이어가 가까울 때만 — `FlameJetTrap.PlayerNear` 참고)
-- TODO: 회복 숫자 통일 — 회복 구슬(`ArenaReward`)·흡혈 송곳니 회복도 실제 회복량 초록 숫자 "+N" (가득 차면 생략). `ChunkStreamer.ShowHealNumber`를 `DamageNumbers.ShowHeal(Vector3, float)` 같은 공용 함수로 옮겨 같이 쓴다
-- TODO: 체력 바 회복 반짝 — HUD 체력 캡슐 바가 차오를 때 늘어난 부분이 연두색으로 0.4초 빛났다 사라지게 (`UI/CapsuleBar`의 trail 반대 방향, 피해 trail은 그대로)
+- TODO: 꿀단지 연출 — 꿀단지가 있을 때 보상 구슬을 주우면 머리 위로 작은 꿀단지가 톡 떠올랐다 사라지게 (`VfxPlayer.AcornGlint`처럼 `MedalGlintFx.Create(..., "HoneyJar")`), 알림에 "· 꿀단지 +15%" 붙이기
+- TODO: 흡혈 하트 소리 — 붉은 하트가 닿을 때 작고 말랑한 "뽁" (`Tools/AudioGen` vampire_heart, StarShard처럼 작게, `PlayerRelics.OnVampireHeartArrived`)
+- TODO: 무너지는 발판 위 적 — 적(슬라임·고블린)이 무너지는 발판에 올라서도 무너지게 할지 확인하고, 무너지면 적도 떨어지게 (`CrumblingPlatform.OnCollisionStay2D`가 지금은 플레이어만 봄). 낙사 판정이 적에게 문제없는지 확인
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 

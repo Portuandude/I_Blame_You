@@ -5,7 +5,7 @@ namespace IBlameYou.UI
     // 왼쪽 위 상태 패널 첫 줄의 체력·마나 바 (귀엽지만 화려하게).
     // 하트/별 아이콘 + 둥근 캡슐 바 + 빛나는 테두리. 그림은 Tools/ArtGen/generate_hud.py가 만든
     // Resources/UI/HUD/*.png를 9분할(GUIStyle.border)로 늘려 그리고, 없으면 단색 사각형으로 그린다.
-    // 줄어든 부분은 흰색 잔상으로 잠깐 남았다가 따라 내려간다 (회복하면 잔상은 바로 맞춰진다).
+    // 줄어든 부분은 흰색 잔상으로 잠깐 남았다가 따라 내려간다 (회복하면 잔상은 바로 맞춰지고, 늘어난 부분이 연두색으로 0.4초 빛난다).
     // 체력이 낮으면(LowHealth 경고와 같은 기준) 하트가 두근거린다.
     public partial class SkillHUD
     {
@@ -18,6 +18,9 @@ namespace IBlameYou.UI
         private static readonly Color HealthGlowColor = new Color(1f, 0.55f, 0.75f);
         private static readonly Color ManaFillColor = new Color(0.35f, 0.7f, 1f);
         private static readonly Color ManaGlowColor = new Color(0.5f, 0.96f, 1f);        // aqua
+        private static readonly Color HealGlowColor = new Color(0.6f, 1f, 0.45f, 0.85f); // 연두 (회복 반짝)
+        private static readonly Color ManaGainColor = new Color(0.6f, 0.95f, 1f, 0.85f);  // 하늘색 (마나 채움 반짝)
+        private const float ManaGainMin = 0.05f; // 마나는 자연 회복이 잦으므로 5% 넘게 찼을 때만 반짝
         private static readonly Color InfiniteManaColor = new Color(1f, 0.85f, 0.3f);    // gold
 
         private bool barArtLoaded;
@@ -98,23 +101,45 @@ namespace IBlameYou.UI
             float beat = severity > 0f ? 1f + 0.18f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * Mathf.PI * (1.2f + severity * 1.5f))) : 1f;
 
             DrawVitalBar(new Rect(line.x, line.y, half, line.height), heartIcon, beat, healthRatio, healthTrail.Shown,
-                HealthFillColor, HealthGlowColor, $"{health.Current:0}/{health.Max:0}");
+                HealthFillColor, HealthGlowColor, $"{health.Current:0}/{health.Max:0}",
+                healthTrail.GainFrom, healthTrail.GainAlpha(Time.unscaledTime));
 
             string manaText = mana.Infinite ? "무한" : $"{mana.Current:0}/{mana.Max:0}";
+            // 무한 마나면 끈다. 반짝이는 동안 이어 차서 5%를 넘겨도 켜진다 (구간 시작점이 유지되므로)
+            float manaGain = !mana.Infinite && manaRatio - manaTrail.GainFrom > ManaGainMin ? manaTrail.GainAlpha(Time.unscaledTime) : 0f;
             DrawVitalBar(new Rect(line.x + half + 8f, line.y, half, line.height), starIcon, 1f, manaRatio, manaTrail.Shown,
-                mana.Infinite ? InfiniteManaColor : ManaFillColor, mana.Infinite ? InfiniteManaColor : ManaGlowColor, manaText);
+                mana.Infinite ? InfiniteManaColor : ManaFillColor, mana.Infinite ? InfiniteManaColor : ManaGlowColor, manaText,
+                manaTrail.GainFrom, manaGain, ManaGainColor);
         }
 
-        private void DrawVitalBar(Rect area, Texture2D icon, float iconScale, float ratio, float trail, Color fill, Color glow, string text)
+        // 회복으로 늘어난 구간(from~to 비율)을 연두색으로 덧칠해 alpha만큼 빛낸다 (BarTrail.GainGlow초 동안 사라짐).
+        private void DrawHealGlow(Rect bar, float from, float to, float alpha, Color color)
+        {
+            if (alpha <= 0f || to <= from) return;
+            from = Mathf.Clamp01(from);
+            to = Mathf.Clamp01(to);
+            var previous = GUI.color;
+            GUI.color = new Color(color.r, color.g, color.b, color.a * alpha);
+            // 전체 너비로 그리고 늘어난 구간만 보이게 자른다 (채움 그림과 같은 모양)
+            GUI.BeginGroup(new Rect(bar.x + bar.width * from, bar.y, bar.width * (to - from), bar.height));
+            DrawStyle(barFillStyle, new Rect(-bar.width * from, 0f, bar.width, bar.height));
+            GUI.EndGroup();
+            GUI.color = previous;
+        }
+
+        private void DrawVitalBar(Rect area, Texture2D icon, float iconScale, float ratio, float trail, Color fill, Color glow, string text,
+            float gainFrom = 0f, float gainAlpha = 0f, Color? gainColor = null)
         {
             float barX = area.x + BarIconSize + 4f;
             var bar = new Rect(barX, area.y + (area.height - BarHeight) / 2f, area.xMax - barX - BarGlow, BarHeight);
-            DrawCapsuleBar(bar, ratio, trail, fill, glow, text);
+            DrawCapsuleBar(bar, ratio, trail, fill, glow, text, gainFrom, gainAlpha, gainColor);
             DrawIcon(icon, new Rect(area.x, area.y + (area.height - BarIconSize) / 2f, BarIconSize, BarIconSize), iconScale);
         }
 
         // 둥근 캡슐 바 하나 (빛 테두리 → 바탕 → 흰 잔상 → 채움 → 글자). 보스 체력바도 쓴다.
-        private void DrawCapsuleBar(Rect bar, float ratio, float trail, Color fill, Color glow, string text)
+        // gainAlpha > 0이면 회복으로 늘어난 구간(gainFrom~ratio)을 채움 위·글자 아래에 gainColor(기본 연두)로 빛낸다.
+        private void DrawCapsuleBar(Rect bar, float ratio, float trail, Color fill, Color glow, string text,
+            float gainFrom = 0f, float gainAlpha = 0f, Color? gainColor = null)
         {
             EnsureBarArt();
             var previous = GUI.color;
@@ -128,6 +153,7 @@ namespace IBlameYou.UI
             // 흰 잔상 → 채움 순서. 전체 너비로 그리고 비율만큼 잘라서(그룹) 왼쪽 둥근 끝을 유지한다.
             DrawClipped(bar, trail, new Color(1f, 1f, 1f, 0.95f));
             DrawClipped(bar, ratio, fill);
+            DrawHealGlow(bar, gainFrom, ratio, gainAlpha, gainColor ?? HealGlowColor);
 
             if (string.IsNullOrEmpty(text)) return;
             GUI.color = new Color(0f, 0f, 0f, 0.6f);

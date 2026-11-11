@@ -67,7 +67,12 @@ namespace IBlameYou.Player
             AddExperience(xp);
 
             if (Rank(Trait.Wrath) >= 20 && mana != null) mana.Restore(5f);
-            if (Rank(Trait.Vitality) >= 10) health.Heal(2f);
+            if (Rank(Trait.Vitality) >= 10)
+            {
+                float before = health.Current;
+                health.Heal(2f);
+                DamageNumbers.ShowHeal(transform.position, health.Current - before); // 다른 회복과 같은 초록 숫자
+            }
         }
 
         public void AddExperience(float amount)

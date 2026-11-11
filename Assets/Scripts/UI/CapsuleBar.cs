@@ -6,15 +6,20 @@ namespace IBlameYou.UI
 {
     // 줄어든 부분을 잠깐 흰색으로 남기는 잔상 비율 (HUD 바·머리 위 바 공용).
     // 피해로 줄면 Hold초 그대로 있다가 초당 Speed 비율로 따라 내려가고, 늘면 바로 맞춘다.
+    // 늘면(회복) GainFrom~지금 비율 구간을 GainGlow초 동안 반짝일 수 있게 기억한다 (HUD 체력 바가 쓴다).
     public struct BarTrail
     {
         public const float Hold = 0.45f;
         public const float Speed = 0.9f;
+        public const float GainGlow = 0.4f;
 
         public float Shown;      // 잔상 비율
         public float Last;       // 지난 갱신 비율
         public float DropTime;   // 마지막으로 줄어든 시각
         public bool Started;
+        public float GainFrom;   // 반짝일 구간의 시작 비율 (끝은 지금 비율)
+        public float GainTime;   // 마지막으로 늘어난 시각
+        public bool Gained;      // 한 번이라도 늘었는지 (구조체라 필드 초기값을 못 준다)
 
         public void Step(float ratio, float now, float deltaTime)
         {
@@ -26,10 +31,25 @@ namespace IBlameYou.UI
             }
 
             if (ratio < Last - 0.0001f) DropTime = now;
+            if (ratio > Last + 0.005f) // 아주 작은 변화(재생 등)로 반짝임이 계속 켜지지 않게 (리뷰 LOW)
+            {
+                // 반짝이는 중에 또 차면 구간을 이어 붙인다 (처음 시작점 유지)
+                GainFrom = GainAlpha(now) > 0f ? Mathf.Min(GainFrom, Last) : Last;
+                GainTime = now;
+                Gained = true;
+            }
             Last = ratio;
 
             if (ratio >= Shown) Shown = ratio;
             else if (now - DropTime > Hold) Shown = Mathf.Max(ratio, Shown - Speed * deltaTime);
+        }
+
+        // 회복 반짝임의 세기 (1 → 0으로 GainGlow초 동안 사라진다, 없으면 0).
+        public float GainAlpha(float now)
+        {
+            if (!Gained) return 0f;
+            float t = (now - GainTime) / GainGlow;
+            return t >= 1f || t < 0f ? 0f : 1f - t;
         }
     }
 

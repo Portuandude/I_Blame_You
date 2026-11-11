@@ -420,6 +420,33 @@ def star_shard():
     return normalize(fade_edges(out))
 
 
+def crumble():
+    """무너지는 발판: 나무가 삐걱(아래로 처지는 톱니 마찰음) 하다가 '툭' 빠지는 소리 + 부스러기 잡음, 0.45초."""
+    n = int(0.45 * SR)
+    t = t_axis(0.45)
+    creak_n = int(0.2 * SR)
+    creak_f = np.linspace(330.0, 220.0, creak_n) * (1 + 0.04 * np.sin(2 * np.pi * 38 * t[:creak_n]))
+    creak = bandpass(osc("saw", creak_f, creak_n), 300, 2500) * env_adsr(creak_n, a=0.02, d=0.05, s=0.6, r=0.1) * 0.5
+    out = np.zeros(n)
+    out[:creak_n] += creak
+    drop = int(0.17 * SR)
+    m = n - drop
+    thud = osc("sine", np.linspace(160.0, 70.0, m), m) * env_exp(m, 0.09)
+    knock = bandpass(noise(m), 600, 2400) * env_exp(m, 0.03) * 0.6
+    debris = bandpass(noise(m), 2000, 6000) * env_exp(m, 0.12) * 0.15
+    out[drop:] += thud + knock + debris
+    return normalize(fade_edges(lowpass(out, 8000)))
+
+
+def crumble_back():
+    """무너졌던 발판이 다시 생김: 작고 가벼운 나무 '톡' (짧은 삼각파 + 맑은 고음 한 점), 0.15초."""
+    n = int(0.15 * SR)
+    tok = osc("tri", note_hz("E5"), n) * env_exp(n, 0.03)
+    knock = bandpass(noise(n), 1800, 4500) * env_exp(n, 0.012) * 0.4
+    ping = 0.25 * osc("sine", note_hz("B6"), n) * env_exp(n, 0.05)
+    return normalize(fade_edges(tok + knock + ping))
+
+
 def relic_new():
     """도감에 처음 오른 유물: RelicOpen 아르페지오 뒤에 겹쳐 울리는 짧은 반짝 화음 (G장조 G6·B6·D7 동시 + 높은 반짝임), 0.6초."""
     n = int(0.6 * SR)
@@ -773,7 +800,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard,
-        "RelicNew": relic_new,
+        "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -781,7 +808,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "Crumble_Back": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()

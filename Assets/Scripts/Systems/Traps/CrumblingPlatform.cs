@@ -15,6 +15,7 @@ namespace IBlameYou.Systems
         private const float GoneAlpha = 0.15f;
         private const float WarnAlpha = 0.5f;
         public const float Thickness = 0.35f;
+        private const float SoundRange = 12f;    // 카메라가 이만큼 가까울 때만 소리 (FlameJetTrap과 같다)
 
         private BoxCollider2D solid;
         private Transform visualRoot;
@@ -66,6 +67,7 @@ namespace IBlameYou.Systems
         private IEnumerator Crumble()
         {
             crumbling = true;
+            if (PlayerNear()) GameAudio.PlaySfx("Crumble", 0.7f);
             float elapsed = 0f;
             while (elapsed < ShakeTime)
             {
@@ -94,8 +96,15 @@ namespace IBlameYou.Systems
 
             solid.enabled = true;
             SetAlpha(1f);
+            if (PlayerNear()) GameAudio.PlaySfx("Crumble_Back", 0.5f);
             VfxPlayer.AimGlint(new Vector3(transform.position.x + (width - 1) / 2f, topY + 0.15f, 0f)); // 오른쪽 끝에서 작게 반짝
             crumbling = false;
+        }
+
+        private bool PlayerNear()
+        {
+            var cam = Camera.main;
+            return cam != null && Mathf.Abs(cam.transform.position.x - transform.position.x) < SoundRange;
         }
 
         private void SetAlpha(float alpha)

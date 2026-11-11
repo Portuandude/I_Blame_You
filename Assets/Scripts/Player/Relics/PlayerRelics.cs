@@ -69,21 +69,27 @@ namespace IBlameYou.Player
         {
             var health = GetComponent<HealthSystem>();
             if (health == null || health.IsDead) return;
+            float before = health.Current;
             health.Heal(RelicBook.AcornPouchHeal);
             // 한 번에 여러 레벨이 오르면 도토리 연출은 한 번만, 글자는 레벨마다 조금씩 위로 쌓는다 (겹치지 않게, 리뷰 LOW)
             acornStack = acornFrame == Time.frameCount ? acornStack + 1 : 0;
             acornFrame = Time.frameCount;
             if (acornStack == 0) VfxPlayer.AcornGlint(transform, AcornGlintOffset); // 레벨업 빛기둥 위로 도토리 주머니가 톡
-            DamageNumbers.ShowText(transform.position + Vector3.up * (2f + 0.4f * acornStack), $"체력 +{RelicBook.AcornPouchHeal:0}", new Color(0.55f, 0.9f, 0.45f), 0.8f);
+            DamageNumbers.ShowHeal(transform.position, health.Current - before, "체력 "); // 실제 찬 만큼, 같은 프레임이면 위로 쌓인다
         }
 
-        // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
+        // 흡혈 송곳니: 적을 쓰러뜨리면 붉은 하트가 날아와 닿을 때 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
         // 별똥 조각: 적을 쓰러뜨리면 가끔 금별이 적 자리에서 날아와 닿을 때 마나 회복 (노란 글자).
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             var health = GetComponent<HealthSystem>();
             if (health == null || health.IsDead) return;
-            if (Has(RelicId.VampireFang)) health.Heal(RelicBook.VampireFangHeal);
+            if (Has(RelicId.VampireFang))
+            {
+                // 적 자리에서 붉은 하트가 날아와 닿을 때 회복 (최대 1.5초 안에는 반드시 닿는다, StarShardFx)
+                Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
+                VfxPlayer.VampireHeart(from, transform, Vector3.up * 0.8f, OnVampireHeartArrived);
+            }
             if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
             {
                 Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
@@ -101,6 +107,16 @@ namespace IBlameYou.Player
             mana.Restore(RelicBook.StarShardMana);
             GameAudio.PlaySfx("StarShard", 0.6f, 0.08f); // 작고 맑은 띵 (Tools/AudioGen star_shard)
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.StarShardMana:0}", new Color(1f, 0.9f, 0.35f), 0.8f);
+        }
+
+        private void OnVampireHeartArrived()
+        {
+            if (this == null) return; // 하트가 날아오는 사이 플레이어가 사라졌다
+            var health = GetComponent<HealthSystem>();
+            if (health == null || health.IsDead) return;
+            float before = health.Current;
+            health.Heal(RelicBook.VampireFangHeal);
+            DamageNumbers.ShowHeal(transform.position, health.Current - before);
         }
 
         // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.
