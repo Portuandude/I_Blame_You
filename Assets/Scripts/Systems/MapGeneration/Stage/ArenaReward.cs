@@ -50,7 +50,8 @@ namespace IBlameYou.Systems
 
             var rimGo = new GameObject("HoneyRim");
             rimGo.transform.SetParent(reward.visual, false);
-            rimGo.transform.localScale = new Vector3(HoneyRimSize, HoneyRimSize, 1f);
+            float rimScale = HoneyRimSize / Mathf.Max(0.01f, reward.visual.localScale.x); // 그림이 없어 구슬이 0.7배 원이어도 월드 크기는 같게
+            rimGo.transform.localScale = new Vector3(rimScale, rimScale, 1f);
             reward.honeyRim = rimGo.AddComponent<SpriteRenderer>();
             reward.honeyRim.sprite = SolidSpriteFactory.CreateCircle();
             reward.honeyRim.color = HoneyRimColor;
