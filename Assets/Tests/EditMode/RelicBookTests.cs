@@ -91,6 +91,16 @@ namespace IBlameYou.Tests
             Assert.AreEqual(18, (int)RelicId.StarShard);
             Assert.AreEqual(19, (int)RelicId.HeroMedal);
             Assert.AreEqual(20, (int)RelicId.AcornPouch);
+            Assert.AreEqual(21, (int)RelicId.HoneyJar);
+        }
+
+        [Test]
+        public void HoneyJar_DescribesRewardHeal()
+        {
+            Assert.AreEqual("보상 구슬 체력 회복 +15%", RelicBook.Description(RelicId.HoneyJar));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.HoneyJar));
+            Assert.AreEqual("꿀단지", RelicBook.Name(RelicId.HoneyJar));
+            Assert.Contains(RelicId.HoneyJar, RelicBook.All);
         }
 
         [Test]
