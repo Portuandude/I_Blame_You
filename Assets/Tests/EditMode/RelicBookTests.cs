@@ -90,6 +90,15 @@ namespace IBlameYou.Tests
             Assert.AreEqual(17, (int)RelicId.CheerRibbon);
             Assert.AreEqual(18, (int)RelicId.StarShard);
             Assert.AreEqual(19, (int)RelicId.HeroMedal);
+            Assert.AreEqual(20, (int)RelicId.AcornPouch);
+        }
+
+        [Test]
+        public void AcornPouch_DescribesLevelHeal()
+        {
+            Assert.AreEqual("레벨이 오를 때마다 체력 +10", RelicBook.Description(RelicId.AcornPouch));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.AcornPouch));
+            Assert.AreEqual("도토리 주머니", RelicBook.Name(RelicId.AcornPouch));
         }
 
         [Test]
