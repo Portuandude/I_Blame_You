@@ -10,12 +10,17 @@ namespace IBlameYou.Systems
         private const float ShakeTime = 0.55f;
         private const float RespawnTime = 3f;
         private const float ShakeAmount = 0.06f;
+        private const float WarnTime = 0.6f;     // 다시 생기기 전 윤곽이 깜빡이는 시간
+        private const float WarnBlink = 0.1f;    // 깜빡임 간격
+        private const float GoneAlpha = 0.15f;
+        private const float WarnAlpha = 0.5f;
         public const float Thickness = 0.35f;
 
         private BoxCollider2D solid;
         private Transform visualRoot;
         private SpriteRenderer[] renderers;
         private bool crumbling;
+        private int width;
 
         // topLeft: 발판 윗면의 왼쪽 끝 (월드), width: 칸 수.
         public static CrumblingPlatform Create(Transform parent, Vector2 topLeft, int width)
@@ -45,6 +50,7 @@ namespace IBlameYou.Systems
             }
 
             platform.renderers = platform.visualRoot.GetComponentsInChildren<SpriteRenderer>();
+            platform.width = width;
             return platform;
         }
 
@@ -70,11 +76,25 @@ namespace IBlameYou.Systems
 
             visualRoot.localPosition = Vector3.zero;
             solid.enabled = false;
-            SetAlpha(0.15f);
-            yield return new WaitForSeconds(RespawnTime);
+            SetAlpha(GoneAlpha);
+            // 무너질 때 발판 칸마다 나무 먼지가 펑 (발판 윗면 기준)
+            float topY = transform.position.y + Thickness / 2f;
+            for (int i = 0; i < width; i++)
+                VfxPlayer.Dust(new Vector3(transform.position.x + i - (width - 1) / 2f, topY, 0f), 0.6f);
+            yield return new WaitForSeconds(RespawnTime - WarnTime);
+
+            // 다시 생기기 직전: 흐린 윤곽이 깜빡여 "곧 생긴다"를 알린다
+            float warn = 0f;
+            while (warn < WarnTime)
+            {
+                SetAlpha(Mathf.FloorToInt(warn / WarnBlink) % 2 == 0 ? WarnAlpha : GoneAlpha);
+                warn += Time.deltaTime;
+                yield return null;
+            }
 
             solid.enabled = true;
             SetAlpha(1f);
+            VfxPlayer.AimGlint(new Vector3(transform.position.x + (width - 1) / 2f, topY + 0.15f, 0f)); // 오른쪽 끝에서 작게 반짝
             crumbling = false;
         }
 
