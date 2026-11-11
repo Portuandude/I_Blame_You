@@ -64,7 +64,9 @@ namespace IBlameYou.UI
             float shake = shakeAge < BossShakeTime ? Mathf.Sin(shakeAge * 70f) * 3f * (1f - shakeAge / BossShakeTime) : 0f;
             var icon = new Rect(rect.x + 10f + shake, rect.y + 26f, BarIconSize, BarIconSize);
             var bar = new Rect(icon.xMax + 4f, rect.y + 29f, rect.xMax - icon.xMax - 4f - 10f - BarGlow, BarHeight);
-            DrawCapsuleBar(bar, ratio, bossTrail.Shown, BossFillColor, BossGlowColor, null);
+            // 슬라임 킹이 무리를 흡수해 회복하면 늘어난 부분이 연두색으로 빛난다 (최대 체력이 바뀐 프레임은 위에서 잔상을 비워 반짝이지 않는다)
+            DrawCapsuleBar(bar, ratio, bossTrail.Shown, BossFillColor, BossGlowColor, null,
+                bossTrail.GainFrom, bossTrail.GainAlpha(Time.unscaledTime));
             DrawIcon(crownIcon, icon, 1f);
 
             if (!string.IsNullOrEmpty(BossEvents.Notice))
