@@ -10,8 +10,12 @@
 ## 다음 (2026-11-11 자동 실행이 추가)
 
 - DONE (claude/project-thread-k82lyk): 용사의 훈장 연출 — 회복할 때 플레이어 머리 위로 작은 금 메달이 반짝 떴다 사라지게 (기존 Sparkle 그림 재사용, `ChunkStreamer.OnArenaCleared`, `VfxPlayer`)
-- TODO: 회복 알림 합치기 — 중간보스 처치 50% 회복과 용사의 훈장 15% 회복이 같은 순간이면 알림이 덮어써진다. "중간보스 처치! 체력 +50% · 용사의 훈장 +15%"처럼 한 줄로 (`ChunkStreamer.OnArenaCleared`/`HealPlayer`)
-- TODO: 유물 도토리 주머니 — 레벨이 오를 때마다 체력 +10 회복 (공용, 레벨업 이벤트에 붙이기, 아이콘 `Tools/ArtGen/generate_relic_icons.py`, `RelicId` 맨 뒤 20번, 테스트)
+- DONE (claude/project-thread-k82lyk): 회복 알림 합치기 — 중간보스 처치 50% 회복과 용사의 훈장 15% 회복이 같은 순간이면 알림이 덮어써진다. "중간보스 처치! 체력 +50% · 용사의 훈장 +15%"처럼 한 줄로 (`ChunkStreamer.OnArenaCleared`/`HealPlayer`)
+- DONE (claude/project-thread-k82lyk, `RelicId.AcornPouch`=20): 유물 도토리 주머니 — 레벨이 오를 때마다 체력 +10 회복 (공용, 레벨업 이벤트에 붙이기, 아이콘 `Tools/ArtGen/generate_relic_icons.py`, `RelicId` 맨 뒤 20번, 테스트)
+
+- TODO: 회복 숫자 — 중간보스 50%·용사의 훈장 15% 회복 때 머리 위에 실제 회복량 초록 숫자 "+38"(가득 찬 상태면 띄우지 않기, `HealthSystem.Heal` 전후 차이, `DamageNumbers.ShowText`, `ChunkStreamer.HealPlayer`)
+- TODO: 도토리 주머니 연출 — 레벨업 회복 때 머리 위로 작은 도토리가 톡 튀었다 사라지게 (`MedalGlintFx`를 아이콘 이름을 받게 일반화해 `Relics/AcornPouch` 재사용, `PlayerRelics.OnLeveledUp`)
+- TODO: 발판 퍼즐 변형: 무너지는 발판 — 밟으면 0.5초 흔들리다 떨어지고 3초 뒤 제자리에 다시 생기는 발판. 이동 방 공중 발판 일부를 바꾼다 (다시 생기므로 경로 검증은 그대로, 시드 고정 테스트, `ChunkGenerator`·`ChunkStreamer`, 그림은 `Tools/ArtGen`)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
