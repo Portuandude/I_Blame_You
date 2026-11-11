@@ -271,6 +271,22 @@ def hero_medal(d):
     d.polygon(star_points(20.5, 7.5, 2.0, 0.9), fill=CREAM)
 
 
+def acorn_pouch(d):
+    # 도토리 주머니: 통통한 갈색 주머니 + 위 끈 매듭(베리), 주머니 앞에 도토리 하나, 주변 반짝 (레벨업 회복)
+    sack = hexrgba("c98a4b")
+    acorn = hexrgba("e09a3e")
+    cap = hexrgba("8a5a2e")
+    outlined_ellipse(d, 3.5, 7.5, 17.5, 22, sack)                                  # 주머니 몸
+    outlined_poly(d, [(6.5, 4), (14.5, 4), (12.5, 9), (8.5, 9)], sack, 1.0)        # 주머니 입
+    d.rectangle(E(7.5, 8, 13.5, 9.6), fill=BERRY)                                  # 끈
+    outlined_ellipse(d, 13, 12.5, 20.5, 21.5, acorn, 1.1)                          # 도토리 열매
+    outlined_ellipse(d, 12.5, 11, 21, 15.5, cap, 1.0)                              # 도토리 모자
+    d.rectangle(E(16.4, 9.2, 17.2, 11.4), fill=cap)                                # 꼭지
+    shine(d, 7.2, 12.0, 1.0)
+    shine(d, 15.0, 17.0, 0.7)
+    d.polygon(star_points(21.0, 5.0, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -292,6 +308,7 @@ ICONS = {
     "CheerRibbon": cheer_ribbon,
     "StarShard": star_shard,
     "HeroMedal": hero_medal,
+    "AcornPouch": acorn_pouch,
 }
 
 
