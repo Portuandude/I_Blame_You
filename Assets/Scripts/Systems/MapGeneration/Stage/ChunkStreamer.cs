@@ -514,8 +514,11 @@ namespace IBlameYou.Systems
             if (Mathf.Abs(x - cam.transform.position.x) > halfWidth) return;
             float y = Mathf.Max(killLine + 0.5f, cam.transform.position.y - cam.orthographicSize + 0.4f);
             VfxPlayer.Dust(new Vector3(x, y, 0f), 0.8f);
-            GameAudio.PlaySfx("EnemyDie", 0.35f);
+            if (fallPoofFrame != Time.frameCount) GameAudio.PlaySfx("EnemyDie", 0.35f); // 같은 프레임 여러 마리면 소리는 한 번 (리뷰 LOW)
+            fallPoofFrame = Time.frameCount;
         }
+
+        private static int fallPoofFrame = -1;
 
         // 만들어 둔 범위 밖으로 벗어난 적은 치운다 (다시 다가가면 원래 자리에 다시 나온다).
         // 낭떠러지로 떨어진 적은 쓰러진 것으로 치고 다시 만들지 않는다.
