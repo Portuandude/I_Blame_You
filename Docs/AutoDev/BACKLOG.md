@@ -9,7 +9,7 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 용사의 훈장 연출 — 회복할 때 플레이어 머리 위로 작은 금 메달이 반짝 떴다 사라지게 (기존 Sparkle 그림 재사용, `ChunkStreamer.OnArenaCleared`, `VfxPlayer`)
+- DONE (claude/project-thread-k82lyk): 용사의 훈장 연출 — 회복할 때 플레이어 머리 위로 작은 금 메달이 반짝 떴다 사라지게 (기존 Sparkle 그림 재사용, `ChunkStreamer.OnArenaCleared`, `VfxPlayer`)
 - TODO: 회복 알림 합치기 — 중간보스 처치 50% 회복과 용사의 훈장 15% 회복이 같은 순간이면 알림이 덮어써진다. "중간보스 처치! 체력 +50% · 용사의 훈장 +15%"처럼 한 줄로 (`ChunkStreamer.OnArenaCleared`/`HealPlayer`)
 - TODO: 유물 도토리 주머니 — 레벨이 오를 때마다 체력 +10 회복 (공용, 레벨업 이벤트에 붙이기, 아이콘 `Tools/ArtGen/generate_relic_icons.py`, `RelicId` 맨 뒤 20번, 테스트)
 
