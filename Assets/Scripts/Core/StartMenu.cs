@@ -330,6 +330,7 @@ namespace IBlameYou.Core
                     GUI.DrawTexture(new Rect(cellRect.center.x - iconSize / 2f, cellRect.y + 4f, iconSize, iconSize), icon, ScaleMode.ScaleToFit);
                     GUI.color = previous;
                 }
+                if (known) DrawOwnerBadge(IBlameYou.Player.RelicBook.Owner(id), new Vector2(cellRect.center.x - iconSize / 2f, cellRect.y + 4f + iconSize));
                 GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
             }
@@ -353,6 +354,23 @@ namespace IBlameYou.Core
                     new GUIStyle(button) { fontSize = 16 })) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
                 codexDevMode = !codexDevMode;
             if (GUI.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) codexOpen = false;
+        }
+
+        // 모은 유물 아이콘 왼쪽 아래에 주인 배지: A는 하늘색, B는 주황 글자 (공용은 표시 없음). corner = 아이콘 왼쪽 아래.
+        private GUIStyle ownerBadge;
+
+        private void DrawOwnerBadge(string owner, Vector2 corner)
+        {
+            if (owner != "A" && owner != "B") return;
+            if (ownerBadge == null)
+                ownerBadge = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
+            var rect = new Rect(corner.x - 6f, corner.y - 12f, 14f, 14f);
+            var previous = GUI.color;
+            GUI.color = new Color(0.12f, 0.08f, 0.22f, 0.85f * previous.a); // 진한 바탕 사각
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previous;
+            ownerBadge.normal.textColor = owner == "A" ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.65f, 0.3f);
+            GUI.Label(rect, owner, ownerBadge);
         }
 
         // 고른 칸 둘레에 금색 테두리 (2px, 칸 안쪽으로 조금 들여서).
