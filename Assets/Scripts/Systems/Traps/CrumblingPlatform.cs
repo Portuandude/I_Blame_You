@@ -99,7 +99,7 @@ namespace IBlameYou.Systems
         private IEnumerator Crumble(float shakeTime, bool jelly)
         {
             crumbling = true;
-            if (PlayerNear()) GameAudio.PlaySfx("Crumble", 0.7f);
+            if (PlayerNear()) GameAudio.PlaySfx(jelly ? "JellySquish" : "Crumble", 0.7f); // 젤리 방석이면 말랑한 "뭉-뿅"
             float elapsed = 0f;
             while (elapsed < shakeTime)
             {
