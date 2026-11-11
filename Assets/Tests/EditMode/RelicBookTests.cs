@@ -89,6 +89,15 @@ namespace IBlameYou.Tests
             Assert.AreEqual(16, (int)RelicId.Clover);
             Assert.AreEqual(17, (int)RelicId.CheerRibbon);
             Assert.AreEqual(18, (int)RelicId.StarShard);
+            Assert.AreEqual(19, (int)RelicId.HeroMedal);
+        }
+
+        [Test]
+        public void HeroMedal_DescribesHeal()
+        {
+            Assert.AreEqual("정예 구역을 돌파하면 체력 15% 회복", RelicBook.Description(RelicId.HeroMedal));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.HeroMedal));
+            Assert.AreEqual("용사의 훈장", RelicBook.Name(RelicId.HeroMedal));
         }
 
         [Test]
