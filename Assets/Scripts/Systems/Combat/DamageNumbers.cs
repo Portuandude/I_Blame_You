@@ -27,6 +27,24 @@ namespace IBlameYou.Systems
                 critical && !physical ? Gold : OutlineColor);
         }
 
+        // 실제로 찬 체력을 머리 위에 초록 숫자 "+N"으로 (가득 차 있어서 0.5 미만이면 띄우지 않는다).
+        // feet: 플레이어 발밑. 같은 프레임에 여러 번 찼으면(중간보스 + 용사의 훈장, 처치 + 레벨업 등) 조금씩 위로 쌓아 겹치지 않게 한다.
+        // label을 주면 "체력 +N"처럼 앞에 붙이고 조금 작게 쓴다.
+        public static void ShowHeal(Vector3 feet, float gained, string label = "")
+        {
+            if (gained < 0.5f) return;
+            healStack = healFrame == Time.frameCount ? healStack + 1 : 0;
+            healFrame = Time.frameCount;
+            ShowText(feet + Vector3.up * (HealHeight + HealStep * healStack), $"{label}+{gained:0}", HealColor,
+                string.IsNullOrEmpty(label) ? 1f : 0.8f);
+        }
+
+        public const float HealHeight = 2.3f; // 훈장 메달(1.5 → 2.05)보다 위
+        private const float HealStep = 0.45f;
+        private static readonly Color HealColor = new Color(0.45f, 0.95f, 0.5f);
+        private static int healFrame = -1;
+        private static int healStack;
+
         public static void ShowText(Vector3 position, string text, Color color, float scale = 1f)
         {
             ShowText(position, text, color, scale, OutlineColor);
