@@ -67,6 +67,9 @@ namespace IBlameYou.Systems
             collected = true;
             var progression = player.GetComponent<IBlameYou.Player.PlayerProgression>();
             float healRatio = progression != null ? progression.RewardHealRatio : HealRatio; // 생명 5 특성이면 45%
+            var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
+            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HoneyJar))
+                healRatio += IBlameYou.Player.RelicBook.HoneyJarHealBonus; // 꿀단지: +15%p
             if (health != null)
             {
                 float before = health.Current;
