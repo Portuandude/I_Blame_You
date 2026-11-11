@@ -9,9 +9,10 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 무너지는 발판 소리 — 무너질 때 나무 삐걱·툭 효과음, 다시 생길 때 작은 톡 (`Tools/AudioGen` crumble/crumble_back, `CrumblingPlatform.Crumble`, 플레이어가 가까울 때만 — `FlameJetTrap.PlayerNear` 참고)
-- TODO: 회복 숫자 통일 — 회복 구슬(`ArenaReward`)·흡혈 송곳니 회복도 실제 회복량 초록 숫자 "+N" (가득 차면 생략). `ChunkStreamer.ShowHealNumber`를 `DamageNumbers.ShowHeal(Vector3, float)` 같은 공용 함수로 옮겨 같이 쓴다
-- TODO: 체력 바 회복 반짝 — HUD 체력 캡슐 바가 차오를 때 늘어난 부분이 연두색으로 0.4초 빛났다 사라지게 (`UI/CapsuleBar`의 trail 반대 방향, 피해 trail은 그대로)
+- TODO: 마나 바 채움 반짝 — HUD 마나 캡슐 바도 크게 차오를 때(5% 넘게) 늘어난 부분이 하늘색으로 0.4초 빛나기 (`BarTrail.GainAlpha` 재사용, 무한 마나일 때는 끔)
+- TODO: 보스 체력 바 회복 반짝 — 슬라임 킹이 체력을 회복할 때(`SlimeKingController` Heal) 보스 바의 늘어난 부분이 연두색으로 빛나 "회복했다"가 보이게 (`SkillHUD.Boss`의 `bossTrail`)
+- TODO: 흡혈 송곳니 연출 — 처치 때 적 자리에서 작은 빨간 하트가 튀었다 플레이어로 빨려 와 닿을 때 회복 (`Effects/StarShardFx`처럼, 하트 그림 `Tools/ArtGen`, 회복 숫자는 닿을 때)
+- TODO: 유물 꿀단지 — 전투 구역 보상 구슬 체력 회복 +15%p (`ArenaReward` 회복 비율, `RelicId` 맨 뒤 21번, 아이콘·설명·테스트)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 

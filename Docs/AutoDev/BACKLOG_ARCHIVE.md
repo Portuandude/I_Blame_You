@@ -2,6 +2,9 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-ex838b): 무너지는 발판 소리 — 무너질 때 나무 삐걱·툭(`Crumble.wav`), 다시 생길 때 톡(`Crumble_Back.wav`), 카메라 12유닛 안일 때만
+- DONE (claude/project-thread-ex838b): 회복 숫자 통일 — `DamageNumbers.ShowHeal`(실제 회복량, 가득 차면 생략, 같은 프레임 위로 쌓기)을 중간보스·훈장·보상 구슬·흡혈 송곳니·도토리 주머니·생명 10 특성이 같이 씀
+- DONE (claude/project-thread-ex838b): 체력 바 회복 반짝 — HUD 체력 바의 늘어난 부분이 연두색으로 0.4초 빛남 (`BarTrail.GainFrom/GainAlpha`)
 - DONE (claude/project-thread-k82lyk): 무너지는 발판 손맛 — 이미 있는 `Traps/CrumblingPlatform`(밟으면 0.55초 흔들리고 3초 뒤 다시 생김)에 연출 더하기: 무너질 때 나무 먼지 펑(`VfxPlayer.Dust`), 다시 생기기 0.6초 전부터 흐린 윤곽이 깜빡여 예고, 다시 생길 때 작게 반짝 (발판 퍼즐 변형은 이미 무너지는 발판·스위치 발판이 있어 연출부터)
 - DONE (claude/project-thread-k82lyk): 도토리 주머니 연출 — 레벨업 회복 때 머리 위로 작은 도토리가 톡 튀었다 사라지게 (`MedalGlintFx`를 아이콘 이름을 받게 일반화해 `Relics/AcornPouch` 재사용, `PlayerRelics.OnLeveledUp`)
 - DONE (claude/project-thread-k82lyk): 회복 숫자 — 중간보스 50%·용사의 훈장 15% 회복 때 머리 위에 실제 회복량 초록 숫자 "+38"(가득 찬 상태면 띄우지 않기, `HealthSystem.Heal` 전후 차이, `DamageNumbers.ShowText`, `ChunkStreamer.HealPlayer`)
