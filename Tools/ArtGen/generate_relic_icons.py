@@ -314,6 +314,17 @@ def jelly_cushion(d):
     d.polygon(star_points(20.5, 4.5, 2.0, 0.9), fill=CREAM)
 
 
+def star_candy(d):
+    # 별사탕: 통통한 하늘색 별 사탕 한 알 + 뒤에 작은 분홍·노랑 별사탕 두 알, 마나 반짝 (레벨업마다 마나)
+    for cx, cy, r_out, r_in, color in [(6.5, 17.0, 4.4, 2.4, "ff9fd0"), (18.0, 17.5, 4.0, 2.2, "ffe066"),
+                                        (12.0, 10.5, 7.6, 4.0, "6fd3ff")]:  # 뒤 분홍·노랑, 앞 큰 하늘색
+        d.polygon(star_points(cx, cy, r_out + 1.4, r_in + 1.1), fill=OUTLINE)
+        d.polygon(star_points(cx, cy, r_out, r_in), fill=hexrgba(color))
+    d.polygon(star_points(11.2, 9.6, 3.4, 1.8), fill=hexrgba("b8ecff"))  # 윗면 밝은 부분
+    shine(d, 10.0, 8.2, 1.0)
+    d.polygon(star_points(20.5, 4.5, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -338,6 +349,7 @@ ICONS = {
     "AcornPouch": acorn_pouch,
     "HoneyJar": honey_jar,
     "JellyCushion": jelly_cushion,
+    "StarCandy": star_candy,
 }
 
 
