@@ -22,8 +22,12 @@ namespace IBlameYou.Player
 
         private bool listeningSpells;
 
+        private bool listeningLevels;
+
         private void OnDestroy()
         {
+            var progression = listeningLevels ? GetComponent<PlayerProgression>() : null;
+            if (progression != null) progression.LeveledUp -= OnLeveledUp;
             if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
             var shieldSkill = listeningShield ? GetComponent<ElementShieldSkill>() : null;
             if (shieldSkill != null) shieldSkill.Activated -= OnShieldActivated;
@@ -53,6 +57,15 @@ namespace IBlameYou.Player
             var color = new Color(0.37f, 0.82f, 1f);
             VfxPlayer.ManaRing(transform, RingOffset, color); // A색 고리
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
+        }
+
+        // 도토리 주머니: 레벨이 오를 때마다 체력 회복 (한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 회복하지 않는다).
+        private void OnLeveledUp(int level)
+        {
+            var health = GetComponent<HealthSystem>();
+            if (health == null || health.IsDead) return;
+            health.Heal(RelicBook.AcornPouchHeal);
+            DamageNumbers.ShowText(transform.position + Vector3.up * 2f, $"체력 +{RelicBook.AcornPouchHeal:0}", new Color(0.55f, 0.9f, 0.45f), 0.8f);
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
@@ -182,6 +195,14 @@ namespace IBlameYou.Player
                     {
                         shieldSkill.Activated += OnShieldActivated;
                         listeningShield = true;
+                    }
+                    break;
+                case RelicId.AcornPouch:
+                    var progression = GetComponent<PlayerProgression>();
+                    if (progression != null && !listeningLevels)
+                    {
+                        progression.LeveledUp += OnLeveledUp;
+                        listeningLevels = true;
                     }
                     break;
                 case RelicId.CheerRibbon:
