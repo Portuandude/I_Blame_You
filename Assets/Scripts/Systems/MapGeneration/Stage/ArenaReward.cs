@@ -67,7 +67,12 @@ namespace IBlameYou.Systems
             collected = true;
             var progression = player.GetComponent<IBlameYou.Player.PlayerProgression>();
             float healRatio = progression != null ? progression.RewardHealRatio : HealRatio; // 생명 5 특성이면 45%
-            if (health != null) health.Heal(health.Max * healRatio);
+            if (health != null)
+            {
+                float before = health.Current;
+                health.Heal(health.Max * healRatio);
+                DamageNumbers.ShowHeal(player.transform.position, health.Current - before);
+            }
             var mana = player.GetComponent<ManaSystem>();
             if (mana != null) mana.Restore(mana.Max * ManaRatio);
 

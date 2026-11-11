@@ -422,30 +422,12 @@ namespace IBlameYou.Systems
             if (health == null || health.IsDead) return false;
             float before = health.Current;
             health.Heal(health.Max * ratio);
-            ShowHealNumber(health.Current - before);
+            DamageNumbers.ShowHeal(player.position, health.Current - before);
             EffectLibrary.PlayHit(Element.Water, player.position + Vector3.up, 1.5f);
             GameAudio.PlaySfx("Pickup", 0.8f);
             if (notice != null) StageEvents.PostNotice(notice);
             return true;
         }
-
-        // 실제로 찬 체력을 머리 위에 초록 숫자로 (가득 차 있어서 안 찼으면 띄우지 않는다).
-        // 같은 프레임에 두 번(중간보스 + 용사의 훈장) 찼으면 두 번째 숫자는 조금 위에 띄워 겹치지 않게 한다.
-        private int healTextFrame = -1;
-        private int healTextStack;
-
-        private void ShowHealNumber(float gained)
-        {
-            if (gained < 0.5f || player == null) return;
-            healTextStack = healTextFrame == Time.frameCount ? healTextStack + 1 : 0;
-            healTextFrame = Time.frameCount;
-            DamageNumbers.ShowText(player.position + Vector3.up * (HealTextHeight + HealTextStep * healTextStack),
-                $"+{gained:0}", HealTextColor, 1f);
-        }
-
-        private const float HealTextHeight = 2.3f; // 훈장 메달(1.5 → 2.05)보다 위
-        private const float HealTextStep = 0.45f;
-        private static readonly Color HealTextColor = new Color(0.45f, 0.95f, 0.5f);
 
         private static readonly Vector3 MedalGlintOffset = new Vector3(0f, 1.5f, 0f); // 용사의 훈장 메달 시작 높이 (발밑 기준, 머리 위)
 
