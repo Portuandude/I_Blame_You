@@ -27,7 +27,8 @@ namespace IBlameYou.Player
         Clover,      // 네잎 클로버: 다음 유물 상자부터 후보가 OfferSize → CloverOfferSize개
         CheerRibbon, // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana (쌍둥이 반지의 B 쪽 짝)
         StarShard,   // 별똥 조각: 적을 처치하면 StarShardChance 확률로 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
-        HeroMedal    // 용사의 훈장: 정예 구역(전투 구역)을 돌파하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
+        HeroMedal,   // 용사의 훈장: 정예 구역(전투 구역)을 돌파하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
+        AcornPouch   // 도토리 주머니: 레벨이 오를 때마다 체력 +AcornPouchHeal (PlayerProgression.LeveledUp)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -58,13 +59,15 @@ namespace IBlameYou.Player
         public const float StarShardChance = 0.15f;
         public const float StarShardMana = 6f;
         public const float HeroMedalHealRatio = 0.15f;
+        public const float AcornPouchHeal = 10f;
 
         public static readonly RelicId[] All =
         {
             RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
-            RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal
+            RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
+            RelicId.AcornPouch
         };
 
         public static string Name(RelicId id)
@@ -90,6 +93,7 @@ namespace IBlameYou.Player
                 case RelicId.CheerRibbon: return "응원 리본";
                 case RelicId.StarShard: return "별똥 조각";
                 case RelicId.HeroMedal: return "용사의 훈장";
+                case RelicId.AcornPouch: return "도토리 주머니";
                 default: return "집중 구슬";
             }
         }
@@ -117,6 +121,7 @@ namespace IBlameYou.Player
                 case RelicId.CheerRibbon: return $"B의 공격 마법이 발동하면 마나 +{CheerRibbonMana:0}";
                 case RelicId.StarShard: return $"적 처치 시 {StarShardChance * 100f:0}% 확률로 마나 +{StarShardMana:0}";
                 case RelicId.HeroMedal: return $"정예 구역을 돌파하면 체력 {HeroMedalHealRatio * 100f:0}% 회복";
+                case RelicId.AcornPouch: return $"레벨이 오를 때마다 체력 +{AcornPouchHeal:0}";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }

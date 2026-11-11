@@ -9,9 +9,9 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 용사의 훈장 연출 — 회복할 때 플레이어 머리 위로 작은 금 메달이 반짝 떴다 사라지게 (기존 Sparkle 그림 재사용, `ChunkStreamer.OnArenaCleared`, `VfxPlayer`)
-- TODO: 회복 알림 합치기 — 중간보스 처치 50% 회복과 용사의 훈장 15% 회복이 같은 순간이면 알림이 덮어써진다. "중간보스 처치! 체력 +50% · 용사의 훈장 +15%"처럼 한 줄로 (`ChunkStreamer.OnArenaCleared`/`HealPlayer`)
-- TODO: 유물 도토리 주머니 — 레벨이 오를 때마다 체력 +10 회복 (공용, 레벨업 이벤트에 붙이기, 아이콘 `Tools/ArtGen/generate_relic_icons.py`, `RelicId` 맨 뒤 20번, 테스트)
+- TODO: 무너지는 발판 소리 — 무너질 때 나무 삐걱·툭 효과음, 다시 생길 때 작은 톡 (`Tools/AudioGen` crumble/crumble_back, `CrumblingPlatform.Crumble`, 플레이어가 가까울 때만 — `FlameJetTrap.PlayerNear` 참고)
+- TODO: 회복 숫자 통일 — 회복 구슬(`ArenaReward`)·흡혈 송곳니 회복도 실제 회복량 초록 숫자 "+N" (가득 차면 생략). `ChunkStreamer.ShowHealNumber`를 `DamageNumbers.ShowHeal(Vector3, float)` 같은 공용 함수로 옮겨 같이 쓴다
+- TODO: 체력 바 회복 반짝 — HUD 체력 캡슐 바가 차오를 때 늘어난 부분이 연두색으로 0.4초 빛났다 사라지게 (`UI/CapsuleBar`의 trail 반대 방향, 피해 trail은 그대로)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 

@@ -312,11 +312,14 @@ namespace IBlameYou.Systems
                         ArenaZone.Create(root, ox + f.X, ox + f.X + f.Width, oy + f.Y, arenaSpawns, clearedArenas.Contains(index), spawnEnemy,
                             () =>
                             {
-                                OnArenaCleared(arenaChunk, boss);
+                                bool medalHealed = OnArenaCleared(arenaChunk, boss, midBoss && arenaRoot != null); // 중간보스 알림을 띄울 때만 훈장 알림을 합친다
                                 if (boss || arenaRoot == null) return;
                                 if (midBoss)
                                 {
-                                    HealPlayer(MidBossHealRatio, "중간보스 처치! 체력 50% 회복, 유물 상자가 나타났다");
+                                    // 용사의 훈장 회복과 같은 순간이면 알림 한 줄로 (따로 띄우면 뒤 알림이 앞을 덮는다)
+                                    HealPlayer(MidBossHealRatio, medalHealed
+                                        ? $"중간보스 처치! 체력 +50% · 훈장 +{MedalPercent}%, 유물 상자 등장"
+                                        : "중간보스 처치! 체력 50% 회복, 유물 상자가 나타났다");
                                     SpawnRelicChest(arenaRoot, arenaChunk, rewardPosition, true);
                                     return;
                                 }
@@ -386,19 +389,24 @@ namespace IBlameYou.Systems
             };
         }
 
-        private void OnArenaCleared(int chunkIndex, bool boss)
+        // 용사의 훈장으로 회복했으면 true. 보스·중간보스 구역은 그쪽 알림에 훈장 회복을 합쳐 한 줄로 띄운다.
+        private bool OnArenaCleared(int chunkIndex, bool boss, bool midBoss)
         {
             clearedArenas.Add(chunkIndex);
             IBlameYou.Core.RunStats.AddArenaCleared();
             var relics = player != null ? IBlameYou.Player.PlayerRelics.For(player.gameObject) : null;
-            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal)) // 용사의 훈장: 돌파 보상 회복
-                HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, $"용사의 훈장: 체력 +{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}%");
-            if (!boss) return;
+            bool medalHealed = relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 돌파 보상 회복 + 머리 위 금 메달
+                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, boss || midBoss ? null : $"용사의 훈장: 체력 +{MedalPercent}%");
+            if (medalHealed) VfxPlayer.MedalGlint(player, MedalGlintOffset);
+            if (!boss) return medalHealed;
 
             bossCleared = true;
             foreach (var exit in exits.Values) if (exit != null) exit.SetOpen(true);
-            StageEvents.PostNotice("출구가 열렸다!");
+            StageEvents.PostNotice(medalHealed ? $"출구가 열렸다! · 용사의 훈장 +{MedalPercent}%" : "출구가 열렸다!");
+            return medalHealed;
         }
+
+        private static string MedalPercent => $"{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}";
 
         // 일반 전투 구역 보상 (보스 구역은 출구가 보상이라 없음). 이미 주웠으면 만들지 않는다.
         private void SpawnReward(Transform root, int chunkIndex, Vector2 position, bool dropped)
@@ -407,16 +415,39 @@ namespace IBlameYou.Systems
             ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
         }
 
-        // 중간보스 처치 즉시 회복 (최대 체력 비율). 쓰러진 뒤면 아무 일도 하지 않는다.
-        private void HealPlayer(float ratio, string notice)
+        // 즉시 회복 (최대 체력 비율, 중간보스 처치·용사의 훈장). 쓰러진 뒤면 아무 일도 하지 않고 false. notice가 null이면 알림 없이.
+        private bool HealPlayer(float ratio, string notice)
         {
             var health = player != null ? player.GetComponent<HealthSystem>() : null;
-            if (health == null || health.IsDead) return;
+            if (health == null || health.IsDead) return false;
+            float before = health.Current;
             health.Heal(health.Max * ratio);
+            ShowHealNumber(health.Current - before);
             EffectLibrary.PlayHit(Element.Water, player.position + Vector3.up, 1.5f);
             GameAudio.PlaySfx("Pickup", 0.8f);
-            StageEvents.PostNotice(notice);
+            if (notice != null) StageEvents.PostNotice(notice);
+            return true;
         }
+
+        // 실제로 찬 체력을 머리 위에 초록 숫자로 (가득 차 있어서 안 찼으면 띄우지 않는다).
+        // 같은 프레임에 두 번(중간보스 + 용사의 훈장) 찼으면 두 번째 숫자는 조금 위에 띄워 겹치지 않게 한다.
+        private int healTextFrame = -1;
+        private int healTextStack;
+
+        private void ShowHealNumber(float gained)
+        {
+            if (gained < 0.5f || player == null) return;
+            healTextStack = healTextFrame == Time.frameCount ? healTextStack + 1 : 0;
+            healTextFrame = Time.frameCount;
+            DamageNumbers.ShowText(player.position + Vector3.up * (HealTextHeight + HealTextStep * healTextStack),
+                $"+{gained:0}", HealTextColor, 1f);
+        }
+
+        private const float HealTextHeight = 2.3f; // 훈장 메달(1.5 → 2.05)보다 위
+        private const float HealTextStep = 0.45f;
+        private static readonly Color HealTextColor = new Color(0.45f, 0.95f, 0.5f);
+
+        private static readonly Vector3 MedalGlintOffset = new Vector3(0f, 1.5f, 0f); // 용사의 훈장 메달 시작 높이 (발밑 기준, 머리 위)
 
         // 정예 구역 유물 상자. 이미 유물을 골랐으면 만들지 않는다.
         private void SpawnRelicChest(Transform root, int chunkIndex, Vector2 position, bool dropped)
