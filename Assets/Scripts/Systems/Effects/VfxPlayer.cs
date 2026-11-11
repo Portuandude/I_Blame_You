@@ -116,6 +116,9 @@ namespace IBlameYou.Systems
         // 도토리 주머니 회복(레벨업): 머리 위로 작은 도토리 주머니가 톡 튀었다 사라진다 (훈장 메달과 같은 연출).
         public static void AcornGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "AcornPouch");
 
+        // 꿀단지 회복(보상 구슬): 머리 위로 작은 꿀단지가 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
+        public static void HoneyGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "HoneyJar");
+
         // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
         public static void AimGlint(Vector3 position)
         {
