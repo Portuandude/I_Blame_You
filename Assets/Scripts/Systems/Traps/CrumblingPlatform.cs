@@ -16,10 +16,15 @@ namespace IBlameYou.Systems
         private const float WarnAlpha = 0.5f;
         public const float Thickness = 0.35f;
         private const float SoundRange = 12f;    // 카메라가 이만큼 가까울 때만 소리 (FlameJetTrap과 같다)
+        // 젤리 방석: 흔들리는 대신 분홍빛으로 말랑하게 눌렸다 튀어 오른다
+        private static readonly Color JellyTint = new Color(1f, 0.62f, 0.82f);
+        private const float JellySquash = 0.22f;   // 세로로 눌리는 최대 비율
+        private const float JellyWobbles = 2.5f;   // 흔들림 시간 동안 눌렸다 펴지는 횟수
 
         private BoxCollider2D solid;
         private Transform visualRoot;
         private SpriteRenderer[] renderers;
+        private Color[] baseColors;
         private bool crumbling;
         private int width;
 
@@ -51,6 +56,8 @@ namespace IBlameYou.Systems
             }
 
             platform.renderers = platform.visualRoot.GetComponentsInChildren<SpriteRenderer>();
+            platform.baseColors = new Color[platform.renderers.Length];
+            for (int i = 0; i < platform.renderers.Length; i++) platform.baseColors[i] = platform.renderers[i].color;
             platform.width = width;
             return platform;
         }
@@ -61,7 +68,7 @@ namespace IBlameYou.Systems
 
             // 위에 올라섰을 때만 (아래에서 뚫고 올라오는 중이면 발이 윗면보다 아래에 있다).
             float top = solid.bounds.max.y;
-            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble(ShakeTimeFor(collision.collider)));
+            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble(ShakeTimeFor(collision.collider), HasJellyCushion(collision.collider)));
         }
 
         // 플레이어나 살아 있는 적(슬라임·고블린 등)이 올라서면 무너진다. 무너지면 위의 적도 떨어지고,
@@ -78,14 +85,18 @@ namespace IBlameYou.Systems
         // 젤리 방석을 가진 플레이어가 밟으면 더 오래 흔들린다 (적이 밟으면 늘 기본 시간).
         private static float ShakeTimeFor(Collider2D other)
         {
-            var player = TrapCommon.PlayerFrom(other);
-            if (player == null) return ShakeTime;
-            var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
-            return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion)
-                ? IBlameYou.Player.RelicBook.JellyCushionShakeTime : ShakeTime;
+            return HasJellyCushion(other) ? IBlameYou.Player.RelicBook.JellyCushionShakeTime : ShakeTime;
         }
 
-        private IEnumerator Crumble(float shakeTime)
+        private static bool HasJellyCushion(Collider2D other)
+        {
+            var player = TrapCommon.PlayerFrom(other);
+            if (player == null) return false;
+            var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
+            return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion);
+        }
+
+        private IEnumerator Crumble(float shakeTime, bool jelly)
         {
             crumbling = true;
             if (PlayerNear()) GameAudio.PlaySfx("Crumble", 0.7f);
@@ -93,11 +104,14 @@ namespace IBlameYou.Systems
             while (elapsed < shakeTime)
             {
                 elapsed += Time.deltaTime;
-                visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);
+                if (jelly) Jiggle(Mathf.Clamp01(elapsed / shakeTime));
+                else visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);
                 yield return null;
             }
 
             visualRoot.localPosition = Vector3.zero;
+            visualRoot.localScale = Vector3.one;
+            if (jelly) SetTint(0f);
             solid.enabled = false;
             SetAlpha(GoneAlpha);
             // 무너질 때 발판 칸마다 나무 먼지가 펑 (발판 윗면 기준)
@@ -126,6 +140,29 @@ namespace IBlameYou.Systems
         {
             var cam = Camera.main;
             return cam != null && Mathf.Abs(cam.transform.position.x - transform.position.x) < SoundRange;
+        }
+
+        // 젤리 방석으로 버티는 동안: 분홍빛이 차오르며 세로로 눌렸다 펴지고(가로는 반대로 늘어남),
+        // 끝무렵엔 위로 살짝 튀어 오른다. 윗면 높이가 거의 그대로 보이도록 눌린 만큼 아래로 내린다.
+        private void Jiggle(float t)
+        {
+            float wave = Mathf.Sin(t * JellyWobbles * 2f * Mathf.PI);
+            float squash = JellySquash * Mathf.Abs(wave) * (1f - 0.5f * t); // 점점 덜 눌림
+            float bounce = t > 0.8f ? Mathf.Sin((t - 0.8f) / 0.2f * Mathf.PI) * 0.08f : 0f;
+            visualRoot.localScale = new Vector3(1f + squash * 0.3f, 1f - squash, 1f);
+            visualRoot.localPosition = new Vector3(0f, -squash * Thickness * 0.5f + bounce, 0f);
+            SetTint(Mathf.Min(1f, t * 4f) * (0.7f + 0.3f * Mathf.Abs(wave)));
+        }
+
+        // amount 0이면 원래 나무색, 1이면 젤리 분홍. 알파는 건드리지 않는다.
+        private void SetTint(float amount)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                var color = Color.Lerp(baseColors[i], JellyTint, amount);
+                color.a = renderers[i].color.a;
+                renderers[i].color = color;
+            }
         }
 
         private void SetAlpha(float alpha)
