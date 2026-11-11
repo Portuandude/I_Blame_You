@@ -318,7 +318,7 @@ namespace IBlameYou.Systems
                                 {
                                     // 용사의 훈장 회복과 같은 순간이면 알림 한 줄로 (따로 띄우면 뒤 알림이 앞을 덮는다)
                                     HealPlayer(MidBossHealRatio, medalHealed
-                                        ? $"중간보스 처치! 체력 +50% · 용사의 훈장 +{MedalPercent}%, 유물 상자가 나타났다"
+                                        ? $"중간보스 처치! 체력 +50% · 훈장 +{MedalPercent}%, 유물 상자 등장"
                                         : "중간보스 처치! 체력 50% 회복, 유물 상자가 나타났다");
                                     SpawnRelicChest(arenaRoot, arenaChunk, rewardPosition, true);
                                     return;
