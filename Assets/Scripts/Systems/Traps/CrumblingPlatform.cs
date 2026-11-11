@@ -61,7 +61,7 @@ namespace IBlameYou.Systems
 
             // 위에 올라섰을 때만 (아래에서 뚫고 올라오는 중이면 발이 윗면보다 아래에 있다).
             float top = solid.bounds.max.y;
-            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble());
+            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble(ShakeTimeFor(collision.collider)));
         }
 
         // 플레이어나 살아 있는 적(슬라임·고블린 등)이 올라서면 무너진다. 무너지면 위의 적도 떨어지고,
@@ -75,12 +75,22 @@ namespace IBlameYou.Systems
             return health != null && !health.IsDead;
         }
 
-        private IEnumerator Crumble()
+        // 젤리 방석을 가진 플레이어가 밟으면 더 오래 흔들린다 (적이 밟으면 늘 기본 시간).
+        private static float ShakeTimeFor(Collider2D other)
+        {
+            var player = TrapCommon.PlayerFrom(other);
+            if (player == null) return ShakeTime;
+            var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
+            return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion)
+                ? IBlameYou.Player.RelicBook.JellyCushionShakeTime : ShakeTime;
+        }
+
+        private IEnumerator Crumble(float shakeTime)
         {
             crumbling = true;
             if (PlayerNear()) GameAudio.PlaySfx("Crumble", 0.7f);
             float elapsed = 0f;
-            while (elapsed < ShakeTime)
+            while (elapsed < shakeTime)
             {
                 elapsed += Time.deltaTime;
                 visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);
