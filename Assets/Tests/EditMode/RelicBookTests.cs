@@ -93,6 +93,7 @@ namespace IBlameYou.Tests
             Assert.AreEqual(20, (int)RelicId.AcornPouch);
             Assert.AreEqual(21, (int)RelicId.HoneyJar);
             Assert.AreEqual(22, (int)RelicId.JellyCushion);
+            Assert.AreEqual(23, (int)RelicId.StarCandy);
         }
 
         [Test]
@@ -181,6 +182,15 @@ namespace IBlameYou.Tests
             almostAll.Remove(RelicId.HawkEye);
             Assert.AreEqual(2, RelicBook.Offer(3, 1, almostAll).Length);
             Assert.AreEqual(0, RelicBook.Offer(3, 1, null, -1).Length);
+        }
+
+        [Test]
+        public void StarCandy_DescribesManaOnLevelUp()
+        {
+            Assert.AreEqual("레벨이 오를 때마다 마나 +30", RelicBook.Description(RelicId.StarCandy));
+            Assert.AreEqual("B", RelicBook.Owner(RelicId.StarCandy));
+            Assert.AreEqual("별사탕", RelicBook.Name(RelicId.StarCandy));
+            Assert.Contains(RelicId.StarCandy, RelicBook.All);
         }
     }
 }
