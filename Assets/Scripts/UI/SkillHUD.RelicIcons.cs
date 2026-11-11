@@ -107,23 +107,67 @@ namespace IBlameYou.UI
             float x = rect.x + (rect.width - total) * 0.5f;
             GUI.Label(new Rect(x, rect.y, headerWidth + 2f, rect.height), header, style);
             x += headerWidth;
+            var mouse = Event.current.mousePosition; // 팝 행렬 안 좌표 (IMGUI가 GUI.matrix 역변환을 해 준다)
+            int hovered = -1;
+            float hoveredCenter = 0f;
             for (int i = 0; i < RelicCount; i++)
             {
                 var id = relics.Owned[i];
                 x += gap;
+                float itemStart = x;
                 bool hasIcon = RelicIcon(id) != null;
                 if (hasIcon)
                 {
-                    DrawRelicIcon(id, new Rect(x, rect.y + (rect.height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize));
+                    var iconRect = new Rect(x, rect.y + (rect.height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize);
+                    DrawRelicIcon(id, iconRect);
+                    if (IBlameYou.Systems.RelicCodex.Has(IBlameYou.Core.RunStats.NewRelicMask, (int)id)) DrawNewRelicDot(iconRect);
                     x += RelicListIconSize + (showNames ? 3f : 0f);
                 }
-                if (!showNames && hasIcon) continue;
+                if (!showNames && hasIcon)
+                {
+                    if (new Rect(itemStart, rect.y, x - itemStart, rect.height).Contains(mouse)) { hovered = i; hoveredCenter = (itemStart + x) * 0.5f; }
+                    continue;
+                }
 
                 var name = new GUIContent(RelicBook.Name(id));
                 float w = style.CalcSize(name).x;
                 GUI.Label(new Rect(x, rect.y, w + 2f, rect.height), name, style);
                 x += w;
+                if (new Rect(itemStart, rect.y, x - itemStart, rect.height).Contains(mouse)) { hovered = i; hoveredCenter = (itemStart + x) * 0.5f; }
             }
+            if (hovered >= 0) DrawEndRelicTip(relics.Owned[hovered], rect, hoveredCenter);
+        }
+
+        // 결과 창 유물 줄에 마우스를 올린 유물의 "이름 — 설명" 말풍선. 줄 바로 위, 가로는 유물 줄 칸 안으로 맞춘다.
+        private void DrawEndRelicTip(RelicId id, Rect row, float centerX)
+        {
+            var tip = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(8, 8, 3, 3) };
+            tip.normal.textColor = OutlinedLabel.Cream;
+            var content = new GUIContent(RelicLine(id));
+            float width = Mathf.Min(new GUIStyle(tip) { wordWrap = false }.CalcSize(content).x + 2f, row.width);
+            float height = tip.CalcHeight(content, width);
+            float left = Mathf.Clamp(centerX - width * 0.5f, row.x, row.xMax - width);
+            var box = new Rect(left, row.y - height - 2f, width, height);
+            var previous = GUI.color;
+            GUI.color = new Color(0.08f, 0.05f, 0.16f, 0.92f * previous.a); // 진한 바탕
+            GUI.DrawTexture(box, Texture2D.whiteTexture);
+            GUI.color = new Color(1f, 0.85f, 0.3f, 0.9f * previous.a); // 금색 윗줄
+            GUI.DrawTexture(new Rect(box.x, box.y, box.width, 1.5f), Texture2D.whiteTexture);
+            GUI.color = previous;
+            GUI.Label(box, content, tip);
+        }
+
+        // 이번 판에 처음 도감에 오른 유물: 아이콘 오른쪽 위에 작은 초록 점 (결과 창 "새 유물 N개 도감 등록!"과 같은 색).
+        private static void DrawNewRelicDot(Rect icon)
+        {
+            const float size = 7f;
+            var previous = GUI.color;
+            var dot = new Rect(icon.xMax - size + 2f, icon.y - 2f, size, size);
+            GUI.color = new Color(0.1f, 0.25f, 0.1f, previous.a); // 진한 테두리
+            GUI.DrawTexture(new Rect(dot.x - 1f, dot.y - 1f, size + 2f, size + 2f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.49f, 1f, 0.48f, previous.a); // #7dff7a
+            GUI.DrawTexture(dot, Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         // 레벨 막대 아래: "유물" + [아이콘 이름] 줄. 화면보다 길어지면 이름은 빼고 아이콘만 늘어놓는다.

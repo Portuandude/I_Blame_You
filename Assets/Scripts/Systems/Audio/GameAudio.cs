@@ -57,7 +57,11 @@ namespace IBlameYou.Systems
 
         // 효과음 한 번. pitchJitter만큼 음높이를 무작위로 흔들어 반복해도 덜 단조롭게 한다.
         public static void PlaySfx(string name, float volume = 1f, float pitchJitter = 0.06f) =>
-            Instance.PlayOneShot(name, volume, pitchJitter);
+            Instance.PlayOneShot(name, volume, pitchJitter, 0f);
+
+        // delay초 뒤에 울리는 효과음 (오디오 시계 기준이라 일시정지·timeScale과 상관없다). 앞 소리에 이어 붙일 때.
+        public static void PlaySfxDelayed(string name, float delay, float volume = 1f, float pitchJitter = 0f) =>
+            Instance.PlayOneShot(name, volume, pitchJitter, Mathf.Max(0f, delay));
 
         private void Awake()
         {
@@ -87,7 +91,7 @@ namespace IBlameYou.Systems
             return clip;
         }
 
-        private void PlayOneShot(string name, float volume, float pitchJitter)
+        private void PlayOneShot(string name, float volume, float pitchJitter, float delay)
         {
             var clip = Load($"Audio/SFX/{name}");
             if (clip == null) return;
@@ -101,7 +105,8 @@ namespace IBlameYou.Systems
             source.clip = clip;
             source.volume = SfxVolume * volume;
             source.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
-            source.Play();
+            if (delay > 0f) source.PlayDelayed(delay);
+            else source.Play();
         }
 
         private void SwitchMusic(string name)

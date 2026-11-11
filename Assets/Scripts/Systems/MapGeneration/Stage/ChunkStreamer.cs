@@ -390,6 +390,9 @@ namespace IBlameYou.Systems
         {
             clearedArenas.Add(chunkIndex);
             IBlameYou.Core.RunStats.AddArenaCleared();
+            var relics = player != null ? IBlameYou.Player.PlayerRelics.For(player.gameObject) : null;
+            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal)) // 용사의 훈장: 돌파 보상 회복
+                HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, $"용사의 훈장: 체력 +{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}%");
             if (!boss) return;
 
             bossCleared = true;
