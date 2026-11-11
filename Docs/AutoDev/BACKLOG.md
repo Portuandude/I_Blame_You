@@ -9,9 +9,9 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 꿀단지 연출 — 꿀단지가 있을 때 보상 구슬을 주우면 머리 위로 작은 꿀단지가 톡 떠올랐다 사라지게 (`VfxPlayer.AcornGlint`처럼 `MedalGlintFx.Create(..., "HoneyJar")`), 알림에 "· 꿀단지 +15%" 붙이기
-- TODO: 흡혈 하트 소리 — 붉은 하트가 닿을 때 작고 말랑한 "뽁" (`Tools/AudioGen` vampire_heart, StarShard처럼 작게, `PlayerRelics.OnVampireHeartArrived`)
-- TODO: 무너지는 발판 위 적 — 적(슬라임·고블린)이 무너지는 발판에 올라서도 무너지게 할지 확인하고, 무너지면 적도 떨어지게 (`CrumblingPlatform.OnCollisionStay2D`가 지금은 플레이어만 봄). 낙사 판정이 적에게 문제없는지 확인
+- TODO: 젤리 방석 연출 — 젤리 방석으로 버티는 동안 발판이 흔들리는 대신 분홍빛으로 말랑하게 눌렸다 튀어 오르게 (`CrumblingPlatform.Crumble`의 흔들림 구간, 플레이어가 젤리 방석을 가졌을 때만)
+- TODO: 꿀단지 보상 구슬 — 꿀단지가 있으면 전투 구역 보상 구슬에 금빛 테두리 반짝을 둘러 "더 많이 찬다"가 보이게 (`ArenaReward` 비주얼, 둘 중 한 명이라도 가졌으면)
+- TODO: 도감 창 23칸 확인 — 유물 23종이 된 도감 창(`StartMenu` 267줄 근처)이 좁은 화면에서 넘치지 않는지 칸 배치를 확인하고, 넘치면 줄 수를 늘리거나 칸을 줄인다
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 

@@ -92,6 +92,16 @@ namespace IBlameYou.Tests
             Assert.AreEqual(19, (int)RelicId.HeroMedal);
             Assert.AreEqual(20, (int)RelicId.AcornPouch);
             Assert.AreEqual(21, (int)RelicId.HoneyJar);
+            Assert.AreEqual(22, (int)RelicId.JellyCushion);
+        }
+
+        [Test]
+        public void JellyCushion_DescribesLongerShake()
+        {
+            Assert.AreEqual("무너지는 발판이 0.9초 버틴다", RelicBook.Description(RelicId.JellyCushion));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.JellyCushion));
+            Assert.AreEqual("젤리 방석", RelicBook.Name(RelicId.JellyCushion));
+            Assert.Contains(RelicId.JellyCushion, RelicBook.All);
         }
 
         [Test]

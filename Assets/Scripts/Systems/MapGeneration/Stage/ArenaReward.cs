@@ -9,6 +9,7 @@ namespace IBlameYou.Systems
         public const float HealRatio = 0.3f; // 최대 체력의 30%
         public const float ManaRatio = 0.5f; // 최대 마나의 50%
         private const float FloatHeight = 0.9f;
+        private static readonly Vector3 HoneyGlintOffset = new Vector3(0f, 1.5f, 0f); // 꿀단지 시작 높이 (머리 위, 훈장·도토리와 같게)
         private const float BobAmplitude = 0.15f;
         private const float BobSpeed = 3f;
 
@@ -68,8 +69,8 @@ namespace IBlameYou.Systems
             var progression = player.GetComponent<IBlameYou.Player.PlayerProgression>();
             float healRatio = progression != null ? progression.RewardHealRatio : HealRatio; // 생명 5 특성이면 45%
             var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
-            if (relics != null && relics.Has(IBlameYou.Player.RelicId.HoneyJar))
-                healRatio += IBlameYou.Player.RelicBook.HoneyJarHealBonus; // 꿀단지: +15%p
+            bool honey = relics != null && relics.Has(IBlameYou.Player.RelicId.HoneyJar);
+            if (honey) healRatio += IBlameYou.Player.RelicBook.HoneyJarHealBonus; // 꿀단지: +15%p
             if (health != null)
             {
                 float before = health.Current;
@@ -84,7 +85,9 @@ namespace IBlameYou.Systems
             if (pop != null) EffectLibrary.PlayOneShot(orbCenter, pop, 18f, Color.clear, 0f, false, 1.1f, sortingOrder: 7); // 하트·별이 톡톡
             else EffectLibrary.PlayHit(Element.Water, orbCenter, 1.2f);
             GameAudio.PlaySfx("Pickup", 0.7f);
-            StageEvents.PostNotice($"보상: 체력 {healRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복");
+            if (honey) VfxPlayer.HoneyGlint(player.transform, HoneyGlintOffset); // 머리 위로 작은 꿀단지가 톡
+            string honeyNote = honey ? $" · 꿀단지 +{IBlameYou.Player.RelicBook.HoneyJarHealBonus * 100f:0}%" : "";
+            StageEvents.PostNotice($"보상: 체력 {healRatio * 100f:0}% · 마나 {ManaRatio * 100f:0}% 회복{honeyNote}");
             onCollected?.Invoke();
             Destroy(gameObject);
         }

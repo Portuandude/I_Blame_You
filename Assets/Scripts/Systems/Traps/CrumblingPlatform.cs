@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 밟으면 잠깐 흔들리다가 무너지고, 몇 초 뒤 다시 생기는 발판 (아래에서 뚫고 올라갈 수 있다).
+    // 플레이어나 적이 밟으면 잠깐 흔들리다가 무너지고, 몇 초 뒤 다시 생기는 발판 (아래에서 뚫고 올라갈 수 있다).
     // 떨어졌을 때 돌아갈 "안전한 땅"으로는 치지 않는다 (FallRecovery가 UnsafeGround를 본다).
     public class CrumblingPlatform : MonoBehaviour
     {
@@ -57,19 +57,40 @@ namespace IBlameYou.Systems
 
         private void OnCollisionStay2D(Collision2D collision)
         {
-            if (crumbling || TrapCommon.PlayerFrom(collision.collider) == null) return;
+            if (crumbling || !Crumbles(collision.collider)) return;
 
             // 위에 올라섰을 때만 (아래에서 뚫고 올라오는 중이면 발이 윗면보다 아래에 있다).
             float top = solid.bounds.max.y;
-            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble());
+            if (collision.collider.bounds.min.y >= top - 0.12f) StartCoroutine(Crumble(ShakeTimeFor(collision.collider)));
         }
 
-        private IEnumerator Crumble()
+        // 플레이어나 살아 있는 적(슬라임·고블린 등)이 올라서면 무너진다. 무너지면 위의 적도 떨어지고,
+        // 구덩이 아래 낙사선(ChunkStreamer.KillLine)에 닿은 적은 처치로 사라진다 (다시 생기지 않는다).
+        private static bool Crumbles(Collider2D other)
+        {
+            if (TrapCommon.PlayerFrom(other) != null) return true;
+            var enemy = other != null ? other.GetComponentInParent<IBlameYou.Enemies.EnemyController>() : null;
+            if (enemy == null) return false;
+            var health = enemy.GetComponent<HealthSystem>();
+            return health != null && !health.IsDead;
+        }
+
+        // 젤리 방석을 가진 플레이어가 밟으면 더 오래 흔들린다 (적이 밟으면 늘 기본 시간).
+        private static float ShakeTimeFor(Collider2D other)
+        {
+            var player = TrapCommon.PlayerFrom(other);
+            if (player == null) return ShakeTime;
+            var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
+            return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion)
+                ? IBlameYou.Player.RelicBook.JellyCushionShakeTime : ShakeTime;
+        }
+
+        private IEnumerator Crumble(float shakeTime)
         {
             crumbling = true;
             if (PlayerNear()) GameAudio.PlaySfx("Crumble", 0.7f);
             float elapsed = 0f;
-            while (elapsed < ShakeTime)
+            while (elapsed < shakeTime)
             {
                 elapsed += Time.deltaTime;
                 visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);

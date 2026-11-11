@@ -504,6 +504,22 @@ namespace IBlameYou.Systems
             exits.Remove(index);
         }
 
+        // 떨어진 적이 사라질 때: 화면 아래 가장자리(낙사선보다 위)에서 작은 먼지 펑 + 작은 쓰러짐 소리.
+        // 화면 옆으로 벗어난 곳이면 아무것도 하지 않는다 (경험치는 주지 않는다).
+        private static void FallPoof(float x, float killLine)
+        {
+            var cam = Camera.main;
+            if (cam == null || !cam.orthographic) return;
+            float halfWidth = cam.orthographicSize * cam.aspect;
+            if (Mathf.Abs(x - cam.transform.position.x) > halfWidth) return;
+            float y = Mathf.Max(killLine + 0.5f, cam.transform.position.y - cam.orthographicSize + 0.4f);
+            VfxPlayer.Dust(new Vector3(x, y, 0f), 0.8f);
+            if (fallPoofFrame != Time.frameCount) GameAudio.PlaySfx("EnemyDie", 0.35f); // 같은 프레임 여러 마리면 소리는 한 번 (리뷰 LOW)
+            fallPoofFrame = Time.frameCount;
+        }
+
+        private static int fallPoofFrame = -1;
+
         // 만들어 둔 범위 밖으로 벗어난 적은 치운다 (다시 다가가면 원래 자리에 다시 나온다).
         // 낭떠러지로 떨어진 적은 쓰러진 것으로 치고 다시 만들지 않는다.
         private void SweepEnemies()
@@ -535,6 +551,7 @@ namespace IBlameYou.Systems
                 if (position.y < killLine)
                 {
                     killed.Add(pair.Key);
+                    FallPoof(position.x, killLine);
                     Destroy(health.gameObject);
                     (removed ?? (removed = new List<int>())).Add(pair.Key);
                 }
@@ -555,6 +572,7 @@ namespace IBlameYou.Systems
                 var position = health.transform.position;
                 if (position.y < killLine || position.x < minX || position.x > maxX)
                 {
+                    if (position.y < killLine) FallPoof(position.x, killLine);
                     Destroy(health.gameObject);
                     extras.RemoveAt(i);
                 }
