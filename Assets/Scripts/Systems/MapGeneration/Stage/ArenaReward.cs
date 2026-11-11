@@ -17,6 +17,13 @@ namespace IBlameYou.Systems
         private const float HoneyRimSize = 1.05f;      // 구슬(약 0.7유닛)보다 조금 크게
         private const float HoneyCheckInterval = 0.5f; // 유물을 다시 확인하는 간격
         private const float HoneySparkleInterval = 1.1f;
+        // 자석: 살아 있는 플레이어가 구슬 가운데에서 이만큼 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려온다
+        public const float MagnetRadius = 1.5f;
+        private const float MagnetCheckInterval = 0.1f;
+        private const float MagnetStartSpeed = 2f;
+        private const float MagnetAcceleration = 14f;
+        private const float MagnetMaxSpeed = 9f;
+        private static readonly Collider2D[] MagnetHits = new Collider2D[16];
 
         private System.Action onCollected;
         private Transform visual;
@@ -25,6 +32,9 @@ namespace IBlameYou.Systems
         private SpriteRenderer honeyRim;
         private float honeyCheckTimer;
         private float honeySparkleTimer;
+        private Transform magnetTarget;
+        private float magnetSpeed;
+        private float magnetCheckTimer;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
         public static ArenaReward Create(Transform parent, Vector2 position, bool dropped, System.Action onCollected)
@@ -68,6 +78,55 @@ namespace IBlameYou.Systems
             float y = FloatHeight + Mathf.Sin((Time.time + phase) * BobSpeed) * BobAmplitude;
             visual.localPosition = new Vector3(0f, y, 0f);
             UpdateHoneyRim();
+            UpdateMagnet();
+        }
+
+        // 가까이 온 플레이어 쪽으로 구슬(트리거째)이 빨라지며 끌려온다. 닿으면 OnTriggerEnter2D로 줍는다.
+        // 끌려가다 플레이어가 쓰러지거나 멀어지면 그 자리에 멈춘다 (청크 기록 자리는 그대로라 다시 오면 원래 자리).
+        private void UpdateMagnet()
+        {
+            if (collected) return;
+            magnetCheckTimer -= Time.deltaTime;
+            if (magnetCheckTimer <= 0f)
+            {
+                magnetCheckTimer = MagnetCheckInterval;
+                magnetTarget = FindMagnetTarget();
+                if (magnetTarget == null) magnetSpeed = 0f;
+            }
+            if (magnetTarget == null) return;
+
+            magnetSpeed = Mathf.Min(MagnetMaxSpeed, Mathf.Max(MagnetStartSpeed, magnetSpeed + MagnetAcceleration * Time.deltaTime));
+            // 구슬 가운데(바닥 + FloatHeight)를 플레이어 몸통 쪽으로
+            Vector3 orbCenter = transform.position + Vector3.up * FloatHeight;
+            Vector3 goal = magnetTarget.position + Vector3.up * 0.6f;
+            Vector3 next = Vector3.MoveTowards(orbCenter, goal, magnetSpeed * Time.deltaTime);
+            transform.position += next - orbCenter;
+        }
+
+        private Transform FindMagnetTarget()
+        {
+            Vector2 center = transform.position + Vector3.up * FloatHeight;
+            var filter = new ContactFilter2D();
+            filter.NoFilter();
+            int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층이 있으면 그 층만 (바닥 칸이 버퍼를 채우지 않게)
+            if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
+            int count = Physics2D.OverlapCircle(center, MagnetRadius, filter, MagnetHits);
+            Transform best = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                var player = TrapCommon.PlayerFrom(MagnetHits[i]);
+                if (player == null) continue;
+                var health = player.GetComponent<HealthSystem>();
+                if (health != null && health.IsDead) continue;
+                float distance = ((Vector2)player.transform.position - center).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = player.transform;
+                }
+            }
+            return best;
         }
 
         private void UpdateHoneyRim()
