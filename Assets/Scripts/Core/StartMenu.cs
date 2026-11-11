@@ -340,7 +340,7 @@ namespace IBlameYou.Core
                 DrawCellFrame(new Rect(rect.x + 20f + (hovered % columns) * cell, rect.y + 70f + (hovered / columns) * cellHeight, cell, cellHeight), previous);
 
             // 고른 칸의 설명 한 줄: 모은 유물이면 "[A] 설명", 아직이면 "아직 모르는 유물". 안 골랐으면 안내 문구.
-            string info = hovered < 0 ? "유물 칸에 마우스를 올리거나 방향키로 고르면 설명이 보인다 · Tab: 다른 모드 도감"
+            string info = hovered < 0 ? "칸에 마우스를 올리거나 방향키로 고르면 설명 · Tab: 다른 모드"
                 : RelicCodex.Has(mask, (int)all[hovered])
                     ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
                     : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
@@ -349,7 +349,8 @@ namespace IBlameYou.Core
             GUI.Label(new Rect(rect.x + 10f, rect.yMax - 90f, rect.width - 20f, 36f), info, infoStyle);
             GUI.color = previous;
 
-            if (GUI.Button(new Rect(rect.center.x - 150f, rect.yMax - 48f, 160f, 36f), codexDevMode ? "일반 모드 (Tab)" : "개발자 모드 (Tab)", button))
+            if (GUI.Button(new Rect(rect.center.x - 150f, rect.yMax - 48f, 160f, 36f), codexDevMode ? "Tab: 일반 보기" : "Tab: 개발자 보기",
+                    new GUIStyle(button) { fontSize = 16 })) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
                 codexDevMode = !codexDevMode;
             if (GUI.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) codexOpen = false;
         }
