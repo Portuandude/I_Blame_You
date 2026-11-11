@@ -420,6 +420,18 @@ def star_shard():
     return normalize(fade_edges(out))
 
 
+def relic_new():
+    """도감에 처음 오른 유물: RelicOpen 아르페지오 뒤에 겹쳐 울리는 짧은 반짝 화음 (G장조 G6·B6·D7 동시 + 높은 반짝임), 0.6초."""
+    n = int(0.6 * SR)
+    out = np.zeros(n)
+    for k, (f, gain) in enumerate([(1568.0, 0.5), (1975.5, 0.4), (2349.3, 0.35)]):  # G6 B6 D7
+        m = n - int(k * 0.015 * SR)  # 아주 살짝 흩어 쳐서 "촤랑"
+        tone_ = (osc("sine", f, m) + 0.25 * osc("tri", f * 2, m)) * env_exp(m, 0.18) * gain
+        mix_at(out, tone_, n - m)
+    out += bandpass(noise(n), 6000, 10000) * env_exp(n, 0.12) * 0.08
+    return normalize(fade_edges(lowpass(out, 10000)))
+
+
 def arena_lock():
     """전투 구역 잠김: 무거운 문이 쿵 내려앉는 소리 + 쇠 울림, 0.7초."""
     n = int(0.7 * SR)
@@ -761,6 +773,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard,
+        "RelicNew": relic_new,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
