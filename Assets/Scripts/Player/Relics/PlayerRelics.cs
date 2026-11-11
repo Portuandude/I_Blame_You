@@ -93,6 +93,7 @@ namespace IBlameYou.Player
             if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
             {
                 Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
+                if (Has(RelicId.VampireFang)) from += Vector3.right * 0.25f; // 흡혈 하트와 같이 나오면 별은 살짝 옆에서 (겹치지 않게)
                 VfxPlayer.StarShard(from, transform, Vector3.up * 0.8f, OnStarShardArrived);
             }
         }
