@@ -112,7 +112,7 @@ Assets/
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
-      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판), MovingPlatform(움직이는 발판), TrapCommon
+      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
