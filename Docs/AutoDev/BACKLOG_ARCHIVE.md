@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-7mrafg): 결과 창 유물 아이콘 설명 — 결과 창 유물 줄 아이콘에 마우스를 올리면 그 위에 "이름 — 설명" 말풍선 (`SkillHUD.DrawEndRelics`, 팝 행렬 안 좌표 주의)
+- DONE (claude/project-thread-7mrafg): 도감 창 A/B 표시 — 도감 창 모은 유물 아이콘 왼쪽 아래에 작은 A(하늘)/B(주황) 글자 배지, 공용·모르는 유물은 없음 (`StartMenu.DrawCodex`, `RelicBook.Owner`)
+- DONE (claude/project-thread-7mrafg): 유물 용사의 훈장 (`RelicId.HeroMedal`=19, 정예 구역 돌파 시 최대 체력 15% 회복, 아이콘) — GDD 로드맵 "유물 종류 늘리기"
+- DONE (claude/project-thread-7mrafg): 결과 창 이번 판 유물 줄 — 아이콘 줄은 이미 있어서(#24), 이번 판 처음 도감에 오른 유물 아이콘에 초록 점(`RunStats.NewRelicMask`)을 더함
+- DONE (claude/project-thread-7mrafg): 유물 획득 소리 차등 — 도감에 처음 오른 유물은 `RelicOpen` 뒤 0.32초에 반짝 화음 `RelicNew` (`GameAudio.PlaySfxDelayed`)
+- DONE (claude/project-thread-7mrafg): 도감 창 다른 모드 보기 — 도감 창에서 Tab/버튼으로 일반·개발자 모드 도감 전환 (`StartMenu.DrawCodex`)
 - DONE (claude/project-thread-gb0nu0): 별똥 조각 반짝 소리 — 금별이 플레이어에 닿을 때 작고 맑은 "띵" 효과음 (`Tools/AudioGen`에 합성음 추가 → `GameAudio.PlaySfx`, `PlayerRelics.OnStarShardArrived`)
 - DONE (claude/project-thread-gb0nu0): 도감 창 키보드로 보기 — 마우스 없이도 방향키/WASD로 칸을 골라 설명 줄을 볼 수 있게 (고른 칸 테두리 강조, `StartMenu.DrawCodex`, 마우스를 움직이면 마우스 쪽이 우선)
 - DONE (claude/project-thread-gb0nu0): 반지·리본 마나 연출 — 쌍둥이 반지(A 방어막)·응원 리본(B 마법) 마나 회복 때 글자만 뜨는 걸, 플레이어 둘레에 A색/B색 작은 빛 고리가 퍼지게 (`VfxPlayer`, 기존 Sparkle/HeartPop 그림 재사용)
