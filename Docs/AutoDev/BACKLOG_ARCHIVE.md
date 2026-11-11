@@ -2,6 +2,10 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-ex838b): 마나 바 채움 반짝 — 5% 넘게 차면 늘어난 부분 하늘색 0.4초 (무한 마나면 끔)
+- DONE (claude/project-thread-ex838b): 보스 체력 바 회복 반짝 — 슬라임 킹 무리 흡수 회복 때 연두 반짝 (최대 체력 바뀐 프레임 제외)
+- DONE (claude/project-thread-ex838b): 흡혈 송곳니 연출 — 붉게 물들인 작은 HeartOrb가 적 자리에서 날아와 닿을 때 회복 (`VfxPlayer.VampireHeart`, `StarShardFx` 크기·색 인자)
+- DONE (claude/project-thread-ex838b, `RelicId.HoneyJar`=21): 유물 꿀단지 — 보상 구슬 체력 회복 +15%p (생명 5와 합산 60%), 아이콘·테스트, 유물 22종
 - DONE (claude/project-thread-ex838b): 무너지는 발판 소리 — 무너질 때 나무 삐걱·툭(`Crumble.wav`), 다시 생길 때 톡(`Crumble_Back.wav`), 카메라 12유닛 안일 때만
 - DONE (claude/project-thread-ex838b): 회복 숫자 통일 — `DamageNumbers.ShowHeal`(실제 회복량, 가득 차면 생략, 같은 프레임 위로 쌓기)을 중간보스·훈장·보상 구슬·흡혈 송곳니·도토리 주머니·생명 10 특성이 같이 씀
 - DONE (claude/project-thread-ex838b): 체력 바 회복 반짝 — HUD 체력 바의 늘어난 부분이 연두색으로 0.4초 빛남 (`BarTrail.GainFrom/GainAlpha`)

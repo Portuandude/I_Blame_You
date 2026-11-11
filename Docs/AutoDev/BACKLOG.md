@@ -9,10 +9,9 @@
 
 ## 다음 (2026-11-11 자동 실행이 추가)
 
-- TODO: 마나 바 채움 반짝 — HUD 마나 캡슐 바도 크게 차오를 때(5% 넘게) 늘어난 부분이 하늘색으로 0.4초 빛나기 (`BarTrail.GainAlpha` 재사용, 무한 마나일 때는 끔)
-- TODO: 보스 체력 바 회복 반짝 — 슬라임 킹이 체력을 회복할 때(`SlimeKingController` Heal) 보스 바의 늘어난 부분이 연두색으로 빛나 "회복했다"가 보이게 (`SkillHUD.Boss`의 `bossTrail`)
-- TODO: 흡혈 송곳니 연출 — 처치 때 적 자리에서 작은 빨간 하트가 튀었다 플레이어로 빨려 와 닿을 때 회복 (`Effects/StarShardFx`처럼, 하트 그림 `Tools/ArtGen`, 회복 숫자는 닿을 때)
-- TODO: 유물 꿀단지 — 전투 구역 보상 구슬 체력 회복 +15%p (`ArenaReward` 회복 비율, `RelicId` 맨 뒤 21번, 아이콘·설명·테스트)
+- TODO: 꿀단지 연출 — 꿀단지가 있을 때 보상 구슬을 주우면 머리 위로 작은 꿀단지가 톡 떠올랐다 사라지게 (`VfxPlayer.AcornGlint`처럼 `MedalGlintFx.Create(..., "HoneyJar")`), 알림에 "· 꿀단지 +15%" 붙이기
+- TODO: 흡혈 하트 소리 — 붉은 하트가 닿을 때 작고 말랑한 "뽁" (`Tools/AudioGen` vampire_heart, StarShard처럼 작게, `PlayerRelics.OnVampireHeartArrived`)
+- TODO: 무너지는 발판 위 적 — 적(슬라임·고블린)이 무너지는 발판에 올라서도 무너지게 할지 확인하고, 무너지면 적도 떨어지게 (`CrumblingPlatform.OnCollisionStay2D`가 지금은 플레이어만 봄). 낙사 판정이 적에게 문제없는지 확인
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
