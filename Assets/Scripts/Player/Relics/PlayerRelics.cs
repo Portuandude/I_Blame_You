@@ -116,6 +116,7 @@ namespace IBlameYou.Player
             if (health == null || health.IsDead) return;
             float before = health.Current;
             health.Heal(RelicBook.VampireFangHeal);
+            GameAudio.PlaySfx("VampireHeart", 0.6f, 0.08f); // 작고 말랑한 뽁 (Tools/AudioGen vampire_heart)
             DamageNumbers.ShowHeal(transform.position, health.Current - before);
         }
 
