@@ -13,8 +13,8 @@
 - DONE (claude/project-thread-qysenh): 흡혈 하트 소리 — 붉은 하트가 닿을 때 작고 말랑한 "뽁" (`Tools/AudioGen` vampire_heart, StarShard처럼 작게, `PlayerRelics.OnVampireHeartArrived`)
 - DONE (claude/project-thread-qysenh): 무너지는 발판 위 적 — 적(슬라임·고블린)이 무너지는 발판에 올라서도 무너지게 할지 확인하고, 무너지면 적도 떨어지게 (`CrumblingPlatform.OnCollisionStay2D`가 지금은 플레이어만 봄). 낙사 판정이 적에게 문제없는지 확인
 - DONE (claude/project-thread-qysenh): 적 낙사 연출 — 무너지는 발판이나 낭떠러지로 떨어진 적이 낙사선(`ChunkStreamer` KillLine) 아래에서 조용히 사라진다. 사라질 때 낙사선 위 화면 안쪽(카메라 아래 가장자리)에 작은 먼지 펑 + 작은 `EnemyDie` 소리를 내서 "떨어져 처치됨"이 보이게 (경험치는 지금처럼 주지 않는다)
-- TODO: 유물 젤리 방석 — 무너지는 발판이 흔들리는 시간 0.55초 → 0.9초 (`CrumblingPlatform.ShakeTime`, 플레이어가 밟았을 때만). `RelicId` 맨 끝에 추가, 아이콘(`Tools/ArtGen/generate_relic_icons.py`), 테스트, 유물 23종
-- TODO: 흡혈 하트·별똥 조각 겹침 — 한 적에서 하트와 금별이 같이 나오면 시작 위치가 겹친다. 별은 0.25유닛 옆에서 출발하게 (`PlayerRelics.OnEnemyKilled`)
+- DONE (claude/project-thread-qysenh): 유물 젤리 방석 — 무너지는 발판이 흔들리는 시간 0.55초 → 0.9초 (`CrumblingPlatform.ShakeTime`, 플레이어가 밟았을 때만). `RelicId` 맨 끝에 추가, 아이콘(`Tools/ArtGen/generate_relic_icons.py`), 테스트, 유물 23종
+- DONE (claude/project-thread-qysenh): 흡혈 하트·별똥 조각 겹침 — 한 적에서 하트와 금별이 같이 나오면 시작 위치가 겹친다. 별은 0.25유닛 옆에서 출발하게 (`PlayerRelics.OnEnemyKilled`)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
