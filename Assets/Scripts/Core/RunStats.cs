@@ -8,6 +8,7 @@ namespace IBlameYou.Core
         public static int ArenasCleared { get; set; }
         public static int GatesOpened { get; set; }
         public static int NewRelics { get; set; } // 이번 판에 처음 유물 도감에 오른 유물 수 (결과 창 최애 줄 끝)
+        public static int NewRelicMask { get; private set; } // 이번 판에 처음 도감에 오른 유물 (RelicCodex 비트 마스크, 결과 창 유물 줄 NEW 점)
         public static bool CodexCompleted { get; set; } // 이번 판에 유물 도감을 다 채웠다 (결과 창 금색 "유물 도감 완성!")
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
@@ -21,6 +22,7 @@ namespace IBlameYou.Core
             ArenasCleared = 0;
             GatesOpened = 0;
             NewRelics = 0;
+            NewRelicMask = 0;
             CodexCompleted = false;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
             System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
@@ -38,10 +40,11 @@ namespace IBlameYou.Core
         }
 
         // 새 유물이 도감에 올랐다. completes: 그 유물로 도감이 다 찼다 (새로 오를 때만 완성으로 바뀔 수 있으니 '처음 완성').
-        public static void AddNewRelic(bool completes = false)
+        public static void AddNewRelic(int relicId, bool completes = false)
         {
             if (Ended) return;
             NewRelics++;
+            NewRelicMask = IBlameYou.Systems.RelicCodex.With(NewRelicMask, relicId);
             if (completes) CodexCompleted = true;
         }
 
