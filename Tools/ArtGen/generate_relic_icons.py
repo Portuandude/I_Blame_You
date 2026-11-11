@@ -287,6 +287,20 @@ def acorn_pouch(d):
     d.polygon(star_points(21.0, 5.0, 2.0, 0.9), fill=CREAM)
 
 
+def honey_jar(d):
+    # 꿀단지: 통통한 주황 항아리 + 위 천 뚜껑(베리) 끈, 입가로 흘러내린 금색 꿀, 작은 하트 반짝 (보상 구슬 회복)
+    jar = hexrgba("d9733a")
+    honey = hexrgba("ffd84d")
+    outlined_ellipse(d, 3.5, 7, 20.5, 22.5, jar)                                   # 항아리 몸
+    outlined_poly(d, [(6, 3.5), (16.5, 3.5), (16, 8), (7, 8)], BERRY, 1.0)           # 천 뚜껑
+    d.rectangle(E(6.5, 7.2, 17.5, 8.8), fill=CREAM)                                # 끈
+    d.ellipse(E(7, 8.5, 12, 13), fill=honey)                                       # 흘러내린 꿀 방울
+    d.rectangle(E(8.5, 8.5, 10.5, 15), fill=honey)                                 # 꿀 줄기
+    d.ellipse(E(8, 13.5, 11, 16.5), fill=honey)                                    # 꿀 끝 방울
+    shine(d, 14.5, 13.0, 1.0)
+    heart_shape(d, 20.6, 4.0, 2.6, hexrgba("ff5f96"))
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -309,6 +323,7 @@ ICONS = {
     "StarShard": star_shard,
     "HeroMedal": hero_medal,
     "AcornPouch": acorn_pouch,
+    "HoneyJar": honey_jar,
 }
 
 
