@@ -64,11 +64,36 @@ namespace IBlameYou.Player
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
         }
 
-        // 도토리 주머니: 레벨이 오를 때마다 체력 회복 (한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 회복하지 않는다).
+        // 레벨이 오를 때: 도토리 주머니(체력)·별사탕(마나). 한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 회복하지 않는다.
         private void OnLeveledUp(int level)
         {
             var health = GetComponent<HealthSystem>();
             if (health == null || health.IsDead) return;
+            if (Has(RelicId.StarCandy)) StarCandyMana();
+            if (Has(RelicId.AcornPouch)) AcornHeal(health);
+        }
+
+        private int candyFrame = -1;
+        private int candyStack;
+
+        // 별사탕: 레벨이 오를 때마다 마나. 같은 프레임 여러 레벨이면 고리는 한 번, 글자는 위로 쌓는다 (도토리 글자보다 조금 아래).
+        private void StarCandyMana()
+        {
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            float before = mana.Current;
+            mana.Restore(RelicBook.StarCandyMana);
+            candyStack = candyFrame == Time.frameCount ? candyStack + 1 : 0;
+            candyFrame = Time.frameCount;
+            var color = new Color(0.43f, 0.83f, 1f);
+            if (candyStack == 0) VfxPlayer.ManaRing(transform, RingOffset, color);
+            float gained = mana.Current - before;
+            if (gained > 0.5f)
+                DamageNumbers.ShowText(transform.position + Vector3.up * (1.2f + 0.3f * candyStack), $"마나 +{gained:0}", color, 0.8f);
+        }
+
+        private void AcornHeal(HealthSystem health)
+        {
             float before = health.Current;
             health.Heal(RelicBook.AcornPouchHeal);
             // 한 번에 여러 레벨이 오르면 도토리 연출은 한 번만, 글자는 레벨마다 조금씩 위로 쌓는다 (겹치지 않게, 리뷰 LOW)
@@ -225,6 +250,7 @@ namespace IBlameYou.Player
                     }
                     break;
                 case RelicId.AcornPouch:
+                case RelicId.StarCandy:
                     var progression = GetComponent<PlayerProgression>();
                     if (progression != null && !listeningLevels)
                     {

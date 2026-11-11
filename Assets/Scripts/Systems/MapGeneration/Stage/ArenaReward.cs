@@ -12,11 +12,29 @@ namespace IBlameYou.Systems
         private static readonly Vector3 HoneyGlintOffset = new Vector3(0f, 1.5f, 0f); // 꿀단지 시작 높이 (머리 위, 훈장·도토리와 같게)
         private const float BobAmplitude = 0.15f;
         private const float BobSpeed = 3f;
+        // 꿀단지를 가졌으면 구슬 뒤에 금빛 테두리가 숨 쉬듯 빛나고 가끔 반짝인다 ("더 많이 찬다")
+        private static readonly Color HoneyRimColor = new Color(1f, 0.82f, 0.28f);
+        private const float HoneyRimSize = 1.05f;      // 구슬(약 0.7유닛)보다 조금 크게
+        private const float HoneyCheckInterval = 0.5f; // 유물을 다시 확인하는 간격
+        private const float HoneySparkleInterval = 1.1f;
+        // 자석: 살아 있는 플레이어가 구슬 가운데에서 이만큼 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려온다
+        public const float MagnetRadius = 1.5f;
+        private const float MagnetCheckInterval = 0.1f;
+        private const float MagnetStartSpeed = 2f;
+        private const float MagnetAcceleration = 14f;
+        private const float MagnetMaxSpeed = 9f;
+        private static readonly Collider2D[] MagnetHits = new Collider2D[16];
 
         private System.Action onCollected;
         private Transform visual;
         private bool collected;
         private float phase;
+        private SpriteRenderer honeyRim;
+        private float honeyCheckTimer;
+        private float honeySparkleTimer;
+        private Transform magnetTarget;
+        private float magnetSpeed;
+        private float magnetCheckTimer;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
         public static ArenaReward Create(Transform parent, Vector2 position, bool dropped, System.Action onCollected)
@@ -40,6 +58,16 @@ namespace IBlameYou.Systems
             reward.visual = renderer.transform;
             reward.visual.localPosition = new Vector3(0f, FloatHeight, 0f);
 
+            var rimGo = new GameObject("HoneyRim");
+            rimGo.transform.SetParent(reward.visual, false);
+            float rimScale = HoneyRimSize / Mathf.Max(0.01f, reward.visual.localScale.x); // 그림이 없어 구슬이 0.7배 원이어도 월드 크기는 같게
+            rimGo.transform.localScale = new Vector3(rimScale, rimScale, 1f);
+            reward.honeyRim = rimGo.AddComponent<SpriteRenderer>();
+            reward.honeyRim.sprite = SolidSpriteFactory.CreateCircle();
+            reward.honeyRim.color = HoneyRimColor;
+            reward.honeyRim.sortingOrder = 2; // 구슬(3) 뒤
+            reward.honeyRim.enabled = AnyPlayerHasHoney();
+
             if (dropped) EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * FloatHeight, 1.2f);
             return reward;
         }
@@ -49,6 +77,89 @@ namespace IBlameYou.Systems
             if (visual == null) return;
             float y = FloatHeight + Mathf.Sin((Time.time + phase) * BobSpeed) * BobAmplitude;
             visual.localPosition = new Vector3(0f, y, 0f);
+            UpdateHoneyRim();
+            UpdateMagnet();
+        }
+
+        // 가까이 온 플레이어 쪽으로 구슬(트리거째)이 빨라지며 끌려온다. 닿으면 OnTriggerEnter2D로 줍는다.
+        // 끌려가다 플레이어가 쓰러지거나 멀어지면 그 자리에 멈춘다 (청크 기록 자리는 그대로라 다시 오면 원래 자리).
+        private void UpdateMagnet()
+        {
+            if (collected) return;
+            magnetCheckTimer -= Time.deltaTime;
+            if (magnetCheckTimer <= 0f)
+            {
+                magnetCheckTimer = MagnetCheckInterval;
+                magnetTarget = FindMagnetTarget();
+                if (magnetTarget == null) magnetSpeed = 0f;
+            }
+            if (magnetTarget == null) return;
+
+            magnetSpeed = Mathf.Min(MagnetMaxSpeed, Mathf.Max(MagnetStartSpeed, magnetSpeed + MagnetAcceleration * Time.deltaTime));
+            // 구슬 가운데(바닥 + FloatHeight)를 플레이어 몸통 쪽으로
+            Vector3 orbCenter = transform.position + Vector3.up * FloatHeight;
+            Vector3 goal = magnetTarget.position + Vector3.up * 0.6f;
+            Vector3 next = Vector3.MoveTowards(orbCenter, goal, magnetSpeed * Time.deltaTime);
+            transform.position += next - orbCenter;
+        }
+
+        private Transform FindMagnetTarget()
+        {
+            Vector2 center = transform.position + Vector3.up * FloatHeight;
+            var filter = new ContactFilter2D();
+            filter.NoFilter();
+            int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층이 있으면 그 층만 (바닥 칸이 버퍼를 채우지 않게)
+            if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
+            int count = Physics2D.OverlapCircle(center, MagnetRadius, filter, MagnetHits);
+            Transform best = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                var player = TrapCommon.PlayerFrom(MagnetHits[i]);
+                if (player == null) continue;
+                var health = player.GetComponent<HealthSystem>();
+                if (health != null && health.IsDead) continue;
+                float distance = ((Vector2)player.transform.position - center).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = player.transform;
+                }
+            }
+            return best;
+        }
+
+        private void UpdateHoneyRim()
+        {
+            if (honeyRim == null) return;
+            honeyCheckTimer -= Time.deltaTime;
+            if (honeyCheckTimer <= 0f)
+            {
+                honeyCheckTimer = HoneyCheckInterval;
+                honeyRim.enabled = AnyPlayerHasHoney();
+            }
+            if (!honeyRim.enabled) return;
+
+            var color = HoneyRimColor;
+            color.a = 0.35f + 0.25f * (0.5f + 0.5f * Mathf.Sin((Time.time + phase) * 4f));
+            honeyRim.color = color;
+
+            honeySparkleTimer -= Time.deltaTime;
+            if (honeySparkleTimer <= 0f)
+            {
+                honeySparkleTimer = HoneySparkleInterval;
+                // 테두리 위쪽 가장자리에서 번갈아 좌우로 작게 반짝
+                float side = Mathf.FloorToInt(Time.time / HoneySparkleInterval) % 2 == 0 ? 1f : -1f;
+                VfxPlayer.AimGlint(visual.position + new Vector3(0.32f * side, 0.3f, 0f));
+            }
+        }
+
+        // 둘(A·B가 함께 쓰는 캐릭터) 중 누구라도 꿀단지를 가졌는지.
+        private static bool AnyPlayerHasHoney()
+        {
+            foreach (var relics in FindObjectsByType<IBlameYou.Player.PlayerRelics>(FindObjectsSortMode.None))
+                if (relics.Has(IBlameYou.Player.RelicId.HoneyJar)) return true;
+            return false;
         }
 
         private void OnTriggerEnter2D(Collider2D other) => TryCollect(other);

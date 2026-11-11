@@ -266,11 +266,11 @@ namespace IBlameYou.Core
         {
             var all = IBlameYou.Player.RelicBook.All;
             int mask = SaveData.RelicCodexMask(codexDevMode);
-            int columns = Mathf.Clamp(Mathf.FloorToInt((Screen.width - 80f) / 96f), 3, 6);
-            int rows = (all.Length + columns - 1) / columns;
-            const float cell = 96f;
-            // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄인다 (리뷰 LOW)
-            float cellHeight = Mathf.Clamp((Screen.height - 20f - 162f) / rows, 50f, 84f);
+            // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄이고, 그래도 넘치면 가로 칸을 늘린다 (RelicCodex.Grid*)
+            int columns = RelicCodex.GridColumns(all.Length, Screen.width, Screen.height);
+            int rows = RelicCodex.GridRows(all.Length, columns);
+            const float cell = RelicCodex.GridCellWidth;
+            float cellHeight = RelicCodex.GridCellHeight(rows, Screen.height);
             float iconSize = Mathf.Min(44f, cellHeight - 36f);
             float width = columns * cell + 40f;
             float height = 70f + rows * cellHeight + 36f + 56f; // 36: 마우스 올린 유물 설명 (좁은 창에선 두 줄)

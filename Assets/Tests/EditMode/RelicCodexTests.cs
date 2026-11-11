@@ -47,5 +47,38 @@ namespace IBlameYou.Tests.EditMode
             Assert.AreEqual("유물 도감 3/3 ★", RelicCodex.Summary(all3, 3));
             Assert.AreEqual("유물 도감 3/4", RelicCodex.Summary(all3, 4));
         }
+
+        [Test]
+        public void Grid_WideScreen_KeepsSixColumnsAndFits()
+        {
+            int columns = RelicCodex.GridColumns(23, 1280f, 720f);
+            Assert.AreEqual(6, columns);
+            int rows = RelicCodex.GridRows(23, columns);
+            Assert.AreEqual(4, rows);
+            Assert.LessOrEqual(rows * RelicCodex.GridCellHeight(rows, 720f) + RelicCodex.GridChrome, 720f);
+        }
+
+        [Test]
+        public void Grid_ShortScreen_AddsColumnsToFit()
+        {
+            // 높이 360: 줄에 쓸 수 있는 높이 178 → 50짜리 줄은 3줄 → 23개면 8칸 필요 (너비 1000이면 8칸까지 된다)
+            int columns = RelicCodex.GridColumns(23, 1000f, 360f);
+            Assert.AreEqual(8, columns, "높이 178에 50짜리 줄은 3줄까지 → 8칸");
+            Assert.LessOrEqual(RelicCodex.GridRows(23, columns) * RelicCodex.GridMinCellHeight + RelicCodex.GridChrome, 360f);
+        }
+
+        [Test]
+        public void Grid_NarrowScreen_AtLeastThreeColumns()
+        {
+            Assert.AreEqual(3, RelicCodex.GridColumns(23, 300f, 1000f));
+            Assert.AreEqual(4, RelicCodex.GridColumns(23, 500f, 2000f), "너비 500이면 4칸까지");
+        }
+
+        [Test]
+        public void Grid_CellHeight_Clamped()
+        {
+            Assert.AreEqual(RelicCodex.GridMaxCellHeight, RelicCodex.GridCellHeight(4, 2000f));
+            Assert.AreEqual(RelicCodex.GridMinCellHeight, RelicCodex.GridCellHeight(8, 300f));
+        }
     }
 }
