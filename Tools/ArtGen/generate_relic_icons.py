@@ -301,6 +301,19 @@ def honey_jar(d):
     heart_shape(d, 20.6, 4.0, 2.6, hexrgba("ff5f96"))
 
 
+def jelly_cushion(d):
+    # 젤리 방석: 말랑한 분홍 젤리 쿠션(둥근 납작 타원 두 겹) + 위 하이라이트, 아래 나무 발판 조각, 출렁 반짝 (무너지는 발판이 버틴다)
+    jelly = hexrgba("ff8fc4")
+    jelly_top = hexrgba("ffc2e0")
+    plank = hexrgba("9a6b45")
+    outlined_poly(d, [(2.5, 17.5), (21.5, 17.5), (21.5, 21.5), (2.5, 21.5)], plank, 1.0)  # 나무 발판
+    outlined_ellipse(d, 3, 8, 21, 19, jelly)                                        # 젤리 몸
+    d.ellipse(E(6, 9.5, 18, 13.5), fill=jelly_top)                                  # 윗면 밝은 부분
+    shine(d, 8.0, 11.0, 1.1)
+    shine(d, 16.5, 15.0, 0.6)
+    d.polygon(star_points(20.5, 4.5, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -324,6 +337,7 @@ ICONS = {
     "HeroMedal": hero_medal,
     "AcornPouch": acorn_pouch,
     "HoneyJar": honey_jar,
+    "JellyCushion": jelly_cushion,
 }
 
 
