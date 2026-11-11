@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-rtmaz9): 젤리 방석 연출 — 젤리 방석으로 버티는 동안 발판이 흔들리는 대신 분홍빛으로 말랑하게 눌렸다 튀어 오르게 (`CrumblingPlatform.Crumble`의 흔들림 구간, 플레이어가 젤리 방석을 가졌을 때만)
+- DONE (claude/project-thread-rtmaz9): 꿀단지 보상 구슬 — 꿀단지가 있으면 전투 구역 보상 구슬에 금빛 테두리 반짝을 둘러 "더 많이 찬다"가 보이게 (`ArenaReward` 비주얼, 둘 중 한 명이라도 가졌으면)
+- DONE (claude/project-thread-rtmaz9): 도감 창 23칸 확인 — 유물 23종이 된 도감 창(`StartMenu` 267줄 근처)이 좁은 화면에서 넘치지 않는지 칸 배치를 확인하고, 넘치면 줄 수를 늘리거나 칸을 줄인다
+- DONE (claude/project-thread-rtmaz9): 젤리 방석 "말랑" 소리 — 젤리 방석으로 버티는 발판은 `Crumble` 대신 말랑한 소리(`Tools/AudioGen`에 jelly_squish 추가, 카메라 12유닛 안)
+- DONE (claude/project-thread-rtmaz9): 유물 별사탕 — (솜사탕 구름은 깃털 낙하와 겹쳐서 바꿈) 레벨이 오를 때마다 마나 +30 (RelicId.StarCandy=23, B, 아이콘·테스트, 유물 24종)
+- DONE (claude/project-thread-rtmaz9): 보상 구슬 자석 — 플레이어가 1.5유닛 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려와 줍기 쉽게 (`ArenaReward`, 쓰러진 플레이어는 제외)
 - DONE (claude/project-thread-qysenh): 꿀단지 연출 — 꿀단지가 있을 때 보상 구슬을 주우면 머리 위로 작은 꿀단지가 톡 떠올랐다 사라지게 (`VfxPlayer.AcornGlint`처럼 `MedalGlintFx.Create(..., "HoneyJar")`), 알림에 "· 꿀단지 +15%" 붙이기
 - DONE (claude/project-thread-qysenh): 흡혈 하트 소리 — 붉은 하트가 닿을 때 작고 말랑한 "뽁" (`Tools/AudioGen` vampire_heart, StarShard처럼 작게, `PlayerRelics.OnVampireHeartArrived`)
 - DONE (claude/project-thread-qysenh): 무너지는 발판 위 적 — 적(슬라임·고블린)이 무너지는 발판에 올라서도 무너지게 할지 확인하고, 무너지면 적도 떨어지게 (`CrumblingPlatform.OnCollisionStay2D`가 지금은 플레이어만 봄). 낙사 판정이 적에게 문제없는지 확인
