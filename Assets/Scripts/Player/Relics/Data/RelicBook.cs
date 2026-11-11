@@ -29,7 +29,8 @@ namespace IBlameYou.Player
         StarShard,   // 별똥 조각: 적을 처치하면 StarShardChance 확률로 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
         HeroMedal,   // 용사의 훈장: 정예 구역(전투 구역)을 돌파하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
         AcornPouch,  // 도토리 주머니: 레벨이 오를 때마다 체력 +AcornPouchHeal (PlayerProgression.LeveledUp)
-        HoneyJar     // 꿀단지: 전투 구역 보상 구슬의 체력 회복 +HoneyJarHealBonus (비율, ArenaReward)
+        HoneyJar,    // 꿀단지: 전투 구역 보상 구슬의 체력 회복 +HoneyJarHealBonus (비율, ArenaReward)
+        JellyCushion // 젤리 방석: 플레이어가 밟은 무너지는 발판이 JellyCushionShakeTime초 버틴다 (CrumblingPlatform)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -61,6 +62,7 @@ namespace IBlameYou.Player
         public const float StarShardMana = 6f;
         public const float HeroMedalHealRatio = 0.15f;
         public const float AcornPouchHeal = 10f;
+        public const float JellyCushionShakeTime = 0.9f; // 무너지는 발판 흔들림 0.55초 → 0.9초
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
         public static readonly RelicId[] All =
@@ -69,7 +71,7 @@ namespace IBlameYou.Player
             RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
             RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
-            RelicId.AcornPouch, RelicId.HoneyJar
+            RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion
         };
 
         public static string Name(RelicId id)
@@ -97,6 +99,7 @@ namespace IBlameYou.Player
                 case RelicId.HeroMedal: return "용사의 훈장";
                 case RelicId.AcornPouch: return "도토리 주머니";
                 case RelicId.HoneyJar: return "꿀단지";
+                case RelicId.JellyCushion: return "젤리 방석";
                 default: return "집중 구슬";
             }
         }
@@ -126,6 +129,7 @@ namespace IBlameYou.Player
                 case RelicId.HeroMedal: return $"정예 구역을 돌파하면 체력 {HeroMedalHealRatio * 100f:0}% 회복";
                 case RelicId.AcornPouch: return $"레벨이 오를 때마다 체력 +{AcornPouchHeal:0}";
                 case RelicId.HoneyJar: return $"보상 구슬 체력 회복 +{HoneyJarHealBonus * 100f:0}%";
+                case RelicId.JellyCushion: return $"무너지는 발판이 {JellyCushionShakeTime:0.0}초 버틴다";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
