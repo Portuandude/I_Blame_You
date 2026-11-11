@@ -2,9 +2,10 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 용사의 훈장 연출 (VfxPlayer.MedalGlint): 회복할 때 플레이어 머리 위로 작은 금 메달이 톡 튀어나와 떠오르고,
+    // 유물 아이콘 반짝 연출 (VfxPlayer.MedalGlint·AcornGlint): 회복할 때 플레이어 머리 위로 유물 아이콘이 톡 튀어나와 떠오르고,
     // 반짝임(Resources/Effects/Sparkle)이 한 번 터진 뒤 옅어지며 사라진다 (0.9초).
-    // 메달 그림은 유물 아이콘 Resources/UI/HUD/Relics/HeroMedal (24px)을 키워 쓴다. 그림이 없으면 아무것도 하지 않는다.
+    // 그림은 유물 아이콘 Resources/UI/HUD/Relics/<이름> (24px)을 키워 쓴다 (용사의 훈장 = HeroMedal, 도토리 주머니 = AcornPouch).
+    // 그림이 없으면 아무것도 하지 않는다.
     public class MedalGlintFx : MonoBehaviour
     {
         private const float Lifetime = 0.9f;
@@ -14,8 +15,8 @@ namespace IBlameYou.Systems
         private const float IconScale = 2.6f;    // 24px / ppu 100 → 보이는 크기 약 0.62유닛
         private const float SparkleDelay = 0.12f;
 
-        private static Sprite medalSprite;
-        private static bool medalLoaded;
+        private static readonly System.Collections.Generic.Dictionary<string, Sprite> sprites =
+            new System.Collections.Generic.Dictionary<string, Sprite>(); // 아이콘 이름 → 그림 (없으면 null로 기억)
 
         private Transform follow;
         private Vector3 offset;
@@ -25,17 +26,17 @@ namespace IBlameYou.Systems
         private bool sparkled;
 
         // follow 기준 offset(월드 방향)에서 시작해 따라다닌다. follow의 자식이 아니라서 좌우 뒤집힘·크기의 영향을 받지 않는다.
-        public static void Create(Transform follow, Vector3 offset)
+        public static void Create(Transform follow, Vector3 offset, string relicIcon)
         {
-            if (follow == null) return;
-            if (!medalLoaded)
+            if (follow == null || string.IsNullOrEmpty(relicIcon)) return;
+            if (!sprites.TryGetValue(relicIcon, out var sprite))
             {
-                medalSprite = Resources.Load<Sprite>("UI/HUD/Relics/HeroMedal");
-                medalLoaded = true;
+                sprite = Resources.Load<Sprite>("UI/HUD/Relics/" + relicIcon);
+                sprites[relicIcon] = sprite;
             }
-            if (medalSprite == null) return;
+            if (sprite == null) return;
 
-            var go = new GameObject("MedalGlint");
+            var go = new GameObject("RelicGlint_" + relicIcon);
             go.transform.position = follow.position + offset;
             go.transform.localScale = Vector3.zero;
             var fx = go.AddComponent<MedalGlintFx>();
@@ -43,7 +44,7 @@ namespace IBlameYou.Systems
             fx.offset = offset;
             fx.basePosition = go.transform.position;
             fx.icon = go.AddComponent<SpriteRenderer>();
-            fx.icon.sprite = medalSprite;
+            fx.icon.sprite = sprite;
             fx.icon.sortingOrder = 8;
         }
 
