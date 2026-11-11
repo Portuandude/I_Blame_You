@@ -448,6 +448,23 @@ def crumble():
     return normalize(fade_edges(lowpass(out, 8000)))
 
 
+def jelly_squish():
+    """젤리 방석으로 버티는 발판: 말랑하게 눌렸다 펴지는 "뭉-뿅" (아래로 처지는 둥근 사인 + 떨림, 끝에 위로 튀는 작은 뿅), 0.5초."""
+    n = int(0.5 * SR)
+    t = np.arange(n) / SR
+    squash_n = int(0.32 * SR)
+    ts = t[:squash_n]
+    f = (260.0 - 110.0 * (1 - np.exp(-ts / 0.08))) * (1 + 0.06 * np.sin(2 * np.pi * 9 * ts))  # 260 → 150Hz로 처지며 말랑 떨림
+    out = np.zeros(n)
+    out[:squash_n] += osc("sine", f, squash_n) * env_adsr(squash_n, a=0.01, d=0.08, s=0.6, r=0.15)
+    out[:squash_n] += 0.3 * osc("tri", f * 2, squash_n) * env_exp(squash_n, 0.06)
+    pop_start = int(0.36 * SR)
+    m = n - pop_start
+    pf = 300.0 + 600.0 * (1 - np.exp(-np.arange(m) / SR / 0.02))
+    out[pop_start:] += 0.7 * osc("sine", pf, m) * env_exp(m, 0.04)  # 위로 튀는 뿅
+    return normalize(fade_edges(lowpass(out, 4500)))
+
+
 def crumble_back():
     """무너졌던 발판이 다시 생김: 작고 가벼운 나무 '톡' (짧은 삼각파 + 맑은 고음 한 점), 0.15초."""
     n = int(0.15 * SR)
@@ -810,7 +827,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
-        "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back,
+        "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -818,7 +835,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
