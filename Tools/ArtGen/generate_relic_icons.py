@@ -258,6 +258,19 @@ def star_shard(d):
     d.polygon(star_points(3.5, 4.5, 1.8, 0.8), fill=CREAM)
 
 
+def hero_medal(d):
+    # 용사의 훈장: 베리·하늘 줄무늬 리본 V + 통통한 금 메달 + 가운데 크림 별, 주변 반짝 (정예 구역 돌파 보상 회복)
+    berry = hexrgba("ff6fae")
+    sky = hexrgba("7fd8ff")
+    outlined_poly(d, [(5.5, 1.5), (10.5, 1.5), (13, 11), (9, 11)], berry, 1.0)    # 왼쪽 리본 띠
+    outlined_poly(d, [(13.5, 1.5), (18.5, 1.5), (15, 11), (11, 11)], sky, 1.0)    # 오른쪽 리본 띠
+    outlined_ellipse(d, 5.5, 9.5, 18.5, 22.5, GOLD)                               # 메달
+    d.ellipse(E(7.6, 11.6, 16.4, 20.4), fill=hexrgba("ffb52e"))                    # 안쪽 테
+    d.polygon(star_points(12, 16, 3.6, 1.6), fill=CREAM)                           # 별
+    shine(d, 8.4, 12.6, 0.9)
+    d.polygon(star_points(20.5, 7.5, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -278,6 +291,7 @@ ICONS = {
     "Clover": clover,
     "CheerRibbon": cheer_ribbon,
     "StarShard": star_shard,
+    "HeroMedal": hero_medal,
 }
 
 
