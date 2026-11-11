@@ -114,7 +114,9 @@ namespace IBlameYou.UI
                 bool hasIcon = RelicIcon(id) != null;
                 if (hasIcon)
                 {
-                    DrawRelicIcon(id, new Rect(x, rect.y + (rect.height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize));
+                    var iconRect = new Rect(x, rect.y + (rect.height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize);
+                    DrawRelicIcon(id, iconRect);
+                    if (IBlameYou.Systems.RelicCodex.Has(IBlameYou.Core.RunStats.NewRelicMask, (int)id)) DrawNewRelicDot(iconRect);
                     x += RelicListIconSize + (showNames ? 3f : 0f);
                 }
                 if (!showNames && hasIcon) continue;
@@ -124,6 +126,19 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(x, rect.y, w + 2f, rect.height), name, style);
                 x += w;
             }
+        }
+
+        // 이번 판에 처음 도감에 오른 유물: 아이콘 오른쪽 위에 작은 초록 점 (결과 창 "새 유물 N개 도감 등록!"과 같은 색).
+        private static void DrawNewRelicDot(Rect icon)
+        {
+            const float size = 7f;
+            var previous = GUI.color;
+            var dot = new Rect(icon.xMax - size + 2f, icon.y - 2f, size, size);
+            GUI.color = new Color(0.1f, 0.25f, 0.1f, previous.a); // 진한 테두리
+            GUI.DrawTexture(new Rect(dot.x - 1f, dot.y - 1f, size + 2f, size + 2f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.49f, 1f, 0.48f, previous.a); // #7dff7a
+            GUI.DrawTexture(dot, Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         // 레벨 막대 아래: "유물" + [아이콘 이름] 줄. 화면보다 길어지면 이름은 빼고 아이콘만 늘어놓는다.
