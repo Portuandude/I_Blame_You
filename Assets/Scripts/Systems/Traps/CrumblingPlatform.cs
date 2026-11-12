@@ -114,10 +114,14 @@ namespace IBlameYou.Systems
             if (jelly) SetTint(0f);
             solid.enabled = false;
             SetAlpha(GoneAlpha);
-            // 무너질 때 발판 칸마다 나무 먼지가 펑 (발판 윗면 기준)
+            // 무너질 때 발판 칸마다 나무 먼지가 펑 (발판 윗면 기준), 젤리 방석이면 분홍 방울도
             float topY = transform.position.y + Thickness / 2f;
             for (int i = 0; i < width; i++)
-                VfxPlayer.Dust(new Vector3(transform.position.x + i - (width - 1) / 2f, topY, 0f), 0.6f);
+            {
+                var cell = new Vector3(transform.position.x + i - (width - 1) / 2f, topY, 0f);
+                VfxPlayer.Dust(cell, 0.6f);
+                if (jelly) VfxPlayer.JellyDrops(cell, 2); // 젤리 방석이면 먼지와 함께 분홍 방울이 톡톡
+            }
             yield return new WaitForSeconds(RespawnTime - WarnTime);
 
             // 다시 생기기 직전: 흐린 윤곽이 깜빡여 "곧 생긴다"를 알린다

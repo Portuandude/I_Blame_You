@@ -2,9 +2,9 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 유물 아이콘 반짝 연출 (VfxPlayer.MedalGlint·AcornGlint·HoneyGlint): 회복할 때 플레이어 머리 위로 유물 아이콘이 톡 튀어나와 떠오르고,
+    // 유물 아이콘 반짝 연출 (VfxPlayer.MedalGlint·AcornGlint·HoneyGlint·StarCandyGlint·HorseshoeGlint): 회복할 때 플레이어 머리 위로 유물 아이콘이 톡 튀어나와 떠오르고,
     // 반짝임(Resources/Effects/Sparkle)이 한 번 터진 뒤 옅어지며 사라진다 (0.9초).
-    // 그림은 유물 아이콘 Resources/UI/HUD/Relics/<이름> (24px)을 키워 쓴다 (용사의 훈장 = HeroMedal, 도토리 주머니 = AcornPouch, 꿀단지 = HoneyJar).
+    // 그림은 유물 아이콘 Resources/UI/HUD/Relics/<이름> (24px)을 키워 쓴다 (용사의 훈장 = HeroMedal, 도토리 주머니 = AcornPouch, 꿀단지 = HoneyJar, 별사탕 = StarCandy, 말굽 자석 = HorseshoeMagnet).
     // 그림이 없으면 아무것도 하지 않는다.
     public class MedalGlintFx : MonoBehaviour
     {

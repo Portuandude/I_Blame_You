@@ -10,6 +10,7 @@ namespace IBlameYou.Systems
         public const float ManaRatio = 0.5f; // 최대 마나의 50%
         private const float FloatHeight = 0.9f;
         private static readonly Vector3 HoneyGlintOffset = new Vector3(0f, 1.5f, 0f); // 꿀단지 시작 높이 (머리 위, 훈장·도토리와 같게)
+        private static readonly Vector3 HorseshoeGlintOffset = new Vector3(-0.55f, 1.4f, 0f); // 말굽 자석 (꿀단지와 안 겹치게 왼쪽)
         private const float BobAmplitude = 0.15f;
         private const float BobSpeed = 3f;
         // 꿀단지를 가졌으면 구슬 뒤에 금빛 테두리가 숨 쉬듯 빛나고 가끔 반짝인다 ("더 많이 찬다")
@@ -18,12 +19,13 @@ namespace IBlameYou.Systems
         private const float HoneyCheckInterval = 0.5f; // 유물을 다시 확인하는 간격
         private const float HoneySparkleInterval = 1.1f;
         // 자석: 살아 있는 플레이어가 구슬 가운데에서 이만큼 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려온다
-        public const float MagnetRadius = 1.5f;
+        // (RelicBook.MagnetRadius, 말굽 자석이 있으면 HorseshoeMagnetRadius — 꿀단지처럼 0.5초마다 확인)
         private const float MagnetCheckInterval = 0.1f;
         private const float MagnetStartSpeed = 2f;
         private const float MagnetAcceleration = 14f;
         private const float MagnetMaxSpeed = 9f;
         private static readonly Collider2D[] MagnetHits = new Collider2D[16];
+        private static readonly RaycastHit2D[] WallHits = new RaycastHit2D[8];
 
         private System.Action onCollected;
         private Transform visual;
@@ -35,6 +37,17 @@ namespace IBlameYou.Systems
         private Transform magnetTarget;
         private float magnetSpeed;
         private float magnetCheckTimer;
+        private float nextWhooshTime;
+        private float foundEdgeDistance; // 마지막으로 찾은 플레이어 몸 가장자리까지 거리 (FindMagnetTarget)
+        private float magnetRadius = IBlameYou.Player.RelicBook.MagnetRadius;
+        private float magnetRelicTimer;
+        private SpriteRenderer orbRenderer;
+        private float trailTimer;
+        // 자석 꼬리: 끌려오는 동안 구슬 뒤로 분홍 잔상이 짧게 남는다 (Afterimage, 빨라졌을 때만)
+        private const float TrailInterval = 0.05f;
+        private const float TrailMinSpeed = 3f;
+        private static readonly Color TrailColor = new Color(1f, 0.6f, 0.75f);
+        private const float WhooshCooldown = 0.6f;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
         public static ArenaReward Create(Transform parent, Vector2 position, bool dropped, System.Action onCollected)
@@ -56,6 +69,7 @@ namespace IBlameYou.Systems
             var renderer = EffectLibrary.CreateVisual(go.transform, "Orb", frames, 10f, true,
                 new Color(1f, 0.45f, 0.55f), 0.7f, 3);
             reward.visual = renderer.transform;
+            reward.orbRenderer = renderer;
             reward.visual.localPosition = new Vector3(0f, FloatHeight, 0f);
 
             var rimGo = new GameObject("HoneyRim");
@@ -87,10 +101,30 @@ namespace IBlameYou.Systems
         {
             if (collected) return;
             magnetCheckTimer -= Time.deltaTime;
+            magnetRelicTimer -= Time.deltaTime;
+            if (magnetRelicTimer <= 0f)
+            {
+                magnetRelicTimer = HoneyCheckInterval;
+                magnetRadius = AnyPlayerHas(IBlameYou.Player.RelicId.HorseshoeMagnet)
+                    ? IBlameYou.Player.RelicBook.HorseshoeMagnetRadius : IBlameYou.Player.RelicBook.MagnetRadius;
+            }
             if (magnetCheckTimer <= 0f)
             {
                 magnetCheckTimer = MagnetCheckInterval;
-                magnetTarget = FindMagnetTarget();
+                var found = FindMagnetTarget();
+                // 끌려오기 시작할 때 작게 "슝" (벽 모서리에서 잡혔다 놓쳤다 해도 0.6초에 한 번만)
+                if (found != null && magnetTarget == null && Time.time >= nextWhooshTime)
+                {
+                    GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
+                    nextWhooshTime = Time.time + WhooshCooldown;
+                    // 말굽 자석 덕분에 기본 거리 밖에서 잡혔으면 머리 위로 말굽 자석이 톡
+                    // (몸 가장자리까지 거리로 판단, 잡힌 그 플레이어가 유물을 가졌을 때만)
+                    var foundRelics = found.GetComponent<IBlameYou.Player.PlayerRelics>();
+                    if (foundRelics != null && foundRelics.Has(IBlameYou.Player.RelicId.HorseshoeMagnet)
+                        && foundEdgeDistance > IBlameYou.Player.RelicBook.MagnetRadius)
+                        VfxPlayer.HorseshoeGlint(found, HorseshoeGlintOffset); // 곧 주우면 꿀단지가 가운데에 뜨므로 왼쪽으로 비켜서
+                }
+                magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
             }
             if (magnetTarget == null) return;
@@ -101,6 +135,16 @@ namespace IBlameYou.Systems
             Vector3 goal = magnetTarget.position + Vector3.up * 0.6f;
             Vector3 next = Vector3.MoveTowards(orbCenter, goal, magnetSpeed * Time.deltaTime);
             transform.position += next - orbCenter;
+
+            if (magnetSpeed >= TrailMinSpeed)
+            {
+                trailTimer -= Time.deltaTime;
+                if (trailTimer <= 0f)
+                {
+                    trailTimer = TrailInterval;
+                    Afterimage.Spawn(orbRenderer, TrailColor, 0.5f, 0.18f);
+                }
+            }
         }
 
         private Transform FindMagnetTarget()
@@ -110,7 +154,7 @@ namespace IBlameYou.Systems
             filter.NoFilter();
             int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층이 있으면 그 층만 (바닥 칸이 버퍼를 채우지 않게)
             if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
-            int count = Physics2D.OverlapCircle(center, MagnetRadius, filter, MagnetHits);
+            int count = Physics2D.OverlapCircle(center, magnetRadius, filter, MagnetHits);
             Transform best = null;
             float bestDistance = float.MaxValue;
             for (int i = 0; i < count; i++)
@@ -119,6 +163,7 @@ namespace IBlameYou.Systems
                 if (player == null) continue;
                 var health = player.GetComponent<HealthSystem>();
                 if (health != null && health.IsDead) continue;
+                if (WallBetween(center, (Vector2)player.transform.position + Vector2.up * 0.6f)) continue; // 벽 너머로는 끌려가지 않는다
                 float distance = ((Vector2)player.transform.position - center).sqrMagnitude;
                 if (distance < bestDistance)
                 {
@@ -126,7 +171,34 @@ namespace IBlameYou.Systems
                     best = player.transform;
                 }
             }
+            // 고른 플레이어 몸 가장자리까지 가장 가까운 거리 (OverlapCircle은 가장자리로 잡는다)
+            foundEdgeDistance = float.MaxValue;
+            if (best != null)
+                for (int i = 0; i < count; i++)
+                {
+                    var player = TrapCommon.PlayerFrom(MagnetHits[i]);
+                    if (player == null || player.transform != best) continue;
+                    foundEdgeDistance = Mathf.Min(foundEdgeDistance, (MagnetHits[i].ClosestPoint(center) - center).magnitude);
+                }
             return best;
+        }
+
+        // from → to 사이에 막힌 땅(벽·바닥)이 있으면 true. 위에서만 밟히는 한쪽 발판(PlatformEffector2D)은 막지 않는다
+        // (구슬이 발판 위·아래에 있어도 플레이어가 그 발판을 지나 다닐 수 있으니까).
+        private static bool WallBetween(Vector2 from, Vector2 to)
+        {
+            var filter = new ContactFilter2D();
+            filter.SetLayerMask(1 << TrapCommon.GroundLayer);
+            filter.useTriggers = false;
+            int count = Physics2D.Linecast(from, to, filter, WallHits);
+            for (int i = 0; i < count; i++)
+            {
+                var hit = WallHits[i].collider;
+                if (hit == null || hit.usedByEffector) continue; // 한쪽 발판
+                if (TrapCommon.PlayerFrom(hit) != null) continue; // Ground 층이 없어 Default로 찾을 때 플레이어 몸은 벽이 아니다
+                return true;
+            }
+            return false;
         }
 
         private void UpdateHoneyRim()
@@ -155,10 +227,12 @@ namespace IBlameYou.Systems
         }
 
         // 둘(A·B가 함께 쓰는 캐릭터) 중 누구라도 꿀단지를 가졌는지.
-        private static bool AnyPlayerHasHoney()
+        private static bool AnyPlayerHasHoney() => AnyPlayerHas(IBlameYou.Player.RelicId.HoneyJar);
+
+        private static bool AnyPlayerHas(IBlameYou.Player.RelicId id)
         {
             foreach (var relics in FindObjectsByType<IBlameYou.Player.PlayerRelics>(FindObjectsSortMode.None))
-                if (relics.Has(IBlameYou.Player.RelicId.HoneyJar)) return true;
+                if (relics.Has(id)) return true;
             return false;
         }
 

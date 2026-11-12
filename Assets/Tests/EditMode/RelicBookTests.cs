@@ -94,6 +94,17 @@ namespace IBlameYou.Tests
             Assert.AreEqual(21, (int)RelicId.HoneyJar);
             Assert.AreEqual(22, (int)RelicId.JellyCushion);
             Assert.AreEqual(23, (int)RelicId.StarCandy);
+            Assert.AreEqual(24, (int)RelicId.HorseshoeMagnet);
+        }
+
+        [Test]
+        public void HorseshoeMagnet_DescribesWiderMagnet()
+        {
+            Assert.AreEqual("보상 구슬이 4칸 밖에서도 끌려온다", RelicBook.Description(RelicId.HorseshoeMagnet));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.HorseshoeMagnet));
+            Assert.AreEqual("말굽 자석", RelicBook.Name(RelicId.HorseshoeMagnet));
+            Assert.Contains(RelicId.HorseshoeMagnet, RelicBook.All);
+            Assert.Greater(RelicBook.HorseshoeMagnetRadius, RelicBook.MagnetRadius);
         }
 
         [Test]
