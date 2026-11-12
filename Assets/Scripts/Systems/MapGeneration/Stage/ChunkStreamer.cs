@@ -386,6 +386,7 @@ namespace IBlameYou.Systems
                 int cols = RoomCols(index);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
+                VillageDecor.Build(root, origin.x, cols, ground); // 따뜻한 색조·울타리·가로등·꽃·분수
             }
         }
 
