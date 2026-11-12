@@ -24,7 +24,7 @@ namespace IBlameYou.Core
 
         private void Update()
         {
-            if (!GameSession.DevMode || health == null) return;
+            if (!(GameSession.DevMode || GameSession.FeatureTest) || health == null) return; // 기능 테스트 모드는 미니게임을 켜도 치트를 쓴다
 
             if (Input.GetKeyDown(KeyCode.F1))
             {

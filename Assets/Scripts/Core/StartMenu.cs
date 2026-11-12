@@ -113,6 +113,7 @@ namespace IBlameYou.Core
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
                     SaveData.SaveSettings();
                     GameSession.Started = true;
+                    GameSession.FeatureTest = false;
                     var callback = onContinue;
                     Destroy(this);
                     callback?.Invoke();
@@ -121,8 +122,8 @@ namespace IBlameYou.Core
                 GUILayout.Space(4f);
             }
 
-            string startLabel = saved == null ? "로컬 테스트 시작"
-                : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "새로 시작";
+            string startLabel = saved == null ? "플레이 테스트 시작 (일반 판)"
+                : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "플레이 테스트 새로 시작";
             bool startPressed = GUILayout.Button(startLabel, button, GUILayout.Height(48f));
             if (startPressed && saved != null && !confirmNewRun)
             {
@@ -130,12 +131,14 @@ namespace IBlameYou.Core
             }
             else if (startPressed)
             {
-                GameSession.DevMode = devMode;
-                SaveData.SaveSettings();
-                GameSession.Started = true;
-                var callback = onStart;
-                Destroy(this);
-                callback?.Invoke();
+                StartRun(false); // GUILayout 영역을 닫아야 하므로 return 없이 아래까지 그린다 (예전 시작 버튼과 같음)
+            }
+
+            // 기능 테스트 모드: 적 없는 시험용 맵에서 몬스터·유물·협동 기능을 키로 불러 시험 (이어하던 런은 건드리지 않는다)
+            GUILayout.Space(4f);
+            if (GUILayout.Button("기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", button, GUILayout.Height(40f)))
+            {
+                StartRun(true);
             }
 
             GUI.enabled = false;
@@ -144,6 +147,17 @@ namespace IBlameYou.Core
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
+        }
+
+        private void StartRun(bool featureTest)
+        {
+            GameSession.DevMode = devMode;
+            SaveData.SaveSettings();
+            GameSession.Started = true;
+            GameSession.FeatureTest = featureTest;
+            var callback = onStart;
+            Destroy(this);
+            callback?.Invoke();
         }
 
         // 제목: 진한 외곽선 + gold 테두리 + 크림 글자, 위아래로 둥실, 둘레에 반짝이 별 4개가 번갈아 깜빡임.
@@ -245,7 +259,7 @@ namespace IBlameYou.Core
             h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
             h += 22f;                                 // 유물 도감 줄
             if (saved != null) h += 44f + 4f;         // 이어하기 버튼
-            h += 48f + 40f;                           // 시작·온라인 버튼
+            h += 48f + 4f + 40f + 40f;                // 시작·기능 테스트·온라인 버튼
             return h + 12f * 4f;                      // 요소 사이 기본 여백
         }
 
