@@ -16,6 +16,14 @@ namespace IBlameYou.Player
         [SerializeField] private float runSpeed = 9f;
         [SerializeField] private float jumpForce = 12f;
 
+        [Header("Jump Feel")]
+        [Tooltip("발판 끝에서 떨어진 뒤에도 점프할 수 있는 시간 (코요테 타임). 0.08초 × 달리기 9 = 0.7칸이라 최대 거리는 약 8칸")]
+        [SerializeField] private float coyoteTime = 0.08f;
+        [Tooltip("착지 직전에 누른 점프를 기억해 두는 시간 (입력 버퍼)")]
+        [SerializeField] private float jumpBufferTime = 0.12f;
+        [Tooltip("올라가는 중에 점프 키를 떼면 위 속도에 곱하는 값 (짧게 누르면 낮은 점프)")]
+        [SerializeField] private float jumpCutMultiplier = 0.5f;
+
         [Header("Run Stamina")]
         [SerializeField] private float runStaminaDrainPerSecond = 25f;
         [SerializeField] private float minStaminaToStartRun = 10f;
@@ -53,6 +61,12 @@ namespace IBlameYou.Player
         private float lastLandSoundTime = -1f;
         private bool isRunning;
         private bool jumpQueued;
+        private float lastGroundedTime = float.NegativeInfinity;  // 마지막으로 땅에 서 있던 시각 (코요테 타임)
+        private float jumpPressedTime = float.NegativeInfinity;   // 마지막으로 점프 키를 누른 시각 (입력 버퍼)
+        private float jumpLockUntil;     // 점프 직후 발밑 확인이 아직 땅에 걸려 있어도 다시 점프·코요테로 보지 않는 시각
+        private bool jumpCutArmed;       // 이번 점프가 올라가는 중이라 키를 떼면 낮은 점프가 될 수 있음
+        private bool jumpCutRequested;   // Update에서 키를 뗀 것을 봤고 다음 물리 프레임에 위 속도를 줄인다
+        private const float JumpLockTime = 0.1f;
         private bool isDashing;
         private float dashTimeRemaining;
         private float dashDirection;
@@ -144,10 +158,25 @@ namespace IBlameYou.Player
 
             bool stunned = hitStun.IsStunned;
 
-            if (RoleInput.JumpDown(control) && isGrounded && !stunned)
+            // 땅에 서 있던 마지막 시각. 점프 직후 잠깐은 발밑 확인이 아직 땅에 걸려 있어도 세지 않는다 (공중 두 번 점프 방지).
+            if (isGrounded && Time.time >= jumpLockUntil) lastGroundedTime = Time.time;
+
+            if (RoleInput.JumpDown(control)) jumpPressedTime = Time.time;
+
+            // 입력 버퍼: 착지 직전에 누른 점프도 쓴다. 코요테 타임: 발판에서 떨어진 직후에도 점프할 수 있다.
+            // 대시 중에는 받지 않는다 (대시 끝에 공중에서 점프가 터져 대시+점프 거리가 늘지 않게).
+            bool canJump = !stunned && !isDashing && !jumpQueued && Time.time >= jumpLockUntil &&
+                (isGrounded || Time.time - lastGroundedTime <= coyoteTime);
+            if (canJump && Time.time - jumpPressedTime <= jumpBufferTime)
             {
                 jumpQueued = true;
+                jumpPressedTime = float.NegativeInfinity;
+                lastGroundedTime = float.NegativeInfinity; // 이 점프로 코요테 시간을 다 쓴다
+                jumpLockUntil = Time.time + JumpLockTime;
             }
+
+            // 짧게 누르면 낮은 점프: 이번 점프로 올라가는 중에 키를 떼면 다음 물리 프레임에 위 속도를 줄인다.
+            if (jumpCutArmed && !jumpQueued && !RoleInput.JumpHeld(control)) jumpCutRequested = true;
 
             // 마력 안개(스위치 발판 낭떠러지) 안이나, 공중에서 안개 가까이에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
             if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Blocks(rb.position, IsGroundedStable) && stamina.TryConsume(dashStaminaCost))
@@ -163,6 +192,9 @@ namespace IBlameYou.Player
         {
             airMinVelocityY = 0f;
             wasGrounded = true;
+            lastGroundedTime = float.NegativeInfinity; // 옮긴 자리(공중일 수 있음)에서 예전 땅 기준 코요테 점프가 나오지 않게
+            jumpCutArmed = false;
+            jumpCutRequested = false;
             var squash = GetComponent<PlayerSquash>();
             if (squash != null) squash.ResetAirborne(); // 옮긴 자리에서 가짜 착지 찌그러짐이 나지 않게
         }
@@ -203,6 +235,10 @@ namespace IBlameYou.Player
             rb.gravityScale = 0f;
             health.Invulnerable = true;
             jumpQueued = false; // 같은 프레임에 누른 점프가 대쉬가 끝난 뒤 공중에서 터지지 않게
+            jumpPressedTime = float.NegativeInfinity;
+            lastGroundedTime = float.NegativeInfinity; // 대시로 발판을 벗어난 뒤 코요테 점프로 거리를 늘리지 못하게
+            jumpCutArmed = false;
+            jumpCutRequested = false;
             GameAudio.PlaySfx("Dash", 0.8f);
         }
 
@@ -241,6 +277,8 @@ namespace IBlameYou.Player
             {
                 isRunning = false;
                 jumpQueued = false;
+                jumpCutArmed = false;
+                jumpCutRequested = false;
                 rb.linearVelocity = new Vector2(carryX, rb.linearVelocity.y);
                 return;
             }
@@ -249,7 +287,19 @@ namespace IBlameYou.Player
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
                 jumpQueued = false;
+                jumpCutArmed = true;
+                jumpCutRequested = false;
                 GameAudio.PlaySfx("Jump", 0.6f);
+            }
+            else if (jumpCutArmed)
+            {
+                if (rb.linearVelocity.y <= 0f) jumpCutArmed = false; // 꼭대기를 지났으면 끝
+                else if (jumpCutRequested)
+                {
+                    rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
+                    jumpCutArmed = false;
+                }
+                jumpCutRequested = false;
             }
 
             float moveInput = RoleInput.MoveAxis(control);
