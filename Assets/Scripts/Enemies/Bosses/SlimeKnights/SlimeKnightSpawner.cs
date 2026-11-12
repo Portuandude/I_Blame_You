@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.Enemies
 {
-    // 중간보스 쌍둥이 슬라임 기사 구성의 단일 출처 (Docs/MidBossDraft.md 후보 C, 진행도 55% 중간보스 방).
+    // 중간보스 쌍둥이 슬라임 기사 구성의 단일 출처 (Docs/MidBossDraft.md 후보 C, 보스까지 거리 55% 지점 중간보스 방).
     // 슬라임 몸(도약 덮치기)을 그대로 쓰고, 투구 쓴 그림(Resources/Enemies/SlimeKnight*)으로 바꿔 끼운 뒤
     // 불 기사는 돌진(KnightCharge), 물 기사는 방패(KnightShield)를 붙인다. 둘 다 짝이 쓰러지면 광폭화(SlimeKnight).
     // 상성: 불 기사 = 불 몸(물 마법에 약함), 물 기사 = 물 몸(상성표대로 땅에 약함) + 바람 방어 -30(초안의 "바람에 약함").
