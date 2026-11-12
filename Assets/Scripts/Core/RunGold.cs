@@ -61,9 +61,29 @@ namespace IBlameYou.Core
             if (amount <= 0) return;
 
             RunStats.AddGold(amount);
+            LaunchCoins(enemy.transform.position + Vector3.up * 0.5f, target, amount);
+        }
+
+        // 돼지 저금통 (2026-11-12): 판에서 처음 찾은 마을에 들어갈 때 (ChunkStreamer.EnterRoom). 화면에 보이는 골드(아직 날아오는 몫 제외)의
+        // 25%(최대 50)를 이자로 받는다. 머리 위에 저금통이 톡 뜨고 동전이 저금통 자리에서 튀어 빨려 온다. 받은 이자를 돌려준다 (없으면 0).
+        public static int OnVillageFound(Transform player)
+        {
+            if (player == null || RunStats.Ended) return 0;
+            var relics = PlayerRelics.For(player.gameObject);
+            if (relics == null || !relics.Has(RelicId.PiggyBank)) return 0;
+            int interest = RelicBook.PiggyBankInterest(Mathf.Max(0, RunStats.Gold - InFlight));
+            if (interest <= 0) return 0;
+            RunStats.AddGold(interest);
+            VfxPlayer.PiggyBankGlint(player, PouchGlintOffset);
+            LaunchCoins(player.position + PouchGlintOffset, player, interest);
+            return interest;
+        }
+
+        // amount 골드를 동전 여러 개로 나눠 from에서 부채꼴로 튀운 뒤 target에게 빨려 오게 한다. 닿을 때마다 InFlight가 줄고 HUD 숫자가 오른다.
+        private static void LaunchCoins(Vector3 from, Transform target, int amount)
+        {
             var frames = EffectLibrary.LoadRuntimeFrames("Effects/Coin");
             var coins = GoldDropTable.SplitCoins(amount);
-            Vector3 from = enemy.transform.position + Vector3.up * 0.5f;
             int gen = generation;
             for (int i = 0; i < coins.Length; i++)
             {
