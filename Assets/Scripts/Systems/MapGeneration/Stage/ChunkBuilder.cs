@@ -51,8 +51,8 @@ namespace IBlameYou.Systems
 
             var go = new GameObject("Background");
             go.transform.SetParent(root, false);
-            go.transform.localPosition = new Vector3(ChunkData.Width / 2f, ChunkData.Height / 2f, 0f);
-            go.transform.localScale = new Vector3(ChunkData.Width, ChunkData.Height + 8f, 1f);
+            go.transform.localPosition = new Vector3(chunk.Cols / 2f, ChunkData.Height / 2f, 0f);
+            go.transform.localScale = new Vector3(chunk.Cols, ChunkData.Height + 8f, 1f);
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = SolidSpriteFactory.CreateSquare();
             renderer.color = tint.Value;
@@ -72,15 +72,15 @@ namespace IBlameYou.Systems
             composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
             composite.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
-            var used = new bool[ChunkData.Width, ChunkData.Height];
+            var used = new bool[chunk.Cols, ChunkData.Height];
             for (int y = 0; y < ChunkData.Height; y++)
             {
-                for (int x = 0; x < ChunkData.Width; x++)
+                for (int x = 0; x < chunk.Cols; x++)
                 {
                     if (used[x, y] || chunk.Tiles[x, y] != StageTile.Solid) continue;
 
                     int width = 1;
-                    while (x + width < ChunkData.Width && !used[x + width, y] && chunk.Tiles[x + width, y] == StageTile.Solid) width++;
+                    while (x + width < chunk.Cols && !used[x + width, y] && chunk.Tiles[x + width, y] == StageTile.Solid) width++;
 
                     int height = 1;
                     while (y + height < ChunkData.Height && RowFree(chunk, used, x, width, y + height)) height++;
@@ -145,11 +145,11 @@ namespace IBlameYou.Systems
             var plank = TrapCommon.Frame("Platform");
             for (int y = 0; y < ChunkData.Height; y++)
             {
-                for (int x = 0; x < ChunkData.Width; x++)
+                for (int x = 0; x < chunk.Cols; x++)
                 {
                     if (chunk.Tiles[x, y] != StageTile.Platform) continue;
                     int start = x;
-                    while (x + 1 < ChunkData.Width && chunk.Tiles[x + 1, y] == StageTile.Platform) x++;
+                    while (x + 1 < chunk.Cols && chunk.Tiles[x + 1, y] == StageTile.Platform) x++;
                     CreatePlatform(root, start, x - start + 1, y + 1f, plank, groundTile);
                 }
             }

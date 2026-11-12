@@ -95,10 +95,10 @@ namespace IBlameYou.Systems
                 {
                     var o = Origin(i);
                     min = Vector2.Min(min, o);
-                    max = Vector2.Max(max, o);
+                    max = Vector2.Max(max, o + new Vector2(rooms.Rooms[i].Cols, 0f)); // 넓은 방은 오른쪽 끝까지
                 }
 
-                return new Rect(min.x, min.y - 1f, max.x - min.x + ChunkData.Width, max.y - min.y + ChunkData.Height + 1f);
+                return new Rect(min.x, min.y - 1f, max.x - min.x, max.y - min.y + ChunkData.Height + 1f);
             }
         }
 
@@ -108,7 +108,7 @@ namespace IBlameYou.Systems
         public Rect RoomRect(int index)
         {
             var o = Origin(index);
-            return new Rect(o.x, o.y - 1f, ChunkData.Width, ChunkData.Height + 1f);
+            return new Rect(o.x, o.y - 1f, RoomCols(index), ChunkData.Height + 1f);
         }
 
         // 청크(방)의 월드 원점 (왼쪽 아래). 외길 모드는 가로로 이어 붙이고, 방 격자 모드는 격자 칸마다 간격을 두고 놓는다.
@@ -116,8 +116,11 @@ namespace IBlameYou.Systems
         {
             if (rooms == null) return new Vector2(index * ChunkData.Width, 0f);
             var room = rooms.Rooms[index];
-            return new Vector2(room.X * (ChunkData.Width + RoomGap), room.Y * (ChunkData.Height + RoomGap));
+            return new Vector2(room.X * (RoomLayout.CellCols + RoomGap), room.Y * (ChunkData.Height + RoomGap)); // 칸 폭 = 가장 넓은 방 (넓은 방도 겹치지 않게)
         }
+
+        // 방(청크)의 가로 칸 수: 넓은 방은 구간 여러 개 (RoomData.Leads). 외길 모드는 늘 한 화면.
+        public int RoomCols(int index) => rooms == null ? ChunkData.Width : rooms.Rooms[index].Cols;
 
         // 낭떠러지로 떨어졌다고 보는 높이 (지금 방 바닥 기준).
         public float KillLine => (rooms == null ? 0f : Origin(currentRoom).y) + FallRecovery.KillY;
@@ -368,7 +371,7 @@ namespace IBlameYou.Systems
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
                 ? new Vector2(origin.x + floorSpot.Value.x + 2.5f, origin.y + floorSpot.Value.y)
-                : new Vector2(origin.x + ChunkData.Width / 2f, origin.y + stage.Chunks[index].EntryHeight);
+                : new Vector2(origin.x + RoomCols(index) / 2f, origin.y + stage.Chunks[index].EntryHeight);
             // 협동 봉인문이 선 세로 곁방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
             if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
@@ -599,7 +602,7 @@ namespace IBlameYou.Systems
 
             DoorDir passed = DoorDir.None;
             if (local.x < DoorEdge && (room.Doors & DoorDir.Left) != 0) passed = DoorDir.Left;
-            else if (local.x > ChunkData.Width - DoorEdge && (room.Doors & DoorDir.Right) != 0) passed = DoorDir.Right;
+            else if (local.x > RoomCols(currentRoom) - DoorEdge && (room.Doors & DoorDir.Right) != 0) passed = DoorDir.Right;
             else if (local.y > ChunkData.Height - 0.3f && inHole && (room.Doors & DoorDir.Up) != 0) passed = DoorDir.Up;
             else if (local.y < -0.5f && inHole && (room.Doors & DoorDir.Down) != 0) passed = DoorDir.Down;
             if (passed == DoorDir.None) return;
@@ -638,7 +641,7 @@ namespace IBlameYou.Systems
             if (geometries == null || !geometries[index].Arrivals.TryGetValue(door, out var spot)) return;
             int column = spot.x;
             if (door == DoorDir.Left) column = 1;
-            else if (door == DoorDir.Right) column = ChunkData.Width - 2;
+            else if (door == DoorDir.Right) column = RoomCols(index) - 2;
             // 한 칸 안쪽 열의 땅이 문턱보다 높으면 그 위에 선다 (땅 속에 박히지 않게)
             var chunk = stage.Chunks[index];
             int standY = spot.y;

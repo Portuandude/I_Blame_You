@@ -73,7 +73,7 @@ namespace IBlameYou.Systems
 
             for (int y = 0; y < ChunkData.Height; y++)
             {
-                for (int x = 0; x < ChunkData.Width; x++)
+                for (int x = 0; x < chunk.Cols; x++)
                 {
                     if (chunk.Tiles[x, y] != StageTile.Solid) continue;
 
@@ -143,7 +143,7 @@ namespace IBlameYou.Systems
         {
             if (y < 0) return true;
             if (y >= ChunkData.Height) return false;
-            x = Mathf.Clamp(x, 0, ChunkData.Width - 1);
+            x = Mathf.Clamp(x, 0, chunk.Cols - 1);
             return chunk.Tiles[x, y] == StageTile.Solid;
         }
 
