@@ -54,7 +54,7 @@ namespace IBlameYou.Tests
                     var chunk = RoomShaper.Build(seed, room).Chunk;
                     int top = ChunkData.Height - 1;
                     if ((room.Doors & DoorDir.Left) == 0) Assert.IsTrue(chunk.IsSolid(0, top - 1), $"seed {seed} room {room.Index} 왼쪽 벽");
-                    if ((room.Doors & DoorDir.Right) == 0) Assert.IsTrue(chunk.IsSolid(ChunkData.Width - 1, top - 1), $"seed {seed} room {room.Index} 오른쪽 벽");
+                    if ((room.Doors & DoorDir.Right) == 0) Assert.IsTrue(chunk.IsSolid(chunk.Cols - 1, top - 1), $"seed {seed} room {room.Index} 오른쪽 벽");
                     if (!room.IsVertical) continue;
 
                     for (int x = RoomShaper.HoleX0; x <= RoomShaper.HoleX1; x++)
@@ -66,6 +66,66 @@ namespace IBlameYou.Tests
                     }
                 }
             }
+        }
+
+        // 넓은 방: 방 폭 = 구간 수 × 32, 모든 방이 검증 통과, 전투·보스 구역(과 중간보스 기사)은 들어오는 문 반대쪽 끝 구간,
+        // 오른쪽 문 도착 칸은 방 오른쪽 끝 열.
+        [Test]
+        public void WideRoomsMatchColsAndKeepArenaAtFarEnd()
+        {
+            int wide = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    var geometry = RoomShaper.Build(seed, room);
+                    string where = $"seed {seed} room {room.Index} {room.Kind}";
+                    Assert.IsTrue(geometry.Valid, $"{where}: {geometry.Reason}");
+                    var chunk = geometry.Chunk;
+                    Assert.AreEqual(room.Cols, chunk.Cols, where);
+                    if (room.Leads.Count > 0) wide++;
+                    DoorDir right = DoorDir.Right;
+                    if (geometry.Arrivals.ContainsKey(right)) Assert.AreEqual(chunk.Cols - 1, geometry.Arrivals[right].Item1, where);
+                    if (room.Leads.Count == 0) continue;
+
+                    bool mainRight = RoomShaper.MainOnRight(room);
+                    int mainX0 = mainRight ? chunk.Cols - ChunkData.Width : 0;
+                    foreach (var f in chunk.Features)
+                    {
+                        bool arenaThing = f.Kind == FeatureKind.Arena || f.Kind == FeatureKind.Exit || (f.Kind == FeatureKind.Enemy && f.Deferred);
+                        if (!arenaThing) continue;
+                        Assert.That(f.X, Is.InRange(mainX0, mainX0 + ChunkData.Width - 1), $"{where}: {f.Kind} 주 구간 밖 {f.X}");
+                    }
+                }
+            }
+            Assert.Greater(wide, SeedCount * 3, "넓은 방이 판마다 여럿");
+        }
+
+        // 넓은 방 이어 붙이기: 기능 X가 구간 시작만큼 밀리고 적 번호가 겹치지 않는다.
+        [Test]
+        public void StitchShiftsFeaturesAndRenumbersEnemies()
+        {
+            var a = new ChunkData { Index = 3, EntryHeight = 5, ExitHeight = 6 };
+            a.AddEnemy(StageEnemy.Slime, 10, 5);
+            var b = new ChunkData { Index = 3, EntryHeight = 6, ExitHeight = 7, Kind = ChunkKind.Arena };
+            b.AddEnemy(StageEnemy.Goblin, 4, 6);
+            b.AddFeature(FeatureKind.Arena, 2, 6, 28);
+            b.Tiles[1, 0] = StageTile.Solid;
+            var wide = ChunkData.Stitch(new List<ChunkData> { a, b }, b);
+            Assert.AreEqual(64, wide.Cols);
+            Assert.AreEqual(ChunkKind.Arena, wide.Kind);
+            Assert.AreEqual(5, wide.EntryHeight);
+            Assert.AreEqual(7, wide.ExitHeight);
+            Assert.AreEqual(StageTile.Solid, wide.Get(33, 0));
+            var ids = new HashSet<int>();
+            foreach (var f in wide.Features)
+            {
+                if (f.Kind == FeatureKind.Enemy) Assert.IsTrue(ids.Add(f.Id), "적 번호 겹침");
+                if (f.Kind == FeatureKind.Arena) Assert.AreEqual(34, f.X);
+                if (f.Kind == FeatureKind.Enemy && f.Enemy == StageEnemy.Goblin) Assert.AreEqual(36, f.X);
+            }
+            Assert.AreEqual(2, ids.Count);
+            Assert.AreEqual(StageTile.Empty, wide.Get(64, 0), "범위 밖은 빈칸");
         }
 
         // 검증기: 한쪽 발판은 위에서 뚫고 내려갈 수 없다. 벽에서 벽까지 꽉 찬 발판 위에 서면 바닥으로 못 내려간다.

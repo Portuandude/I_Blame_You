@@ -8,7 +8,7 @@ namespace IBlameYou.Tests
     // 방 격자형 배치(RoomLayout) 규칙. Docs/LevelDesign.md의 "생성 규칙"을 고정한다.
     public class RoomLayoutTests
     {
-        private const float TargetSeconds = 15f * 60f; // 스테이지 1 목표 15분 (2026-11-10 사람 결정)
+        private const float TargetSeconds = 20f * 60f; // 스테이지 목표 15~30분의 기본값 20분 (2026-11-12 사람 결정 15~30분)
         private const int SeedCount = 60;
 
         private static IEnumerable<RoomLayoutData> Layouts()
@@ -178,21 +178,42 @@ namespace IBlameYou.Tests
             }
         }
 
-        // 지금 한 화면 방 9~12개로는 15분에 못 미친다 (2026-11-12 측정: 약 11분). 큰 방 작업(백로그)에서 15~30분으로 올린다.
-        // 여기서는 너무 짧아지지 않는지만 본다.
+        // 넓은 방(앞 구간)으로 목표 15·20·30분 모두 예상 시간이 15~30분 안 (2026-11-12 "큰 방").
         [Test]
-        public void EstimatedTimeIsReported()
+        public void EstimatedTimeWithinFifteenToThirtyMinutes()
         {
-            float min = float.MaxValue, max = 0f;
-            foreach (var layout in Layouts())
+            foreach (float minutes in new[] { 15f, 20f, 30f })
             {
-                float seconds = RoomLayout.EstimatedSeconds(layout);
-                min = Math.Min(min, seconds);
-                max = Math.Max(max, seconds);
+                float min = float.MaxValue, max = 0f;
+                for (int seed = 0; seed < 200; seed++)
+                {
+                    float seconds = RoomLayout.EstimatedSeconds(RoomLayout.Generate(seed, minutes * 60f));
+                    min = Math.Min(min, seconds);
+                    max = Math.Max(max, seconds);
+                }
+                Console.WriteLine($"목표 {minutes}분 → 방 격자 예상 시간: {min / 60f:0.0}~{max / 60f:0.0}분");
+                Assert.GreaterOrEqual(min, RoomLayout.MinSeconds, $"목표 {minutes}분");
+                Assert.LessOrEqual(max, RoomLayout.MaxSeconds, $"목표 {minutes}분");
             }
-            Console.WriteLine($"방 격자 예상 시간: {min / 60f:0.0}~{max / 60f:0.0}분");
-            Assert.GreaterOrEqual(min, 9f * 60f);
-            Assert.LessOrEqual(max, RoomLayout.MaxSeconds);
+        }
+
+        // 넓은 방 규칙: 좌우 이동·퍼즐·전투·보스 방은 앞 구간 2개, 휴식 1개, 시작·보물·샘·세로 방은 한 화면. 앞 구간은 봉인문·움직이는 발판이 아니다.
+        [Test]
+        public void LeadsFollowRoomKind()
+        {
+            foreach (var layout in Layouts())
+                foreach (var room in layout.Rooms)
+                {
+                    Assert.AreEqual(RoomLayout.LeadCount(room), room.Leads.Count, $"seed {layout.Seed} room {room.Index}");
+                    Assert.LessOrEqual(room.Cols, RoomLayout.CellCols);
+                    if (room.IsVertical || room.Kind == RoomKind.Start || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring)
+                        Assert.AreEqual(0, room.Leads.Count, $"seed {layout.Seed} room {room.Index} {room.Kind}");
+                    foreach (var lead in room.Leads)
+                    {
+                        Assert.AreNotEqual(ChunkKind.ElementGate, lead);
+                        Assert.AreNotEqual(ChunkKind.MovingBridge, lead);
+                    }
+                }
         }
 
         [Test]
