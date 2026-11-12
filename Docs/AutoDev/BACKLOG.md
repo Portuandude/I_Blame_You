@@ -23,7 +23,7 @@
 - DONE (claude/project-thread-60srw3): 골드 쓰기 표시 — 마을에서 골드를 쓰면 HUD 골드 알약 아래에 빨간 "-N"이 떠올라 사라지고 숫자가 잠깐 붉게 (`RunStats.TrySpendGold` → 이벤트, `UI/SkillHUD.Gold`)
 - DONE (claude/project-thread-60srw3): 유물 돼지 저금통 (`PiggyBank`=28, 공용) — 판마다 마을에 처음 들어가면 가진 골드의 25%(최대 50)를 이자로 받는다. 아이콘·도감·테스트·문서
 - DONE (claude/project-thread-60srw3, 저금통 유물과 함께): 돼지 저금통 연출 — 이자를 받을 때 머리 위 저금통 톡 + 동전 몇 개가 튀었다 빨려 옴 + "이자 +N" 알림
-- TODO: 최고 골드 기록 — 판이 끝날 때 이번 판에 모은 골드(`GoldEarned`)가 지금까지 최고면 저장하고 결과 창에 "최고!" 표시, 시작 화면 기록 줄에 "최고 골드 N"
+- DONE (claude/project-thread-60srw3): 최고 골드 기록 — 판이 끝날 때 이번 판에 모은 골드(`GoldEarned`)가 지금까지 최고면 저장하고 결과 창에 "최고!" 표시, 시작 화면 기록 줄에 "최고 골드 N"
 
 
 
