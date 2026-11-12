@@ -316,6 +316,7 @@ namespace IBlameYou.UI
             DrawLevelBar();
             DrawRelicList();
             DrawBossBar();
+            DrawArenaCount(); // 전투 구역 남은 적 수 (SkillHUD.Arena.cs)
             DrawNotice();
             DrawFeed();
             DrawShieldMinigame();
