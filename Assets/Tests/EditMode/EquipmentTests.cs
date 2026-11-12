@@ -140,5 +140,22 @@ namespace IBlameYou.Tests
             Assert.AreEqual(3, EquipmentBook.ElementIndex(EquipStat.EarthDefense));
             Assert.AreEqual(-1, EquipmentBook.ElementIndex(EquipStat.Defense));
         }
+    
+        [Test]
+        public void ChestOfferIsDeterministicAndVaried()
+        {
+            var ids = new HashSet<EquipmentId>();
+            for (int chunk = 0; chunk < 40; chunk++)
+            {
+                var a = EquipmentOffer.Roll(123, chunk);
+                var b = EquipmentOffer.Roll(123, chunk);
+                Assert.AreEqual(a.Id, b.Id);
+                Assert.AreEqual(a.Grade, b.Grade);
+                ids.Add(a.Id);
+                Assert.GreaterOrEqual(EquipmentOffer.Roll(123, chunk, EquipmentOffer.MidBossGradeBonus).Grade, EquipmentModifier.MinGrade + 1);
+            }
+
+            Assert.GreaterOrEqual(ids.Count, 6, "상자마다 장비가 골고루 나온다");
+        }
     }
 }
