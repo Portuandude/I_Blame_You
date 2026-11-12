@@ -46,16 +46,17 @@ namespace IBlameYou.UI
             var item = shop.Stock[index];
             var current = equip.Get(item.Slot);
             int gold = SpendableGold;
-            if (!shop.CanBuy(index, current, gold))
+            float rate = VillagePriceRate;
+            if (!shop.CanBuy(index, current, gold, rate))
             {
                 villageMessage = "<color=#ff9a6b>골드가 모자라요</color>";
                 GameAudio.PlaySfx("Switch_Tick", 0.5f);
                 return;
             }
 
-            int cost = EquipmentShop.NetCost(item, current);
+            int cost = EquipmentShop.NetCost(item, current, rate);
             if (!RunStats.TrySpendGold(cost, RunGold.InFlight)) return;
-            shop.Buy(index, current, gold, out _);
+            shop.Buy(index, current, gold, out _, rate);
             var old = equip.Equip(item); // 옛 장비는 값에서 이미 깎았다 (판매)
             villageMessage = old != null
                 ? $"<color=#7dff8a>{item.Name} 장착 · {old.Name} 판매 (-{cost} G)</color>"
@@ -125,6 +126,7 @@ namespace IBlameYou.UI
                 new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
 
             int gold = SpendableGold;
+            float rate = VillagePriceRate;
             float y = rect.y + 76f;
             for (int i = 0; i < EquipmentShop.StockSize; i++)
             {
@@ -134,10 +136,10 @@ namespace IBlameYou.UI
                 {
                     var item = shop.Stock[i];
                     var current = equip.Get(item.Slot);
-                    int cost = EquipmentShop.NetCost(item, current);
+                    int cost = EquipmentShop.NetCost(item, current, rate);
                     DrawShopItem(row, $"{i + 1}. ", item, labelRich, smallRich);
                     bool wasEnabled = GUI.enabled;
-                    GUI.enabled = shop.CanBuy(i, current, gold);
+                    GUI.enabled = shop.CanBuy(i, current, gold, rate);
                     string price = current != null ? $"{cost} G <size=11>(-{current.SellPrice})</size>" : $"{cost} G";
                     if (GUI.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), price, buttonRich)) BuyEquipment(shop, i);
                     GUI.enabled = wasEnabled;

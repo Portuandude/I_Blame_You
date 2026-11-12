@@ -34,6 +34,10 @@ namespace IBlameYou.UI
 
         private int SpendableGold => Mathf.Max(0, RunStats.Gold - RunGold.InFlight);
 
+        // 단골 도장이 있으면 마을에서 사는 값 할인 (식당·장비 상점 구매만, 팔기·리롤은 그대로)
+        private float VillagePriceRate =>
+            relics != null && relics.Has(RelicId.RegularStamp) ? RelicBook.RegularStampPriceRate : 1f;
+
         private bool OpenVillage(VillageService service)
         {
             if (villageOpen || villageUnlockFrame >= 0 || !CanOpenRelicWindow()) return true; // 다른 창·영창 중: 열지 않고 알림도 띄우지 않는다
@@ -110,7 +114,8 @@ namespace IBlameYou.UI
 
         private void BuyFood(FoodInfo food)
         {
-            var check = restaurantVisit.Check(food.Id, SpendableGold, HealthFull, ManaFull);
+            float rate = VillagePriceRate;
+            var check = restaurantVisit.Check(food.Id, SpendableGold, HealthFull, ManaFull, rate);
             if (check != FoodBuyCheck.Ok)
             {
                 villageMessage = $"<color=#ff9a6b>{BuyCheckText(check)}</color>";
@@ -118,8 +123,9 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (!RunStats.TrySpendGold(food.Price, RunGold.InFlight)) return;
-            restaurantVisit.TryBuy(food.Id, food.Price, false, false); // 위에서 이미 확인함: 기록만
+            int price = VillagePrice.Apply(food.Price, rate);
+            if (!RunStats.TrySpendGold(price, RunGold.InFlight)) return;
+            restaurantVisit.TryBuy(food.Id, price, false, false, rate); // 위에서 이미 확인함: 기록만
             ApplyFood(food);
             villageMessage = $"<color=#7dff8a>{food.Name}: {food.Describe()}</color>";
             GameAudio.PlaySfx("Coin", 0.7f);
@@ -202,11 +208,12 @@ namespace IBlameYou.UI
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
 
             bool healthFull = HealthFull, manaFull = ManaFull;
+            float rate = VillagePriceRate;
             float y = rect.y + 80f;
             for (int i = 0; i < count; i++)
             {
                 var food = VillageFood.All[i];
-                var check = restaurantVisit.Check(food.Id, SpendableGold, healthFull, manaFull);
+                var check = restaurantVisit.Check(food.Id, SpendableGold, healthFull, manaFull, rate);
                 var row = new Rect(rect.x + 20f, y, rect.width - 40f, rowHeight - 6f);
                 GUI.Box(row, GUIContent.none, panel);
                 string name = check == FoodBuyCheck.Ok ? $"<b>{food.Name}</b>" : $"<color=#8a8a8a><b>{food.Name}</b></color>";
@@ -226,7 +233,9 @@ namespace IBlameYou.UI
                 var buy = new Rect(row.xMax - 120f, row.y + 5f, 110f, row.height - 10f);
                 bool wasEnabled = GUI.enabled;
                 GUI.enabled = check == FoodBuyCheck.Ok;
-                string price = check == FoodBuyCheck.NotEnoughGold ? $"<color=#ff6b6b>{food.Price} G</color>" : $"{food.Price} G";
+                int cost = VillagePrice.Apply(food.Price, rate);
+                string price = check == FoodBuyCheck.NotEnoughGold ? $"<color=#ff6b6b>{cost} G</color>" : $"{cost} G";
+                if (cost < food.Price) price += " <size=11><color=#7dff8a>도장</color></size>"; // 단골 도장 할인
                 if (GUI.Button(buy, price, new GUIStyle(cardButton) { richText = true })) BuyFood(food);
                 GUI.enabled = wasEnabled;
                 y += rowHeight;
