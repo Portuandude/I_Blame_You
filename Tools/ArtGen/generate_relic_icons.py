@@ -325,6 +325,30 @@ def star_candy(d):
     d.polygon(star_points(20.5, 4.5, 2.0, 0.9), fill=CREAM)
 
 
+def horseshoe_magnet(d):
+    # 말굽 자석: 통통한 빨간 U자 자석 + 은빛 끝, 양옆으로 끌려오는 작은 분홍 하트 구슬·반짝 (보상 구슬 자석)
+    red = hexrgba("ff4f6a")
+    silver = hexrgba("dfe6f0")
+    clear = (0, 0, 0, 0)
+    w = 1.3
+    d.ellipse(E(4 - w, 5 - w, 20 + w, 21 + w), fill=OUTLINE)                    # 바깥 외곽선 (아래 반원)
+    d.rectangle(E(4 - w, 3 - w, 20 + w, 13), fill=OUTLINE)                      # 다리 외곽선
+    d.ellipse(E(4, 5, 20, 21), fill=red)
+    d.rectangle(E(4, 3, 20, 13), fill=red)
+    d.ellipse(E(8.7 - w, 9.7 - w, 15.3 + w, 16.3 + w), fill=OUTLINE)          # 안쪽 외곽선
+    d.rectangle(E(8.7 - w, 0, 15.3 + w, 13), fill=OUTLINE)
+    d.ellipse(E(8.7, 9.7, 15.3, 16.3), fill=clear)                             # 가운데 빈 곳
+    d.rectangle(E(8.7, 0, 15.3, 13), fill=clear)
+    d.rectangle(E(4 - w, 0, 20 + w, 3 - w), fill=clear)                         # 다리 위 정리
+    d.rectangle(E(4, 3, 8.7 - w, 6.5), fill=silver)                             # 은빛 끝 (왼쪽)
+    d.rectangle(E(15.3 + w, 3, 20, 6.5), fill=silver)                           # 은빛 끝 (오른쪽)
+    d.rectangle(E(4, 6.5, 8.7 - w, 7.4), fill=OUTLINE)
+    d.rectangle(E(15.3 + w, 6.5, 20, 7.4), fill=OUTLINE)
+    shine(d, 6.6, 16.5, 1.0)
+    heart_shape(d, 12.0, 4.0, 2.4, hexrgba("ff8fc0"))                           # 끌려오는 작은 하트 구슬
+    d.polygon(star_points(21.5, 20.5, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -350,6 +374,7 @@ ICONS = {
     "HoneyJar": honey_jar,
     "JellyCushion": jelly_cushion,
     "StarCandy": star_candy,
+    "HorseshoeMagnet": horseshoe_magnet,
 }
 
 
