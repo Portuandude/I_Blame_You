@@ -84,6 +84,24 @@ namespace IBlameYou.Systems
             return switchElements[index];
         }
 
+        // 미니맵 동전 점: 그 방에 아직 안 주운 동전 무더기가 남았는지 (방 격자 모드, 청크 번호 = 방 번호).
+        // 무더기 수는 청크 Features에서 처음 물을 때 방마다 한 번 센다. 주운 기록은 CoinPileKey(방, 순번) — 놓는 순서와 같은 순번
+        private int[] coinPileCounts;
+        public bool HasCoinsLeft(int index)
+        {
+            if (rooms == null || stage == null || index < 0 || index >= stage.Chunks.Count) return false;
+            if (coinPileCounts == null)
+            {
+                coinPileCounts = new int[stage.Chunks.Count];
+                for (int i = 0; i < coinPileCounts.Length; i++)
+                    foreach (var f in stage.Chunks[i].Features)
+                        if (f.Kind == FeatureKind.CoinPile) coinPileCounts[i]++;
+            }
+            for (int k = 0; k < coinPileCounts[index]; k++)
+                if (!collectedCoins.Contains(CoinPileKey(index, k))) return true;
+            return false;
+        }
+
         public StageData Stage => stage;
 
         public Rect WorldBounds
