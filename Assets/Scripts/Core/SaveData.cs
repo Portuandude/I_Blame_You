@@ -27,6 +27,7 @@ namespace IBlameYou.Core
             GameSession.DevMode = PlayerPrefs.GetInt(KeyDevMode, GameSession.DevMode ? 1 : 0) != 0;
             GameAudio.MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, GameAudio.MusicVolume));
             GameAudio.SfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, GameAudio.SfxVolume));
+            DisplaySettings.Load(); // 해상도·창 모드 적용, 16:9 레터박스
         }
 
         public static void SaveSettings()

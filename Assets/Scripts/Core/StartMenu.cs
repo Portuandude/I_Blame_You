@@ -24,6 +24,7 @@ namespace IBlameYou.Core
         private bool recordsExpanded; // 접힌 기록 줄을 펼쳤는지 (H 또는 클릭)
         private Vector2 recordScroll;
         private bool recordsTogglePending;
+        private readonly DisplaySettingsWindow display = new DisplaySettingsWindow(); // 화면 설정 창 (일시정지 메뉴와 같은 창)
         private readonly RelicCodexWindow codex = new RelicCodexWindow(); // 유물 도감 창 (C 또는 도감 줄 클릭). 게임 중에도 같은 창 (SkillHUD.Codex)
         private GUIStyle button;
         private GUIStyle toggle;
@@ -73,14 +74,14 @@ namespace IBlameYou.Core
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
             var e = Event.current;
-            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
+            if (!display.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
             {
                 if (e.keyCode == KeyCode.C && !codex.IsOpen) codex.Show(devMode); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
                 else codex.Close();
                 e.Use();
             }
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = !codex.IsOpen; // 도감 창이 열려 있으면 뒤 메뉴는 누를 수 없게
+            GUI.enabled = !codex.IsOpen && !display.IsOpen; // 도감·화면 설정 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
@@ -97,10 +98,14 @@ namespace IBlameYou.Core
             GameAudio.MusicVolume = musicVolume; // 메뉴 음악에 바로 반영
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
             {
                 codex.Show(devMode);
             }
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("화면 설정", recordSmall)) display.Show();
+            GUILayout.EndHorizontal();
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
@@ -147,6 +152,7 @@ namespace IBlameYou.Core
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
+            display.Draw(panel, body, button);
         }
 
         private void StartRun(bool featureTest)
