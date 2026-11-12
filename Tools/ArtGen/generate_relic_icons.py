@@ -379,6 +379,23 @@ def lucky_pouch(d):
     d.polygon(star_points(20.5, 5.5, 2.0, 0.9), fill=CREAM)
 
 
+def regular_stamp(d):
+    # 단골 도장: 크림색 쿠폰 종이 위에 찍힌 빨간 동그라미 도장 자국 + 그 옆에 선 나무 손잡이 도장 (마을에서 사는 값 -20%)
+    paper = CREAM
+    red = hexrgba("e8455a")
+    wood = hexrgba("c98a4b")
+    outlined_poly(d, [(1.5, 9.5), (14.5, 9.5), (14.5, 22), (1.5, 22)], paper, 1.1)   # 쿠폰
+    d.ellipse(E(3.5, 12.2, 11.5, 20.2), fill=red)                                   # 도장 자국
+    d.ellipse(E(5.0, 13.7, 10.0, 18.7), fill=paper)
+    heart_shape(d, 7.5, 15.0, 1.9, red)                                             # 자국 안 하트
+    outlined_poly(d, [(15.5, 2.5), (20.5, 2.5), (20.0, 12), (16.0, 12)], wood, 1.0) # 손잡이
+    outlined_ellipse(d, 15.0, 0.8, 21.0, 5.0, wood, 1.0)                            # 손잡이 머리
+    outlined_poly(d, [(14, 12), (22, 12), (22, 17), (14, 17)], red, 1.1)            # 도장 몸
+    d.rectangle(E(14, 16, 22, 17), fill=hexrgba("a8283c"))
+    shine(d, 17.0, 3.0, 0.8)
+    d.polygon(star_points(21.5, 20.5, 2.0, 0.9), fill=hexrgba("ffd84d"))
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -407,6 +424,7 @@ ICONS = {
     "HorseshoeMagnet": horseshoe_magnet,
     "PaperPlane": paper_plane,
     "LuckyPouch": lucky_pouch,
+    "RegularStamp": regular_stamp,
 }
 
 
