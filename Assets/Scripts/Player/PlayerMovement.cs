@@ -159,7 +159,7 @@ namespace IBlameYou.Player
             bool stunned = hitStun.IsStunned;
 
             // 땅에 서 있던 마지막 시각. 점프 직후 잠깐은 발밑 확인이 아직 땅에 걸려 있어도 세지 않는다 (공중 두 번 점프 방지).
-            if (isGrounded && Time.time >= jumpLockUntil) lastGroundedTime = Time.time;
+            if (isGrounded && !isDashing && Time.time >= jumpLockUntil) lastGroundedTime = Time.time; // 대시 중 땅은 세지 않음
 
             if (RoleInput.JumpDown(control)) jumpPressedTime = Time.time;
 
@@ -246,6 +246,7 @@ namespace IBlameYou.Player
         {
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
+            lastGroundedTime = float.NegativeInfinity; // 대시가 공중에서 끝나면 코요테 점프 없음 (땅에서 끝나면 다음 Update가 다시 채움)
             health.Invulnerable = false;
             if (PostDashGrace > 0f) health.GrantGrace(PostDashGrace);
         }
