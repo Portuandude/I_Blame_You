@@ -24,6 +24,7 @@ namespace IBlameYou.Systems
         private const float MagnetAcceleration = 14f;
         private const float MagnetMaxSpeed = 9f;
         private static readonly Collider2D[] MagnetHits = new Collider2D[16];
+        private static readonly RaycastHit2D[] WallHits = new RaycastHit2D[8];
 
         private System.Action onCollected;
         private Transform visual;
@@ -90,7 +91,10 @@ namespace IBlameYou.Systems
             if (magnetCheckTimer <= 0f)
             {
                 magnetCheckTimer = MagnetCheckInterval;
-                magnetTarget = FindMagnetTarget();
+                var found = FindMagnetTarget();
+                // 끌려오기 시작할 때 작게 "슝" (멈췄다 다시 끌려와도 한 번씩)
+                if (found != null && magnetTarget == null) GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
+                magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
             }
             if (magnetTarget == null) return;
@@ -119,6 +123,7 @@ namespace IBlameYou.Systems
                 if (player == null) continue;
                 var health = player.GetComponent<HealthSystem>();
                 if (health != null && health.IsDead) continue;
+                if (WallBetween(center, (Vector2)player.transform.position + Vector2.up * 0.6f)) continue; // 벽 너머로는 끌려가지 않는다
                 float distance = ((Vector2)player.transform.position - center).sqrMagnitude;
                 if (distance < bestDistance)
                 {
@@ -127,6 +132,24 @@ namespace IBlameYou.Systems
                 }
             }
             return best;
+        }
+
+        // from → to 사이에 막힌 땅(벽·바닥)이 있으면 true. 위에서만 밟히는 한쪽 발판(PlatformEffector2D)은 막지 않는다
+        // (구슬이 발판 위·아래에 있어도 플레이어가 그 발판을 지나 다닐 수 있으니까).
+        private static bool WallBetween(Vector2 from, Vector2 to)
+        {
+            var filter = new ContactFilter2D();
+            filter.SetLayerMask(1 << TrapCommon.GroundLayer);
+            filter.useTriggers = false;
+            int count = Physics2D.Linecast(from, to, filter, WallHits);
+            for (int i = 0; i < count; i++)
+            {
+                var hit = WallHits[i].collider;
+                if (hit == null || hit.usedByEffector) continue; // 한쪽 발판
+                if (TrapCommon.PlayerFrom(hit) != null) continue; // Ground 층이 없어 Default로 찾을 때 플레이어 몸은 벽이 아니다
+                return true;
+            }
+            return false;
         }
 
         private void UpdateHoneyRim()
