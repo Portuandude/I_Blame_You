@@ -103,6 +103,7 @@ namespace IBlameYou.UI
             health.Damaged += OnPlayerDamaged;
             InitializeRelics();
             InitializeEquipmentCard();
+            InitializeVillage();
         }
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
@@ -147,8 +148,9 @@ namespace IBlameYou.UI
             }
             ShutdownRelics();
             ShutdownEquipmentCard();
+            ShutdownVillage();
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -170,6 +172,7 @@ namespace IBlameYou.UI
             ClosePauseMenu();
             CloseRelicWindow();
             CloseEquipCard();
+            CloseVillage();
             CloseCodex();
             stageCleared = true;
             RunStats.Ended = true;
@@ -224,6 +227,7 @@ namespace IBlameYou.UI
                 ClosePauseMenu();
                 CloseRelicWindow();
                 CloseEquipCard();
+                CloseVillage();
                 CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
@@ -246,7 +250,7 @@ namespace IBlameYou.UI
             {
                 UpdateRelicWindowInput();
                 UpdateEquipCardInput();
-                UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
+                if (!UpdateVillageInput()) UpdatePauseInput(); // 마을 창이 열려 있으면 Esc는 마을 창 몫 (SkillHUD.Village.cs) // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
                 UpdateTraitWindowInput();
             }
 
@@ -314,6 +318,7 @@ namespace IBlameYou.UI
             DrawTraitWindow();
             DrawRelicWindow();
             DrawEquipCard();
+            DrawVillageWindow();
             DrawPauseMenu();
             DrawCodexWindow();
             DrawDeathFade();

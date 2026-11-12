@@ -25,7 +25,7 @@ namespace IBlameYou.UI
             }
 
             if (!Input.GetKeyDown(KeyCode.C)) return false;
-            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || deathHandled || stageCleared || health.IsDead) return false;
+            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return false;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return false;
 
             codexWindow.Show(GameSession.DevMode);
