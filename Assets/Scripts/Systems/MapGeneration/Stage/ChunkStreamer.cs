@@ -291,7 +291,7 @@ namespace IBlameYou.Systems
                         var gateElements = f.HasSecondElement
                             ? new[] { (Element)f.ElementIndex, (Element)f.SecondElementIndex }
                             : new[] { (Element)f.ElementIndex };
-                        IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), gateElements,
+                        IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.GateHeight(f.X, f.Y), gateElements,
                             openedGates.Contains(index), () =>
                             {
                                 openedGates.Add(gateChunk);

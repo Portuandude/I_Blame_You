@@ -113,6 +113,18 @@ namespace IBlameYou.Systems
             return 0;
         }
 
+        // 봉인문 높이: (x, floorY)부터 위로 처음 막힌 칸 바로 아래까지 (방 지역 좌표, 칸 수).
+        // 위가 끝까지 비어 있으면 청크 위 GateOverTop칸까지 막아 점프로 넘지 못하게 한다 (방 사이 간격 8유닛 안).
+        // 월드 높이가 아니라 방 안 높이로 재야 한다: 방 격자에서는 방마다 원점 y가 달라서 위·아래 방 지형까지 뚫고 나간다.
+        public const int GateOverTop = 2;
+
+        public int GateHeight(int x, int floorY)
+        {
+            for (int y = Math.Max(0, floorY); y < Height; y++)
+                if (IsSolid(x, y)) return y - floorY;
+            return Height - floorY + GateOverTop;
+        }
+
         public void FillColumn(int x, int height)
         {
             for (int y = 0; y < Height; y++) Tiles[x, y] = y < height ? StageTile.Solid : StageTile.Empty;
