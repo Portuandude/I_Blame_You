@@ -417,6 +417,23 @@ def piggy_bank(d):
     d.polygon(star_points(2.8, 4.0, 2.0, 0.9), fill=CREAM)
 
 
+def treasure_map(d):
+    # 보물 지도: 양 끝이 말린 크림색 양피지 + 점선 길 + 빨간 X 대신 작은 살구색 집 (미니맵에 마을 위치가 미리 보인다)
+    paper = hexrgba("f3dfb0")
+    roll = hexrgba("d9b77a")
+    red = hexrgba("e8455a")
+    house = hexrgba("ffb38a")
+    outlined_poly(d, [(3, 4), (21, 4), (21, 20), (3, 20)], paper, 1.1)              # 종이
+    outlined_ellipse(d, 1, 3, 5, 21, roll, 1.0)                                    # 왼쪽 말림
+    outlined_ellipse(d, 19, 3, 23, 21, roll, 1.0)                                  # 오른쪽 말림
+    for x, y in [(7, 16), (9, 14.5), (11, 13.5), (13, 12)]:                        # 점선 길
+        d.ellipse(E(x - 0.6, y - 0.6, x + 0.6, y + 0.6), fill=red)
+    outlined_poly(d, [(14, 11), (18, 11), (18, 15), (14, 15)], house, 0.9)         # 집 몸
+    outlined_poly(d, [(13, 11.2), (16, 7.5), (19, 11.2)], red, 0.9)                # 집 지붕
+    d.rectangle(E(15.4, 12.8, 16.6, 15), fill=hexrgba("8a5a3c"))                   # 문
+    shine(d, 6.5, 7.0, 0.9)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -447,6 +464,7 @@ ICONS = {
     "LuckyPouch": lucky_pouch,
     "RegularStamp": regular_stamp,
     "PiggyBank": piggy_bank,
+    "TreasureMap": treasure_map,
 }
 
 
