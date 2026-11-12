@@ -28,7 +28,7 @@ namespace IBlameYou.UI
             if (last == null) return;
 
             var body = last.GetComponent<Collider2D>();
-            Vector3 top = body != null
+            Vector3 top = body != null && body.enabled
                 ? new Vector3(body.bounds.center.x, body.bounds.max.y + LastEnemyMarkLift, 0f)
                 : last.transform.position + Vector3.up * 1.5f;
             var vp = cam.WorldToViewportPoint(top);
