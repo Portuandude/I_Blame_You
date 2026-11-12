@@ -145,8 +145,8 @@ namespace IBlameYou.Player
                 jumpQueued = true;
             }
 
-            // 마력 안개(스위치 발판 낭떠러지) 안에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
-            if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Contains(rb.position) && stamina.TryConsume(dashStaminaCost))
+            // 마력 안개(스위치 발판 낭떠러지) 안이나, 공중에서 안개 가까이에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
+            if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Blocks(rb.position, isGrounded) && stamina.TryConsume(dashStaminaCost))
             {
                 StartDash();
             }

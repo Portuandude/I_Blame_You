@@ -71,7 +71,8 @@ namespace IBlameYou.Player
             // 갈 거리를 먼저 정한다: 갈 곳이 없으면 마나를 쓰지 않고 실패만 알린다.
             float travel = PlanTravel(direction);
             // 마력 안개(스위치 발판 낭떠러지): 출발·도착·지나는 길이 닿으면 흩어진다.
-            bool warded = travel >= TeleportRules.MinTravel && BlinkWard.Touches(rb.position, rb.position + direction * travel);
+            bool warded = travel >= TeleportRules.MinTravel &&
+                (BlinkWard.Blocks(rb.position, movement.IsGrounded) || BlinkWard.Touches(rb.position, rb.position + direction * travel));
             if (travel < TeleportRules.MinTravel || warded)
             {
                 SkillMessages.Post(ManaUser.PlayerA, warded ? "순간이동 불가: 마력 안개가 흩뜨림"
