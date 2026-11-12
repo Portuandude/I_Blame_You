@@ -85,8 +85,23 @@ namespace IBlameYou.Systems
                 DamageNumbers.Show(health.transform.position, damage, critical, kind, element);
                 if (affinity > 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "약점!", new Color(1f, 0.85f, 0.3f), 0.75f);
                 else if (affinity < 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "저항", new Color(0.7f, 0.7f, 0.75f), 0.7f);
+                PlayHitFeel(attacker, health, critical);
             }
             return damage;
+        }
+
+        // 전투 손맛 (2026-11-12): 플레이어 공격이 적에게 들어갔을 때만. 쓰러뜨렸으면 히트스톱(정예는 더 길게), 아니면 치명타일 때 짧게.
+        // 보스를 마지막으로 쓰러뜨린 순간은 BossDefeatFx 슬로모션이 먼저 걸려 HitStop은 timeScale이 1이 아니라 저절로 빠진다.
+        private static void PlayHitFeel(CombatStats attacker, HealthSystem health, bool critical)
+        {
+            if (attacker == null || attacker.GetComponent<IBlameYou.Player.PlayerCombat>() == null) return;
+            var enemy = health.GetComponent<IBlameYou.Enemies.EnemyController>();
+            if (enemy == null) return;
+
+            if (health.IsDead)
+                HitStop.Play(IBlameYou.Core.RunGold.RankOf(enemy) == EnemyRank.Elite ? HitStop.EliteDuration : HitStop.KillDuration);
+            else if (critical)
+                HitStop.Play(HitStop.CritDuration);
         }
     }
 }
