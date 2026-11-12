@@ -7,7 +7,7 @@ using UnityEngine;
 namespace IBlameYou.Puzzles
 {
     // 맵 퍼즐: 봉인문. 바닥부터 천장 위까지 길을 막는 마력 벽이고, 문 색(가운데 문양)과 같은 속성의 B 마법을 맞혀야 열린다.
-    // 다른 속성이나 평타는 튕겨 나가며 안내 문구만 띄운다. 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
+    // 다른 속성이나 평타는 튕겨 나가며 벽이 하얗게 번쩍인다 (안내 문구는 없다: 2026-11-12 사람 지시, 문양 색·방어막 거품으로만 알린다). 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
     // 마나는 계속 재생되므로 잘못 쏘거나 영창을 틀려도 기다리면 다시 시도할 수 있다 (갇히지 않는다).
     // 두 속성 봉인문: 문양이 위아래로 둘이고 아래 문양부터 순서대로 맞힌다. 하나를 맞히면 그 문양이 꺼지고 벽 색이 다음 속성으로 바뀐다.
     // 틀려도 진행은 초기화되지 않는다. 맞힌 개수는 ChunkStreamer가 기록해서 청크를 다시 만들어도 이어진다.
@@ -15,7 +15,8 @@ namespace IBlameYou.Puzzles
     // 아래 문양 뒤에는 방어막 거품이 보여서 마법이 아니라 방어막으로 푸는 문양임을 알린다.
     public class ElementGate : MonoBehaviour, IElementReceiver
     {
-        private const float HintCooldown = 1.5f;
+        private const float DeflectCooldown = 0.4f;
+        private const float DeflectFlash = 0.15f;
         private static readonly List<ElementGate> Active = new List<ElementGate>();
         private const float SigilHeight = 2.2f;
         private const float SigilSpacing = 1f;
@@ -34,7 +35,7 @@ namespace IBlameYou.Puzzles
         private SpriteRenderer shieldMark;
         private float nextShieldCheck;
         private float height;
-        private float nextHintTime;
+        private float nextDeflectTime;
 
         public Element Required => sequence[step];
         private bool ShieldStep => shieldFirst && step == 0;
@@ -42,7 +43,7 @@ namespace IBlameYou.Puzzles
         private void OnEnable() => Active.Add(this);
         private void OnDisable() => Active.Remove(this);
 
-        // 벽에 닿지 않는 마법(땅 가시: 바닥에서 솟음)을 문 앞에서 썼을 때 안내한다.
+        // 벽에 닿지 않는 마법(땅 가시: 바닥에서 솟음)을 문 앞에서 썼을 때 튕겨내는 번쩍임을 보인다.
         // from에서 facing 쪽으로 range 안, 높이 차 6칸 이내에 닫힌 문이 있으면 그 문이 받은 것으로 친다.
         public static void NotifyNearby(Vector2 from, float facing, float range, Element element)
         {
@@ -56,16 +57,17 @@ namespace IBlameYou.Puzzles
             }
         }
 
-        // bottom: 문이 선 칸의 바닥 가운데 (월드). alreadyOpen이면 아무것도 만들지 않고 null.
+        // bottom: 문이 선 칸의 바닥 가운데 (월드). height: 막을 높이 (ChunkData.GateHeight, 방 안 좌표로 잰 칸 수).
+        // alreadyOpen이면 아무것도 만들지 않고 null.
         // elements: 맞혀야 하는 속성 순서 (1~2개). startStep: 이미 맞힌 개수 (청크를 다시 만들 때), onStep: 하나 맞힐 때마다 새 개수.
-        public static ElementGate Create(Transform parent, Vector2 bottom, Element[] elements, bool alreadyOpen, Action onOpened,
+        public static ElementGate Create(Transform parent, Vector2 bottom, float height, Element[] elements, bool alreadyOpen, Action onOpened,
             int startStep = 0, Action<int> onStep = null, bool shieldFirst = false)
         {
             if (alreadyOpen || elements == null || elements.Length == 0) return null;
             startStep = Mathf.Clamp(startStep, 0, elements.Length - 1);
             var required = elements[startStep];
 
-            float height = ChunkData.Height - bottom.y + 2f; // 천장 위까지 막아서 점프로 넘지 못하게
+            height = Mathf.Max(1f, height);
             var go = new GameObject("ElementGate");
             go.transform.SetParent(parent, false);
             go.transform.position = bottom;
@@ -121,13 +123,6 @@ namespace IBlameYou.Puzzles
             if (sigil != null) sigil.color = new Color(sigil.color.r * 0.4f, sigil.color.g * 0.4f, sigil.color.b * 0.4f, 0.5f);
         }
 
-        private static string Names(Element[] elements, int from)
-        {
-            var names = new string[elements.Length - from];
-            for (int i = from; i < elements.Length; i++) names[i - from] = ElementInfo.KoreanName(elements[i]);
-            return string.Join(" → ", names);
-        }
-
         public void ReceiveElement(Element element)
         {
             if (opened) return;
@@ -135,13 +130,13 @@ namespace IBlameYou.Puzzles
             var required = sequence[step];
             if (ShieldStep)
             {
-                PostHint($"이 문양은 마법이 아니라 A의 {ElementInfo.KoreanName(required)} 방어막으로 푼다! 방어막을 두르고 문에 닿아라");
+                Deflect();
                 return;
             }
 
             if (element != required)
             {
-                PostHint($"봉인이 튕겨냈다! {ElementInfo.KoreanName(required)} 속성 마법만 통한다");
+                Deflect();
                 return;
             }
 
@@ -167,10 +162,6 @@ namespace IBlameYou.Puzzles
                     var next = ElementInfo.Color(sequence[step]);
                     barrier.color = new Color(next.r, next.g, next.b, barrier.color.a);
                 }
-                nextHintTime = 0f;
-                PostHint(shieldFirst && step == 1
-                    ? $"방어막이 봉인을 풀었다! 이제 B가 {ElementInfo.KoreanName(sequence[step])} 속성 마법을 맞혀라"
-                    : $"봉인 하나가 풀렸다! 다음은 {ElementInfo.KoreanName(sequence[step])} 속성");
                 return;
             }
 
@@ -181,19 +172,15 @@ namespace IBlameYou.Puzzles
             Destroy(gameObject);
         }
 
-        // 플레이어가 문에 부딪히면 어떤 속성이 필요한지 알려 준다.
+        // 방어막 문양: 플레이어가 문에 부딪히면 그 방어막으로 풀리는지 본다.
         private void OnCollisionEnter2D(Collision2D collision)
         {
             var player = TrapCommon.PlayerFrom(collision.collider);
             if (opened || player == null) return;
             if (ShieldStep)
             {
-                if (!TryShield(player)) PostHint(ShieldHint());
-                return;
+                TryShield(player);
             }
-
-            string order = sequence.Length - step > 1 ? $"{Names(sequence, step)} 순서로" : $"{ElementInfo.KoreanName(sequence[step])} 속성";
-            PostHint($"{order} 마법(B)을 맞혀 봉인을 풀어라");
         }
 
         // 방어막 문양: 방어막 미니게임 동안 캐릭터가 멈춰 있어 충돌 이벤트가 다시 오지 않으므로, 문 옆에 붙어 있는지 주기적으로 본다.
@@ -216,7 +203,7 @@ namespace IBlameYou.Puzzles
             if (shield == null || !shield.Active) return false;
             if (shield.ActiveElement != sequence[0])
             {
-                PostHint($"방어막 속성이 다르다! {ElementInfo.KoreanName(sequence[0])} 방어막이 필요하다");
+                Deflect();
                 return false;
             }
 
@@ -224,14 +211,21 @@ namespace IBlameYou.Puzzles
             return true;
         }
 
-        private string ShieldHint() =>
-            $"A가 {ElementInfo.KoreanName(sequence[0])} 방어막을 두르고 문에 닿은 뒤, B가 {ElementInfo.KoreanName(sequence[1])} 마법(B)을 맞혀라";
-
-        private void PostHint(string text)
+        // 틀린 속성·평타·다른 방어막: 문구 대신 벽이 잠깐 하얗게 번쩍여 튕겨냈음을 보여 준다.
+        private void Deflect()
         {
-            if (Time.time < nextHintTime) return;
-            nextHintTime = Time.time + HintCooldown;
-            StageEvents.PostNotice(text);
+            if (barrier == null || Time.time < nextDeflectTime) return;
+            nextDeflectTime = Time.time + DeflectCooldown;
+            StartCoroutine(FlashBarrier());
+        }
+
+        private System.Collections.IEnumerator FlashBarrier()
+        {
+            barrier.color = new Color(1f, 1f, 1f, barrier.color.a);
+            yield return new WaitForSeconds(DeflectFlash);
+            if (opened || barrier == null) yield break;
+            var color = ElementInfo.Color(sequence[step]); // 그사이 한 단계 풀렸으면 다음 속성 색
+            barrier.color = new Color(color.r, color.g, color.b, barrier.color.a);
         }
     }
 }
