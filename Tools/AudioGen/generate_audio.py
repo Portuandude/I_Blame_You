@@ -546,6 +546,41 @@ def elite_warn():
     return normalize(fade_edges(out))
 
 
+def village_found():
+    """마을 첫 발견: 오르골 세 음 G5-C6-E6 + 마지막 음 길게, 약 1.4초 (music_box는 배경음악 쪽에 있다)."""
+    n = int(1.4 * SR)
+    out = np.zeros(n)
+    for k, name in enumerate(["G5", "C6", "E6"]):
+        mix_at(out, music_box(name, 1.4 - k * 0.14) * (0.6 if k < 2 else 0.8), int(k * 0.14 * SR))
+    return out
+
+
+def shop_bell():
+    """가게 문 종: 높은 종 두 번 딸랑 (작게), 약 0.5초."""
+    n = int(0.5 * SR)
+    out = np.zeros(n)
+    for k, f in enumerate((2093.0, 2637.0)):
+        m = int(0.42 * SR)
+        ring = (osc("sine", f, m) + 0.4 * osc("sine", f * 2.76, m) * env_exp(m, 0.04)) * env_exp(m, 0.18)
+        mix_at(out, ring * (0.7 if k == 0 else 0.55), int(k * 0.07 * SR))
+    return out
+
+
+def reroll():
+    """수식어 바꾸기: 주사위 데구르르 (짧은 딸깍 5번, 점점 느려짐) + 끝에 톡, 약 0.6초."""
+    n = int(0.6 * SR)
+    out = np.zeros(n)
+    t = 0.0
+    for k in range(5):
+        m = int(0.03 * SR)
+        click = bandpass(noise(m), 1800, 6000) * env_exp(m, 0.008) + osc("tri", 900 - k * 60, m) * env_exp(m, 0.01) * 0.4
+        mix_at(out, click, int(t * SR))
+        t += 0.06 + k * 0.025
+    m = int(0.12 * SR)
+    mix_at(out, osc("sine", 660, m) * env_exp(m, 0.05) * 0.6, int(t * SR))
+    return out
+
+
 def jingle_clear():
     """클리어 팡파르: 빠른 상승 C-E-G-C 셋잇단 + 길게 끄는 C장조 화음(나팔 같은 사각파 + 종), 반짝이 꼬리, 약 2.8초."""
     n = int(2.8 * SR)
@@ -898,13 +933,14 @@ def main():
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
+        "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "ShopBell": 0.07, "Reroll": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
