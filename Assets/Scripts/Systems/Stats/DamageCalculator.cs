@@ -90,7 +90,7 @@ namespace IBlameYou.Systems
             return damage;
         }
 
-        // 전투 손맛 (2026-11-12): 플레이어 공격이 적에게 들어갔을 때만. 쓰러뜨렸으면 히트스톱(정예는 더 길게), 아니면 치명타일 때 짧게.
+        // 전투 손맛 (2026-11-12): 플레이어 공격이 적에게 들어갔을 때만. 일반 적은 넉백. 쓰러뜨렸으면 히트스톱(정예는 더 길게), 아니면 치명타일 때 짧게.
         // 보스를 마지막으로 쓰러뜨린 순간은 BossDefeatFx 슬로모션이 먼저 걸려 HitStop은 timeScale이 1이 아니라 저절로 빠진다.
         private static void PlayHitFeel(CombatStats attacker, HealthSystem health, bool critical)
         {
@@ -98,8 +98,13 @@ namespace IBlameYou.Systems
             var enemy = health.GetComponent<IBlameYou.Enemies.EnemyController>();
             if (enemy == null) return;
 
+            // 넉백: 일반 적만, 공격자(플레이어 몸) 반대쪽으로. 바로 위·아래에서 맞으면 밀지 않는다
+            float dx = health.transform.position.x - attacker.transform.position.x;
+            var rank = IBlameYou.Core.RunGold.RankOf(enemy);
+            if (rank == EnemyRank.Normal && Mathf.Abs(dx) > 0.05f) enemy.Knockback(dx);
+
             if (health.IsDead)
-                HitStop.Play(IBlameYou.Core.RunGold.RankOf(enemy) == EnemyRank.Elite ? HitStop.EliteDuration : HitStop.KillDuration);
+                HitStop.Play(rank == EnemyRank.Elite ? HitStop.EliteDuration : HitStop.KillDuration);
             else if (critical)
                 HitStop.Play(HitStop.CritDuration);
         }

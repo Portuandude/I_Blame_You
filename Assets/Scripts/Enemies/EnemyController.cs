@@ -93,6 +93,20 @@ namespace IBlameYou.Enemies
             healthBar = IBlameYou.UI.EnemyHealthBar.Ping(healthBar, Health, bodyCollider);
         }
 
+        // 넉백 (전투 손맛, 2026-11-12): 플레이어 공격에 맞은 일반 적이 경직 동안 공격자 반대쪽으로 짧게 밀려난다.
+        // 처음 속도 KnockbackSpeed가 KnockbackDeceleration으로 줄어 약 0.4칸 (4² / (2 × 20)). 경직이 먼저 끝나면 거기서 멈춘다.
+        // 누구를 밀지는 DamageCalculator가 정한다 (일반 등급만 — 보스·중간보스·정예는 밀리지 않음).
+        public const float KnockbackSpeed = 4f;
+        public const float KnockbackDeceleration = 20f;
+        private float knockVelocity;
+
+        // direction: 밀려날 가로 방향 (+1 오른쪽, -1 왼쪽). 경직에 걸려 있을 때만 의미가 있다.
+        public void Knockback(float direction)
+        {
+            if (IsDead || !hitStun.IsStunned || Mathf.Approximately(direction, 0f)) return;
+            knockVelocity = Mathf.Sign(direction) * KnockbackSpeed;
+        }
+
         // 스포너가 적마다 다른 접촉 데미지를 지정할 때 사용.
         public void ConfigureContactDamage(float damageMultiplier, float cooldown)
         {
@@ -180,9 +194,13 @@ namespace IBlameYou.Enemies
         {
             if (IsDead || hitStun.IsStunned)
             {
-                Rb.linearVelocity = new Vector2(0f, Rb.linearVelocity.y);
+                // 경직 중에는 넉백 속도만 (줄어들며) 남는다. 죽으면 바로 멈춘다.
+                float x = IsDead ? 0f : knockVelocity;
+                knockVelocity = Mathf.MoveTowards(knockVelocity, 0f, KnockbackDeceleration * Time.fixedDeltaTime);
+                Rb.linearVelocity = new Vector2(x, Rb.linearVelocity.y);
                 return;
             }
+            knockVelocity = 0f;
 
             Move();
             if (ContactDamageActive) ApplyContactDamage();
