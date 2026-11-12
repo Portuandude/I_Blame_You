@@ -395,6 +395,7 @@ namespace IBlameYou.Systems
 
         private const float VillageRestaurantAt = 0.3f; // 방 가로 비율 (문 앞을 비워 두려고 양 끝에서 떨어뜨림)
         private const float VillageShopAt = 0.7f;
+        private const string VillageMusic = "Village"; // Resources/Audio/Music/Village (Tools/AudioGen village_theme)
         private const float VillageNpcOffset = 1.3f; // 건물 가운데에서 NPC까지 (문 폭 ±0.6 밖, 건물 폭 ±1.75 안)
 
         private static Vector3 EnemyPosition(Vector2 origin, ChunkFeature f) =>
@@ -731,6 +732,9 @@ namespace IBlameYou.Systems
                 StageEvents.StageSeed = stage.Seed;
             }
             StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
+            // 마을에 있는 동안은 잔잔한 마을 곡, 나오면 깊이에 맞는 던전 곡 (다른 곡이 나오던 중이면 건드리지 않는다)
+            if (entered.Kind == RoomKind.Village) GameAudio.PlayMusic(VillageMusic);
+            else if (GameAudio.CurrentMusic == VillageMusic) GameAudio.PlayMusic(ArenaZone.StageMusicFor(StageEvents.Depth));
             RoomEntered?.Invoke(index);
         }
 
