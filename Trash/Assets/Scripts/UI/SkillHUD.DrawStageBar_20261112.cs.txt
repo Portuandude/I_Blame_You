@@ -1,0 +1,14 @@
+// 2026-11-12 진행도 시스템 삭제(사람 결정)로 HUD에서 뺀 스테이지 진행 막대. 원래 위치: Assets/Scripts/UI/SkillHUD.cs (DrawStageBar)
+// 컴파일되지 않게 .txt로 둔다. 되살리려면 StageEvents.Progress 대신 StageEvents.Depth를 쓸 것.
+
+        private void DrawStageBar()
+        {
+            var rect = new Rect(12f, 168f, 360f, 30f);
+            GUI.Box(rect, GUIContent.none, panel);
+            // 진행도 캡슐 바 (gold) + 끝에 깃발 (SkillHUD.Bars.cs)
+            var bar = new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow - 10f, BarHeight);
+            DrawCapsuleBar(bar, Mathf.Clamp01(StageEvents.Progress), 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
+            DrawIcon(flagIcon, new Rect(bar.xMax - 6f, rect.y + 2f, 22f, 22f), 1f);
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
+        }
+

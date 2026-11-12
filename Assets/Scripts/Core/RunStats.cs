@@ -37,6 +37,15 @@ namespace IBlameYou.Core
             if (amount > 0) Gold += amount;
         }
 
+        // 마을에서 골드를 쓴다 (식당·장비 상점). reserved: 아직 날아오는 동전 몫(RunGold.InFlight) — 화면 숫자만큼만 쓸 수 있게.
+        // 모자라면 false, 아무것도 바꾸지 않는다.
+        public static bool TrySpendGold(int amount, int reserved)
+        {
+            if (amount < 0 || Gold - System.Math.Max(0, reserved) < amount) return false;
+            Gold -= amount;
+            return true;
+        }
+
         public static void AddArenaCleared()
         {
             if (!Ended) ArenasCleared++;

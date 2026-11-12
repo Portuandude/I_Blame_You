@@ -2,6 +2,17 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+
+## 2026-11-12 14:00 실행 (claude/project-thread-41del8)
+
+- DONE (claude/project-thread-41del8): **진행도 시스템 삭제** — 스테이지 진행도(%) 개념과 HUD 스테이지 진행 막대를 없앤다. 지금 진행도에 묶인 것(중간보스 55% 지점, 마법 스위치 50%/이중 스위치 80% 이후, 50% 이후 Dungeon2 곡, 난이도 상승, `ClearPace`·결과 창 비교 등)은 **시작 방에서의 방 거리/깊이** 같은 다른 기준으로 옮긴다. 플레이어는 방을 돌아다니며 탐험하는 방식. 지운 코드는 Trash로, 테스트 갱신. 착수 전에 진행도를 쓰는 곳 목록과 대체 기준을 PR 설명에 적는다
+- DONE (claude/project-thread-41del8): NPC 마을 — **스테이지마다 마을 1개**를 방 격자에 넣는다. 주 경로 위 고정 지점이 아니라 **방을 돌아다니며 찾는** 곳(곁가지 쪽 안전한 특수 방, 적 없음, 찾으면 미니맵 아이콘). 우선 **식당**과 **장비 상점** 두 건물만. 마을 설계는 장비 설계 문서에 같이 적어도 된다
+- DONE (claude/project-thread-41del8): 식당 — 골드로 **체력·마나 관련 런 도움 음식**을 판다 (예: 즉시 회복, 최대 체력 +, 마나 재생 +, 다음 방까지 효과 등). 가격·효과 표는 데이터로
+- DONE (claude/project-thread-41del8): 장비 상점 — 장비 **구매·판매**, **수식어 변경(리롤)**. 수식어는 **랜덤으로 좋아질 수도 나빠질 수도** 있다. 수식어를 바꿀 때마다 **그 장비의 수식어 변경 비용이 올라간다** (장비마다 따로 누적). 판매가는 수식어 반영. EditMode 테스트(리롤 비용 증가, 가격 계산)
+- DONE (claude/project-thread-41del8, 순간이동에 재사용 대기가 없어 마나 -25%로 바꿈): 유물 종이비행기 — 순간이동 재사용 대기 -20% (`TeleportSkill` 재사용 대기 값 확인, 주인 A/B/공용은 순간이동 담당에 맞춰, 아이콘·테스트, 유물 26종, 맨 뒤 번호 25)
+- DONE (claude/project-thread-41del8): 화면 밖 보상 구슬 길잡이 — 줍지 않은 보상 구슬이 카메라 밖에 있으면 화면 가장자리에 작은 분홍 하트 화살표 (구슬 쪽, 같은 방·옆 방 안에서만, `ArenaReward` 목록 + HUD IMGUI)
+- DONE (claude/project-thread-41del8): 젤리 방울 소리 — 젤리 방울이 튈 때 아주 작은 "똑똑" (`Tools/AudioGen`, JellySquish와 겹치지 않게 0.2초 늦게, 카메라 12유닛 안일 때만)
+
 - DONE (claude/project-thread-54keuu): 장비 설계 문서 `Docs/EquipmentDesign.md` (장비 12종·수식어 6등급·리롤·마을·식당·골드 수지, [결정 필요] 2곳)
 - DONE (claude/project-thread-54keuu): 장비 구현 1차 — 순수 데이터 `Player/Equipment/Data`, `PlayerEquipment`, 아이콘 12장, 기능 테스트 F12, 일시정지 장비 3칸, 유물 상자 옆 장비 + 비교 카드 (상점·식당·마을은 남은 TODO)
 - DONE (claude/project-thread-cj1qcj, #46 — 좌우 방 3화면·휴식 2화면, 예상 15~19분, 기본 목표 20분): **큰 방 — 4×3 격자 판을 15~30분으로** (4×3 작업 후속, 2026-11-12 측정: 한 화면 방 9~12개로는 예상 약 11~12분) — 방 하나를 가로 2화면(64칸) 등으로 키우거나 전투 방을 2웨이브로 만들어 15~30분을 맞춘다. `ChunkStreamer`는 지금 방 = 청크 하나(원점·문 감지·카메라 영역)라 넓은 방을 지원하려면 방 크기를 데이터로 빼야 한다. 먼저 planner로 범위를 정하고, `RoomLayout.EstimatedSeconds`를 15~30분 테스트로 바꾼다. 15분 기준 코드·문서(`StagePlanner` 목표, `ClearPace`, `PlaytestBootstrap.targetMinutes`)도 이때 맞춘다

@@ -21,7 +21,7 @@ namespace IBlameYou.UI
 
         private float endScreenShownAt = -1f;
         private float defeatTime; // 쓰러진 순간까지 걸린 시간 (Update에서 deathHandled를 세울 때)
-        private int defeatUsualPercent = -1; // 이번 판 전 최근 쓰러진 곳 평균 진행도 (없으면 -1)
+        private int defeatUsualRooms = -1; // 이번 판 전 최근 쓰러진 판들이 간 가장 먼 방 거리 평균 (없으면 -1)
         private GUIStyle endTitle;
 
         // 결과 창이 처음 그려지는 순간: 배경음악을 줄여 끄고 클리어 팡파르 / 게임오버 징글 (Tools/AudioGen Jingle_*).
@@ -148,27 +148,27 @@ namespace IBlameYou.UI
             GUI.matrix = previous;
         }
 
-        // 게임오버 결과 창: 쓰러진 곳(주 경로 몇 번째 방·곁방·진행도)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
+        // 게임오버 결과 창: 쓰러진 곳(시작 방에서 몇 칸·곁방·가장 멀리 간 거리)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
         private void DrawDefeatPlace(Rect rect)
         {
-            string text = ClearPace.DescribeDefeat(StageEvents.PathStep, StageEvents.MainRooms, StageEvents.InSideRoom, StageEvents.Progress, defeatTime);
+            string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, StageEvents.InSideRoom, defeatTime);
             var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(rect, text, style);
         }
 
-        // 게임오버 결과 창: 이번 판 진행도를 최근 쓰러진 곳 평균과 비교. 더 갔으면 초록, 덜 갔으면 주황, 같으면 크림색 (Chunks/ClearPace.CompareDefeat).
-        private bool HasDefeatCompare => defeatUsualPercent >= 0;
+        // 게임오버 결과 창: 이번 판 가장 멀리 간 방 거리를 최근 쓰러진 판 평균과 비교. 더 갔으면 초록, 덜 갔으면 주황, 같으면 크림색 (Chunks/ClearPace.CompareDefeat).
+        private bool HasDefeatCompare => defeatUsualRooms >= 0 && StageEvents.FarthestDistance >= 0;
 
         private void DrawDefeatCompare(Rect rect)
         {
             if (!HasDefeatCompare) return;
-            int gap = ClearPace.DefeatGap(StageEvents.Progress, defeatUsualPercent);
+            int gap = ClearPace.DefeatGap(StageEvents.FarthestDistance, defeatUsualRooms);
             var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
             style.normal.textColor = gap > 0 ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 평소보다 더 갔다
                 : gap < 0 ? new Color(1f, 0.62f, 0.25f)                          // 주황: 덜 갔다
                 : OutlinedLabel.Cream;
-            GUI.Label(rect, ClearPace.CompareDefeat(StageEvents.Progress, defeatUsualPercent), style);
+            GUI.Label(rect, ClearPace.CompareDefeat(StageEvents.FarthestDistance, defeatUsualRooms), style);
         }
 
         // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally) + 이번 판 새 도감 유물 수. 없으면 빈 문자열.

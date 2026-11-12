@@ -86,6 +86,20 @@ namespace IBlameYou.Systems
             return reward;
         }
 
+        // 아직 안 주운 구슬 목록 (HUD 화면 밖 길잡이 하트, SkillHUD.OrbGuide.cs). 켜질 때 넣고 꺼지거나 주우면 뺀다.
+        private static readonly System.Collections.Generic.List<ArenaReward> active = new System.Collections.Generic.List<ArenaReward>();
+        public static System.Collections.Generic.IReadOnlyList<ArenaReward> Active => active;
+        // 화면에 보이는 구슬 자리 (둥실 떠 있는 그림 위치)
+        public Vector3 OrbPosition => visual != null ? visual.position : transform.position;
+        public bool Collected => collected;
+
+        private void OnEnable()
+        {
+            if (!active.Contains(this)) active.Add(this);
+        }
+
+        private void OnDisable() => active.Remove(this);
+
         private void Update()
         {
             if (visual == null) return;

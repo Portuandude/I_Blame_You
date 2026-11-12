@@ -488,6 +488,19 @@ def jelly_squish():
     return normalize(fade_edges(lowpass(out, 4500)))
 
 
+def jelly_drip():
+    """젤리 방울이 튈 때 아주 작은 물방울 "똑똑": 위로 휘는 짧은 사인 두 번(두 번째는 조금 높고 작게), 0.26초."""
+    n = int(0.26 * SR)
+    out = np.zeros(n)
+    for start, base, gain in ((0.0, 900.0, 1.0), (0.11, 1150.0, 0.7)):
+        m = int(0.09 * SR)
+        k = np.arange(m) / SR
+        f = base * (1 + 0.8 * (1 - np.exp(-k / 0.012)))  # 위로 톡 휘는 물방울
+        drop = osc("sine", f, m) * env_exp(m, 0.022) * gain
+        mix_at(out, drop, int(start * SR))
+    return normalize(fade_edges(lowpass(out, 6000)))
+
+
 def crumble_back():
     """무너졌던 발판이 다시 생김: 작고 가벼운 나무 '톡' (짧은 삼각파 + 맑은 고음 한 점), 0.15초."""
     n = int(0.15 * SR)
@@ -850,7 +863,7 @@ def main():
         "Jump": jump, "Dash": dash, "Hurt": hurt, "EnemyDie": enemy_die, "LevelUp": level_up,
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
-        "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
+        "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
         "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -858,7 +871,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1, "MagnetWhoosh": 0.07, "Coin": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()

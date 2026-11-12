@@ -96,6 +96,17 @@ namespace IBlameYou.Systems
             return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion);
         }
 
+        private const float JellyDripDelay = 0.2f;
+        private const float JellyDripRange = 12f;
+
+        private bool CameraNear(float range)
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+            Vector2 d = cam.transform.position - transform.position;
+            return d.sqrMagnitude <= range * range;
+        }
+
         private IEnumerator Crumble(float shakeTime, bool jelly)
         {
             crumbling = true;
@@ -122,6 +133,8 @@ namespace IBlameYou.Systems
                 VfxPlayer.Dust(cell, 0.6f);
                 if (jelly) VfxPlayer.JellyDrops(cell, 2); // 젤리 방석이면 먼지와 함께 분홍 방울이 톡톡
             }
+            // 젤리 방울 "똑똑": 앞의 "뭉-뿅"(JellySquish)과 안 겹치게 0.2초 늦게, 카메라가 가까울 때만 (멀리서 무너지는 소리까지 나지 않게)
+            if (jelly && CameraNear(JellyDripRange)) GameAudio.PlaySfxDelayed("JellyDrip", JellyDripDelay, 0.6f, 0.08f);
             yield return new WaitForSeconds(RespawnTime - WarnTime);
 
             // 다시 생기기 직전: 흐린 윤곽이 깜빡여 "곧 생긴다"를 알린다

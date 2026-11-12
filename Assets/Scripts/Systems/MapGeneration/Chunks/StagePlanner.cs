@@ -38,7 +38,7 @@ namespace IBlameYou.Systems
         public const float GateMaxProgress = 0.85f;
         // 이중 스위치 퍼즐(SwitchBridge)은 진행도가 이 값을 넘은 뒤 첫 이동 방으로 꼭 한 번 나온다.
         // (예전에는 무작위 발판 낭떠러지의 80% 이후 변형뿐이라, 이동 방이 78% 언저리에서 끝나는 15분 판에서는 거의 안 나왔다.)
-        public const float SwitchBridgeProgress = 0.5f;
+        public const float SwitchBridgeDepth = 0.5f;
         private static readonly float[] EliteAt = { 0.3f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예 (15분: 정예 0.3 → 중간보스 0.55 → 보스)
         public static readonly IReadOnlyList<float> EliteProgress = Array.AsReadOnly(EliteAt);
 
@@ -71,7 +71,7 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < travelCount && elapsed < targetSeconds - reserve; i++)
                 {
                     var travel = PickTravel(rng, elapsed / targetSeconds, last, gatesPlaced < MaxGates);
-                    if (!switchBridgePlaced && (float)(elapsed / targetSeconds) >= SwitchBridgeProgress)
+                    if (!switchBridgePlaced && (float)(elapsed / targetSeconds) >= SwitchBridgeDepth)
                     {
                         travel = ChunkKind.SwitchBridge; // 난수열은 그대로 소비해 다른 방 배치가 덜 흔들리게
                         switchBridgePlaced = true;

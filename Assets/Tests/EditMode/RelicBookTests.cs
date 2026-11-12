@@ -107,6 +107,19 @@ namespace IBlameYou.Tests
             Assert.Greater(RelicBook.HorseshoeMagnetRadius, RelicBook.MagnetRadius);
         }
 
+        // 종이비행기 (2026-11-12): 순간이동은 재사용 대기가 없어 마나를 줄인다. 맨 뒤 번호 25, A 유물.
+        [Test]
+        public void PaperPlane_CutsTeleportMana()
+        {
+            Assert.AreEqual(25, (int)RelicId.PaperPlane);
+            Assert.AreEqual("종이비행기", RelicBook.Name(RelicId.PaperPlane));
+            Assert.AreEqual("A", RelicBook.Owner(RelicId.PaperPlane));
+            Assert.AreEqual("순간이동 마나 -25%", RelicBook.Description(RelicId.PaperPlane));
+            Assert.Contains(RelicId.PaperPlane, RelicBook.All);
+            Assert.AreEqual(26, RelicBook.All.Length);
+            Assert.That(RelicBook.PaperPlaneTeleportCost, Is.InRange(0.5f, 0.95f));
+        }
+
         [Test]
         public void JellyCushion_DescribesLongerShake()
         {

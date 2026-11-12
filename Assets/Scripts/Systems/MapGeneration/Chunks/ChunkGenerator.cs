@@ -105,7 +105,7 @@ namespace IBlameYou.Systems
 
         // ------------------------------------------------------------------ 적
 
-        // 진행도가 오를수록 슬라임 대신 고블린/궁수/병사가 섞인다.
+        // 난이도(깊이)가 오를수록 슬라임 대신 고블린/궁수/병사가 섞인다.
         internal static StageEnemy PickEnemy(Random rng, float difficulty)
         {
             double r = rng.NextDouble();
@@ -445,7 +445,7 @@ namespace IBlameYou.Systems
             {
                 Kind = FeatureKind.ElementGate, X = GateX, Y = ground, Width = 1, ElementIndex = rng.Next(GateElementCount)
             };
-            // 진행도 후반에는 두 속성을 순서대로 맞혀야 열리는 봉인문 (B가 영창을 두 번, 서로 다른 속성으로).
+            // 깊이 후반에는 두 속성을 순서대로 맞혀야 열리는 봉인문 (B가 영창을 두 번, 서로 다른 속성으로).
             if (chunk.Difficulty >= TwoElementGateMinDifficulty)
             {
                 gate.HasSecondElement = true;
@@ -504,7 +504,7 @@ namespace IBlameYou.Systems
         public const int SwitchBridgeMaxGap = 10; // 출발 쪽 땅 끝에서 룬까지 gap + 1칸 ≤ 물 마법 사거리 12
 
         public const float SwitchBridgeMinDifficulty = 0.5f;
-        public const int SwitchBridgeOneIn = 2; // 진행도 50% 이후 한 발판 낭떠러지의 절반
+        public const int SwitchBridgeOneIn = 2; // 깊이 0.5 이후 한 발판 낭떠러지의 절반
 
         public const float DoubleBridgeMinDifficulty = 0.7f;
         public const int DoubleBridgePillarWidth = 2;

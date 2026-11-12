@@ -197,11 +197,11 @@ namespace IBlameYou.Systems
                 }
 
                 CheckDoors();
-                StageEvents.Progress = RoomProgress(currentRoom);
+                StageEvents.Depth = RoomDepth(currentRoom);
             }
             else
             {
-                StageEvents.Progress = Mathf.Clamp01(player.position.x / stage.WidthTiles);
+                StageEvents.Depth = Mathf.Clamp01(player.position.x / stage.WidthTiles); // 외길 모드: 가로 위치 비율 (화면에는 안 보임)
             }
 
             if (Time.time >= nextSweep)
@@ -364,7 +364,7 @@ namespace IBlameYou.Systems
             if (rooms != null) LoadRoomExtras(index, root, origin);
         }
 
-        // 방 격자 모드의 곁방 보상: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다).
+        // 방 격자 모드의 곁방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
@@ -379,7 +379,18 @@ namespace IBlameYou.Systems
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (room.Kind == RoomKind.Treasure) SpawnRelicChest(root, index, floor, false);
             else if (room.Kind == RoomKind.Spring) SpawnReward(root, index, floor, false);
+            else if (room.Kind == RoomKind.Village)
+            {
+                // 마을: 평평한 휴식 지형 위에 왼쪽 식당, 오른쪽 장비 상점 (RoomLayout이 좌우 한 화면 방으로 고른다)
+                float ground = origin.y + stage.Chunks[index].EntryHeight;
+                int cols = RoomCols(index);
+                VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
+                VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
+            }
         }
+
+        private const float VillageRestaurantAt = 0.3f; // 방 가로 비율 (문 앞을 비워 두려고 양 끝에서 떨어뜨림)
+        private const float VillageShopAt = 0.7f;
 
         private static Vector3 EnemyPosition(Vector2 origin, ChunkFeature f) =>
             new Vector3(origin.x + f.X + 0.5f, origin.y + f.Y + SpawnLift, 0f);
@@ -705,19 +716,27 @@ namespace IBlameYou.Systems
             }
 
             var entered = rooms.Rooms[index];
-            var pathRoom = !entered.MainPath && entered.ParentIndex >= 0 ? rooms.Rooms[entered.ParentIndex] : entered;
-            StageEvents.PathStep = pathRoom.PathIndex + 1; // 게임오버 창 "쓰러진 곳" (주 경로 몇 번째 방)
+            StageEvents.RoomDistance = entered.Distance; // 게임오버 창 "쓰러진 곳: 시작 방에서 N칸"
+            StageEvents.FarthestDistance = Math.Max(StageEvents.FarthestDistance, entered.Distance);
             StageEvents.InSideRoom = !entered.MainPath;
-            StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
+            if (entered.Kind == RoomKind.Village)
+            {
+                StageEvents.VillageVisit++; // 식당 새 방문
+                StageEvents.VillageRoom = index; // 장비 상점 진열 시드
+                StageEvents.StageSeed = stage.Seed;
+            }
+            StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }
 
-        // 진행도 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
-        private float RoomProgress(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
+        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        private float RoomDepth(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()
         {
-            StageEvents.Progress = 0f;
+            StageEvents.Depth = 0f;
+            StageEvents.RoomDistance = -1;
+            StageEvents.FarthestDistance = -1;
             FallRecovery.FloorY = 0f;
         }
     }

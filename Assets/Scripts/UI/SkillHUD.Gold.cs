@@ -8,7 +8,7 @@ namespace IBlameYou.UI
     public partial class SkillHUD
     {
         private const float GoldPopTime = 0.25f;
-        private static readonly Rect GoldPillRect = new Rect(380f, 168f, 120f, 30f); // 스테이지 막대 줄 오른쪽 (위쪽 가운데는 보스 막대 자리)
+        private static readonly Rect GoldPillRect = new Rect(150f, 168f, 120f, 30f); // 스테이지 이름 꼬리표 오른쪽 (진행도 막대를 뺀 자리, 위쪽 가운데는 보스 막대 자리)
 
         private Texture2D coinIcon;
         private bool coinIconLoaded;

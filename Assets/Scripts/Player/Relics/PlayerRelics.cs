@@ -230,6 +230,10 @@ namespace IBlameYou.Player
                         listeningKills = true;
                     }
                     break;
+                case RelicId.PaperPlane:
+                    var teleport = GetComponent<TeleportSkill>();
+                    if (teleport != null) teleport.CostMultiplier *= RelicBook.PaperPlaneTeleportCost;
+                    break;
                 case RelicId.FocusBead:
                     if (mana != null) mana.WastedRefundRatio = Mathf.Min(1f, mana.WastedRefundRatio + RelicBook.FocusBeadRefund);
                     break;

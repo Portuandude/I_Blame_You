@@ -33,6 +33,7 @@ namespace IBlameYou.Player
         JellyCushion, // 젤리 방석: 플레이어가 밟은 무너지는 발판이 JellyCushionShakeTime초 버틴다 (CrumblingPlatform)
         StarCandy,   // 별사탕: 레벨이 오를 때마다 마나 +StarCandyMana (PlayerProgression.LeveledUp, 도토리 주머니의 마나 짝)
         HorseshoeMagnet, // 말굽 자석: 전투 구역 보상 구슬이 끌려오는 거리 MagnetRadius → HorseshoeMagnetRadius (ArenaReward)
+        PaperPlane,  // 종이비행기: 순간이동 마나 × PaperPlaneTeleportCost (A, TeleportSkill.CostMultiplier). 순간이동은 재사용 대기가 없어 백로그 원안(대기 -20%) 대신 마나
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -68,6 +69,7 @@ namespace IBlameYou.Player
         public const float StarCandyMana = 30f;
         public const float MagnetRadius = 1.5f;          // 보상 구슬 자석 기본 거리 (유닛, ArenaReward)
         public const float HorseshoeMagnetRadius = 4f;   // 말굽 자석이 있으면
+        public const float PaperPlaneTeleportCost = 0.75f; // 순간이동 마나 20 → 15
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
         public static readonly RelicId[] All =
@@ -77,7 +79,7 @@ namespace IBlameYou.Player
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
             RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
             RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion, RelicId.StarCandy,
-            RelicId.HorseshoeMagnet
+            RelicId.HorseshoeMagnet, RelicId.PaperPlane
         };
 
         public static string Name(RelicId id)
@@ -108,6 +110,7 @@ namespace IBlameYou.Player
                 case RelicId.JellyCushion: return "젤리 방석";
                 case RelicId.StarCandy: return "별사탕";
                 case RelicId.HorseshoeMagnet: return "말굽 자석";
+                case RelicId.PaperPlane: return "종이비행기";
                 default: return "집중 구슬";
             }
         }
@@ -140,6 +143,7 @@ namespace IBlameYou.Player
                 case RelicId.JellyCushion: return $"무너지는 발판이 {JellyCushionShakeTime:0.0}초 버틴다";
                 case RelicId.StarCandy: return $"레벨이 오를 때마다 마나 +{StarCandyMana:0}";
                 case RelicId.HorseshoeMagnet: return $"보상 구슬이 {HorseshoeMagnetRadius:0}칸 밖에서도 끌려온다";
+                case RelicId.PaperPlane: return $"순간이동 마나 -{Math.Round((1f - PaperPlaneTeleportCost) * 100f)}%";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
         }
@@ -154,7 +158,8 @@ namespace IBlameYou.Player
                 case RelicId.Featherfall:
                 case RelicId.ShadowVeil:
                 case RelicId.Hourglass:
-                case RelicId.TwinRing: return "A";
+                case RelicId.TwinRing:
+                case RelicId.PaperPlane: return "A";
                 case RelicId.WrathCharm:
                 case RelicId.HawkEye:
                 case RelicId.VampireFang:

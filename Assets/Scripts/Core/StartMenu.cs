@@ -112,7 +112,7 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                if (GUILayout.Button($"이어하기 — 진행도 {saved.progress * 100f:0}% · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
+                if (GUILayout.Button($"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
                         button, GUILayout.Height(44f)))
                 {
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
@@ -276,7 +276,7 @@ namespace IBlameYou.Core
             string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
             string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
             if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
-            string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 곳 평균 진행도 (어려운 구간 찾기용)
+            string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 판들이 간 방 거리 평균 (어려운 구간 찾기용)
             if (!string.IsNullOrEmpty(defeats)) line += "\n" + defeats;
             string blame = SaveData.RecentBlameSummary(dev); // 최근 10판 누구 탓 (서로 놀릴 거리)
             return string.IsNullOrEmpty(blame) ? line : line + "\n" + blame;
