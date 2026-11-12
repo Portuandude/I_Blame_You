@@ -8,7 +8,7 @@ namespace IBlameYou.UI
 {
     // 마을 창 (Docs/EquipmentDesign.md 9~10절): 마을 건물(Stage/VillageBuilding) 앞에서 W를 톡 / ↑를 누르면 열린다.
     // 식당: 음식 5가지를 골드로 산다 (한 방문에 종류별 한 번, Data/VillageFood.cs). 1~5 또는 클릭으로 사고, Esc·W·↑·닫기로 닫는다.
-    // 유물 창·장비 카드와 같은 방식으로 게임을 멈추고 조작을 잠근다. 장비 상점은 다음 작업 (지금은 "곧 문을 열어요").
+    // 장비 상점은 SkillHUD.Shop.cs. 유물 창·장비 카드와 같은 방식으로 게임을 멈추고 조작을 잠근다.
     public partial class SkillHUD
     {
         private bool villageOpen;
@@ -36,14 +36,13 @@ namespace IBlameYou.UI
 
         private bool OpenVillage(VillageService service)
         {
-            if (service != VillageService.Restaurant) return false; // 장비 상점 창은 아직 (VillageBuilding이 "곧 문을 열어요")
             if (villageOpen || villageUnlockFrame >= 0 || !CanOpenRelicWindow()) return true; // 다른 창·영창 중: 열지 않고 알림도 띄우지 않는다
             villageOpen = true;
             villageService = service;
             villageOpenedFrame = Time.frameCount;
             villageOpenedAt = Time.unscaledTime;
             villageMessage = null;
-            restaurantVisit.BeginVisit(StageEvents.VillageVisit);
+            if (service == VillageService.Restaurant) restaurantVisit.BeginVisit(StageEvents.VillageVisit);
             control.Locked = true;
             Time.timeScale = 0f;
             GameAudio.PlaySfx("RelicOpen", 0.4f);
@@ -74,6 +73,12 @@ namespace IBlameYou.UI
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
             {
                 CloseVillage(true);
+                return true;
+            }
+
+            if (villageService == VillageService.Shop)
+            {
+                UpdateShopKeys(); // SkillHUD.Shop.cs
                 return true;
             }
 
@@ -133,6 +138,15 @@ namespace IBlameYou.UI
             StageEvents.PostNotice($"{food.Name} 냠!");
         }
 
+        // 창 뒤 화면을 어둡게
+        private static void DrawVillageBackdrop()
+        {
+            var previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
         private static string BuyCheckText(FoodBuyCheck check)
         {
             switch (check)
@@ -147,6 +161,11 @@ namespace IBlameYou.UI
         private void DrawVillageWindow()
         {
             if (!villageOpen) return;
+            if (villageService == VillageService.Shop)
+            {
+                DrawShopWindow(); // SkillHUD.Shop.cs
+                return;
+            }
 
             int count = VillageFood.Count;
             const float rowHeight = 46f;
@@ -154,10 +173,7 @@ namespace IBlameYou.UI
             float height = 112f + count * rowHeight + 70f;
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(16f, (Screen.height - height) / 2f), width, height);
 
-            var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = previous;
+            DrawVillageBackdrop();
             var previousMatrix = BeginCardPop(rect, villageOpenedAt, 0);
             DrawCard(rect, "공용");
 
