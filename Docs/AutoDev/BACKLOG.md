@@ -20,29 +20,11 @@
 
 23:20 실행 인수인계 후보. 동전 무더기는 난수를 쓰지 않고 놓아 기존 시드 지형을 바꾸지 않는다.
 
-- DONE (claude/project-thread-sxxwfk): 섬(Pits) 동전 — 난이도 30%+면 가장 깊이 들어간(마지막) 단단한 섬 가운데에 동전 무더기. 낭떠러지를 건넌 보상
-- DONE (claude/project-thread-sxxwfk): 절벽 오르기(Climb) 동전 — 난이도 30%+면 절벽 위 평지 끝(지키는 적 뒤)에 동전 무더기
-- DONE (claude/project-thread-sxxwfk): 종유석이 적을 맞혔을 때 연출 — 별 튀김·"쾅" 흔들림을 플레이어 피격과 구분되게 짧게
-- DONE (claude/project-thread-sxxwfk): 미니맵에 동전 표시 — 가 본 방 중 아직 안 주운 동전 무더기가 남은 방 칸 구석에 작은 금색 점
-- DONE (claude/project-thread-sxxwfk): 가시밭(SpikeField) 동전 — 난이도 30%+면 마지막 가시 위 발판 가운데에 동전 무더기
-- DONE (claude/project-thread-sxxwfk): 동굴(Cave) 동전 — 종유석이 있는 동굴(35%+)은 마지막 종유석 바로 아래 바닥에 동전 무더기 (주우러 가면 종유석이 흔들림)
 - BLOCKED (결과 창 자리 부족: 골드 줄 아래·요약 줄 모두 가운데 글과 겹침 — 결과 창 배치를 바꿀 때 같이): 결과 창에 동전 무더기 주운 수 "동전 무더기 N/M"
 
 ## 다음 (2026-11-12 22:50 자동 실행이 추가 — 레벨 재설계 2차: 세로 방 다양화)
 
 DIRECTION ① "플레이 감각 다듬기" 안의 세로 방 다양화. ContentIdeas 후보와 겹치지 않는 지형 변형이다.
-
-## 다음 (2026-11-12 23:20 자동 실행이 추가 — 위험한 길 보상·종유석 다듬기)
-
-DIRECTION ① "방 종류 늘리기"의 연장. 회복 구슬은 회복 수지 때문에 안 되므로 위험한 길 보상은 골드로 한다. 골드는 그 판 안에서만 쓰여 경제 영향이 작다.
-
-- DONE (claude/project-thread-d80q0t): 종유석이 적도 맞힌다 — 떨어지는 종유석에 닿은 적도 물리 피해(플레이어와 같은 배율)를 받고 종유석이 부서진다. 적을 종유석 아래로 끌어들이는 재미
-- DONE (claude/project-thread-d80q0t): 동전 무더기 (`FeatureKind.CoinPile`) — 닿으면 골드 3~6(난이도에 따라 오름)을 동전 연출로 받는다. 방마다 한 번만 (다시 와도 안 생김, `StageRecords.collectedCoins`). 그림은 기존 동전 프레임 재사용
-- DONE (claude/project-thread-d80q0t): 두 갈래 길 위 길 끝 발판에 동전 무더기 (적 없는 대신 틈·무너지는 발판을 건넌 보상)
-- DONE (claude/project-thread-d80q0t): 기둥 숲에서 가장 높은 기둥 머리에 동전 무더기 (난이도 30% 이상, 무너지는 머리는 피함)
-- DONE (claude/project-thread-d80q0t): 종유석 흔들림 때 작은 돌 부스러기가 떨어지는 예고 (그림자 예고와 함께)
-- DONE (claude/project-thread-d80q0t): 선반 세로 방(이동 방, 난이도 30%+) 궁수가 지키는 높은 선반에 동전 무더기
-- DONE (claude/project-thread-d80q0t): 동전 무더기 전용 효과음 `CoinPile` (짤랑짤랑 다섯 음)
 
 ## 다음 (2026-11-12 23:10 자동 실행이 추가 — 레벨 재설계 2차: 가로 지형 늘리기)
 
