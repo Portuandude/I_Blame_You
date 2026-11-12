@@ -26,6 +26,12 @@ namespace IBlameYou.Systems
         public static void PostNotice(string text) => Notice?.Invoke(text);
 
         public static void RaiseCleared() => Cleared?.Invoke();
+
+        // 마을 건물 앞에서 W: 식당·상점 창을 여는 쪽(HUD)이 등록한다. 창을 열었으면 true. 아무도 없으면 false (VillageBuilding이 "곧 열려요" 알림).
+        public static Func<VillageService, bool> VillageInteractRequested;
+
+        public static bool RaiseVillageInteract(VillageService service) =>
+            VillageInteractRequested != null && VillageInteractRequested(service);
     }
 
     // 분열 같은 효과로 새로 생긴 적을 같은 묶음(전투 구역 등)에 넣는다.

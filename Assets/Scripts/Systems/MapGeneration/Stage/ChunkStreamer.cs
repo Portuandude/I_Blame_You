@@ -364,7 +364,7 @@ namespace IBlameYou.Systems
             if (rooms != null) LoadRoomExtras(index, root, origin);
         }
 
-        // 방 격자 모드의 곁방 보상: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다).
+        // 방 격자 모드의 곁방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
@@ -379,7 +379,18 @@ namespace IBlameYou.Systems
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (room.Kind == RoomKind.Treasure) SpawnRelicChest(root, index, floor, false);
             else if (room.Kind == RoomKind.Spring) SpawnReward(root, index, floor, false);
+            else if (room.Kind == RoomKind.Village)
+            {
+                // 마을: 평평한 휴식 지형 위에 왼쪽 식당, 오른쪽 장비 상점 (RoomLayout이 좌우 한 화면 방으로 고른다)
+                float ground = origin.y + stage.Chunks[index].EntryHeight;
+                int cols = RoomCols(index);
+                VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
+                VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
+            }
         }
+
+        private const float VillageRestaurantAt = 0.3f; // 방 가로 비율 (문 앞을 비워 두려고 양 끝에서 떨어뜨림)
+        private const float VillageShopAt = 0.7f;
 
         private static Vector3 EnemyPosition(Vector2 origin, ChunkFeature f) =>
             new Vector3(origin.x + f.X + 0.5f, origin.y + f.Y + SpawnLift, 0f);
