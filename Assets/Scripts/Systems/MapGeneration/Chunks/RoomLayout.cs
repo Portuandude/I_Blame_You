@@ -30,7 +30,8 @@ namespace IBlameYou.Systems
         MidBoss,   // 중간보스 방 (보스까지 거리의 55% 안팎)
         Boss,      // 마지막 방 + 출구
         Treasure,  // 막다른 곁방: 유물 상자
-        Spring     // 막다른 곁방: 회복 샘
+        Spring,    // 막다른 곁방: 회복 샘
+        Village    // 막다른 곁방: NPC 마을 (식당·장비 상점, 적·함정 없음). 스테이지마다 하나, 방을 돌아다니며 찾는다 (2026-11-12 사람 결정)
     }
 
     public class RoomData
@@ -95,6 +96,7 @@ namespace IBlameYou.Systems
         public const int MaxRooms = 12;
         public const int MinBossDistance = 4;        // 시작 → 보스 문 수 (중간보스 앞뒤에 방이 하나씩은 있게)
         public const float MidBossDepth = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
+        public const int VillageMinDistance = 2;     // 마을은 시작 방에서 문 두 개 이상 (골드를 조금 모은 뒤 찾게)
         public const int MinRewardRooms = 2;         // 막다른 보상 곁방 (보물 상자 / 회복 샘)
         public const int MaxRewardRooms = 3;
         public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
@@ -378,10 +380,29 @@ namespace IBlameYou.Systems
                 afterMid.Chunk = ChunkKind.Rest;
             }
 
-            // 보상 곁방: 주 경로 밖 막다른 방 중 2~3개 (먼 곳부터). 모자라면 이 배치는 버린다
+            // 막다른 곁방 (주 경로 밖, 문 하나)
             var leaves = new List<RoomData>();
             foreach (var r in layout.Rooms) if (!r.MainPath && DoorCount(r) == 1) leaves.Add(r);
-            if (leaves.Count < MinRewardRooms) return false;
+
+            // 마을: 판마다 하나. 좌우 방(건물 두 채가 설 평지), 시작 방에서 VillageMinDistance칸 이상, 보스 방과 격자로 붙지 않은 곳.
+            // 난수를 쓰지 않고 정한다 (가장 먼 곳 → 위쪽 → 왼쪽). 후보가 없으면 이 배치는 버린다 (Generate가 다시 뽑음).
+            RoomData village = null;
+            foreach (var r in leaves)
+            {
+                if (r.IsVertical || r.Distance < VillageMinDistance) continue;
+                if (Math.Abs(r.X - boss.X) + Math.Abs(r.Y - boss.Y) <= 1) continue;
+                if (village == null || r.Distance > village.Distance
+                    || (r.Distance == village.Distance && (r.Y > village.Y || (r.Y == village.Y && r.X < village.X))))
+                    village = r;
+            }
+            if (village == null) return false;
+            village.Kind = RoomKind.Village;
+            village.Chunk = ChunkKind.Rest;
+            leaves.Remove(village);
+
+            // 보상 곁방: 남은 막다른 방 중 2~3개 (먼 곳부터). 마을이 하나를 가져가 모자라면 보물 하나만 (회복 샘 자리를 마을이 대신),
+            // 하나도 없으면 이 배치는 버린다
+            if (leaves.Count < 1) return false;
             // 세로 막다른 방부터 (세로 방은 전투·퍼즐이 될 수 없으니 보상으로 쓰는 게 낫다), 그다음 먼 곳부터
             leaves.Sort((a, b) =>
             {
