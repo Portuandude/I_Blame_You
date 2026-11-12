@@ -116,6 +116,7 @@
 - 찾으면 미니맵에 집 아이콘. 방문 전에는 다른 방과 같은 규칙으로 안 보인다 (Dungreed식 미니맵 그대로).
 - 마을 방 문은 잠기지 않는다. 배경 음악은 잔잔한 마을 곡(나중에 `Tools/AudioGen`).
 - **[결정 필요]** 마을이 막다른 곁방 수(보상 곁방 2~3개)에 포함되는지, 따로 하나 더인지. 기본은 따로 하나 더 (9~12방 중 하나).
+- 구현 (2026-11-12): 기본안대로 **따로 하나 더**로 만들었다 (`RoomLayout.AssignKinds`). 막다른 방이 모자란 배치에서는 회복 샘 자리를 마을이 대신한다(보물은 늘 1개 이상). 건물은 `Stage/VillageBuilding`(그림 `Tools/ArtGen/generate_village.py`), 앞에 서면 [W] 표시, W/↑로 `StageEvents.VillageInteractRequested`를 부른다 (창은 식당·상점 작업에서).
 
 ## 10. 식당
 
