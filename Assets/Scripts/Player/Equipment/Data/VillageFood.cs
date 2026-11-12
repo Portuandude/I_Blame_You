@@ -86,6 +86,16 @@ namespace IBlameYou.Player
         NoEffect        // 지금 먹어도 소용없음 (체력·마나가 이미 가득)
     }
 
+    // 마을 가격 할인 (유물 단골 도장). rate = 1이면 그대로. 반올림(.5 올림)하고, 값이 있던 물건은 1골드 아래로 내려가지 않는다.
+    public static class VillagePrice
+    {
+        public static int Apply(int price, float rate)
+        {
+            if (price <= 0 || rate >= 1f) return price;
+            return Math.Max(1, (int)Math.Round(price * (double)Math.Max(0f, rate), MidpointRounding.AwayFromZero));
+        }
+    }
+
     // 한 판 동안의 식당 기록: 방문 번호와 이번 방문에 산 음식. 마을 방에 새로 들어오면 BeginVisit.
     public sealed class RestaurantVisit
     {
@@ -104,20 +114,21 @@ namespace IBlameYou.Player
         public bool Bought(FoodId id) => bought.Contains(id);
 
         // gold: 쓸 수 있는 골드. healthFull/manaFull: 회복 음식이 소용없는지.
-        public FoodBuyCheck Check(FoodId id, int gold, bool healthFull, bool manaFull)
+        // priceRate: 할인 배율 (VillagePrice.Apply, 단골 도장).
+        public FoodBuyCheck Check(FoodId id, int gold, bool healthFull, bool manaFull, float priceRate = 1f)
         {
             if (bought.Contains(id)) return FoodBuyCheck.AlreadyBought;
             var food = VillageFood.Get(id);
             if (food.Effect == FoodEffect.HealRatio && healthFull) return FoodBuyCheck.NoEffect;
             if (food.Effect == FoodEffect.ManaFull && manaFull) return FoodBuyCheck.NoEffect;
-            if (gold < food.Price) return FoodBuyCheck.NotEnoughGold;
+            if (gold < VillagePrice.Apply(food.Price, priceRate)) return FoodBuyCheck.NotEnoughGold;
             return FoodBuyCheck.Ok;
         }
 
         // 샀다고 기록한다. Check가 Ok가 아니면 false (아무것도 바꾸지 않음).
-        public bool TryBuy(FoodId id, int gold, bool healthFull, bool manaFull)
+        public bool TryBuy(FoodId id, int gold, bool healthFull, bool manaFull, float priceRate = 1f)
         {
-            if (Check(id, gold, healthFull, manaFull) != FoodBuyCheck.Ok) return false;
+            if (Check(id, gold, healthFull, manaFull, priceRate) != FoodBuyCheck.Ok) return false;
             bought.Add(id);
             return true;
         }
