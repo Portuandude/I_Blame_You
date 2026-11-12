@@ -33,20 +33,21 @@ namespace IBlameYou.Player
             rerollRng = new Random(unchecked(seed * 104729 + room * 17 + 11));
         }
 
-        // 사는 데 실제로 드는 골드: 장비 가격 − 그 부위에 낀 장비 판매가 (0 아래로는 안 내려감 = 웃돈은 안 줌).
-        public static int NetCost(EquipmentItem item, EquipmentItem current) =>
-            Math.Max(0, item.Price - (current != null ? current.SellPrice : 0));
+        // 사는 데 실제로 드는 골드: 장비 가격(할인 priceRate 반영, 단골 도장) − 그 부위에 낀 장비 판매가 (0 아래로는 안 내려감 = 웃돈은 안 줌).
+        // 판매가는 할인과 상관없이 그대로다.
+        public static int NetCost(EquipmentItem item, EquipmentItem current, float priceRate = 1f) =>
+            Math.Max(0, VillagePrice.Apply(item.Price, priceRate) - (current != null ? current.SellPrice : 0));
 
-        public bool CanBuy(int index, EquipmentItem current, int gold) =>
-            index >= 0 && index < stock.Count && gold >= NetCost(stock[index], current);
+        public bool CanBuy(int index, EquipmentItem current, int gold, float priceRate = 1f) =>
+            index >= 0 && index < stock.Count && gold >= NetCost(stock[index], current, priceRate);
 
         // 진열에서 꺼낸다. 돌려준 장비를 부르는 쪽이 끼고, cost만큼 골드를 뺀다. 못 사면 null.
-        public EquipmentItem Buy(int index, EquipmentItem current, int gold, out int cost)
+        public EquipmentItem Buy(int index, EquipmentItem current, int gold, out int cost, float priceRate = 1f)
         {
             cost = 0;
-            if (!CanBuy(index, current, gold)) return null;
+            if (!CanBuy(index, current, gold, priceRate)) return null;
             var item = stock[index];
-            cost = NetCost(item, current);
+            cost = NetCost(item, current, priceRate);
             stock.RemoveAt(index);
             return item;
         }

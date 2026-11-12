@@ -1,5 +1,6 @@
 using System;
 using IBlameYou.Enemies;
+using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -14,6 +15,9 @@ namespace IBlameYou.Core
         private const float CoinScale = 0.42f;            // 48px 그림 → 약 0.2유닛
         private const float CoinSfxGap = 0.05f;           // 동전 소리는 이 간격보다 촘촘하게 겹치지 않는다
         private static readonly Vector3 TargetOffset = Vector3.up * 0.8f;
+        private static readonly Vector3 PouchGlintOffset = new Vector3(0.55f, 1.4f, 0f); // 복주머니 (도토리·훈장 머리 위와 안 겹치게 오른쪽)
+        private const float PouchGlintGap = 0.6f;         // 여럿을 한꺼번에 잡아도 복주머니는 이 간격보다 자주 뜨지 않는다
+        private static float lastPouchGlint = -10f;
 
         private static int generation;                    // 판이 바뀌면 이전 판 동전 콜백을 무시한다
         private static float lastCoinSfx = -1f;
@@ -25,6 +29,7 @@ namespace IBlameYou.Core
         {
             generation++;
             InFlight = 0;
+            lastPouchGlint = -10f; // 새 판: 지난 판 간격 기록을 지운다 (도메인 리로드를 꺼도)
         }
 
         public static EnemyRank RankOf(EnemyController enemy)
@@ -42,6 +47,17 @@ namespace IBlameYou.Core
             if (enemy.GetComponent<BossSummon>() != null) return; // 보스가 되풀이해 소환하는 적은 골드 없음
             var rank = RankOf(enemy);
             int amount = GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
+            var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
+            if (relics != null && relics.Has(RelicId.LuckyPouch))
+            {
+                int boosted = RelicBook.LuckyPouchGold(amount); // 복주머니 +50%
+                if (boosted > amount && target != null && Time.time - lastPouchGlint >= PouchGlintGap)
+                {
+                    lastPouchGlint = Time.time;
+                    VfxPlayer.LuckyPouchGlint(target, PouchGlintOffset);
+                }
+                amount = boosted;
+            }
             if (amount <= 0) return;
 
             RunStats.AddGold(amount);

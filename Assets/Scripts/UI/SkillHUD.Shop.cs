@@ -46,16 +46,18 @@ namespace IBlameYou.UI
             var item = shop.Stock[index];
             var current = equip.Get(item.Slot);
             int gold = SpendableGold;
-            if (!shop.CanBuy(index, current, gold))
+            float rate = VillagePriceRate;
+            if (!shop.CanBuy(index, current, gold, rate))
             {
                 villageMessage = "<color=#ff9a6b>골드가 모자라요</color>";
                 GameAudio.PlaySfx("Switch_Tick", 0.5f);
                 return;
             }
 
-            int cost = EquipmentShop.NetCost(item, current);
+            int cost = EquipmentShop.NetCost(item, current, rate);
             if (!RunStats.TrySpendGold(cost, RunGold.InFlight)) return;
-            shop.Buy(index, current, gold, out _);
+            shop.Buy(index, current, gold, out _, rate);
+            if (EquipmentShop.NetCost(item, current, rate) < EquipmentShop.NetCost(item, current)) VfxPlayer.StampGlint(health.transform, StampGlintOffset); // 단골 도장 할인 쾅
             var old = equip.Equip(item); // 옛 장비는 값에서 이미 깎았다 (판매)
             villageMessage = old != null
                 ? $"<color=#7dff8a>{item.Name} 장착 · {old.Name} 판매 (-{cost} G)</color>"
@@ -125,6 +127,7 @@ namespace IBlameYou.UI
                 new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
 
             int gold = SpendableGold;
+            float rate = VillagePriceRate;
             float y = rect.y + 76f;
             for (int i = 0; i < EquipmentShop.StockSize; i++)
             {
@@ -134,11 +137,12 @@ namespace IBlameYou.UI
                 {
                     var item = shop.Stock[i];
                     var current = equip.Get(item.Slot);
-                    int cost = EquipmentShop.NetCost(item, current);
+                    int cost = EquipmentShop.NetCost(item, current, rate);
                     DrawShopItem(row, $"{i + 1}. ", item, labelRich, smallRich);
                     bool wasEnabled = GUI.enabled;
-                    GUI.enabled = shop.CanBuy(i, current, gold);
+                    GUI.enabled = shop.CanBuy(i, current, gold, rate);
                     string price = current != null ? $"{cost} G <size=11>(-{current.SellPrice})</size>" : $"{cost} G";
+                    if (cost < EquipmentShop.NetCost(item, current)) price += " <size=11><color=#7dff8a>도장</color></size>"; // 단골 도장 할인 (식당과 같은 표시)
                     if (GUI.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), price, buttonRich)) BuyEquipment(shop, i);
                     GUI.enabled = wasEnabled;
                 }

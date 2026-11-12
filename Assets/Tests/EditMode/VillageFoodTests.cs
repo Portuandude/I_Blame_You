@@ -56,5 +56,23 @@ namespace IBlameYou.Tests
             Assert.IsFalse(visit.TryBuy(FoodId.WarmSoup, 5, false, false));
             Assert.IsFalse(visit.Bought(FoodId.WarmSoup)); // 실패하면 기록 안 함
         }
+    
+        // 단골 도장 (2026-11-12): 사는 값 × 배율, 반올림(.5 올림), 값이 있으면 1골드 아래로 안 내려감.
+        [Test]
+        public void VillagePriceDiscount()
+        {
+            Assert.AreEqual(20, VillagePrice.Apply(20, 1f));
+            Assert.AreEqual(16, VillagePrice.Apply(20, 0.8f));
+            Assert.AreEqual(36, VillagePrice.Apply(45, 0.8f));
+            Assert.AreEqual(2, VillagePrice.Apply(3, 0.5f));   // 1.5 → 2
+            Assert.AreEqual(1, VillagePrice.Apply(1, 0.1f));   // 1골드 아래로 안 내려감
+            Assert.AreEqual(0, VillagePrice.Apply(0, 0.8f));
+
+            var visit = new RestaurantVisit();
+            visit.BeginVisit(0);
+            Assert.AreEqual(FoodBuyCheck.NotEnoughGold, visit.Check(FoodId.WarmSoup, 15, false, false, 0.8f));
+            Assert.AreEqual(FoodBuyCheck.Ok, visit.Check(FoodId.WarmSoup, 16, false, false, 0.8f)); // 20 → 16
+            Assert.IsTrue(visit.TryBuy(FoodId.WarmSoup, 16, false, false, 0.8f));
+        }
     }
 }

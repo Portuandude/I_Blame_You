@@ -3,6 +3,14 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
+## 2026-11-12 14:34 실행 (claude/project-thread-yzlt3y)
+
+- DONE (claude/project-thread-yzlt3y): 기능 테스트 모드 마을 시험 — 시험 맵에는 마을 방이 없어 식당·상점을 시험할 수 없다. F12 장비 창 아래에 "골드 +100", "식당 창 열기"(열 때마다 새 방문), "장비 상점 창 열기" 버튼 (`Core/FeatureTestTools`)
+- DONE (claude/project-thread-yzlt3y): 유물 복주머니 — 몬스터 골드 +50% (`RelicId.LuckyPouch`=26, 공용, `RunGold.OnEnemyKilled`에서 굴린 양에 곱하고 반올림, 0이면 그대로 0). 아이콘(`Tools/ArtGen/generate_relic_icons.py`)·설명·테스트·문서 (유물 27종)
+- DONE (claude/project-thread-yzlt3y): 유물 단골 도장 — 마을 식당·장비 상점에서 사는 값 -20% (`RelicId.RegularStamp`=27, 공용, 리롤·팔기 값은 그대로). 순수 데이터 쪽에 할인 계산 함수를 두고 테스트. 창 가격 표시도 할인값으로 (유물 28종)
+- DONE (claude/project-thread-yzlt3y): 복주머니 연출 — 복주머니로 더 받은 골드가 있을 때 동전과 함께 머리 위로 작은 복주머니가 톡 (`MedalGlintFx` 재사용, 한 처치에 한 번)
+- DONE (claude/project-thread-yzlt3y): 단골 도장 다듬기 — 장비 상점 값에도 "도장" 표시(리뷰 LOW), 할인받아 사면 머리 위로 작은 도장이 톡 (마을 창이 멈춰도 보이게 실제 시간)
+
 ## 2026-11-12 14:21 실행 (claude/project-thread-zpaf21)
 
 - DONE (claude/project-thread-zpaf21): 마을 첫 발견 연출 — 판에서 마을 방에 처음 들어오면 "마을 발견!" 알림 + 짧은 징글(`Tools/AudioGen` VillageFound, 오르골 3음) + 미니맵 집 아이콘 반짝. 두 번째부터는 조용히

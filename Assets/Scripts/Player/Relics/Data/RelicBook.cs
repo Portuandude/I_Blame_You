@@ -34,6 +34,8 @@ namespace IBlameYou.Player
         StarCandy,   // 별사탕: 레벨이 오를 때마다 마나 +StarCandyMana (PlayerProgression.LeveledUp, 도토리 주머니의 마나 짝)
         HorseshoeMagnet, // 말굽 자석: 전투 구역 보상 구슬이 끌려오는 거리 MagnetRadius → HorseshoeMagnetRadius (ArenaReward)
         PaperPlane,  // 종이비행기: 순간이동 마나 × PaperPlaneTeleportCost (A, TeleportSkill.CostMultiplier). 순간이동은 재사용 대기가 없어 백로그 원안(대기 -20%) 대신 마나
+        LuckyPouch,  // 복주머니: 몬스터가 떨어뜨리는 골드 × (1 + LuckyPouchGoldBonus), 반올림 (공용, Core/RunGold.OnEnemyKilled)
+        RegularStamp, // 단골 도장: 마을 식당·장비 상점에서 사는 값 × RegularStampPriceRate (공용, UI/SkillHUD.Village·Shop). 팔기·리롤 값은 그대로
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -70,6 +72,8 @@ namespace IBlameYou.Player
         public const float MagnetRadius = 1.5f;          // 보상 구슬 자석 기본 거리 (유닛, ArenaReward)
         public const float HorseshoeMagnetRadius = 4f;   // 말굽 자석이 있으면
         public const float PaperPlaneTeleportCost = 0.75f; // 순간이동 마나 20 → 15
+        public const float LuckyPouchGoldBonus = 0.5f;     // 몬스터 골드 +50%
+        public const float RegularStampPriceRate = 0.8f;   // 마을에서 사는 값 -20%
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
         public static readonly RelicId[] All =
@@ -79,7 +83,7 @@ namespace IBlameYou.Player
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
             RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
             RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion, RelicId.StarCandy,
-            RelicId.HorseshoeMagnet, RelicId.PaperPlane
+            RelicId.HorseshoeMagnet, RelicId.PaperPlane, RelicId.LuckyPouch, RelicId.RegularStamp
         };
 
         public static string Name(RelicId id)
@@ -111,6 +115,8 @@ namespace IBlameYou.Player
                 case RelicId.StarCandy: return "별사탕";
                 case RelicId.HorseshoeMagnet: return "말굽 자석";
                 case RelicId.PaperPlane: return "종이비행기";
+                case RelicId.LuckyPouch: return "복주머니";
+                case RelicId.RegularStamp: return "단골 도장";
                 default: return "집중 구슬";
             }
         }
@@ -143,6 +149,8 @@ namespace IBlameYou.Player
                 case RelicId.JellyCushion: return $"무너지는 발판이 {JellyCushionShakeTime:0.0}초 버틴다";
                 case RelicId.StarCandy: return $"레벨이 오를 때마다 마나 +{StarCandyMana:0}";
                 case RelicId.HorseshoeMagnet: return $"보상 구슬이 {HorseshoeMagnetRadius:0}칸 밖에서도 끌려온다";
+                case RelicId.RegularStamp: return $"마을에서 사는 값 -{Math.Round((1f - RegularStampPriceRate) * 100f)}%";
+                case RelicId.LuckyPouch: return $"몬스터가 떨어뜨리는 골드 +{Math.Round(LuckyPouchGoldBonus * 100f)}%";
                 case RelicId.PaperPlane: return $"순간이동 마나 -{Math.Round((1f - PaperPlaneTeleportCost) * 100f)}%";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
             }
@@ -168,6 +176,10 @@ namespace IBlameYou.Player
                 default: return "공용";
             }
         }
+
+        // 복주머니: 몬스터 한 마리가 떨어뜨린 골드(amount)를 늘린 값. 반올림(.5는 올림)이라 1골드도 2골드가 된다. 0 이하는 그대로.
+        public static int LuckyPouchGold(int amount) =>
+            amount <= 0 ? amount : (int)Math.Round(amount * (1.0 + LuckyPouchGoldBonus), MidpointRounding.AwayFromZero);
 
         // 별똥 조각: 0~1 난수(roll)가 확률 밑이면 터진다. 난수는 부르는 쪽이 넘긴다 (테스트 고정용).
         public static bool StarShardProcs(float roll) => roll < StarShardChance;

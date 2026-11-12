@@ -63,5 +63,22 @@ namespace IBlameYou.Tests
             Assert.That(item.Grade, Is.InRange(EquipmentModifier.MinGrade, EquipmentModifier.MaxGrade));
             Assert.IsFalse(EquipmentShop.CanReroll(null, 9999));
         }
+    
+        // 단골 도장 (2026-11-12): 장비 값만 깎이고 낀 장비 판매가는 그대로.
+        [Test]
+        public void DiscountAppliesToPriceNotTradeIn()
+        {
+            var shop = new EquipmentShop(7, 2);
+            var item = shop.Stock[0];
+            var current = new EquipmentItem(item.Id, 0);
+            int discounted = VillagePrice.Apply(item.Price, 0.8f);
+            Assert.Less(discounted, item.Price);
+            Assert.AreEqual(discounted, EquipmentShop.NetCost(item, null, 0.8f));
+            Assert.AreEqual(System.Math.Max(0, discounted - current.SellPrice), EquipmentShop.NetCost(item, current, 0.8f));
+            Assert.IsFalse(shop.CanBuy(0, null, discounted - 1, 0.8f));
+            Assert.IsTrue(shop.CanBuy(0, null, discounted, 0.8f));
+            Assert.AreSame(item, shop.Buy(0, null, discounted, out int cost, 0.8f));
+            Assert.AreEqual(discounted, cost);
+        }
     }
 }

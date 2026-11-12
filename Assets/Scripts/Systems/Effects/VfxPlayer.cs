@@ -128,6 +128,13 @@ namespace IBlameYou.Systems
         // 말굽 자석(먼 보상 구슬이 끌려오기 시작): 머리 위로 작은 말굽 자석이 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
         public static void HorseshoeGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "HorseshoeMagnet");
 
+        // 복주머니(몬스터 골드 +50%): 더 받은 골드가 있으면 머리 위로 작은 복주머니가 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
+        public static void LuckyPouchGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "LuckyPouch");
+
+        // 단골 도장(마을 할인): 할인받아 사면 머리 위로 작은 도장이 톡. 마을 창이 게임을 멈춰도 보이게 실제 시간으로.
+        public static void StampGlint(Transform follow, Vector3 offset) =>
+            MedalGlintFx.CreateFromPath(follow, offset, "UI/HUD/Relics/RegularStamp", true);
+
         // 식당에서 산 음식 아이콘이 머리 위로 톡 떠오른다 (foodId = FoodId 이름, Resources/UI/HUD/Food).
         public static void FoodGlint(Transform follow, Vector3 offset, string foodId) =>
             MedalGlintFx.CreateFromPath(follow, offset, "UI/HUD/Food/" + foodId, true); // 식당 창이 게임을 멈춰도 바로 보이게
