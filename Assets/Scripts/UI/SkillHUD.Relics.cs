@@ -15,7 +15,7 @@ namespace IBlameYou.UI
         private Action<RelicId> relicChosen;
         private Action relicCancelled;
         private int relicOpenedFrame;
-        private int relicCodexAtOpen; // 창을 연 때의 유물 도감 (처음 보는 유물 카드에 NEW)
+        private long relicCodexAtOpen; // 창을 연 때의 유물 도감 (처음 보는 유물 카드에 NEW)
         private int relicUnlockFrame = -1; // 고른 키가 같은 프레임에 스킬 입력으로 새지 않게, 이 프레임부터 조작 잠금을 푼다
 
         private PlayerRelics relics;
