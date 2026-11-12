@@ -36,7 +36,7 @@ namespace IBlameYou.Systems
             var circle = SolidSpriteFactory.CreateCircle();
 
             ambience.steam = new SpriteRenderer[SteamCount];
-            for (int i = 0; i < SteamCount; i++) ambience.steam[i] = ambience.Dot(circle, SteamColor, -3); // 건물(-3)과 같은 층, 나중에 만들어 앞에
+            for (int i = 0; i < SteamCount; i++) ambience.steam[i] = ambience.Dot(circle, SteamColor, -2); // 건물(-3) 바로 앞 (리뷰 LOW)
 
             foreach (float x in lampsX)
                 for (int k = 0; k < FirefliesPerLamp; k++)
