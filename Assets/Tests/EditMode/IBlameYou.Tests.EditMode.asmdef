@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "IBlameYou.StageGeneration",
         "IBlameYou.Relics",
+        "IBlameYou.Equipment",
         "IBlameYou.Formula",
         "IBlameYou.SkillRules"
     ],
