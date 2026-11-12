@@ -44,6 +44,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
+                case ChunkKind.SwitchBridge: BuildDoubleMovingBridge(chunk, heights, rng, true); break;
                 case ChunkKind.Arena: BuildArena(chunk, heights, rng, false); break;
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
@@ -504,7 +505,8 @@ namespace IBlameYou.Systems
         // 둘째 발판이 기둥 반대편에서 기다리고 있다 (놓치면 기둥에서 한 바퀴 기다린다).
         // 두 낭떠러지 폭이 같아 두 발판의 주기가 같다 (엇갈림이 유지된다). 폭 9칸 = 달리기 점프(약 7.3칸)·걷기 점프+공중 대쉬(약 8.1칸)로도
         // 못 건너는 폭 (검증기는 걷기 점프 기준이라 이 여유는 여기서 따로 잡는다). 달리기 점프+대쉬(약 11칸)는 막지 못한다.
-        private static void BuildDoubleMovingBridge(ChunkData chunk, int[] heights, Random rng)
+        // forceSwitch: 이중 스위치로 고정 (ChunkKind.SwitchBridge).
+        private static void BuildDoubleMovingBridge(ChunkData chunk, int[] heights, Random rng, bool forceSwitch = false)
         {
             int ground = chunk.EntryHeight;
             int gap = DoubleBridgeGap;
@@ -529,7 +531,7 @@ namespace IBlameYou.Systems
 
             // 변형: 이중 스위치 발판. 두 발판 모두 멈춰 있고, 각 발판 건너편 첫 칸(기둥 첫 칸, 건너편 절벽 첫 칸)에 서로 다른 속성 룬.
             // 첫 룬은 출발 쪽 절벽에서, 둘째 룬은 기둥 위에서 쏴서 맞힌다 (둘 다 10칸 거리).
-            if (chunk.Difficulty >= DoubleSwitchBridgeMinDifficulty && rng.Next(DoubleSwitchBridgeOneIn) == 0)
+            if (forceSwitch || (chunk.Difficulty >= DoubleSwitchBridgeMinDifficulty && rng.Next(DoubleSwitchBridgeOneIn) == 0))
             {
                 int count = chunk.Features.Count;
                 for (int i = count - 2; i < count; i++)

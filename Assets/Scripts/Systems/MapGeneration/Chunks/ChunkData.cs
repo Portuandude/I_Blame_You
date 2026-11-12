@@ -28,7 +28,8 @@ namespace IBlameYou.Systems
         Arena,         // 들어가면 문이 닫히고 적이 나오는 전투 구역
         EliteArena,    // 정예 전투 구역
         Rest,          // 숨 고르기 평지 (체크포인트는 2026-11-10 제거). 곁방 지형으로도 쓴다
-        Boss           // 마지막 전투 + 출구
+        Boss,          // 마지막 전투 + 출구
+        SwitchBridge   // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
     }
 
     public enum FeatureKind
