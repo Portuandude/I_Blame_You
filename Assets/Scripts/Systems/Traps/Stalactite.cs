@@ -19,6 +19,11 @@ namespace IBlameYou.Systems
         private const float DamageMultiplier = 1f;
         private const float SoundRange = 12f;          // FlameJetTrap과 같다
         private const float TipOffset = 0.45f;         // 그림 가운데에서 뾰족한 끝까지
+        private const float LookupInterval = 0.5f;     // 플레이어를 못 찾았을 때 다시 찾는 간격
+        private const float ShadowMaxAlpha = 0.55f;    // 그림자 예고: 흔들릴 때 옅게 → 떨어질수록 진하게
+        private const float ShadowWidth = 0.9f;
+        private const float ShadowHeight = 0.22f;
+        private const float ShadowSearch = 24f;        // 이만큼 아래까지 땅을 찾는다 (없으면 그림자 없음)
 
         private enum Phase { Hang, Shake, Fall, Gone, Regrow }
 
@@ -30,6 +35,12 @@ namespace IBlameYou.Systems
         private Color baseColor;
         private BoxCollider2D hitBox;
         private Transform player;
+        private float nextLookup;
+        private Vector3 bodyScale;
+        private float bodyHalfHeight;
+        private SpriteRenderer shadow;
+        private float floorY;
+        private bool hasFloor;
 
         // position: 매달린 칸의 가운데 (월드). 그 칸 바로 위가 천장이다.
         public static Stalactite Create(Transform parent, Vector2 position)
@@ -43,6 +54,17 @@ namespace IBlameYou.Systems
             trap.body = TrapCommon.AddSprite(go.transform, "Body", TrapCommon.Frame("Stalactite"), Vector2.zero, new Vector2(0.5f, 0.9f),
                 new Color(0.55f, 0.5f, 0.62f), 2);
             trap.baseColor = trap.body.color;
+            trap.bodyScale = trap.body.transform.localScale;
+            trap.bodyHalfHeight = trap.body.bounds.extents.y;
+
+            // 떨어질 자리 그림자 (부모 = 방 뿌리라 종유석과 같이 지워진다). 흔들리기 시작할 때 땅을 찾아 놓는다
+            var shadowGo = new GameObject("StalactiteShadow");
+            shadowGo.transform.SetParent(parent, false);
+            trap.shadow = shadowGo.AddComponent<SpriteRenderer>();
+            trap.shadow.sprite = SolidSpriteFactory.CreateCircle();
+            trap.shadow.color = new Color(0.05f, 0.02f, 0.1f, 0f);
+            trap.shadow.sortingOrder = 1;
+            trap.shadow.enabled = false;
 
             var rb = go.AddComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Kinematic;
@@ -59,11 +81,17 @@ namespace IBlameYou.Systems
             switch (phase)
             {
                 case Phase.Hang:
-                    if (PlayerBelow()) Enter(Phase.Shake);
+                    if (PlayerBelow())
+                    {
+                        Enter(Phase.Shake);
+                        FindFloor();
+                        if (CameraNear()) GameAudio.PlaySfx("StoneCrack", 0.8f);
+                    }
                     break;
                 case Phase.Shake:
                     timer += Time.deltaTime;
                     transform.position = home + new Vector3(Mathf.Sin(timer * 70f) * ShakeAmount, 0f, 0f);
+                    ShowShadow(0.3f * Mathf.Clamp01(timer / ShakeTime));
                     if (timer >= ShakeTime)
                     {
                         transform.position = home;
@@ -78,6 +106,7 @@ namespace IBlameYou.Systems
                     if (timer >= RegrowDelay)
                     {
                         transform.position = home;
+                        body.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f); // 첫 프레임에 다 자란 채로 번쩍이지 않게
                         body.enabled = true;
                         Enter(Phase.Regrow);
                     }
@@ -86,7 +115,10 @@ namespace IBlameYou.Systems
                     timer += Time.deltaTime;
                     float t = Mathf.Clamp01(timer / RegrowTime);
                     body.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * t);
-                    transform.localScale = new Vector3(1f, Mathf.Lerp(0.3f, 1f, t), 1f);
+                    // 천장에 붙은 윗면은 그대로 두고 아래로 자란다
+                    float grow = Mathf.Lerp(0.3f, 1f, t);
+                    body.transform.localScale = new Vector3(bodyScale.x, bodyScale.y * grow, bodyScale.z);
+                    body.transform.localPosition = new Vector3(0f, bodyHalfHeight * (1f - grow), 0f);
                     if (t >= 1f) Enter(Phase.Hang);
                     break;
             }
@@ -98,12 +130,33 @@ namespace IBlameYou.Systems
             timer = 0f;
             speed = 0f;
             hitBox.enabled = next == Phase.Fall;
+            if (next != Phase.Shake && next != Phase.Fall && shadow != null) shadow.enabled = false;
+        }
+
+        private void FindFloor()
+        {
+            var hit = Physics2D.Raycast((Vector2)home + Vector2.down * TipOffset, Vector2.down, ShadowSearch, 1 << TrapCommon.GroundLayer);
+            hasFloor = hit.collider != null;
+            if (hasFloor) floorY = hit.point.y;
+        }
+
+        // alpha: 0~1 (ShadowMaxAlpha 비율). 땅이 가까워질수록 그림자가 조금 커진다
+        private void ShowShadow(float alpha)
+        {
+            if (shadow == null || !hasFloor) return;
+            shadow.enabled = true;
+            shadow.transform.position = new Vector3(home.x, floorY + 0.04f, 0f);
+            float size = Mathf.Lerp(0.6f, 1f, alpha);
+            shadow.transform.localScale = new Vector3(ShadowWidth * size, ShadowHeight * size, 1f);
+            shadow.color = new Color(0.05f, 0.02f, 0.1f, ShadowMaxAlpha * alpha);
         }
 
         private bool PlayerBelow()
         {
             if (player == null)
             {
+                if (Time.time < nextLookup) return false;
+                nextLookup = Time.time + LookupInterval;
                 var movement = FindFirstObjectByType<Player.PlayerMovement>();
                 if (movement == null) return false;
                 player = movement.transform;
@@ -127,6 +180,12 @@ namespace IBlameYou.Systems
             }
 
             transform.position += Vector3.down * step;
+            if (hasFloor)
+            {
+                float total = home.y - TipOffset - floorY;
+                float left = transform.position.y - TipOffset - floorY;
+                ShowShadow(total > 0.01f ? Mathf.Lerp(0.3f, 1f, 1f - Mathf.Clamp01(left / total)) : 1f);
+            }
             if (home.y - transform.position.y >= MaxFallDistance) Shatter();
         }
 
@@ -149,7 +208,7 @@ namespace IBlameYou.Systems
             var dust = EffectLibrary.CreateVisual(null, "StalactiteDust", TrapCommon.Frames("Smoke"), 16f, false,
                 new Color(0.7f, 0.66f, 0.75f, 0.7f), 0.6f, 6, true);
             dust.transform.position = tip;
-            if (CameraNear()) GameAudio.PlaySfx("Crumble", 0.65f);
+            if (CameraNear()) GameAudio.PlaySfx("RockShatter", 0.75f);
 
             body.enabled = false;
             body.color = baseColor;
