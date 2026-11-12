@@ -249,11 +249,12 @@ namespace IBlameYou.Tests
             {
                 { ChunkKind.Cave, 0.15f }, { ChunkKind.Climb, 0.2f }, { ChunkKind.MovingBridge, 0.2f },
                 { ChunkKind.CrumbleBridge, 0.3f }, { ChunkKind.ElementGate, StagePlanner.GateMinProgress },
+                { ChunkKind.Pillars, StagePlanner.PillarsMinProgress },
             };
             var travel = new HashSet<ChunkKind>
             {
                 ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave, ChunkKind.Climb,
-                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate,
+                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate, ChunkKind.Pillars,
             };
             for (int seed = 0; seed < SeedCount; seed++)
             {
@@ -429,6 +430,64 @@ namespace IBlameYou.Tests
             }
 
             Assert.Greater(blinkBridges, 20, "깜빡 발판 다리가 거의 안 나옴");
+        }
+
+        // 기둥 숲 (레벨 재설계 2차): 낭떠러지가 여럿, 기둥은 폭 1~2칸, 오르는 낭떠러지는 2칸 이하, 검증기 통과.
+        // 무너지는 머리는 난이도 문턱 이상에서만, 그 아래에 한 칸 낮은 기둥 몸통이 있다.
+        [Test]
+        public void PillarsAreNarrowJumpableAndCrumbleLate()
+        {
+            int crumbleHeads = 0, narrow = 0, valid = 0, total = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 6, 12 })
+                    {
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Pillars, difficulty, entry, 0);
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var crumbles = chunk.Features.FindAll(f => f.Kind == FeatureKind.Crumble);
+                        foreach (var c in crumbles)
+                        {
+                            Assert.GreaterOrEqual(difficulty, ChunkGenerator.PillarCrumbleMinDifficulty, tag);
+                            for (int i = 0; i < c.Width; i++) Assert.AreEqual(c.Y, Surface(chunk, c.X + i), tag + ": 무너지는 머리 아래 몸통");
+                            crumbleHeads++;
+                        }
+
+                        int pits = 0, x = 0;
+                        while (x < ChunkData.Width)
+                        {
+                            if (Surface(chunk, x) > 0) { x++; continue; }
+                            int start = x;
+                            while (x < ChunkData.Width && Surface(chunk, x) == 0) x++;
+                            pits++;
+                            Assert.Less(x, ChunkData.Width, tag + ": 낭떠러지로 끝남");
+                            int gap = x - start;
+                            int before = Surface(chunk, start - 1), after = Surface(chunk, x);
+                            foreach (var c in crumbles)
+                            {
+                                if (c.X == x) after = c.Y + 1;
+                                if (c.X + c.Width - 1 == start - 1) before = c.Y + 1; // 무너지기 전 머리 위에서 뛴다
+                            }
+                            Assert.LessOrEqual(gap, 3, tag);
+                            if (after > before) Assert.LessOrEqual(gap, 2, tag + $": 오르며 {gap}칸 ({start})");
+                            Assert.LessOrEqual(after - before, 1, tag + $": 한 번에 {after - before}칸 오름 ({start})");
+                            int width = 0;
+                            while (x + width < ChunkData.Width && Surface(chunk, x + width) > 0) width++;
+                            if (x + width < ChunkData.Width) Assert.LessOrEqual(width, 2, tag + $": 기둥 폭 ({x})");
+                            if (width == 1) narrow++;
+                        }
+
+                        Assert.GreaterOrEqual(pits, 4, tag + ": 낭떠러지가 적음");
+                        if (StageValidator.Validate(chunk, out _)) valid++;
+                        total++;
+                    }
+                }
+            }
+
+            Assert.Greater(crumbleHeads, 50, "무너지는 머리가 거의 안 나옴");
+            Assert.Greater(narrow, 100, "폭 1칸 기둥이 거의 안 나옴");
+            Assert.Greater(valid, total * 0.8, $"첫 시도 검증 통과 {valid}/{total} (실패하면 다른 시도 번호로 다시 만든다)");
         }
 
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)

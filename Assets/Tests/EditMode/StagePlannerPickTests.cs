@@ -24,7 +24,7 @@ namespace IBlameYou.Tests
         private static readonly ChunkKind[] TravelKinds =
         {
             ChunkKind.Start, ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave,
-            ChunkKind.Climb, ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate
+            ChunkKind.Climb, ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate, ChunkKind.Pillars
         };
 
         // 1.0은 NextDouble 범위([0, 1)) 밖이지만, 합이 반올림으로 조금 커지거나 작아진 경우와 같은 상황(roll이 끝까지 남음)을 만든다.
@@ -72,6 +72,7 @@ namespace IBlameYou.Tests
                 case ChunkKind.Climb: Assert.GreaterOrEqual(progress, 0.2f, "절벽이 너무 이르다"); break;
                 case ChunkKind.CrumbleBridge: Assert.GreaterOrEqual(progress, 0.3f, "무너지는 다리가 너무 이르다"); break;
                 case ChunkKind.MovingBridge: Assert.GreaterOrEqual(progress, 0.2f, "움직이는 발판이 너무 이르다"); break;
+                case ChunkKind.Pillars: Assert.GreaterOrEqual(progress, StagePlanner.PillarsMinProgress, "기둥 숲이 너무 이르다"); break;
                 case ChunkKind.ElementGate:
                     Assert.IsTrue(allowGate, "봉인문 개수 초과");
                     Assert.GreaterOrEqual(progress, StagePlanner.GateMinProgress);
