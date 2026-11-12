@@ -33,6 +33,7 @@ namespace IBlameYou.Systems
         // 중간보스 방: 정예 전투 구역 지형에 정예 대신 쌍둥이 슬라임 기사 둘 (Docs/MidBossDraft.md 후보 C)
         public const int MidBossFireX = 9;
         public const int MidBossWaterX = 22;
+        private const int ArenaStartX = 2;  // ChunkGenerator.BuildArena의 전투 구역 시작 열 (기사 자리 기준)
 
         // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
         public enum ShaftStyle { Zigzag, TwinStairs, Shelves }
@@ -97,33 +98,72 @@ namespace IBlameYou.Systems
         }
 
         // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
+        // 넓은 방에서는 전투 구역이 방 안쪽 끝 구간에 있으므로 기사 자리는 구역 시작 열(한 화면 방에서는 2)만큼 민다.
         private static void ArmMidBoss(ChunkData chunk)
         {
             int ground = chunk.EntryHeight;
+            int shift = 0;
             foreach (var f in chunk.Features)
-                if (f.Kind == FeatureKind.Arena) { ground = f.Y; break; }
+                if (f.Kind == FeatureKind.Arena) { ground = f.Y; shift = f.X - ArenaStartX; break; }
             chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy && f.Deferred);
-            chunk.AddEnemy(StageEnemy.SlimeKnightFire, MidBossFireX, ground, true);
-            chunk.AddEnemy(StageEnemy.SlimeKnightWater, MidBossWaterX, ground, true);
+            chunk.AddEnemy(StageEnemy.SlimeKnightFire, shift + MidBossFireX, ground, true);
+            chunk.AddEnemy(StageEnemy.SlimeKnightWater, shift + MidBossWaterX, ground, true);
         }
 
         // ------------------------------------------------------------------ 좌우 방
+
+        // 넓은 방 (2026-11-12 "큰 방"): 주 구간(room.Chunk) 앞, 들어오는 문 쪽에 앞 구간(room.Leads)을 이어 붙인다.
+        // 왼쪽으로 들어오면 [앞 … 앞 | 주], 오른쪽으로 들어오면 [주 | 앞 … 앞] — 전투·보스 구간은 늘 방 안쪽 끝이다.
+        // 구간은 왼쪽부터 만들어 앞 구간의 출구 높이를 다음 구간 입구 높이로 넘긴다 (외길 스테이지와 같은 이음매 규칙).
+        private const int LeadSeedStep = 7919;
 
         private static RoomGeometry BuildHorizontal(int seed, RoomData room)
         {
             RoomGeometry result = null;
             for (int attempt = 0; attempt < MaxAttempts; attempt++)
             {
-                var chunk = ChunkGenerator.Generate(seed, room.Index, room.Chunk, room.Difficulty, StageGenerator.StartHeight, attempt);
-                if (MirrorsBoss(room)) Mirror(chunk);
-                result = Finish(chunk, room);
+                result = Finish(BuildWide(seed, room, attempt, false), room);
                 if (result.Valid) return result;
             }
 
-            var fallbackChunk = ChunkGenerator.Fallback(room.Index, room.Chunk, room.Difficulty, StageGenerator.StartHeight);
-            if (MirrorsBoss(room)) Mirror(fallbackChunk);
-            var fallback = Finish(fallbackChunk, room);
+            var fallback = Finish(BuildWide(seed, room, 0, true), room);
             return fallback.Valid ? fallback : result;
+        }
+
+        // 주 구간이 오른쪽 끝(왼쪽으로 들어옴)인지. 오른쪽 문으로 들어오는 방(보스 거울 포함)은 주 구간이 왼쪽 끝.
+        internal static bool MainOnRight(RoomData room)
+        {
+            if (room.EntryDoor == DoorDir.Right) return false;
+            if (room.EntryDoor == DoorDir.Left) return true;
+            return (room.Doors & DoorDir.Right) == 0; // 들어오는 문이 따로 없으면 문 반대쪽 끝
+        }
+
+        private static ChunkData BuildWide(int seed, RoomData room, int attempt, bool fallback)
+        {
+            int count = room.Leads.Count;
+            bool mainRight = MainOnRight(room);
+            var parts = new List<ChunkData>();
+            ChunkData main = null;
+            int entry = StageGenerator.StartHeight;
+            for (int i = 0; i <= count; i++)
+            {
+                bool isMain = mainRight ? i == count : i == 0;
+                int lead = mainRight ? i : i - 1; // 앞 구간 순번 (주 구간에서 가까울수록 뒤 번호)
+                var kind = isMain ? room.Chunk : room.Leads[mainRight ? lead : count - 1 - lead];
+                int partSeed = isMain ? seed : unchecked(seed + LeadSeedStep * (1 + (mainRight ? lead : count - 1 - lead)));
+                var part = fallback
+                    ? ChunkGenerator.Fallback(room.Index, kind, room.Difficulty, entry)
+                    : ChunkGenerator.Generate(partSeed, room.Index, kind, room.Difficulty, entry, attempt);
+                if (isMain)
+                {
+                    if (MirrorsBoss(room)) Mirror(part);
+                    main = part;
+                }
+                parts.Add(part);
+                entry = part.ExitHeight;
+            }
+
+            return count == 0 ? main : ChunkData.Stitch(parts, main);
         }
 
         // 보스 방이 오른쪽 문으로 들어오면 (4×3 격자에서 보스가 왼쪽 끝에 놓인 경우) 보스 지형을 좌우로 뒤집어
@@ -135,17 +175,17 @@ namespace IBlameYou.Systems
         internal static void Mirror(ChunkData chunk)
         {
             for (int y = 0; y < H; y++)
-                for (int x = 0; x < W / 2; x++)
+                for (int x = 0; x < chunk.Cols / 2; x++)
                 {
                     var t = chunk.Tiles[x, y];
-                    chunk.Tiles[x, y] = chunk.Tiles[W - 1 - x, y];
-                    chunk.Tiles[W - 1 - x, y] = t;
+                    chunk.Tiles[x, y] = chunk.Tiles[chunk.Cols - 1 - x, y];
+                    chunk.Tiles[chunk.Cols - 1 - x, y] = t;
                 }
 
             for (int i = 0; i < chunk.Features.Count; i++)
             {
                 var f = chunk.Features[i];
-                f.X = W - f.X - Math.Max(1, f.Width);
+                f.X = chunk.Cols - f.X - Math.Max(1, f.Width);
                 if (f.Kind == FeatureKind.ArrowTrap) f.Direction = -f.Direction;
                 chunk.Features[i] = f;
             }
@@ -159,9 +199,9 @@ namespace IBlameYou.Systems
         {
             var geometry = new RoomGeometry { Chunk = chunk };
             WallWithDoor(chunk, 0, (room.Doors & DoorDir.Left) != 0, chunk.EntryHeight);
-            WallWithDoor(chunk, W - 1, (room.Doors & DoorDir.Right) != 0, chunk.ExitHeight);
+            WallWithDoor(chunk, chunk.Cols - 1, (room.Doors & DoorDir.Right) != 0, chunk.ExitHeight);
             if ((room.Doors & DoorDir.Left) != 0) geometry.Arrivals[DoorDir.Left] = geometry.Exits[DoorDir.Left] = (0, chunk.EntryHeight);
-            if ((room.Doors & DoorDir.Right) != 0) geometry.Arrivals[DoorDir.Right] = geometry.Exits[DoorDir.Right] = (W - 1, chunk.ExitHeight);
+            if ((room.Doors & DoorDir.Right) != 0) geometry.Arrivals[DoorDir.Right] = geometry.Exits[DoorDir.Right] = (chunk.Cols - 1, chunk.ExitHeight);
             return Check(geometry);
         }
 

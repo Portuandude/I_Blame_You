@@ -48,6 +48,9 @@ namespace IBlameYou.Systems
         public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (진행도·"쓰러진 곳" 기준)
         public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
         public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
+        // 넓은 방 (2026-11-12 "큰 방"): 주 구간(Chunk) 앞, 들어오는 문 쪽에 이어 붙이는 이동 구간들. 비어 있으면 한 화면 방.
+        public readonly List<ChunkKind> Leads = new List<ChunkKind>();
+        public int Cols => (1 + Leads.Count) * ChunkData.Width; // 방 가로 칸 수
 
         // 위/아래 문이 있는 방은 세로로 오르내리는 방(탑·굴)이다.
         // 곁방으로 가는 위/아래 문도 포함한다 (지형을 세로 방으로 만들어야 하므로).
@@ -102,6 +105,51 @@ namespace IBlameYou.Systems
         public const int MinFights = 1;              // 중간보스·보스 말고 일반/정예 전투 방 최소 수
         public const float MinFightDifficulty = 0.15f; // 시작 방 바로 옆은 보스 거리가 짧을 때(4~5)만 전투 방이 될 수 있다
 
+        // 넓은 방: 좌우 이동·퍼즐·전투·정예·중간보스·보스 방은 앞 구간 2개(3화면), 휴식 방은 1개(2화면). 시작·보물·샘·세로 방은 한 화면.
+        // 격자 한 칸의 가로 크기는 가장 넓은 방에 맞춘다 (ChunkStreamer 원점이 칸마다 같은 간격).
+        public const int MaxLeads = 2;
+        public const int CellCols = (1 + MaxLeads) * ChunkData.Width;
+
+        public static int LeadCount(RoomData room)
+        {
+            if (room.IsVertical) return 0;
+            switch (room.Kind)
+            {
+                case RoomKind.Travel:
+                case RoomKind.Puzzle:
+                case RoomKind.Combat:
+                case RoomKind.Elite:
+                    return MaxLeads;
+                case RoomKind.MidBoss:
+                case RoomKind.Boss:
+                    return MaxLeads;
+                case RoomKind.Rest:
+                    return 1; // 숨 고르기 방: 앞에 이동 구간 하나 + 빈 평지
+                default:
+                    return 0;
+            }
+        }
+
+        // 앞 구간 종류: 이동 지형만 (봉인문·움직이는 발판 제외 — 보스 방 좌우 뒤집기가 움직이는 발판을 못 다루고, 퍼즐은 방마다 하나).
+        // 배치 난수열과 따로 굴려 방 배치·종류가 넓은 방 도입 전과 같게 남는다.
+        private static void AssignLeads(RoomLayoutData layout)
+        {
+            var rng = new Random(unchecked(layout.Seed * 7368787 + 2017));
+            foreach (var room in layout.Rooms)
+            {
+                room.Leads.Clear();
+                int count = LeadCount(room);
+                var last = room.Chunk;
+                for (int i = 0; i < count; i++)
+                {
+                    var kind = StagePlanner.PickTravel(rng, room.Difficulty, last, false);
+                    if (kind == ChunkKind.MovingBridge || kind == ChunkKind.ElementGate) kind = last == ChunkKind.Hills ? ChunkKind.Plains : ChunkKind.Hills;
+                    room.Leads.Add(kind);
+                    last = kind;
+                }
+            }
+        }
+
         private static readonly DoorDir[] Dirs = { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down };
 
         // targetSeconds: 목표 시간 (15~30분으로 자른다). 방 수와 전투 방 수가 이것을 따라간다.
@@ -123,6 +171,11 @@ namespace IBlameYou.Systems
             foreach (var room in layout.Rooms)
             {
                 total += room.Kind == RoomKind.MidBoss ? StagePlanner.EstimatedSeconds(ChunkKind.EliteArena) : StagePlanner.EstimatedSeconds(room.Chunk);
+                // 앞 구간: 정해졌으면 그 종류대로, 아직이면(종류 배정 중) 평지 어림
+                if (room.Leads.Count > 0)
+                    foreach (var lead in room.Leads) total += StagePlanner.EstimatedSeconds(lead);
+                else
+                    total += LeadCount(room) * StagePlanner.EstimatedSeconds(ChunkKind.Plains);
                 if (!room.MainPath) total += 2f * BacktrackSeconds;
             }
 
@@ -163,6 +216,8 @@ namespace IBlameYou.Systems
             MarkMainPath(layout, boss);
             if (!AssignKinds(layout, rng, target)) return null;
             Reindex(layout);
+            AssignLeads(layout);
+            if (EstimatedSeconds(layout) < MinSeconds) return null; // 15분에 못 미치는 배치(방 9개·전투 방 적음)는 버린다
             layout.MinX = 0;
             layout.MaxX = GridWidth - 1;
             layout.MinY = 0;
