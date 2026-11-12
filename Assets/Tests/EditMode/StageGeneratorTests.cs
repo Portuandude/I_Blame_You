@@ -249,12 +249,12 @@ namespace IBlameYou.Tests
             {
                 { ChunkKind.Cave, 0.15f }, { ChunkKind.Climb, 0.2f }, { ChunkKind.MovingBridge, 0.2f },
                 { ChunkKind.CrumbleBridge, 0.3f }, { ChunkKind.ElementGate, StagePlanner.GateMinProgress },
-                { ChunkKind.Pillars, StagePlanner.PillarsMinProgress },
+                { ChunkKind.Pillars, StagePlanner.PillarsMinProgress }, { ChunkKind.TwinPath, StagePlanner.TwinPathMinProgress },
             };
             var travel = new HashSet<ChunkKind>
             {
                 ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave, ChunkKind.Climb,
-                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate, ChunkKind.Pillars,
+                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate, ChunkKind.Pillars, ChunkKind.TwinPath,
             };
             for (int seed = 0; seed < SeedCount; seed++)
             {
@@ -488,6 +488,63 @@ namespace IBlameYou.Tests
             Assert.Greater(crumbleHeads, 50, "무너지는 머리가 거의 안 나옴");
             Assert.Greater(narrow, 100, "폭 1칸 기둥이 거의 안 나옴");
             Assert.Greater(valid, total * 0.8, $"첫 시도 검증 통과 {valid}/{total} (실패하면 다른 시도 번호로 다시 만든다)");
+        }
+
+        // 두 갈래 길 (레벨 재설계 2차): 아래 길은 평평하고 가시·적이 계단 밑에 없다. 위 길은 2칸씩 오르는 계단 → 바닥 + 6 발판 줄,
+        // 첫 발판은 단단하고 틈은 1~2칸, 출구 앞 4칸은 비어 내려설 수 있다. 무너지는 발판은 위 길 줄에만.
+        [Test]
+        public void TwinPathHasSafeStairsAndJumpableWalkway()
+        {
+            int crumbles = 0, enemies = 0, spikes = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.3f, 0.7f })
+                {
+                    foreach (int entry in new[] { 3, 8, 13 })
+                    {
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.TwinPath, difficulty, entry, 0);
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        for (int x = 0; x < ChunkData.Width; x++) Assert.AreEqual(entry, Surface(chunk, x), tag + $": 아래 길 높이 ({x})");
+                        Assert.AreEqual(entry, chunk.ExitHeight, tag);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(3, entry + 1), tag + ": 계단 1");
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(6, entry + 3), tag + ": 계단 2");
+
+                        int row = entry + ChunkGenerator.TwinPathWalkRise - 1;
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(ChunkGenerator.TwinPathWalkStart, row), tag + ": 첫 발판은 단단");
+                        var walk = new bool[ChunkData.Width];
+                        for (int x = 0; x < ChunkData.Width; x++) walk[x] = chunk.Get(x, row) == StageTile.Platform;
+                        foreach (var f in chunk.Features)
+                        {
+                            if (f.Kind == FeatureKind.Crumble)
+                            {
+                                Assert.AreEqual(row, f.Y, tag + ": 무너지는 발판은 위 길에만");
+                                for (int i = 0; i < f.Width; i++) walk[f.X + i] = true;
+                                crumbles++;
+                            }
+                            if (f.Kind == FeatureKind.Spikes)
+                            {
+                                Assert.GreaterOrEqual(f.X, 9, tag + ": 계단 밑 가시");
+                                Assert.LessOrEqual(f.X + f.Width, ChunkData.Width - 4, tag + ": 출구 가시");
+                                spikes++;
+                            }
+                            if (f.Kind == FeatureKind.Enemy) { Assert.AreEqual(entry, f.Y, tag); enemies++; }
+                        }
+
+                        int gap = 0;
+                        for (int x = ChunkGenerator.TwinPathWalkStart; x <= ChunkGenerator.TwinPathWalkEnd; x++)
+                        {
+                            gap = walk[x] ? 0 : gap + 1;
+                            Assert.LessOrEqual(gap, 2, tag + $": 위 길 틈 ({x})");
+                        }
+                        for (int x = ChunkGenerator.TwinPathWalkEnd + 1; x < ChunkData.Width; x++) Assert.IsFalse(walk[x], tag + ": 출구 위는 비어야");
+                        Assert.IsTrue(StageValidator.Validate(chunk, out string reason), tag + ": " + reason);
+                    }
+                }
+            }
+
+            Assert.Greater(crumbles, 300, "무너지는 발판이 거의 없음");
+            Assert.Greater(enemies, 600, "아래 길 적이 거의 없음");
+            Assert.Greater(spikes, 600, "아래 길 가시가 거의 없음");
         }
 
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)
