@@ -525,7 +525,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 140f + extra, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             extra += DrawFavoriteLine(rect.x, rect.y + 168f + extra, rect.width); // B 최애 마법 · A 최애 방어막
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f + extra, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            DrawEndRelicsAndEquipment(new Rect(rect.x + 12f, rect.y + 170f + extra, rect.width - 24f, 26f)); // 유물 아이콘 줄 + 장비 3칸 (SkillHUD.RelicIcons.cs·Equipment.cs)
             GUI.Label(new Rect(rect.x, rect.y + 200f + extra, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.color = previousColor;
@@ -560,7 +560,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             float shift = DrawFavoriteLine(rect.x, rect.y + 168f, rect.width); // B 최애 마법 · A 최애 방어막
-            DrawEndRelics(new Rect(rect.x + 12f, rect.y + 170f + shift, rect.width - 24f, 26f)); // 유물 아이콘 줄 (SkillHUD.RelicIcons.cs)
+            DrawEndRelicsAndEquipment(new Rect(rect.x + 12f, rect.y + 170f + shift, rect.width - 24f, 26f)); // 유물 아이콘 줄 + 장비 3칸 (SkillHUD.RelicIcons.cs·Equipment.cs)
             GUI.Label(new Rect(rect.x, rect.y + 200f + shift, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             GUI.matrix = previousMatrix;
