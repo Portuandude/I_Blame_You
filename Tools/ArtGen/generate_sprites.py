@@ -1194,6 +1194,35 @@ def arrow_trap_sprite():
     return finish(img, w, h)
 
 
+def stalactite_sprite():
+    """동굴 종유석 (가로 60 × 세로 100, 위 = 천장에 붙는 쪽, 아래 끝이 뾰족). 보랏빛 수정 돌 + 하이라이트 + 반짝임 하나 (귀엽지만 화려하게)."""
+    w, h = 60, 100
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    outer = [(4, 0), (56, 0), (50, 22), (42, 52), (34, 82), (30, 98), (26, 82), (18, 52), (10, 22)]
+    inner = [(9, 3), (51, 3), (46, 22), (39, 50), (32, 78), (30, 88), (28, 78), (21, 50), (14, 22)]
+    d.polygon([(x * S, y * S) for x, y in outer], fill=OUTLINE)
+    d.polygon([(x * S, y * S) for x, y in inner], fill=rgba("#8a7aa8"))
+    d.polygon([(x * S, y * S) for x, y in [(30, 3), (51, 3), (46, 22), (39, 50), (32, 78), (30, 88)]], fill=rgba("#6c5d8a"))
+    d.polygon([(x * S, y * S) for x, y in [(15, 6), (22, 6), (24, 40), (20, 46)]], fill=rgba("#c9b8ea"))
+    for x0, y0, x1, y1 in ((17, 14, 43, 18), (23, 36, 37, 39), (26, 60, 33, 62)):
+        d.line([(x0 * S, y0 * S), (x1 * S, y1 * S)], fill=rgba("#55486e"), width=2 * S)
+    d.rectangle([4 * S, 0, 56 * S, 5 * S], fill=rgba("#4a3f5c"))
+    # 반짝임 (ArtStyle: 4갈래 별, 작게)
+    cx, cy, r = 21, 28, 5
+    d.polygon([(cx * S, (cy - r) * S), ((cx + 1.2) * S, (cy - 1.2) * S), ((cx + r) * S, cy * S), ((cx + 1.2) * S, (cy + 1.2) * S),
+               (cx * S, (cy + r) * S), ((cx - 1.2) * S, (cy + 1.2) * S), ((cx - r) * S, cy * S), ((cx - 1.2) * S, (cy - 1.2) * S)],
+              fill=(255, 255, 255, 235))
+    return finish(img, w, h)
+
+
+def generate_stalactite():
+    folder = os.path.join(ROOT, "Assets", "Resources", "Stage", "Stalactite")
+    os.makedirs(folder, exist_ok=True)
+    stalactite_sprite().save(os.path.join(folder, "00.png"))
+
+
 def plank(color, cracks, w=100, h=40):
     img = blank(w, h)
     d = ImageDraw.Draw(img)
@@ -1489,6 +1518,7 @@ def generate_stage_art():
         "Flame": flame_frames(),
         "Smoke": smoke_frames(),
         "ArrowTrap": [arrow_trap_sprite()],
+        "Stalactite": [stalactite_sprite()],
         # Platform / Crumble 은 새 팔레트로 generate_terrain.py 가 그린다.
         # Checkpoint: 체크포인트 제거(2026-11-10)로 만들지 않는다 (checkpoint_frames는 남김, 예전 그림은 Trash/)
         "Gate": gate_frames(),
@@ -1573,6 +1603,10 @@ def generate_boss_art():
 if __name__ == "__main__":
     import sys
 
+    if "--stalactite" in sys.argv:  # 동굴 종유석 그림만
+        generate_stalactite()
+        print("stalactite done")
+        sys.exit(0)
     if "--switch" in sys.argv:  # 마법 스위치 룬 그림만
         generate_rune_switch()
         print("switch done")
