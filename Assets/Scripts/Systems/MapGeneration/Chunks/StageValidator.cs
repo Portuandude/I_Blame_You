@@ -166,7 +166,7 @@ namespace IBlameYou.Systems
 
             foreach (var feature in chunk.Features)
             {
-                if (feature.Kind != FeatureKind.Crumble && feature.Kind != FeatureKind.MovingPlatform) continue;
+                if (feature.Kind != FeatureKind.Crumble && feature.Kind != FeatureKind.MovingPlatform && feature.Kind != FeatureKind.BlinkPlatform) continue;
                 int span = feature.Width + (feature.Kind == FeatureKind.MovingPlatform ? Math.Max(0, feature.Direction) : 0);
                 for (int i = 0; i < span; i++)
                 {
