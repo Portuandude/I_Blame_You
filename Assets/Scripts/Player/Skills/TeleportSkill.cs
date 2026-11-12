@@ -29,7 +29,9 @@ namespace IBlameYou.Player
         private readonly List<Collider2D> overlapResults = new List<Collider2D>();
         private ContactFilter2D groundFilter;
 
-        public float ManaCost => manaCost;
+        // 유물 종이비행기 등이 곱하는 순간이동 마나 배율 (PlayerRelics). 기본 1.
+        public float CostMultiplier { get; set; } = 1f;
+        public float ManaCost => manaCost * CostMultiplier;
 
         public float Distance
         {
@@ -81,9 +83,9 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (!mana.TryConsume(manaCost, ManaUser.PlayerA))
+            if (!mana.TryConsume(ManaCost, ManaUser.PlayerA))
             {
-                SkillMessages.Post(ManaUser.PlayerA, $"마나 부족: 순간이동 (필요 {manaCost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerA, $"마나 부족: 순간이동 (필요 {ManaCost:0})", true);
                 return;
             }
 
