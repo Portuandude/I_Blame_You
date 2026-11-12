@@ -104,7 +104,11 @@ namespace IBlameYou.Core
             if (target == null) return;
 
             UpdateLook();
-            followPosition = Clamp(Vector3.SmoothDamp(followPosition, DesiredPosition(), ref velocity, smoothTime));
+            Vector3 unclamped = Vector3.SmoothDamp(followPosition, DesiredPosition(), ref velocity, smoothTime);
+            followPosition = Clamp(unclamped);
+            // 방 경계에 막힌 축은 쌓인 속도를 버린다 (앞보기로 목표가 경계 밖에 있다가 방향을 바꿀 때 한쪽으로 쏠리지 않게)
+            if (!Mathf.Approximately(unclamped.x, followPosition.x)) velocity.x = 0f;
+            if (!Mathf.Approximately(unclamped.y, followPosition.y)) velocity.y = 0f;
 
             Vector3 shake = Vector3.zero;
             if (shakeTimeRemaining > 0f)
