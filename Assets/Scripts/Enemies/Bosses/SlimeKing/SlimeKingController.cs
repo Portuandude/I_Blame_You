@@ -85,6 +85,7 @@ namespace IBlameYou.Enemies
         private float mana;
         private float stamina;
         private int phase = 1;
+        private const float SplitMusicPitch = 1.06f;
         private bool splitDone;
         private bool splitPending;
         private float startDelay = IntroDelay;
@@ -575,6 +576,7 @@ namespace IBlameYou.Enemies
             StartCoroutine(Brain(SplitInvulnerable + 0.3f));
 
             StageEvents.PostNotice($"{DisplayName}이(가) 둘로 분열했다!");
+            if (GameAudio.CurrentMusic == "Boss") GameAudio.SetMusicPitch(SplitMusicPitch); // 2페이즈는 보스 곡도 조금 빠르게 (구역을 돌파해 곡이 바뀌면 원래대로)
             DamageNumbers.ShowText(BodyBounds.center + Vector3.up * 1.5f, "분열!", new Color(0.8f, 0.5f, 1f), 1.5f);
             EffectLibrary.PlayHit(Element.Water, BodyBounds.center, 2.5f);
             Shake(0.3f, 0.3f);
