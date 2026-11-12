@@ -547,6 +547,37 @@ namespace IBlameYou.Tests
             Assert.Greater(spikes, 600, "아래 길 가시가 거의 없음");
         }
 
+        // 떨어지는 종유석: 동굴 난이도 문턱 이상에서만, 천장 바로 아래 빈 칸에 매달리고, 분출구와 2칸 넘게·서로 6칸 이상 떨어진다.
+        [Test]
+        public void StalactitesHangUnderCaveCeilingLate()
+        {
+            int total = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.5f, 0.8f })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Cave, difficulty, 6, 0);
+                    var stones = chunk.Features.FindAll(f => f.Kind == FeatureKind.Stalactite);
+                    string tag = $"seed {seed} diff {difficulty}";
+                    if (difficulty < ChunkGenerator.StalactiteMinDifficulty) Assert.AreEqual(0, stones.Count, tag);
+                    Assert.LessOrEqual(stones.Count, difficulty >= ChunkGenerator.StalactiteSecondDifficulty ? 2 : 1, tag);
+                    foreach (var s in stones)
+                    {
+                        Assert.IsFalse(chunk.IsSolid(s.X, s.Y), tag + ": 매달린 칸은 비어야");
+                        Assert.IsTrue(chunk.IsSolid(s.X, s.Y + 1), tag + ": 바로 위가 천장");
+                        Assert.Greater(s.Y, Surface(chunk, s.X), tag + ": 바닥보다 위");
+                        foreach (var f in chunk.Features)
+                            if (f.Kind == FeatureKind.FlameJet) Assert.Greater(System.Math.Abs(f.X - s.X), 2, tag + ": 분출구 옆");
+                        foreach (var o in stones)
+                            if (o.X != s.X) Assert.GreaterOrEqual(System.Math.Abs(o.X - s.X), 6, tag + ": 종유석끼리");
+                        total++;
+                    }
+                }
+            }
+
+            Assert.Greater(total, 300, "종유석이 거의 안 나옴");
+        }
+
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)
 
         // x열에서 땅 위 첫 빈 칸 높이 (서 있는 칸).
