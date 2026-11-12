@@ -21,9 +21,10 @@ namespace IBlameYou.Systems
         private readonly Collider2D[] riders = new Collider2D[8];
         private readonly System.Collections.Generic.HashSet<Rigidbody2D> carried = new System.Collections.Generic.HashSet<Rigidbody2D>();
 
-        // 마법 스위치 발판: 처음엔 건너편 끝점(룬 쪽)에 멈춰 있고, Activate가 불리면 정해진 시간 동안 오간다.
-        // 시간이 끝나도 건너편 끝점에 닿을 때까지는 마저 움직인다: 낭떠러지 한가운데나 출발 쪽에 멈추지 않는다
-        // (출발 쪽에 멈춘 발판 위에서 뛰면 거리가 3칸 줄어 스위치 없이 건널 수 있으므로. 2026-11-12).
+        // 마법 스위치 발판: 처음엔 출발점에 멈춰 있고, Activate가 불리면 정해진 시간 동안 오간다.
+        // 시간이 끝나도 끝점(출발점이나 건너편)에 닿을 때까지는 마저 움직여서 낭떠러지 한가운데 멈추지 않는다.
+        // 멈춰 있는 동안은 흐릿한 "잠든 발판"이라 밟을 수 없다 (위에 누가 서 있으면 내릴 때까지 기다린다):
+        // 멈춘 발판 위에서 뛰면 낭떠러지가 3칸 줄어 룬 없이 건널 수 있으므로 (2026-11-12 플레이테스트 피드백).
         public const float SwitchStartDelay = 1.2f; // 스위치를 맞히고 발판으로 걸어갈 여유 (멈춰 있던 발판만)
         private bool switchDriven;
         private float clock;       // 스위치 발판의 자체 시계 (움직일 때만 흐른다)
@@ -33,7 +34,8 @@ namespace IBlameYou.Systems
         private Color plankColor;
 
         public bool SwitchDriven => switchDriven;
-        public bool Idle => switchDriven && Time.time >= activeUntil && AtRest(clock);
+        public bool Idle => switchDriven && Time.time >= activeUntil && AtEnd(clock);
+        private bool ghost; // 잠든 발판: 콜라이더를 끈 상태
         public Vector2 StartCenter => start;
         public float ActiveRemaining => switchDriven ? Mathf.Max(0f, activeUntil - Time.time) : 0f;
 
@@ -63,8 +65,7 @@ namespace IBlameYou.Systems
             float moveTime = Mathf.Max(0.01f, travel / Speed);
             platform.cycle = 2f * (moveTime + EndPause);
             platform.switchDriven = switchDriven;
-            // 스위치 발판은 건너편 끝점의 멈춤 구간(주기의 절반 지점)에서 시작한다.
-            platform.phase = switchDriven ? platform.cycle / 2f : Mathf.Repeat(phaseOffset, 1f) * platform.cycle;
+            platform.phase = switchDriven ? 0f : Mathf.Repeat(phaseOffset, 1f) * platform.cycle;
 
             // 첫 물리 프레임에 경로 중간으로 순간이동하며 밀치지 않게, 지금 시각에 있어야 할 자리에서 시작한다.
             var now = Vector2.Lerp(platform.start, platform.end, platform.Progress(platform.CurrentTime()));
@@ -96,7 +97,7 @@ namespace IBlameYou.Systems
         private void ApplyPlankColor()
         {
             if (planks == null) return;
-            var c = Idle ? new Color(plankColor.r * 0.6f, plankColor.g * 0.6f, plankColor.b * 0.6f, plankColor.a) : plankColor;
+            var c = Idle ? new Color(plankColor.r * 0.6f, plankColor.g * 0.6f, plankColor.b * 0.6f, plankColor.a * (ghost ? 0.35f : 1f)) : plankColor;
             foreach (var plank in planks)
                 if (plank != null) plank.color = c;
         }
@@ -112,17 +113,19 @@ namespace IBlameYou.Systems
                 clock = PauseEnd(clock);
             }
             activeUntil = Mathf.Max(activeUntil, Time.time + duration);
+            ghost = false;
+            solid.enabled = true; // 잠든 발판이 깨어나 밟을 수 있다 (1.2초 뒤 출발)
             ApplyPlankColor();
         }
 
         private float CurrentTime() => switchDriven ? clock : Time.time;
 
-        // 시각 t가 건너편 끝점(Progress 1)의 멈춤 구간 안인지: 스위치 발판이 쉬는 곳.
-        private bool AtRest(float t)
+        // 시각 t가 양 끝의 멈춤 구간 안인지.
+        private bool AtEnd(float t)
         {
             float moveTime = cycle / 2f - EndPause;
             float p = Mathf.Repeat(t + phase, cycle);
-            return p >= EndPause + moveTime && p < 2f * EndPause + moveTime;
+            return p < EndPause || (p >= EndPause + moveTime && p < 2f * EndPause + moveTime);
         }
 
         // t가 멈춤 구간 안이면 그 구간이 끝나는 시각 (바로 앞), 아니면 t 그대로.
@@ -156,13 +159,36 @@ namespace IBlameYou.Systems
             if (switchDriven)
             {
                 bool wasIdle = Idle;
-                if (Time.time >= holdUntil && (Time.time < activeUntil || !AtRest(clock))) clock += Time.fixedDeltaTime;
-                if (wasIdle != Idle) ApplyPlankColor();
+                if (Time.time >= holdUntil && (Time.time < activeUntil || !AtEnd(clock))) clock += Time.fixedDeltaTime;
+                bool shouldGhost = Idle && !HasRider();
+                if (shouldGhost != ghost)
+                {
+                    ghost = shouldGhost;
+                    solid.enabled = !ghost;
+                    ApplyPlankColor();
+                }
+                else if (wasIdle != Idle) ApplyPlankColor();
             }
             var target = Vector2.Lerp(start, end, Progress(CurrentTime()));
             var delta = target - body.position;
             CarryRiders(delta);
             body.MovePosition(target);
+        }
+
+        // 발판 윗면 바로 위에 살아 있는 몸(플레이어·적)이 있는지. 잠든 발판으로 바꾸기 전에 본다.
+        private bool HasRider()
+        {
+            var bounds = solid.bounds;
+            var center = new Vector2(bounds.center.x, bounds.max.y + 0.1f);
+            var size = new Vector2(bounds.size.x - 0.1f, 0.2f);
+            var filter = new ContactFilter2D { useTriggers = false };
+            int count = Physics2D.OverlapBox(center, size, 0f, filter, riders);
+            for (int i = 0; i < count; i++)
+            {
+                var rider = riders[i].attachedRigidbody;
+                if (rider != null && rider != body && rider.bodyType == RigidbodyType2D.Dynamic) return true;
+            }
+            return false;
         }
 
         // 발판 윗면 바로 위에 선 플레이어/적을 같이 움직인다 (몸 콜라이더가 마찰 없는 재질이라 저절로 실려 가지 않는다).

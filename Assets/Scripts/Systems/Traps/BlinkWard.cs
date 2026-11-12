@@ -6,11 +6,16 @@ namespace IBlameYou.Systems
     // 마력 안개: 마법 스위치 발판 낭떠러지 위에 깔린 옅은 보랏빛 기둥. 안에서는 순간이동·대시가 흩어진다.
     // - 순간이동: 출발점·도착점·지나는 길이 안개에 닿으면 발동하지 않는다 (TeleportSkill).
     // - 대시: 안개 안에서는 시작하지 못하고, 대시하다 들어오면 그 자리에서 끝난다 (PlayerMovement).
-    // 그래서 스위치 발판 낭떠러지(9칸 이상)는 룬을 맞혀 발판을 타야만 건넌다 (2026-11-12 플레이테스트 피드백).
+    // - 공중: 안개 좌우 AirMargin칸 안에서 공중에 떠 있으면 순간이동·대시를 못 한다 (안개 앞에서 뛰어 위로 순간이동하거나
+    //   대시로 체공·거리를 늘린 뒤 넘어가지 못하게). 땅에 서 있으면 안개 밖에서는 쓸 수 있다.
+    // 그래서 스위치 발판 낭떠러지(9칸 이상, 달리기 점프 약 7.3칸)는 룬을 맞혀 발판을 타야만 건넌다 (2026-11-12 플레이테스트 피드백).
+    // 판단은 몸 가운데 기준이고, 몸이 걸쳐 있는 것까지 치도록 영역을 BodyHalfWidth만큼 넓혀 본다.
     // 몸이 지나가는 순수 영역이라 콜라이더가 없다. 안개 목록은 정적으로 모아 두고 사각형으로만 판단한다.
     public class BlinkWard : MonoBehaviour
     {
         private static readonly List<BlinkWard> Active = new List<BlinkWard>();
+        public const float BodyHalfWidth = 0.4f;
+        public const float AirMargin = 8f;
         private const int MoteCount = 6;
         private static readonly Color MistColor = new Color(0.62f, 0.45f, 0.95f, 0.10f);
         private static readonly Color MoteColor = new Color(0.85f, 0.7f, 1f, 0.55f);
@@ -70,10 +75,23 @@ namespace IBlameYou.Systems
         // 알갱이는 낭떠러지 아래가 아니라 사람 눈높이 근처(영역 아래에서 1/3쯤)에서 떠오른다.
         private float FloorGuess() => area.height / 3f;
 
-        public static bool Contains(Vector2 point)
+        // 안개 안(몸이 걸친 것 포함)인지.
+        public static bool Contains(Vector2 point) => Within(point, BodyHalfWidth);
+
+        // 공중 금지 판단: 안개 좌우 AirMargin칸 안인지 (높이는 안개 기둥 범위).
+        public static bool Near(Vector2 point) => Within(point, AirMargin);
+
+        // 순간이동·대시를 지금 쓸 수 없는지: 안개 안이거나, 공중에서 안개 가까이.
+        public static bool Blocks(Vector2 point, bool grounded) => Contains(point) || (!grounded && Near(point));
+
+        private static bool Within(Vector2 point, float marginX)
         {
             foreach (var ward in Active)
-                if (ward != null && ward.area.Contains(point)) return true;
+            {
+                if (ward == null) continue;
+                var r = ward.area;
+                if (point.x >= r.xMin - marginX && point.x <= r.xMax + marginX && point.y >= r.yMin && point.y <= r.yMax) return true;
+            }
             return false;
         }
 
@@ -83,7 +101,7 @@ namespace IBlameYou.Systems
             foreach (var ward in Active)
             {
                 if (ward == null) continue;
-                var r = ward.area;
+                var r = new Rect(ward.area.xMin - BodyHalfWidth, ward.area.yMin, ward.area.width + 2f * BodyHalfWidth, ward.area.height);
                 if (r.Contains(from) || r.Contains(to)) return true;
                 float minX = Mathf.Min(from.x, to.x), maxX = Mathf.Max(from.x, to.x);
                 float minY = Mathf.Min(from.y, to.y), maxY = Mathf.Max(from.y, to.y);
