@@ -26,7 +26,7 @@
 
 - TODO: 유물 종이비행기 — 순간이동 재사용 대기 -20% (`TeleportSkill` 재사용 대기 값 확인, 주인 A/B/공용은 순간이동 담당에 맞춰, 아이콘·테스트, 유물 26종, 맨 뒤 번호 25)
 - DONE (claude/project-thread-41del8): 화면 밖 보상 구슬 길잡이 — 줍지 않은 보상 구슬이 카메라 밖에 있으면 화면 가장자리에 작은 분홍 하트 화살표 (구슬 쪽, 같은 방·옆 방 안에서만, `ArenaReward` 목록 + HUD IMGUI)
-- TODO: 젤리 방울 소리 — 젤리 방울이 튈 때 아주 작은 "똑똑" (`Tools/AudioGen`, JellySquish와 겹치지 않게 0.2초 늦게, 카메라 12유닛 안일 때만)
+- DONE (claude/project-thread-41del8): 젤리 방울 소리 — 젤리 방울이 튈 때 아주 작은 "똑똑" (`Tools/AudioGen`, JellySquish와 겹치지 않게 0.2초 늦게, 카메라 12유닛 안일 때만)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
