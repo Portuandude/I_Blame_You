@@ -410,14 +410,14 @@ namespace IBlameYou.Core
         }
 
         private const string DevModeHelp =
-            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 방향키+Enter\n" +
+            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
             "A  방어막 상단 1~5 (불/물/바람/땅/무) 즉시 발동\n" +
             "B  평타 마우스 좌클릭 (마우스 쪽으로)\n" +
             "B  공격 스킬 상단 6~9, 0 (불/물/바람/땅/무) 즉시 발동, 마우스 방향\n" +
             "치트  F1 무적 · F2 마나 무한 · F3 방 안의 적 처치 · F4 체력 회복";
 
         private const string NormalModeHelp =
-            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 방향키+Enter\n" +
+            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
             "A  방어막 넘패드 1~5 → 화면에 뜬 순서대로 W/A/S/D (입력 중 캐릭터 정지, 틀리면 마나만 소모)\n" +
             "B  평타 마우스 좌클릭\n" +
             "B  공격 스킬 상단 1~5 → 영창문을 똑같이 타이핑 → Enter (오타면 마나만 소모, Esc 취소)\n" +
