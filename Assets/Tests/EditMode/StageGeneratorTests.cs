@@ -597,6 +597,58 @@ namespace IBlameYou.Tests
             Assert.Greater(pillar, 800, "기둥 숲 동전이 거의 없음");
         }
 
+        // 동전 무더기 (섬·절벽 오르기): 문턱 아래에서는 없고, 섬은 마지막 단단한 섬 위, 절벽 오르기는 절벽 위 평지(지키는 적보다 뒤).
+        // 늘 서는 칸(바로 아래가 땅)이고 무너지는 발판 위가 아니며 청크마다 하나 이하.
+        [Test]
+        public void CoinPilesOnPitsAndClimb()
+        {
+            int pits = 0, climb = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Pits, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.Greater(c.Y, 0, tag);
+                            Assert.AreEqual(c.Y, Surface(chunk, c.X), tag + ": 섬 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Crumble && c.X >= f.X && c.X < f.X + f.Width), tag + ": 무너지는 섬 위");
+                            Assert.Less(c.X, ChunkData.Width - 4, tag + ": 출구 평지가 아니라 섬");
+                            // 마지막 단단한 섬: 동전 오른쪽에 낭떠러지가 있으면 그 뒤는 무너지는 섬이거나 출구 평지
+                            bool gapBefore = false;
+                            for (int x = c.X - 1; x >= 4; x--) if (Surface(chunk, x) == 0) { gapBefore = true; break; }
+                            Assert.IsTrue(gapBefore, tag + ": 낭떠러지를 건넌 뒤");
+                            Assert.IsFalse(chunk.Features.Exists(e => e.Kind == FeatureKind.Enemy && e.X == c.X), tag + ": 적과 같은 칸");
+                            pits++;
+                        }
+
+                        chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Climb, difficulty, entry, 0);
+                        piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(c.Y, Surface(chunk, c.X), tag + ": 땅 위");
+                            int top = 0;
+                            for (int x = 0; x < ChunkData.Width; x++) top = System.Math.Max(top, Surface(chunk, x));
+                            Assert.AreEqual(top, c.Y, tag + ": 절벽 위");
+                            foreach (var e in chunk.Features) if (e.Kind == FeatureKind.Enemy) Assert.Greater(c.X, e.X, tag + ": 지키는 적 뒤");
+                            climb++;
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(pits, 600, "섬 동전이 거의 없음");
+            Assert.Greater(climb, 1000, "절벽 오르기 동전이 거의 없음");
+        }
+
         // 떨어지는 종유석: 동굴 난이도 문턱 이상에서만, 천장 바로 아래 빈 칸에 매달리고, 분출구와 2칸 넘게·서로 6칸 이상 떨어진다.
         [Test]
         public void StalactitesHangUnderCaveCeilingLate()

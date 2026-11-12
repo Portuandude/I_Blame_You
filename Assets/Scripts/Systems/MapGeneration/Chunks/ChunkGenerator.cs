@@ -215,6 +215,7 @@ namespace IBlameYou.Systems
             for (; x < 4; x++) heights[x] = current;
 
             var crumbles = new List<int[]>();
+            int[] lastIsland = null; // 마지막 단단한 섬 (시작 X, 폭) — 동전 무더기 자리
             while (x < W - 4)
             {
                 int remaining = W - 4 - x;
@@ -230,6 +231,7 @@ namespace IBlameYou.Systems
                 int width = Math.Min(rng.Next(3, 6), W - 4 - x);
                 bool crumble = chunk.Difficulty > 0.3f && width <= 4 && rng.NextDouble() < 0.35;
                 if (crumble) crumbles.Add(new[] { x, current - 1, width });
+                else lastIsland = new[] { x, width };
                 for (int i = 0; i < width; i++) heights[x++] = crumble ? 0 : current;
             }
 
@@ -242,8 +244,19 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < c[2]; i++) occupied[c[0] + i] = true;
             }
 
+            // 동전 무더기: 가장 깊이 들어간(마지막) 단단한 섬 가운데. 낭떠러지를 건넌 보상. 적보다 먼저 자리를 잡는다 (난수를 쓰지 않음)
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && lastIsland != null)
+            {
+                int coinX = lastIsland[0] + (lastIsland[1] - 1) / 2;
+                chunk.AddFeature(FeatureKind.CoinPile, coinX, heights[coinX]);
+                occupied[coinX] = true;
+            }
+
             if (chunk.Difficulty > 0.3f) PlaceEnemies(chunk, heights, occupied, rng, 1);
         }
+
+        // 섬·절벽 오르기 동전 무더기 문턱 (기둥 숲 PillarCoinMinDifficulty와 같은 값)
+        public const float RiskyCoinMinDifficulty = 0.3f;
 
         // 기둥 숲: 바닥 없는 낭떠러지 위로 폭 1~2칸 기둥이 높낮이를 바꿔 가며 솟는다 (섬(Pits)보다 좁고 들쭉날쭉).
         // 간격 2칸이면 한 칸 오르거나 두 칸까지 내려가고, 3칸이면 같은 높이이거나 한 칸 내려간다 (점프 규칙: 오르며 건너면 2칸).
@@ -445,6 +458,11 @@ namespace IBlameYou.Systems
             int guardX = cliffX + 4;
             var enemy = chunk.Difficulty > 0.3f && rng.NextDouble() < 0.6 ? StageEnemy.GoblinArcher : PickEnemy(rng, chunk.Difficulty);
             chunk.AddEnemy(enemy, guardX, top);
+
+            // 동전 무더기: 절벽 위 평지 끝 (지키는 적 뒤). 오른 보상. 난수를 쓰지 않아 기존 지형 그대로
+            int climbCoinX = plateauEnd - 2;
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && climbCoinX > guardX && heights[climbCoinX] == top)
+                chunk.AddFeature(FeatureKind.CoinPile, climbCoinX, top);
         }
 
         // 천장이 낮은 동굴. 바닥의 화염 분출구가 주기적으로 불기둥을 뿜는다.
