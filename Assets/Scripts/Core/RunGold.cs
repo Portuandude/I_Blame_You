@@ -29,7 +29,7 @@ namespace IBlameYou.Core
 
         public static EnemyRank RankOf(EnemyController enemy)
         {
-            if (enemy is SlimeKingController) return EnemyRank.Boss;
+            if (enemy is SlimeKingController) return EnemyRank.Boss; // 2페이즈에 둘로 나뉜다: 한 마리당 표의 절반 (BossParts)
             if (enemy.GetComponent<SlimeKnight>() != null) return EnemyRank.MidBoss; // 쌍둥이 기사: 한 마리당 표의 절반
             if (enemy.GetComponent<EnrageAbility>() != null || enemy.GetComponent<SplitOnDeath>() != null) return EnemyRank.Elite;
             return EnemyRank.Normal;
@@ -39,6 +39,7 @@ namespace IBlameYou.Core
         public static void OnEnemyKilled(EnemyController enemy, Transform target)
         {
             if (enemy == null || RunStats.Ended && !(enemy is SlimeKingController)) return;
+            if (enemy.GetComponent<BossSummon>() != null) return; // 보스가 되풀이해 소환하는 적은 골드 없음
             var rank = RankOf(enemy);
             int amount = GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
             if (amount <= 0) return;
