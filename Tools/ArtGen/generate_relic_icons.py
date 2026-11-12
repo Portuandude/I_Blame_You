@@ -396,6 +396,27 @@ def regular_stamp(d):
     d.polygon(star_points(21.5, 20.5, 2.0, 0.9), fill=hexrgba("ffd84d"))
 
 
+def piggy_bank(d):
+    # 돼지 저금통: 통통한 분홍 돼지 몸 + 등의 동전 구멍에 반쯤 들어간 금화, 동그란 코·짧은 다리·귀 (마을에 처음 들어가면 이자)
+    pink = hexrgba("ff9ec4")
+    dark_pink = hexrgba("e2669a")
+    gold = hexrgba("ffd84d")
+    dark_gold = hexrgba("d9a21e")
+    outlined_poly(d, [(5, 19), (8, 19), (8, 22.5), (5, 22.5)], dark_pink, 0.9)     # 뒷다리
+    outlined_poly(d, [(14, 19), (17, 19), (17, 22.5), (14, 22.5)], dark_pink, 0.9) # 앞다리
+    outlined_ellipse(d, 1.5, 8.5, 20.5, 21, pink)                                  # 몸
+    outlined_poly(d, [(13, 9.5), (16.5, 5.5), (17.5, 10.5)], pink, 0.9)            # 귀
+    outlined_ellipse(d, 17.5, 12, 22.5, 17.5, pink, 1.0)                           # 코
+    d.ellipse(E(19.0, 13.8, 19.9, 15.2), fill=dark_pink)                           # 콧구멍
+    d.ellipse(E(20.4, 13.8, 21.3, 15.2), fill=dark_pink)
+    outlined_ellipse(d, 6.5, 2, 13.5, 9, gold, 1.0)                                # 동전 (구멍에 꽂힘)
+    d.rectangle(E(9.5, 3.6, 10.5, 7.4), fill=dark_gold)
+    d.rectangle(E(6, 8.6, 14, 9.8), fill=dark_pink)                                # 동전 구멍
+    d.ellipse(E(14.6, 11.6, 16.0, 13.2), fill=OUTLINE)                             # 눈
+    shine(d, 5.5, 12.5, 1.0)
+    d.polygon(star_points(2.8, 4.0, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -425,6 +446,7 @@ ICONS = {
     "PaperPlane": paper_plane,
     "LuckyPouch": lucky_pouch,
     "RegularStamp": regular_stamp,
+    "PiggyBank": piggy_bank,
 }
 
 
