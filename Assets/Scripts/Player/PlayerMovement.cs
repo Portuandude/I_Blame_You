@@ -145,7 +145,7 @@ namespace IBlameYou.Player
             animator = GetComponentInChildren<Animator>();
             combatStats = GetComponent<CombatStats>();
             defaultGravityScale = rb.gravityScale;
-            bodyCollider = GetComponent<CapsuleCollider2D>();
+            bodyCollider = GetComponent<Collider2D>(); // 보통 CapsuleCollider2D (PlayerSpawner)
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
             // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
@@ -358,12 +358,17 @@ namespace IBlameYou.Player
             float distance = rb.linearVelocity.y * Time.fixedDeltaTime + 0.02f;
             if (!HeadBlocked(center, size, distance)) return;
 
+            // 옮길 자리는 몸 + 이번 프레임에 올라갈 높이까지 겹침으로 확인한다. 지형이 합쳐진 콜라이더(Composite)라
+            // 캐스트는 콜라이더당 hit 하나만 돌려줘 옆벽 hit가 천장 hit를 가릴 수 있으므로 캐스트로 확인하지 않는다.
+            Vector2 sweepSize = new Vector2(size.x, size.y + distance);
+            float first = rb.linearVelocity.x < -0.01f ? -1f : 1f; // 움직이는 쪽을 먼저 (멈춰 있으면 오른쪽부터)
             for (float step = CornerStep; step <= cornerCorrection + 0.001f; step += CornerStep)
             {
-                for (int side = -1; side <= 1; side += 2)
+                for (int k = 0; k < 2; k++)
                 {
-                    Vector2 shifted = center + new Vector2(side * step, 0f);
-                    if (SolidOverlap(shifted, size) || HeadBlocked(shifted, size, distance)) continue;
+                    float side = k == 0 ? first : -first;
+                    Vector2 shifted = center + new Vector2(side * step, distance * 0.5f);
+                    if (SolidOverlap(shifted, sweepSize)) continue;
                     rb.position += new Vector2(side * step, 0f);
                     return;
                 }
