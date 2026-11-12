@@ -471,6 +471,35 @@ def crumble():
     return normalize(fade_edges(lowpass(out, 8000)))
 
 
+
+def stone_crack():
+    """종유석이 흔들림 (떨어지기 0.4초 전 예고): 낮게 웅웅 울리는 바위 떨림 + 자잘한 돌 부스러기 딱딱 소리, 0.4초."""
+    n = int(0.4 * SR)
+    t = t_axis(0.4)
+    rumble = lowpass(noise(n), 180) * (0.6 + 0.4 * np.sin(2 * np.pi * 22 * t)) * env_adsr(n, a=0.05, d=0.1, s=0.8, r=0.12) * 1.6
+    ticks = np.zeros(n)
+    for k in range(7):
+        start = int((0.03 + 0.05 * k + 0.012 * np.random.rand()) * SR)
+        m = int(0.025 * SR)
+        if start + m > n:
+            break
+        ticks[start:start + m] += bandpass(noise(m), 1800, 5200) * env_exp(m, 0.006) * (0.35 + 0.05 * k)
+    return normalize(fade_edges(rumble + ticks))
+
+
+def rock_shatter():
+    """종유석이 땅에 부딪혀 부서짐: 묵직한 돌 '쿵' + 깨지는 잡음 + 수정 조각 '찰랑' 두 점 (귀엽게), 0.5초."""
+    n = int(0.5 * SR)
+    thud = osc("sine", np.linspace(140.0, 55.0, n), n) * env_exp(n, 0.08)
+    crack = bandpass(noise(n), 700, 3500) * env_exp(n, 0.04) * 0.7
+    grit = bandpass(noise(n), 3000, 8000) * env_exp(n, 0.1) * 0.15
+    out = thud + crack + grit
+    for delay, note in ((0.05, "E6"), (0.11, "B6")):
+        start = int(delay * SR)
+        m = n - start
+        out[start:] += 0.18 * osc("sine", note_hz(note), m) * env_exp(m, 0.06)
+    return normalize(fade_edges(lowpass(out, 9000)))
+
 def jelly_squish():
     """젤리 방석으로 버티는 발판: 말랑하게 눌렸다 펴지는 "뭉-뿅" (아래로 처지는 둥근 사인 + 떨림, 끝에 위로 튀는 작은 뿅), 0.5초."""
     n = int(0.5 * SR)
@@ -1002,7 +1031,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
-        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn, "Enrage": enrage,
+        "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -1010,7 +1039,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "ShopBell": 0.07, "Reroll": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "ShopBell": 0.07, "Reroll": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
