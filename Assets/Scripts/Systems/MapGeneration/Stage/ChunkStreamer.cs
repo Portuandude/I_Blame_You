@@ -712,7 +712,7 @@ namespace IBlameYou.Systems
         {
             doorReadyTime = Time.time + DoorCooldown;
             reapplyCameraBounds = true;
-            visitedRooms.Add(index);
+            bool firstVisit = visitedRooms.Add(index);
             FallRecovery.FloorY = Origin(index).y;
             var follow = Camera.main != null ? Camera.main.GetComponent<IBlameYou.Core.CameraFollow>() : null;
             if (follow != null)
@@ -734,6 +734,12 @@ namespace IBlameYou.Systems
             StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
             // 마을에 있는 동안은 잔잔한 마을 곡, 나오면 깊이에 맞는 던전 곡 (다른 곡이 나오던 중이면 건드리지 않는다)
             if (entered.Kind == RoomKind.Village) GameAudio.PlayMusic(VillageMusic);
+            if (entered.Kind == RoomKind.Village && firstVisit)
+            {
+                // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
+                StageEvents.PostNotice("마을 발견! 식당·장비 상점");
+                GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
+            }
             else if (GameAudio.CurrentMusic == VillageMusic) GameAudio.PlayMusic(ArenaZone.StageMusicFor(StageEvents.Depth));
             RoomEntered?.Invoke(index);
         }
