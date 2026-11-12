@@ -678,15 +678,8 @@ namespace IBlameYou.Systems
             RoomEntered?.Invoke(index);
         }
 
-        // 진행도 = 주 경로에서 몇 번째 방인지 (곁방은 붙어 있는 방 기준).
-        private float RoomProgress(int index)
-        {
-            var room = rooms.Rooms[index];
-            if (!room.MainPath && room.ParentIndex >= 0) room = rooms.Rooms[room.ParentIndex];
-            int last = 0;
-            foreach (var r in rooms.Rooms) if (r.MainPath) last = Mathf.Max(last, r.PathIndex);
-            return last > 0 ? Mathf.Clamp01(room.PathIndex / (float)last) : 0f;
-        }
+        // 진행도 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        private float RoomProgress(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()
         {
