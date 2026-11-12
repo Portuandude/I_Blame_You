@@ -187,7 +187,8 @@ namespace IBlameYou.Enemies
 
             OnAliveUpdate();
 
-            if (Animator != null) Animator.SetFloat(SpeedParam, Mathf.Abs(Rb.linearVelocity.x));
+            // 경직 중(넉백으로 밀리는 동안)에는 걷기 그림이 돌지 않게 0
+            if (Animator != null) Animator.SetFloat(SpeedParam, hitStun.IsStunned ? 0f : Mathf.Abs(Rb.linearVelocity.x));
         }
 
         private void FixedUpdate()
