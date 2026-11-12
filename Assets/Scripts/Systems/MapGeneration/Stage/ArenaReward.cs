@@ -115,6 +115,10 @@ namespace IBlameYou.Systems
                 {
                     GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
                     nextWhooshTime = Time.time + WhooshCooldown;
+                    // 말굽 자석 덕분에 기본 거리 밖에서 잡혔으면 머리 위로 말굽 자석이 톡
+                    Vector2 orb = transform.position + Vector3.up * FloatHeight;
+                    if (((Vector2)found.position - orb).magnitude > IBlameYou.Player.RelicBook.MagnetRadius)
+                        VfxPlayer.HorseshoeGlint(found, HoneyGlintOffset);
                 }
                 magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
