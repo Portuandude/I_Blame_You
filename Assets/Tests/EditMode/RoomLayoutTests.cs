@@ -206,7 +206,7 @@ namespace IBlameYou.Tests
                 {
                     Assert.AreEqual(RoomLayout.LeadCount(room), room.Leads.Count, $"seed {layout.Seed} room {room.Index}");
                     Assert.LessOrEqual(room.Cols, RoomLayout.CellCols);
-                    if (room.IsVertical || room.Kind == RoomKind.Start || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring)
+                    if (room.IsVertical || room.Kind == RoomKind.Start || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring || room.Kind == RoomKind.Village)
                         Assert.AreEqual(0, room.Leads.Count, $"seed {layout.Seed} room {room.Index} {room.Kind}");
                     foreach (var lead in room.Leads)
                     {
@@ -263,9 +263,41 @@ namespace IBlameYou.Tests
                     Assert.AreEqual(room.EntryDoor, room.Doors, $"seed {layout.Seed}: 보상 곁방은 문이 하나뿐");
                 }
 
-                Assert.That(rewards, Is.InRange(RoomLayout.MinRewardRooms, RoomLayout.MaxRewardRooms), $"seed {layout.Seed}");
+                // 막다른 방이 모자라면 마을이 회복 샘 자리를 대신하므로 하나 적을 수 있다
+                Assert.That(rewards, Is.InRange(RoomLayout.MinRewardRooms - 1, RoomLayout.MaxRewardRooms), $"seed {layout.Seed}");
                 Assert.GreaterOrEqual(treasure, 1);
             }
+        }
+
+        // NPC 마을 (2026-11-12): 판마다(목표 15·20·30분) 정확히 하나, 주 경로 밖 문 하나짜리 좌우 방, 시작 방에서 2칸 이상,
+        // 보스 방과 격자로 붙지 않음, 문이 잠기지 않고 한 화면 평지(휴식 청크).
+        [Test]
+        public void VillageIsOneDeadEndSideRoom()
+        {
+            foreach (float minutes in new[] { 15f, 20f, 30f })
+                for (int seed = 0; seed < 300; seed++)
+                {
+                    var layout = RoomLayout.Generate(seed, minutes * 60f);
+                    RoomData boss = null, village = null;
+                    int villages = 0;
+                    foreach (var room in layout.Rooms)
+                    {
+                        if (room.Kind == RoomKind.Boss) boss = room;
+                        if (room.Kind != RoomKind.Village) continue;
+                        villages++;
+                        village = room;
+                    }
+                    string at = $"seed {seed} {minutes}분";
+                    Assert.AreEqual(1, villages, at);
+                    Assert.IsFalse(village.MainPath, at);
+                    Assert.AreEqual(village.EntryDoor, village.Doors, $"{at}: 마을은 문이 하나뿐");
+                    Assert.IsFalse(village.IsVertical, at);
+                    Assert.GreaterOrEqual(village.Distance, RoomLayout.VillageMinDistance, at);
+                    Assert.Greater(Math.Abs(village.X - boss.X) + Math.Abs(village.Y - boss.Y), 1, $"{at}: 보스 방 옆");
+                    Assert.IsFalse(village.LocksDoors, at);
+                    Assert.AreEqual(ChunkKind.Rest, village.Chunk, at);
+                    Assert.AreEqual(0, village.Leads.Count, at);
+                }
         }
 
         [Test]

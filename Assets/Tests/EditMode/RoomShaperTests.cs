@@ -25,6 +25,34 @@ namespace IBlameYou.Tests
             }
         }
 
+        // NPC 마을 방: 적·함정·전투 구역·봉인문 등 기능이 하나도 없고, 건물 두 채가 서는 자리(방 가로 30%·70% ±2칸)가
+        // 들어오는 높이(EntryHeight)와 같은 평지 (ChunkStreamer.LoadRoomExtras가 그 높이에 건물을 세운다).
+        [Test]
+        public void VillageRoomIsFlatAndEmpty()
+        {
+            int villages = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var layout = RoomLayout.Generate(seed, TargetSeconds);
+                foreach (var room in layout.Rooms)
+                {
+                    if (room.Kind != RoomKind.Village) continue;
+                    villages++;
+                    var geometry = RoomShaper.Build(seed, room);
+                    var chunk = geometry.Chunk;
+                    Assert.IsTrue(geometry.Valid, $"seed {seed}: {geometry.Reason}");
+                    Assert.AreEqual(0, chunk.Features.Count, $"seed {seed}: 마을에 기능 {chunk.Features.Count}개");
+                    foreach (float at in new[] { 0.3f, 0.7f })
+                    {
+                        int center = (int)(chunk.Cols * at);
+                        for (int x = center - 2; x <= center + 2; x++)
+                            Assert.AreEqual(chunk.EntryHeight, chunk.SurfaceAt(x), $"seed {seed} x {x}: 건물 자리가 평지가 아님");
+                    }
+                }
+            }
+            Assert.AreEqual(SeedCount, villages);
+        }
+
         [Test]
         public void EveryDoorHasArrivalAndExitSpots()
         {
