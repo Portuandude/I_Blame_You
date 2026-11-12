@@ -45,7 +45,7 @@ namespace IBlameYou.UI
             if (service == VillageService.Restaurant) restaurantVisit.BeginVisit(StageEvents.VillageVisit);
             control.Locked = true;
             Time.timeScale = 0f;
-            GameAudio.PlaySfx("RelicOpen", 0.4f);
+            GameAudio.PlaySfx("ShopBell", 0.8f, 0.03f); // 가게 문 종 딸랑 (Tools/AudioGen shop_bell)
             return true;
         }
 
@@ -124,6 +124,7 @@ namespace IBlameYou.UI
             villageMessage = $"<color=#7dff8a>{food.Name}: {food.Describe()}</color>";
             GameAudio.PlaySfx("Coin", 0.7f);
             GameAudio.PlaySfx("Pickup", 0.6f);
+            StageEvents.RaiseVillageNpcSay(VillageService.Restaurant, "맛있게 드세요!"); // 창을 닫으면 식당 주인이 톡
         }
 
         private void ApplyFood(FoodInfo food)

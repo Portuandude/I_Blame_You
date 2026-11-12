@@ -63,6 +63,7 @@ namespace IBlameYou.UI
             StageEvents.PostNotice($"장비: {item.Name}");
             GameAudio.PlaySfx("Coin", 0.7f);
             GameAudio.PlaySfx("RelicOpen", 0.5f);
+            StageEvents.RaiseVillageNpcSay(VillageService.Shop, "좋은 선택이에요!");
         }
 
         private void SellEquipment(EquipSlot slot)
@@ -74,6 +75,7 @@ namespace IBlameYou.UI
             RunStats.AddGold(item.SellPrice);
             villageMessage = $"<color=#ffd84d>{item.Name} 판매 (+{item.SellPrice} G)</color>";
             GameAudio.PlaySfx("Coin", 0.8f);
+            StageEvents.RaiseVillageNpcSay(VillageService.Shop, "고마워요, 잘 쓸게요!");
         }
 
         private void RerollEquipment(EquipmentShop shop, EquipSlot slot)
@@ -95,7 +97,10 @@ namespace IBlameYou.UI
             string turn = item.Grade > before ? "좋아졌다!" : item.Grade < before ? "나빠졌다…" : "그대로";
             string color = item.Grade > before ? "#7dff8a" : item.Grade < before ? "#ff6b6b" : "#fff4dc";
             villageMessage = $"<color={color}>수식어 변경 (-{cost} G): {item.Name} — {turn}</color>";
-            GameAudio.PlaySfx(item.Grade > before ? "RelicNew" : "Switch_On", 0.6f);
+            GameAudio.PlaySfx("Reroll", 0.8f, 0f); // 주사위 데구르르 → 0.55초 뒤 결과 소리 (Tools/AudioGen reroll)
+            GameAudio.PlaySfxDelayed(item.Grade > before ? "RelicNew" : "Switch_On", 0.55f, 0.6f);
+            StageEvents.RaiseVillageNpcSay(VillageService.Shop,
+                item.Grade > before ? "오, 운이 좋네요!" : item.Grade < before ? "앗… 운이 없네요" : "음, 그대로네요");
         }
 
         private void DrawShopWindow()
