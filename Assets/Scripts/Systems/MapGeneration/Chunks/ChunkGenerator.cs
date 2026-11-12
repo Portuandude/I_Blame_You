@@ -382,6 +382,7 @@ namespace IBlameYou.Systems
             Flat(heights, ground);
             ApplyHeights(chunk, heights);
 
+            int coinX = -1; // 마지막 가시 위 발판의 가운데 (동전 무더기 자리)
             for (int x = 4; x < W - 6;)
             {
                 x += rng.Next(2, 5);
@@ -392,9 +393,17 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < width; i++) occupied[x + i] = true;
 
                 // 발판 칸은 바닥보다 한 칸 위 (윗면 = 바닥 + 2, 점프 최고 높이 2.45 안쪽).
-                if (width == 3 || rng.NextDouble() < 0.4) chunk.SetRow(x - 1, x + width, ground + 1, StageTile.Platform);
+                if (width == 3 || rng.NextDouble() < 0.4)
+                {
+                    chunk.SetRow(x - 1, x + width, ground + 1, StageTile.Platform);
+                    coinX = x + (width - 1) / 2;
+                }
                 x += width;
             }
+
+            // 동전 무더기: 마지막 가시 위 발판 한가운데 (가시 바로 위 좁은 발판에 올라선 보상). 난수를 쓰지 않아 기존 지형 그대로
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && coinX >= 0)
+                chunk.AddFeature(FeatureKind.CoinPile, coinX, ground + 2);
 
             PlaceEnemies(chunk, heights, occupied, rng, chunk.Difficulty > 0.4f ? 1 : 0);
         }

@@ -645,6 +645,31 @@ namespace IBlameYou.Tests
                 }
             }
 
+            int spikes = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"spikes seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.SpikeField, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), tag + ": 발판 위");
+                            Assert.AreEqual(StageTile.Empty, chunk.Get(c.X, c.Y), tag + ": 빈 칸");
+                            Assert.IsTrue(chunk.Features.Exists(f => f.Kind == FeatureKind.Spikes && c.X >= f.X && c.X < f.X + f.Width && f.Y == c.Y - 2), tag + ": 가시 바로 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Spikes && f.X > c.X && chunk.Get(f.X, c.Y - 1) == StageTile.Platform), tag + ": 마지막 가시 위 발판");
+                            spikes++;
+                        }
+                    }
+                }
+            }
+            Assert.Greater(spikes, 1000, "가시밭 동전이 거의 없음");
+
             Assert.Greater(pits, 600, "섬 동전이 거의 없음");
             Assert.Greater(climb, 1000, "절벽 오르기 동전이 거의 없음");
         }
