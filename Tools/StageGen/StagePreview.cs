@@ -83,6 +83,7 @@ public static class StagePreview
                     case FeatureKind.Crumble: for (int i = 0; i < f.Width; i++) grid[ox + f.X + i, f.Y] = '~'; break;
                     case FeatureKind.BlinkPlatform: for (int i = 0; i < f.Width; i++) grid[ox + f.X + i, f.Y] = ':'; break;
                     case FeatureKind.FlameJet: grid[ox + f.X, f.Y] = 'F'; break;
+                    case FeatureKind.Stalactite: grid[ox + f.X, f.Y] = 'V'; break;
                     case FeatureKind.ArrowTrap: grid[ox + f.X, f.Y] = f.Direction < 0 ? '<' : '>'; break;
                     case FeatureKind.PlayerStart: grid[ox + f.X, f.Y] = 'P'; break;
                     case FeatureKind.Exit: grid[ox + f.X, f.Y] = 'X'; break;
