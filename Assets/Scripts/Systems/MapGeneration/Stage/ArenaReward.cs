@@ -18,7 +18,7 @@ namespace IBlameYou.Systems
         private const float HoneyCheckInterval = 0.5f; // 유물을 다시 확인하는 간격
         private const float HoneySparkleInterval = 1.1f;
         // 자석: 살아 있는 플레이어가 구슬 가운데에서 이만큼 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려온다
-        public const float MagnetRadius = 1.5f;
+        // (RelicBook.MagnetRadius, 말굽 자석이 있으면 HorseshoeMagnetRadius — 꿀단지처럼 0.5초마다 확인)
         private const float MagnetCheckInterval = 0.1f;
         private const float MagnetStartSpeed = 2f;
         private const float MagnetAcceleration = 14f;
@@ -37,6 +37,8 @@ namespace IBlameYou.Systems
         private float magnetSpeed;
         private float magnetCheckTimer;
         private float nextWhooshTime;
+        private float magnetRadius = IBlameYou.Player.RelicBook.MagnetRadius;
+        private float magnetRelicTimer;
         private const float WhooshCooldown = 0.6f;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
@@ -90,6 +92,13 @@ namespace IBlameYou.Systems
         {
             if (collected) return;
             magnetCheckTimer -= Time.deltaTime;
+            magnetRelicTimer -= Time.deltaTime;
+            if (magnetRelicTimer <= 0f)
+            {
+                magnetRelicTimer = HoneyCheckInterval;
+                magnetRadius = AnyPlayerHas(IBlameYou.Player.RelicId.HorseshoeMagnet)
+                    ? IBlameYou.Player.RelicBook.HorseshoeMagnetRadius : IBlameYou.Player.RelicBook.MagnetRadius;
+            }
             if (magnetCheckTimer <= 0f)
             {
                 magnetCheckTimer = MagnetCheckInterval;
@@ -120,7 +129,7 @@ namespace IBlameYou.Systems
             filter.NoFilter();
             int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층이 있으면 그 층만 (바닥 칸이 버퍼를 채우지 않게)
             if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
-            int count = Physics2D.OverlapCircle(center, MagnetRadius, filter, MagnetHits);
+            int count = Physics2D.OverlapCircle(center, magnetRadius, filter, MagnetHits);
             Transform best = null;
             float bestDistance = float.MaxValue;
             for (int i = 0; i < count; i++)
@@ -184,10 +193,12 @@ namespace IBlameYou.Systems
         }
 
         // 둘(A·B가 함께 쓰는 캐릭터) 중 누구라도 꿀단지를 가졌는지.
-        private static bool AnyPlayerHasHoney()
+        private static bool AnyPlayerHasHoney() => AnyPlayerHas(IBlameYou.Player.RelicId.HoneyJar);
+
+        private static bool AnyPlayerHas(IBlameYou.Player.RelicId id)
         {
             foreach (var relics in FindObjectsByType<IBlameYou.Player.PlayerRelics>(FindObjectsSortMode.None))
-                if (relics.Has(IBlameYou.Player.RelicId.HoneyJar)) return true;
+                if (relics.Has(id)) return true;
             return false;
         }
 
