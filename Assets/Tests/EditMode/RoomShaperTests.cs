@@ -257,7 +257,62 @@ namespace IBlameYou.Tests
                 }
             }
 
-            Assert.AreEqual(3, seen.Count, "지그재그·양 갈래·선반이 모두 나와야 함");
+            Assert.AreEqual(5, seen.Count, "지그재그·양 갈래·선반·무너지는 계단·깜빡 계단이 모두 나와야 함");
+        }
+
+        // 무너지는/깜빡 계단: 난이도 기준 이상에서만 나오고, 맨 위 판·맨 아래 판은 타일 발판 그대로,
+        // 그 사이 판은 타일 없이 무너지는/깜빡 발판 기능으로 바뀐다. 깜빡 계단 박자는 아래 판부터 0, 1, 2….
+        [Test]
+        public void UnsteadyStairsKeepTopAndBottomPlanksFixed()
+        {
+            int crumbleRooms = 0, blinkRooms = 0;
+            int g = RoomShaper.ShaftGround;
+            int lowest = RoomShaper.LowestStairRow(g);
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    if (style != RoomShaper.ShaftStyle.CrumbleStairs && style != RoomShaper.ShaftStyle.BlinkStairs) continue;
+                    bool blink = style == RoomShaper.ShaftStyle.BlinkStairs;
+                    string where = $"seed {seed} room {room.Index} {style}";
+                    Assert.GreaterOrEqual(room.Difficulty, blink ? RoomShaper.BlinkStairsMinDifficulty : RoomShaper.CrumbleStairsMinDifficulty, where);
+                    if (blink) blinkRooms++; else crumbleRooms++;
+
+                    var chunk = RoomShaper.Build(seed, room).Chunk;
+                    Assert.IsTrue(HasTilePlank(chunk, RoomShaper.TopPlatformRow), where + " 맨 위 판");
+                    Assert.IsTrue(HasTilePlank(chunk, lowest), where + " 맨 아래 판");
+                    var kind = blink ? FeatureKind.BlinkPlatform : FeatureKind.Crumble;
+                    int expectedBeat = 0, planks = 0;
+                    for (int row = lowest + 2; row < RoomShaper.TopPlatformRow; row += 2)
+                    {
+                        Assert.IsFalse(HasTilePlank(chunk, row), $"{where} {row}행은 타일이 아니어야 함");
+                        int found = 0;
+                        foreach (var f in chunk.Features)
+                        {
+                            if (f.Kind != kind || f.Y != row) continue;
+                            found++;
+                            if (blink) Assert.AreEqual(expectedBeat, f.Direction, $"{where} {row}행 박자");
+                        }
+
+                        Assert.AreEqual(1, found, $"{where} {row}행 발판 기능");
+                        expectedBeat++;
+                        planks++;
+                    }
+
+                    Assert.Greater(planks, 3, where);
+                }
+            }
+
+            Assert.Greater(crumbleRooms, 0, "무너지는 계단이 한 번은 나와야 함");
+            Assert.Greater(blinkRooms, 0, "깜빡 계단이 한 번은 나와야 함");
+        }
+
+        private static bool HasTilePlank(ChunkData chunk, int row)
+        {
+            for (int x = 0; x < ChunkData.Width; x++) if (chunk.Tiles[x, row] == StageTile.Platform) return true;
+            return false;
         }
     
         // 세로 방 함정: 이동 방 바닥에만, 도착·출발 칸과 구멍 옆·맨 아래 발판 밑에서 떨어져 있고, 함정이 있어도 검증을 통과한다.
