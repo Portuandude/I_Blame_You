@@ -22,6 +22,9 @@ namespace IBlameYou.Systems
         public static int SideRooms { get; set; }
         // 마을 방에 들어온 횟수 (식당 "한 방문에 종류별 한 번"의 방문 번호, ChunkStreamer가 마을 방에 들어올 때 올린다).
         public static int VillageVisit { get; set; }
+        // 마지막으로 들어온 마을 방 번호와 스테이지 시드 (장비 상점 진열 시드, ChunkStreamer).
+        public static int VillageRoom { get; set; } = -1;
+        public static int StageSeed { get; set; }
         // 지금 방이 곁방인지 (게임오버 결과 창 "쓰러진 곳").
         public static bool InSideRoom { get; set; }
 

@@ -719,7 +719,12 @@ namespace IBlameYou.Systems
             StageEvents.RoomDistance = entered.Distance; // 게임오버 창 "쓰러진 곳: 시작 방에서 N칸"
             StageEvents.FarthestDistance = Math.Max(StageEvents.FarthestDistance, entered.Distance);
             StageEvents.InSideRoom = !entered.MainPath;
-            if (entered.Kind == RoomKind.Village) StageEvents.VillageVisit++; // 식당 새 방문
+            if (entered.Kind == RoomKind.Village)
+            {
+                StageEvents.VillageVisit++; // 식당 새 방문
+                StageEvents.VillageRoom = index; // 장비 상점 진열 시드
+                StageEvents.StageSeed = stage.Seed;
+            }
             StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }
