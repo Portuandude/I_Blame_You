@@ -29,7 +29,9 @@ namespace IBlameYou.Systems
         EliteArena,    // 정예 전투 구역
         Rest,          // 숨 고르기 평지 (체크포인트는 2026-11-10 제거). 곁방 지형으로도 쓴다
         Boss,          // 마지막 전투 + 출구
-        SwitchBridge   // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
+        SwitchBridge,  // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
+        Pillars,       // 기둥 숲: 낭떠러지 위 폭 1~2칸 기둥을 높낮이 바꿔 가며 건넌다 (진행도 20%+, 레벨 재설계 2차)
+        TwinPath       // 두 갈래 길: 아래는 가시 + 적, 위는 발판 계단 → 발판 줄(무너지는 발판 섞임). 싸울지 뛸지 고른다 (진행도 25%+)
     }
 
     public enum FeatureKind
@@ -50,8 +52,10 @@ namespace IBlameYou.Systems
         BlinkWard,      // 마력 안개: X ~ X + Width - 1 열 전체(바닥~천장). 안에서는 순간이동·대시가 흩어진다 (스위치 발판 낭떠러지를 건너뛰지 못하게).
                         // 검증기는 걷기 점프 기준이라 무시한다
         Reward,         // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
-        BlinkPlatform   // 깜빡 발판: Width칸 발판 (Crumble과 같은 자리 규칙, 윗면 = Y + 1). 박자에 맞춰 나타났다 사라진다.
+        BlinkPlatform,  // 깜빡 발판: Width칸 발판 (Crumble과 같은 자리 규칙, 윗면 = Y + 1). 박자에 맞춰 나타났다 사라진다.
                         // Direction = 박자 순번 (0, 1, 2…: 왼쪽부터 차례로 늦게). 검증기는 발판으로 본다 (보일 때 밟으면 되므로)
+        Stalactite,     // 동굴 종유석: (X, Y)는 천장 바로 아래 매달린 칸. 플레이어가 아래로 오면 떨어진다. 몸이 없어 길을 막지 않는다 (검증에서는 무시)
+        CoinPile        // 동전 무더기: (X, Y)는 무더기가 놓이는 서는 칸. 닿으면 골드(GoldDropTable.CoinPileGold)를 받는다. 방마다 한 번만. 몸이 없다 (검증에서는 무시)
     }
 
     public enum StageEnemy

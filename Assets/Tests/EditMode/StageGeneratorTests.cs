@@ -249,11 +249,12 @@ namespace IBlameYou.Tests
             {
                 { ChunkKind.Cave, 0.15f }, { ChunkKind.Climb, 0.2f }, { ChunkKind.MovingBridge, 0.2f },
                 { ChunkKind.CrumbleBridge, 0.3f }, { ChunkKind.ElementGate, StagePlanner.GateMinProgress },
+                { ChunkKind.Pillars, StagePlanner.PillarsMinProgress }, { ChunkKind.TwinPath, StagePlanner.TwinPathMinProgress },
             };
             var travel = new HashSet<ChunkKind>
             {
                 ChunkKind.Plains, ChunkKind.Hills, ChunkKind.SpikeField, ChunkKind.Pits, ChunkKind.Cave, ChunkKind.Climb,
-                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate,
+                ChunkKind.CrumbleBridge, ChunkKind.MovingBridge, ChunkKind.ElementGate, ChunkKind.Pillars, ChunkKind.TwinPath,
             };
             for (int seed = 0; seed < SeedCount; seed++)
             {
@@ -429,6 +430,303 @@ namespace IBlameYou.Tests
             }
 
             Assert.Greater(blinkBridges, 20, "깜빡 발판 다리가 거의 안 나옴");
+        }
+
+        // 기둥 숲 (레벨 재설계 2차): 낭떠러지가 여럿, 기둥은 폭 1~2칸, 오르는 낭떠러지는 2칸 이하, 검증기 통과.
+        // 무너지는 머리는 난이도 문턱 이상에서만, 그 아래에 한 칸 낮은 기둥 몸통이 있다.
+        [Test]
+        public void PillarsAreNarrowJumpableAndCrumbleLate()
+        {
+            int crumbleHeads = 0, narrow = 0, valid = 0, total = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 6, 12 })
+                    {
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Pillars, difficulty, entry, 0);
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var crumbles = chunk.Features.FindAll(f => f.Kind == FeatureKind.Crumble);
+                        foreach (var c in crumbles)
+                        {
+                            Assert.GreaterOrEqual(difficulty, ChunkGenerator.PillarCrumbleMinDifficulty, tag);
+                            for (int i = 0; i < c.Width; i++) Assert.AreEqual(c.Y, Surface(chunk, c.X + i), tag + ": 무너지는 머리 아래 몸통");
+                            crumbleHeads++;
+                        }
+
+                        int pits = 0, x = 0;
+                        while (x < ChunkData.Width)
+                        {
+                            if (Surface(chunk, x) > 0) { x++; continue; }
+                            int start = x;
+                            while (x < ChunkData.Width && Surface(chunk, x) == 0) x++;
+                            pits++;
+                            Assert.Less(x, ChunkData.Width, tag + ": 낭떠러지로 끝남");
+                            int gap = x - start;
+                            int before = Surface(chunk, start - 1), after = Surface(chunk, x);
+                            foreach (var c in crumbles)
+                            {
+                                if (c.X == x) after = c.Y + 1;
+                                if (c.X + c.Width - 1 == start - 1) before = c.Y + 1; // 무너지기 전 머리 위에서 뛴다
+                            }
+                            Assert.LessOrEqual(gap, 3, tag);
+                            if (after > before) Assert.LessOrEqual(gap, 2, tag + $": 오르며 {gap}칸 ({start})");
+                            Assert.LessOrEqual(after - before, 1, tag + $": 한 번에 {after - before}칸 오름 ({start})");
+                            int width = 0;
+                            while (x + width < ChunkData.Width && Surface(chunk, x + width) > 0) width++;
+                            if (x + width < ChunkData.Width) Assert.LessOrEqual(width, 2, tag + $": 기둥 폭 ({x})");
+                            if (width == 1) narrow++;
+                        }
+
+                        Assert.GreaterOrEqual(pits, 4, tag + ": 낭떠러지가 적음");
+                        if (StageValidator.Validate(chunk, out _)) valid++;
+                        total++;
+                    }
+                }
+            }
+
+            Assert.Greater(crumbleHeads, 50, "무너지는 머리가 거의 안 나옴");
+            Assert.Greater(narrow, 100, "폭 1칸 기둥이 거의 안 나옴");
+            Assert.Greater(valid, total * 0.8, $"첫 시도 검증 통과 {valid}/{total} (실패하면 다른 시도 번호로 다시 만든다)");
+        }
+
+        // 두 갈래 길 (레벨 재설계 2차): 아래 길은 평평하고 가시·적이 계단 밑에 없다. 위 길은 2칸씩 오르는 계단 → 바닥 + 6 발판 줄,
+        // 첫 발판은 단단하고 틈은 1~2칸, 출구 앞 4칸은 비어 내려설 수 있다. 무너지는 발판은 위 길 줄에만.
+        [Test]
+        public void TwinPathHasSafeStairsAndJumpableWalkway()
+        {
+            int crumbles = 0, enemies = 0, spikes = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.3f, 0.7f })
+                {
+                    foreach (int entry in new[] { 3, 8, 13 })
+                    {
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.TwinPath, difficulty, entry, 0);
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        for (int x = 0; x < ChunkData.Width; x++) Assert.AreEqual(entry, Surface(chunk, x), tag + $": 아래 길 높이 ({x})");
+                        Assert.AreEqual(entry, chunk.ExitHeight, tag);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(3, entry + 1), tag + ": 계단 1");
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(6, entry + 3), tag + ": 계단 2");
+
+                        int row = entry + ChunkGenerator.TwinPathWalkRise - 1;
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(ChunkGenerator.TwinPathWalkStart, row), tag + ": 첫 발판은 단단");
+                        var walk = new bool[ChunkData.Width];
+                        for (int x = 0; x < ChunkData.Width; x++) walk[x] = chunk.Get(x, row) == StageTile.Platform;
+                        foreach (var f in chunk.Features)
+                        {
+                            if (f.Kind == FeatureKind.Crumble)
+                            {
+                                Assert.AreEqual(row, f.Y, tag + ": 무너지는 발판은 위 길에만");
+                                for (int i = 0; i < f.Width; i++) walk[f.X + i] = true;
+                                crumbles++;
+                            }
+                            if (f.Kind == FeatureKind.Spikes)
+                            {
+                                Assert.GreaterOrEqual(f.X, 9, tag + ": 계단 밑 가시");
+                                Assert.LessOrEqual(f.X + f.Width, ChunkData.Width - 4, tag + ": 출구 가시");
+                                spikes++;
+                            }
+                            if (f.Kind == FeatureKind.Enemy) { Assert.AreEqual(entry, f.Y, tag); enemies++; }
+                        }
+
+                        int gap = 0;
+                        for (int x = ChunkGenerator.TwinPathWalkStart; x <= ChunkGenerator.TwinPathWalkEnd; x++)
+                        {
+                            gap = walk[x] ? 0 : gap + 1;
+                            Assert.LessOrEqual(gap, 2, tag + $": 위 길 틈 ({x})");
+                        }
+                        for (int x = ChunkGenerator.TwinPathWalkEnd + 1; x < ChunkData.Width; x++) Assert.IsFalse(walk[x], tag + ": 출구 위는 비어야");
+                        Assert.IsTrue(StageValidator.Validate(chunk, out string reason), tag + ": " + reason);
+                    }
+                }
+            }
+
+            Assert.Greater(crumbles, 300, "무너지는 발판이 거의 없음");
+            Assert.Greater(enemies, 600, "아래 길 적이 거의 없음");
+            Assert.Greater(spikes, 600, "아래 길 가시가 거의 없음");
+        }
+
+        // 동전 무더기 (위험한 길 보상): 두 갈래 길은 위 길 마지막 단단한 발판 위, 기둥 숲은 문턱 이상에서 가장 높은 단단한 기둥 머리 위.
+        // 늘 서는 칸(빈 칸, 바로 아래가 땅이나 발판)에 놓이고 청크마다 하나 이하.
+        [Test]
+        public void CoinPilesSitOnRiskyPathEnds()
+        {
+            int twin = 0, pillar = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var path = ChunkGenerator.Generate(seed, 3, ChunkKind.TwinPath, difficulty, entry, 0);
+                        var piles = path.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        int row = entry + ChunkGenerator.TwinPathWalkRise - 1;
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(row + 1, c.Y, tag + ": 위 길 발판 위");
+                            Assert.AreEqual(StageTile.Platform, path.Get(c.X, row), tag + ": 단단한 발판 위");
+                            Assert.Greater(c.X, ChunkGenerator.TwinPathWalkStart + 4, tag + ": 위 길 끝 쪽");
+                            twin++;
+                        }
+
+                        var pillars = ChunkGenerator.Generate(seed, 3, ChunkKind.Pillars, difficulty, entry, 0);
+                        piles = pillars.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.PillarCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(c.Y, Surface(pillars, c.X), tag + ": 기둥 머리 위");
+                            foreach (var f in pillars.Features)
+                                if (f.Kind == FeatureKind.Crumble)
+                                    Assert.IsFalse(c.X >= f.X && c.X < f.X + f.Width, tag + ": 무너지는 머리 위");
+                            for (int x = 4; x < ChunkData.Width - 4; x++)
+                            {
+                                bool crumbleCol = pillars.Features.Exists(f => f.Kind == FeatureKind.Crumble && x >= f.X && x < f.X + f.Width);
+                                if (!crumbleCol) Assert.LessOrEqual(Surface(pillars, x), c.Y, tag + $": 더 높은 기둥 ({x})");
+                            }
+                            pillar++;
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(twin, 1000, "두 갈래 길 동전이 거의 없음");
+            Assert.Greater(pillar, 800, "기둥 숲 동전이 거의 없음");
+        }
+
+        // 동전 무더기 (섬·절벽 오르기): 문턱 아래에서는 없고, 섬은 마지막 단단한 섬 위, 절벽 오르기는 절벽 위 평지(지키는 적보다 뒤).
+        // 늘 서는 칸(바로 아래가 땅)이고 무너지는 발판 위가 아니며 청크마다 하나 이하.
+        [Test]
+        public void CoinPilesOnPitsAndClimb()
+        {
+            int pits = 0, climb = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Pits, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.Greater(c.Y, 0, tag);
+                            Assert.AreEqual(c.Y, Surface(chunk, c.X), tag + ": 섬 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Crumble && c.X >= f.X && c.X < f.X + f.Width), tag + ": 무너지는 섬 위");
+                            Assert.Less(c.X, ChunkData.Width - 4, tag + ": 출구 평지가 아니라 섬");
+                            // 마지막 단단한 섬: 동전 오른쪽에 낭떠러지가 있으면 그 뒤는 무너지는 섬이거나 출구 평지
+                            bool gapBefore = false;
+                            for (int x = c.X - 1; x >= 4; x--) if (Surface(chunk, x) == 0) { gapBefore = true; break; }
+                            Assert.IsTrue(gapBefore, tag + ": 낭떠러지를 건넌 뒤");
+                            Assert.IsFalse(chunk.Features.Exists(e => e.Kind == FeatureKind.Enemy && e.X == c.X), tag + ": 적과 같은 칸");
+                            pits++;
+                        }
+
+                        chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Climb, difficulty, entry, 0);
+                        piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(c.Y, Surface(chunk, c.X), tag + ": 땅 위");
+                            int top = 0;
+                            for (int x = 0; x < ChunkData.Width; x++) top = System.Math.Max(top, Surface(chunk, x));
+                            Assert.AreEqual(top, c.Y, tag + ": 절벽 위");
+                            foreach (var e in chunk.Features) if (e.Kind == FeatureKind.Enemy) Assert.Greater(c.X, e.X, tag + ": 지키는 적 뒤");
+                            climb++;
+                        }
+                    }
+                }
+            }
+
+            int spikes = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"spikes seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.SpikeField, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.RiskyCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), tag + ": 발판 위");
+                            Assert.AreEqual(StageTile.Empty, chunk.Get(c.X, c.Y), tag + ": 빈 칸");
+                            Assert.IsTrue(chunk.Features.Exists(f => f.Kind == FeatureKind.Spikes && c.X >= f.X && c.X < f.X + f.Width && f.Y == c.Y - 2), tag + ": 가시 바로 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Spikes && f.X > c.X && chunk.Get(f.X, c.Y - 1) == StageTile.Platform), tag + ": 마지막 가시 위 발판");
+                            spikes++;
+                        }
+                    }
+                }
+            }
+            Assert.Greater(spikes, 1000, "가시밭 동전이 거의 없음");
+
+            int caves = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"cave seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Cave, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        var stalactites = chunk.Features.FindAll(f => f.Kind == FeatureKind.Stalactite);
+                        Assert.AreEqual(stalactites.Count > 0 ? 1 : 0, piles.Count, tag + ": 종유석이 있을 때만 하나");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(stalactites[stalactites.Count - 1].X, c.X, tag + ": 마지막 종유석 아래");
+                            Assert.AreEqual(Surface(chunk, c.X), c.Y, tag + ": 바닥 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.FlameJet && System.Math.Abs(f.X - c.X) <= 1), tag + ": 분출구 옆");
+                            caves++;
+                        }
+                    }
+                }
+            }
+            Assert.Greater(caves, 600, "동굴 동전이 거의 없음");
+
+            Assert.Greater(pits, 600, "섬 동전이 거의 없음");
+            Assert.Greater(climb, 1000, "절벽 오르기 동전이 거의 없음");
+        }
+
+        // 떨어지는 종유석: 동굴 난이도 문턱 이상에서만, 천장 바로 아래 빈 칸에 매달리고, 분출구와 2칸 넘게·서로 6칸 이상 떨어진다.
+        [Test]
+        public void StalactitesHangUnderCaveCeilingLate()
+        {
+            int total = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.5f, 0.8f })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Cave, difficulty, 6, 0);
+                    var stones = chunk.Features.FindAll(f => f.Kind == FeatureKind.Stalactite);
+                    string tag = $"seed {seed} diff {difficulty}";
+                    if (difficulty < ChunkGenerator.StalactiteMinDifficulty) Assert.AreEqual(0, stones.Count, tag);
+                    Assert.LessOrEqual(stones.Count, difficulty >= ChunkGenerator.StalactiteSecondDifficulty ? 2 : 1, tag);
+                    foreach (var s in stones)
+                    {
+                        Assert.IsFalse(chunk.IsSolid(s.X, s.Y), tag + ": 매달린 칸은 비어야");
+                        Assert.IsTrue(chunk.IsSolid(s.X, s.Y + 1), tag + ": 바로 위가 천장");
+                        Assert.Greater(s.Y, Surface(chunk, s.X), tag + ": 바닥보다 위");
+                        foreach (var f in chunk.Features)
+                            if (f.Kind == FeatureKind.FlameJet) Assert.Greater(System.Math.Abs(f.X - s.X), 2, tag + ": 분출구 옆");
+                        foreach (var o in stones)
+                            if (o.X != s.X) Assert.GreaterOrEqual(System.Math.Abs(o.X - s.X), 6, tag + ": 종유석끼리");
+                        total++;
+                    }
+                }
+            }
+
+            Assert.Greater(total, 300, "종유석이 거의 안 나옴");
         }
 
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)

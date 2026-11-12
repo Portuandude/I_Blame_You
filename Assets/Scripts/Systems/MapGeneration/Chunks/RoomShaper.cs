@@ -358,7 +358,12 @@ namespace IBlameYou.Systems
             chunk.SetRow(23, 26, leftHigh ? ShelfRowLow : ShelfRowHigh, StageTile.Platform);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= 0.35f)
                 chunk.AddEnemy(StageEnemy.GoblinArcher, leftHigh ? 6 : 25, ShelfRowHigh + 1);
+            // 높은 선반 안쪽 끝에 동전 무더기 (궁수가 지키는 자리, 위험한 길 보상). 난수를 쓰지 않아 방 모양은 그대로다
+            if (room.Kind == RoomKind.Travel && room.Difficulty >= ShelfCoinMinDifficulty)
+                chunk.AddFeature(FeatureKind.CoinPile, leftHigh ? leftX0 + 3 : 23, ShelfRowHigh + 1);
         }
+
+        public const float ShelfCoinMinDifficulty = 0.3f;
 
         // 순간이동 지름길 선반 (Docs/LevelDesign.md "순간이동은 지름길"): 위 문이 없는 세로 방(바닥만 있는 굴) 벽 쪽 높은 곳에
         // 회복 구슬을 올린 선반. 바닥에서 서는 칸 기준 5칸 위라 점프(약 2.5칸)만으로는 못 오르고, 점프 + 위 순간이동(4칸)으로 오른다.

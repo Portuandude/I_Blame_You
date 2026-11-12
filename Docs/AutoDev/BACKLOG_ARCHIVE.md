@@ -3,7 +3,35 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
-## 다음 (2026-11-12 23:00 자동 실행이 추가 — 조작감: 점프 다듬기)
+## 2026-11-12 23:40 실행 (claude/project-thread-sxxwfk)
+
+- DONE (claude/project-thread-sxxwfk): 섬(Pits) 동전 — 난이도 30%+면 가장 깊이 들어간(마지막) 단단한 섬 가운데에 동전 무더기. 낭떠러지를 건넌 보상
+- DONE (claude/project-thread-sxxwfk): 절벽 오르기(Climb) 동전 — 난이도 30%+면 절벽 위 평지 끝(지키는 적 뒤)에 동전 무더기
+- DONE (claude/project-thread-sxxwfk): 종유석이 적을 맞혔을 때 연출 — 별 튀김·"쾅" 흔들림을 플레이어 피격과 구분되게 짧게
+- DONE (claude/project-thread-sxxwfk): 미니맵에 동전 표시 — 가 본 방 중 아직 안 주운 동전 무더기가 남은 방 칸 구석에 작은 금색 점
+- DONE (claude/project-thread-sxxwfk): 가시밭(SpikeField) 동전 — 난이도 30%+면 마지막 가시 위 발판 가운데에 동전 무더기
+- DONE (claude/project-thread-sxxwfk): 동굴(Cave) 동전 — 종유석이 있는 동굴(35%+)은 마지막 종유석 바로 아래 바닥에 동전 무더기 (주우러 가면 종유석이 흔들림)
+
+## 2026-11-12 23:20 실행 (claude/project-thread-d80q0t)
+
+- DONE (claude/project-thread-d80q0t): 종유석이 적도 맞힌다 — 떨어지는 종유석에 닿은 적도 물리 피해(플레이어와 같은 배율)를 받고 종유석이 부서진다. 적을 종유석 아래로 끌어들이는 재미
+- DONE (claude/project-thread-d80q0t): 동전 무더기 (`FeatureKind.CoinPile`) — 닿으면 골드 3~6(난이도에 따라 오름)을 동전 연출로 받는다. 방마다 한 번만 (다시 와도 안 생김, `StageRecords.collectedCoins`). 그림은 기존 동전 프레임 재사용
+- DONE (claude/project-thread-d80q0t): 두 갈래 길 위 길 끝 발판에 동전 무더기 (적 없는 대신 틈·무너지는 발판을 건넌 보상)
+- DONE (claude/project-thread-d80q0t): 기둥 숲에서 가장 높은 기둥 머리에 동전 무더기 (난이도 30% 이상, 무너지는 머리는 피함)
+- DONE (claude/project-thread-d80q0t): 종유석 흔들림 때 작은 돌 부스러기가 떨어지는 예고 (그림자 예고와 함께)
+- DONE (claude/project-thread-d80q0t): 선반 세로 방(이동 방, 난이도 30%+) 궁수가 지키는 높은 선반에 동전 무더기
+- DONE (claude/project-thread-d80q0t): 동전 무더기 전용 효과음 `CoinPile` (짤랑짤랑 다섯 음)
+
+## 2026-11-12 23:10 실행 (claude/project-thread-dihyb7)
+
+- DONE (claude/project-thread-dihyb7): 새 이동 지형 "기둥 숲"(`ChunkKind.Pillars`, 진행도 20%+) — 바닥 없는 낭떠러지 위로 폭 1~2칸 기둥이 높낮이 ±2칸으로 솟는다. 간격 2~3칸(오를 때 2칸). 난이도 50%+면 기둥 머리 하나가 무너지는 발판. 섬(Pits)보다 좁고 들쭉날쭉해 점프 정확도를 본다
+- DONE (claude/project-thread-dihyb7): 새 이동 지형 "두 갈래 길"(`ChunkKind.TwinPath`, 25%+) — 아래 길은 가시 줄 + 적, 위 길은 발판 계단으로 올라가는 발판 줄(무너지는 발판 섞임). 둘 다 출구로 이어진다. 싸울지 뛸지 고르는 방
+- DONE (claude/project-thread-dihyb7): 동굴 "떨어지는 종유석" 함정(`FeatureKind.Stalactite`, 동굴 난이도 35%+) — 천장에 매달린 종유석이 플레이어가 아래에 오면 0.4초 흔들린 뒤 떨어진다. 맞으면 피해, 땅에 닿으면 부서짐. 그림 생성
+- DONE (claude/project-thread-dihyb7): 새 지형 마무리 — 기둥 숲·두 갈래 길 배경 색, 스테이지 미리보기·문서(`LevelDesign.md`, GDD) 반영
+- DONE (claude/project-thread-dihyb7): 종유석 소리 — 흔들릴 때 바위 떨림 "StoneCrack", 부서질 때 돌 쿵 + 수정 찰랑 "RockShatter" (Tools/AudioGen)
+- DONE (claude/project-thread-dihyb7): 종유석 그림자 예고 — 흔들리기 시작하면 바로 아래 땅에 작은 그림자가 생기고 떨어질수록 진해진다 (어디로 떨어질지 보이게)
+
+## 2026-11-12 23:00 실행 (claude/project-thread-3647un)
 
 DIRECTION ① "플레이 감각 다듬기" 안의 조작감. 지금 점프는 땅에 닿은 그 순간에만 눌러야 하고 높이가 늘 같다.
 점프 최대 거리(검증기 `RunJumpReach` 7칸)는 바꾸지 않는다. 스위치 발판 낭떠러지(9~10칸)를 달리기 점프로 건널 수 없어야 한다.

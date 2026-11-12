@@ -13,7 +13,7 @@
 | 종류 | 코드 | 청크 | 문 | 설명 |
 |---|---|---|---|---|
 | 시작 | `Start` | Start | 좌우 | 플레이어가 서는 곳 (가운데 줄 안쪽 칸) |
-| 이동 | `Travel` | Plains·Hills·Pits·SpikeField·Climb·Cave·CrumbleBridge | 좌우·위아래 | 지형·함정·쫄몹. 위/아래 문이 있으면 세로 방(탑·굴) |
+| 이동 | `Travel` | Plains·Hills·Pits·SpikeField·Climb·Cave·CrumbleBridge·Pillars·TwinPath | 좌우·위아래 | 지형·함정·쫄몹. 위/아래 문이 있으면 세로 방(탑·굴) |
 | 퍼즐 | `Puzzle` | ElementGate·MovingBridge | 좌우 | 봉인문, 움직이는 발판 |
 | 전투 | `Combat` | Arena | 좌우 | 들어가면 문이 잠기고 적이 나온다. 다 잡으면 열림 + 회복 구슬 |
 | 정예 | `Elite` | EliteArena | 좌우 | 전투 + 유물 상자 |

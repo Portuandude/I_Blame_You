@@ -30,6 +30,7 @@ namespace IBlameYou.UI
         private static readonly Color TreasureColor = new Color(1f, 0.85f, 0.3f);   // gold
         private static readonly Color RestColor = new Color(0.5f, 0.97f, 1f);       // aqua
         private static readonly Color StartColor = new Color(0.6f, 1f, 0.45f);
+        private static readonly Color CoinColor = new Color(1f, 0.82f, 0.25f);      // 동전 무더기 점 (금색)
         private static readonly Color VillageColor = new Color(1f, 0.63f, 0.48f);   // 살구색 (NPC 마을, #ffa07a)
 
         private ChunkStreamer streamer;
@@ -296,6 +297,24 @@ namespace IBlameYou.UI
                     }
                 }
 
+                // 안 주운 동전 무더기가 남은 방: 방 칸 오른쪽 위에 작은 금색 점 (주우면 사라짐)
+                if (streamer.HasCoinsLeft(room.Index))
+                {
+                    float d = Mathf.Max(4f, body.width * 0.26f);
+                    float o = Mathf.Max(1f, d * 0.2f);
+                    var dot = new Rect(body.xMax - 1f - d, body.y + 1f, d, d);
+                    if (art.Tile != null)
+                    {
+                        DrawTile(new Rect(dot.x - o, dot.y - o, dot.width + o * 2f, dot.height + o * 2f), Frame);
+                        DrawTile(dot, CoinColor);
+                    }
+                    else
+                    {
+                        Fill(new Rect(dot.x - 1f, dot.y - 1f, dot.width + 2f, dot.height + 2f), Frame);
+                        Fill(dot, CoinColor);
+                    }
+                }
+
                 // 새 방 발견 직후 흰 반짝임 한 번
                 float shine = RevealShineAlpha(room.Index);
                 if (shine > 0f)
@@ -392,7 +411,7 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전", legend);
                 return;
             }
 
@@ -401,14 +420,23 @@ namespace IBlameYou.UI
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
                 (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Village, "마을"), (art.Check, "돌파")
             };
-            float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
-            float x = rect.center.x - itemWidth * items.Length / 2f;
+            int count = items.Length + 1; // 마지막 칸은 동전 점 (그림이 아니라 금색 점)
+            float itemWidth = Mathf.Min(92f, rect.width / count); // 좁은 지도에서도 패널 안에
+            float x = rect.center.x - itemWidth * count / 2f;
             foreach (var (icon, name) in items)
             {
                 if (icon != null) GUI.DrawTexture(new Rect(x, rect.y + 2f, 20f, 20f), icon, ScaleMode.ScaleToFit, true);
                 GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), name, legendLeft);
                 x += itemWidth;
             }
+            var coinDot = new Rect(x + 5f, rect.y + 7f, 10f, 10f);
+            if (art.Tile != null)
+            {
+                DrawTile(new Rect(coinDot.x - 2f, coinDot.y - 2f, 14f, 14f), Frame);
+                DrawTile(coinDot, CoinColor);
+            }
+            else Fill(coinDot, CoinColor);
+            GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "동전", legendLeft);
         }
 
         private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;

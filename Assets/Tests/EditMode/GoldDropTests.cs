@@ -81,5 +81,22 @@ namespace IBlameYou.Tests
             }
             Assert.AreEqual(0, GoldDropTable.SplitCoins(0).Length);
         }
+
+        [Test]
+        public void CoinPileGoldRisesWithDifficulty()
+        {
+            Assert.AreEqual(3, GoldDropTable.CoinPileGold(0f));
+            Assert.AreEqual(5, GoldDropTable.CoinPileGold(0.5f), "4.5는 올림");
+            Assert.AreEqual(6, GoldDropTable.CoinPileGold(1f));
+            Assert.AreEqual(3, GoldDropTable.CoinPileGold(-1f), "범위 밖은 끝값");
+            Assert.AreEqual(6, GoldDropTable.CoinPileGold(2f));
+            int last = 0;
+            for (int i = 0; i <= 20; i++)
+            {
+                int gold = GoldDropTable.CoinPileGold(i / 20f);
+                Assert.That(gold, Is.GreaterThanOrEqualTo(last));
+                last = gold;
+            }
+        }
     }
 }

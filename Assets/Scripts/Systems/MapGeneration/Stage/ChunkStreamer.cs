@@ -33,6 +33,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> killed = new HashSet<int>();
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
+        private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
@@ -81,6 +82,24 @@ namespace IBlameYou.Systems
                 switchElements[index] = list;
             }
             return switchElements[index];
+        }
+
+        // 미니맵 동전 점: 그 방에 아직 안 주운 동전 무더기가 남았는지 (방 격자 모드, 청크 번호 = 방 번호).
+        // 무더기 수는 청크 Features에서 처음 물을 때 방마다 한 번 센다. 주운 기록은 CoinPileKey(방, 순번) — 놓는 순서와 같은 순번
+        private int[] coinPileCounts;
+        public bool HasCoinsLeft(int index)
+        {
+            if (rooms == null || stage == null || index < 0 || index >= stage.Chunks.Count) return false;
+            if (coinPileCounts == null)
+            {
+                coinPileCounts = new int[stage.Chunks.Count];
+                for (int i = 0; i < coinPileCounts.Length; i++)
+                    foreach (var f in stage.Chunks[i].Features)
+                        if (f.Kind == FeatureKind.CoinPile) coinPileCounts[i]++;
+            }
+            for (int k = 0; k < coinPileCounts[index]; k++)
+                if (!collectedCoins.Contains(CoinPileKey(index, k))) return true;
+            return false;
         }
 
         public StageData Stage => stage;
@@ -257,6 +276,7 @@ namespace IBlameYou.Systems
             }
 
             int platformOrdinal = 0;
+            int coinOrdinal = 0;
             var switchPlatforms = new List<MovingPlatform>();
             var switchFeatures = new List<ChunkFeature>();
             foreach (var f in chunk.Features)
@@ -271,6 +291,9 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.ArrowTrap:
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f), f.Direction);
+                        break;
+                    case FeatureKind.Stalactite:
+                        Stalactite.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f));
                         break;
                     case FeatureKind.MovingPlatform:
                         // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다. 스위치 발판은 멈춘 채로 만들고 아래에서 룬에 잇는다.
@@ -294,6 +317,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.Reward:
                         // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
                         SpawnReward(root, index, new Vector2(ox + f.X + 0.5f, oy + f.Y), false);
+                        break;
+                    case FeatureKind.CoinPile:
+                        SpawnCoinPile(root, CoinPileKey(index, coinOrdinal++), new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.Difficulty);
                         break;
                     case FeatureKind.Exit:
                         exits[index] = StageExit.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), bossCleared);
@@ -444,6 +470,15 @@ namespace IBlameYou.Systems
             ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
         }
 
+        // 동전 무더기: 청크마다 여럿일 수 있어서(넓은 방은 구간 여러 개) 청크 번호와 청크 안 순번으로 기록한다
+        private static int CoinPileKey(int chunkIndex, int ordinal) => chunkIndex * 16 + ordinal;
+
+        private void SpawnCoinPile(Transform root, int key, Vector2 position, float difficulty)
+        {
+            if (collectedCoins.Contains(key)) return;
+            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () => collectedCoins.Add(key));
+        }
+
         // 즉시 회복 (최대 체력 비율, 중간보스 처치·용사의 훈장). 쓰러진 뒤면 아무 일도 하지 않고 false. notice가 null이면 알림 없이.
         private bool HealPlayer(float ratio, string notice)
         {
@@ -501,6 +536,7 @@ namespace IBlameYou.Systems
                 killed = ToArray(killed),
                 clearedArenas = ToArray(clearedArenas),
                 collectedRewards = ToArray(collectedRewards),
+                collectedCoins = ToArray(collectedCoins),
                 takenRelics = ToArray(takenRelics),
                 openedGates = ToArray(openedGates),
                 gateStepChunks = new int[gateSteps.Count],
@@ -526,6 +562,7 @@ namespace IBlameYou.Systems
             Fill(killed, records.killed);
             Fill(clearedArenas, records.clearedArenas);
             Fill(collectedRewards, records.collectedRewards);
+            Fill(collectedCoins, records.collectedCoins);
             Fill(takenRelics, records.takenRelics);
             Fill(openedGates, records.openedGates);
             Fill(visitedRooms, records.visitedRooms);

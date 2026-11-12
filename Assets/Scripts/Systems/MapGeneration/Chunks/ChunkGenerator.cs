@@ -41,6 +41,8 @@ namespace IBlameYou.Systems
                 case ChunkKind.SpikeField: BuildSpikeField(chunk, heights, occupied, rng); break;
                 case ChunkKind.Climb: BuildClimb(chunk, heights, occupied, rng); break;
                 case ChunkKind.Cave: BuildCave(chunk, heights, occupied, rng); break;
+                case ChunkKind.Pillars: BuildPillars(chunk, heights, occupied, rng); break;
+                case ChunkKind.TwinPath: BuildTwinPath(chunk, heights, occupied, rng); break;
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
@@ -213,6 +215,7 @@ namespace IBlameYou.Systems
             for (; x < 4; x++) heights[x] = current;
 
             var crumbles = new List<int[]>();
+            int[] lastIsland = null; // 마지막 단단한 섬 (시작 X, 폭) — 동전 무더기 자리
             while (x < W - 4)
             {
                 int remaining = W - 4 - x;
@@ -228,6 +231,7 @@ namespace IBlameYou.Systems
                 int width = Math.Min(rng.Next(3, 6), W - 4 - x);
                 bool crumble = chunk.Difficulty > 0.3f && width <= 4 && rng.NextDouble() < 0.35;
                 if (crumble) crumbles.Add(new[] { x, current - 1, width });
+                else lastIsland = new[] { x, width };
                 for (int i = 0; i < width; i++) heights[x++] = crumble ? 0 : current;
             }
 
@@ -240,7 +244,135 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < c[2]; i++) occupied[c[0] + i] = true;
             }
 
+            // 동전 무더기: 가장 깊이 들어간(마지막) 단단한 섬 가운데. 낭떠러지를 건넌 보상. 적보다 먼저 자리를 잡는다 (난수를 쓰지 않음)
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && lastIsland != null)
+            {
+                int coinX = lastIsland[0] + (lastIsland[1] - 1) / 2;
+                chunk.AddFeature(FeatureKind.CoinPile, coinX, heights[coinX]);
+                occupied[coinX] = true;
+            }
+
             if (chunk.Difficulty > 0.3f) PlaceEnemies(chunk, heights, occupied, rng, 1);
+        }
+
+        // 섬·절벽 오르기 동전 무더기 문턱 (기둥 숲 PillarCoinMinDifficulty와 같은 값)
+        public const float RiskyCoinMinDifficulty = 0.3f;
+
+        // 기둥 숲: 바닥 없는 낭떠러지 위로 폭 1~2칸 기둥이 높낮이를 바꿔 가며 솟는다 (섬(Pits)보다 좁고 들쭉날쭉).
+        // 간격 2칸이면 한 칸 오르거나 두 칸까지 내려가고, 3칸이면 같은 높이이거나 한 칸 내려간다 (점프 규칙: 오르며 건너면 2칸).
+        // 난이도 PillarCrumbleMinDifficulty 이상이면 기둥 머리 하나가 무너지는 발판: 무너지면 한 칸 낮은 기둥 몸통에 내려선다.
+        public const float PillarCrumbleMinDifficulty = 0.5f;
+        public const int PillarMinTop = MinGround + 2; // 기둥이 너무 낮으면 낭떠러지 같지 않다
+
+        private static void BuildPillars(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            int current = chunk.EntryHeight;
+            int x = 0;
+            for (; x < 4; x++) heights[x] = current;
+
+            var pillars = new List<int[]>(); // 시작 열, 폭, 높이
+            while (W - 4 - x >= 5)
+            {
+                int gap = chunk.Difficulty >= 0.4f && rng.NextDouble() < 0.4 ? 3 : 2;
+                int delta = gap == 3 ? PickDelta(rng, -1, 0) : PickDelta(rng, -2, -1, 0, 1, 1);
+                int prev = current;
+                // 낮게 들어왔으면 PillarMinTop까지 한 칸씩만 오른다. 오르는 칸이면 간격은 2 (오르며 3칸은 못 건넌다)
+                current = Math.Max(Math.Min(PillarMinTop, prev + 1), Math.Min(MaxGround, prev + delta));
+                if (current > prev) gap = 2;
+                for (int i = 0; i < gap; i++) heights[x++] = 0;
+
+                int width = Math.Min(chunk.Difficulty >= 0.35f && rng.NextDouble() < 0.5 ? 1 : 2, W - 4 - x);
+                pillars.Add(new[] { x, width, current });
+                for (int i = 0; i < width; i++) heights[x++] = current;
+            }
+
+            // 마지막 기둥 뒤 낭떠러지 한 번 더 (2칸) 건너 출구 평지
+            if (x <= W - 6) { heights[x++] = 0; heights[x++] = 0; }
+            for (; x < W; x++) heights[x] = current;
+
+            // 무너지는 머리: 맨 처음·맨 끝이 아닌 폭 2 기둥 하나
+            int[] crumbled = null;
+            if (chunk.Difficulty >= PillarCrumbleMinDifficulty && pillars.Count >= 3)
+            {
+                var candidates = new List<int[]>();
+                for (int i = 1; i < pillars.Count - 1; i++) if (pillars[i][1] == 2) candidates.Add(pillars[i]);
+                if (candidates.Count > 0)
+                {
+                    crumbled = candidates[rng.Next(candidates.Count)];
+                    for (int i = 0; i < crumbled[1]; i++) heights[crumbled[0] + i] = crumbled[2] - 1;
+                }
+            }
+
+            ApplyHeights(chunk, heights);
+            if (crumbled != null)
+            {
+                chunk.AddFeature(FeatureKind.Crumble, crumbled[0], crumbled[2] - 1, crumbled[1]);
+                for (int i = 0; i < crumbled[1]; i++) occupied[crumbled[0] + i] = true;
+            }
+
+            // 동전 무더기: 가장 높은 기둥 머리 (무너지는 머리는 빼고, 같은 높이면 왼쪽 것). 낭떠러지 위를 건너는 보상
+            if (chunk.Difficulty >= PillarCoinMinDifficulty)
+            {
+                int[] top = null;
+                foreach (var p in pillars)
+                    if (p != crumbled && (top == null || p[2] > top[2])) top = p;
+                if (top != null)
+                {
+                    chunk.AddFeature(FeatureKind.CoinPile, top[0] + top[1] / 2, top[2]);
+                    occupied[top[0] + top[1] / 2] = true;
+                }
+            }
+        }
+
+        public const float PillarCoinMinDifficulty = 0.3f;
+
+        // 두 갈래 길: 평평한 아래 길에는 가시 줄과 적, 위에는 발판 계단(2칸씩)으로 오르는 발판 줄이 출구 앞까지 이어진다.
+        // 위 길은 적이 없는 대신 발판 사이 틈(1~2칸)과 무너지는 발판(난이도가 오를수록 많이)을 건너야 한다. 떨어지면 아래 길로 이어 간다.
+        // 아래 길의 머리 위 여유: 발판 줄 칸이 바닥 + TwinPathWalkRise - 1행이라 점프 최고 높이(2.45칸)에 머리가 닿지 않는다.
+        public const int TwinPathWalkRise = 6;   // 위 길 윗면 = 바닥 + 6
+        public const int TwinPathWalkStart = 9;  // 위 길 첫 발판 열 (앞은 계단)
+        public const int TwinPathWalkEnd = W - 5; // 위 길 마지막 발판 열 (뒤 4칸은 내려설 출구 평지)
+
+        private static void BuildTwinPath(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            int ground = Math.Min(chunk.EntryHeight, MaxGround);
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+
+            // 계단: 윗면 바닥 + 2, + 4 (한 번에 2칸씩)
+            chunk.SetRow(3, 5, ground + 1, StageTile.Platform);
+            chunk.SetRow(6, 8, ground + 3, StageTile.Platform);
+
+            int row = ground + TwinPathWalkRise - 1;
+            float crumbleChance = 0.25f + 0.5f * chunk.Difficulty;
+            int x = TwinPathWalkStart;
+            bool first = true;
+            int coinX = -1; // 위 길의 마지막 단단한 발판 가운데 (동전 무더기 자리)
+            while (x <= TwinPathWalkEnd)
+            {
+                int width = Math.Min(rng.Next(3, 6), TwinPathWalkEnd - x + 1);
+                // 첫 발판은 계단에서 올라서는 곳이라 늘 단단하다. 너무 짧게 남은 끝 조각도 단단한 발판
+                bool crumble = !first && width >= 2 && rng.NextDouble() < crumbleChance;
+                if (crumble) chunk.AddFeature(FeatureKind.Crumble, x, row, width);
+                else
+                {
+                    chunk.SetRow(x, x + width - 1, row, StageTile.Platform);
+                    coinX = x + (width - 1) / 2;
+                }
+                first = false;
+                x += width;
+                if (x > TwinPathWalkEnd) break;
+                x += rng.Next(1, 3); // 틈 1~2칸 (같은 높이라 걸어 점프로 넘는다)
+            }
+
+            // 위 길 끝 보상: 마지막 단단한 발판 위 동전 무더기 (적 없는 대신 틈·무너지는 발판을 건넌 몫). 첫 발판뿐이면 두지 않는다
+            if (coinX > TwinPathWalkStart + 4) chunk.AddFeature(FeatureKind.CoinPile, coinX, row + 1);
+
+            // 아래 길: 계단·출구를 피해 가시 줄, 그다음 적 (PlaceEnemies는 가시 근처를 피한다)
+            Mark(occupied, 4, 4);
+            int strips = 1 + (chunk.Difficulty >= 0.5f ? 1 : 0);
+            for (int i = 0; i < strips; i++) PlaceSpikeStrip(chunk, heights, occupied, rng, 2);
+            PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
         }
 
         // 평지에 가시 줄이 이어진다. 3칸짜리 가시 위에는 발판을 놓아 밟고 건널 수 있게 한다.
@@ -250,6 +382,7 @@ namespace IBlameYou.Systems
             Flat(heights, ground);
             ApplyHeights(chunk, heights);
 
+            int coinX = -1; // 마지막 가시 위 발판의 가운데 (동전 무더기 자리)
             for (int x = 4; x < W - 6;)
             {
                 x += rng.Next(2, 5);
@@ -260,9 +393,17 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < width; i++) occupied[x + i] = true;
 
                 // 발판 칸은 바닥보다 한 칸 위 (윗면 = 바닥 + 2, 점프 최고 높이 2.45 안쪽).
-                if (width == 3 || rng.NextDouble() < 0.4) chunk.SetRow(x - 1, x + width, ground + 1, StageTile.Platform);
+                if (width == 3 || rng.NextDouble() < 0.4)
+                {
+                    chunk.SetRow(x - 1, x + width, ground + 1, StageTile.Platform);
+                    coinX = x + (width - 1) / 2;
+                }
                 x += width;
             }
+
+            // 동전 무더기: 마지막 가시 위 발판 한가운데 (가시 바로 위 좁은 발판에 올라선 보상). 난수를 쓰지 않아 기존 지형 그대로
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && coinX >= 0)
+                chunk.AddFeature(FeatureKind.CoinPile, coinX, ground + 2);
 
             PlaceEnemies(chunk, heights, occupied, rng, chunk.Difficulty > 0.4f ? 1 : 0);
         }
@@ -326,6 +467,11 @@ namespace IBlameYou.Systems
             int guardX = cliffX + 4;
             var enemy = chunk.Difficulty > 0.3f && rng.NextDouble() < 0.6 ? StageEnemy.GoblinArcher : PickEnemy(rng, chunk.Difficulty);
             chunk.AddEnemy(enemy, guardX, top);
+
+            // 동전 무더기: 절벽 위 평지 끝 (지키는 적 뒤). 오른 보상. 난수를 쓰지 않아 기존 지형 그대로
+            int climbCoinX = plateauEnd - 2;
+            if (chunk.Difficulty >= RiskyCoinMinDifficulty && climbCoinX > guardX && heights[climbCoinX] == top)
+                chunk.AddFeature(FeatureKind.CoinPile, climbCoinX, top);
         }
 
         // 천장이 낮은 동굴. 바닥의 화염 분출구가 주기적으로 불기둥을 뿜는다.
@@ -361,7 +507,38 @@ namespace IBlameYou.Systems
                 placed++;
             }
 
+            PlaceStalactites(chunk, heights, occupied, rng);
+
+            // 동전 무더기: 마지막 종유석 바로 아래 바닥 (주우러 가면 종유석이 흔들린다 — 피하며 줍는 보상).
+            // 종유석이 없는 동굴(난이도 문턱 아래)에는 두지 않는다. 난수·occupied를 건드리지 않아 기존 지형·적 그대로
+            int stalactiteX = -1;
+            foreach (var f in chunk.Features) if (f.Kind == FeatureKind.Stalactite) stalactiteX = f.X;
+            if (stalactiteX >= 0) chunk.AddFeature(FeatureKind.CoinPile, stalactiteX, heights[stalactiteX]);
+
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
+        }
+
+        // 떨어지는 종유석: 난이도 StalactiteMinDifficulty 이상 동굴 천장에 1개, StalactiteSecondDifficulty 이상이면 2개.
+        // 분출구와 2칸 넘게 떨어진 열, 서로 6칸 이상 떨어진 열. 매달린 칸 = 천장 바로 아래 빈 칸.
+        public const float StalactiteMinDifficulty = 0.35f;
+        public const float StalactiteSecondDifficulty = 0.7f;
+
+        private static void PlaceStalactites(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            if (chunk.Difficulty < StalactiteMinDifficulty) return;
+            int count = chunk.Difficulty >= StalactiteSecondDifficulty ? 2 : 1;
+            int lastX = -100;
+            for (int placed = 0, tries = 0; placed < count && tries < 40; tries++)
+            {
+                int x = rng.Next(5, W - 5);
+                if (IsNear(occupied, x, 2) || Math.Abs(x - lastX) < 6) continue;
+                int y = heights[x];
+                while (y < H && !chunk.IsSolid(x, y)) y++;
+                if (y >= H || y - 1 <= heights[x]) continue; // 천장 없음 / 너무 낮음
+                chunk.AddFeature(FeatureKind.Stalactite, x, y - 1);
+                lastX = x;
+                placed++;
+            }
         }
 
         // 긴 낭떠러지 위에 무너지는 발판만 이어진다. 멈추면 떨어진다.
