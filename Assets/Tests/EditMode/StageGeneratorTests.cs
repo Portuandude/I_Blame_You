@@ -333,12 +333,15 @@ namespace IBlameYou.Tests
                     var runes = chunk.Features.FindAll(f => f.Kind == FeatureKind.PlatformSwitch);
                     var platforms = chunk.Features.FindAll(f => f.Kind == FeatureKind.MovingPlatform);
                     var driven = platforms.FindAll(f => f.SwitchDriven);
+                    var wards = chunk.Features.FindAll(f => f.Kind == FeatureKind.BlinkWard);
                     if (difficulty < ChunkGenerator.SwitchBridgeMinDifficulty)
                     {
                         Assert.AreEqual(0, runes.Count, $"seed {seed}: 50% 전에는 스위치 없음");
+                        Assert.AreEqual(0, wards.Count, $"seed {seed}: 스위치 없으면 마력 안개 없음");
                         continue;
                     }
                     Assert.AreEqual(runes.Count, driven.Count, $"seed {seed}: 룬 하나에 스위치 발판 하나");
+                    Assert.AreEqual(driven.Count, wards.Count, $"seed {seed}: 스위치 발판 낭떠러지마다 마력 안개 하나");
                     if (runes.Count == 0) continue;
                     Assert.AreEqual(platforms.Count, driven.Count, $"seed {seed}: 스위치 변형이면 발판 모두 스위치");
                     if (driven.Count == 2)
@@ -355,6 +358,15 @@ namespace IBlameYou.Tests
                         var rune = runes[k];
                         var platform = driven[k];
                         int farCliff = platform.X + platform.Width + platform.Direction; // 발판 건너편 첫 칸
+
+                        // 2026-11-12 플레이테스트: 순간이동·대시로 건너면 안 된다. 낭떠러지 전체를 마력 안개(순간이동·대시 금지)가 덮고,
+                        // 폭은 달리기 점프(약 7.3칸)보다 넓다. 스위치 발판은 건너편 끝에 쉬므로 출발 쪽 발판 위에서 뛰어 줄일 수도 없다.
+                        int gap = farCliff - platform.X;
+                        Assert.Greater(gap, RunJumpReach, $"seed {seed}: {k}번 스위치 낭떠러지 폭 {gap}");
+                        Assert.AreEqual(platform.X, wards[k].X, $"seed {seed}: {k}번 안개 시작");
+                        Assert.AreEqual(gap, wards[k].Width, $"seed {seed}: {k}번 안개 폭 = 낭떠러지 폭");
+                        for (int x = wards[k].X; x < wards[k].X + wards[k].Width; x++)
+                            Assert.AreEqual(0, Surface(chunk, x), $"seed {seed}: 안개 ({x}열)는 낭떠러지 위만");
                         Assert.AreEqual(farCliff, rune.X, $"seed {seed}: {k}번 룬은 발판 건너편 첫 칸");
                         Assert.AreEqual(Surface(chunk, rune.X), rune.Y, $"seed {seed}: {k}번 룬은 땅 위");
                         Assert.That(rune.ElementIndex, Is.InRange(0, ChunkGenerator.GateElementCount - 1), $"seed {seed}");
@@ -376,6 +388,8 @@ namespace IBlameYou.Tests
             Assert.Greater(singles, 0, "마법 스위치 변형이 한 번도 나오지 않음");
             Assert.Greater(doubles, 0, "이중 스위치 변형이 한 번도 나오지 않음");
         }
+
+        private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)
 
         // x열에서 땅 위 첫 빈 칸 높이 (서 있는 칸).
         private static int Surface(ChunkData chunk, int x)
