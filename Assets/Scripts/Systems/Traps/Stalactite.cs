@@ -26,6 +26,14 @@ namespace IBlameYou.Systems
         private const float ShadowHeight = 0.22f;
         private const float ShadowSearch = 24f;        // 이만큼 아래까지 땅을 찾는다 (없으면 그림자 없음)
 
+        // 돌 부스러기 예고: 흔들리는 동안 끝에서 작은 돌가루가 툭툭 떨어진다 (그림자와 함께 "곧 떨어진다")
+        private const int PebbleCount = 3;
+        private const float PebbleGap = 0.12f;         // 흔들림 0.4초 동안 셋이 차례로
+        private const float PebbleLife = 0.45f;
+        private const float PebbleGravity = 14f;
+        private const float PebbleSize = 0.09f;
+        private static readonly Color PebbleColor = new Color(0.62f, 0.57f, 0.68f);
+
         private enum Phase { Hang, Shake, Fall, Gone, Regrow }
 
         private Phase phase = Phase.Hang;
@@ -42,6 +50,10 @@ namespace IBlameYou.Systems
         private SpriteRenderer shadow;
         private float floorY;
         private bool hasFloor;
+        private SpriteRenderer[] pebbles;
+        private float[] pebbleAge;
+        private Vector2[] pebbleVelocity;
+        private int nextPebble;
 
         // position: 매달린 칸의 가운데 (월드). 그 칸 바로 위가 천장이다.
         public static Stalactite Create(Transform parent, Vector2 position)
@@ -67,6 +79,23 @@ namespace IBlameYou.Systems
             trap.shadow.sortingOrder = 1;
             trap.shadow.enabled = false;
 
+            // 돌가루 (부모 = 방 뿌리: 종유석이 흔들려도 같이 흔들리지 않게)
+            trap.pebbles = new SpriteRenderer[PebbleCount];
+            trap.pebbleAge = new float[PebbleCount];
+            trap.pebbleVelocity = new Vector2[PebbleCount];
+            for (int i = 0; i < PebbleCount; i++)
+            {
+                var pebbleGo = new GameObject("StalactitePebble");
+                pebbleGo.transform.SetParent(parent, false);
+                pebbleGo.transform.localScale = new Vector3(PebbleSize, PebbleSize, 1f);
+                var pebble = pebbleGo.AddComponent<SpriteRenderer>();
+                pebble.sprite = SolidSpriteFactory.CreateSquare();
+                pebble.color = PebbleColor;
+                pebble.sortingOrder = 2;
+                pebble.enabled = false;
+                trap.pebbles[i] = pebble;
+            }
+
             var rb = go.AddComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.useFullKinematicContacts = true;
@@ -79,6 +108,7 @@ namespace IBlameYou.Systems
 
         private void Update()
         {
+            UpdatePebbles();
             switch (phase)
             {
                 case Phase.Hang:
@@ -93,6 +123,7 @@ namespace IBlameYou.Systems
                     timer += Time.deltaTime;
                     transform.position = home + new Vector3(Mathf.Sin(timer * 70f) * ShakeAmount, 0f, 0f);
                     ShowShadow(0.3f * Mathf.Clamp01(timer / ShakeTime));
+                    if (nextPebble < PebbleCount && timer >= nextPebble * PebbleGap) DropPebble(nextPebble++);
                     if (timer >= ShakeTime)
                     {
                         transform.position = home;
@@ -131,7 +162,38 @@ namespace IBlameYou.Systems
             timer = 0f;
             speed = 0f;
             hitBox.enabled = next == Phase.Fall;
+            if (next == Phase.Shake) nextPebble = 0;
             if (next != Phase.Shake && next != Phase.Fall && shadow != null) shadow.enabled = false;
+        }
+
+        private void DropPebble(int i)
+        {
+            if (pebbles == null || pebbles[i] == null) return;
+            pebbles[i].enabled = true;
+            pebbles[i].color = PebbleColor;
+            pebbles[i].transform.position = home + new Vector3(Random.Range(-0.12f, 0.12f), -TipOffset, 0f);
+            pebbleAge[i] = 0f;
+            pebbleVelocity[i] = new Vector2(Random.Range(-0.6f, 0.6f), -0.5f);
+        }
+
+        private void UpdatePebbles()
+        {
+            if (pebbles == null) return;
+            for (int i = 0; i < PebbleCount; i++)
+            {
+                var pebble = pebbles[i];
+                if (pebble == null || !pebble.enabled) continue;
+                pebbleAge[i] += Time.deltaTime;
+                if (pebbleAge[i] >= PebbleLife)
+                {
+                    pebble.enabled = false;
+                    continue;
+                }
+                pebbleVelocity[i].y -= PebbleGravity * Time.deltaTime;
+                pebble.transform.position += (Vector3)(pebbleVelocity[i] * Time.deltaTime);
+                float fade = 1f - pebbleAge[i] / PebbleLife;
+                pebble.color = new Color(PebbleColor.r, PebbleColor.g, PebbleColor.b, fade);
+            }
         }
 
         private void FindFloor()
