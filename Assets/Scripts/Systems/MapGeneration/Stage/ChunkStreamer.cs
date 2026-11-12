@@ -210,6 +210,7 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 외길 모드 전용 (청크 폭이 늘 32). 방 격자 모드는 RoomRect/RoomCols를 쓴다.
         private int ChunkAt(float x) => Mathf.Clamp(Mathf.FloorToInt(x / ChunkData.Width), 0, stage.Chunks.Count - 1);
 
         private void Refresh()
