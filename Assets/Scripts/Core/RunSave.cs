@@ -24,7 +24,7 @@ namespace IBlameYou.Core
             public float spawnX;
             public float spawnY;
             public float elapsed;           // 런 시작부터 저장까지 걸린 시간(초)
-            public float progress;          // 저장 시점 진행도 (시작 화면 표시용)
+            public float progress;          // 저장 시점 방 깊이 (StageEvents.Depth, 이어할 때 곡 고르기. 화면에는 안 보임. 예전 저장과 맞추려고 이름 유지)
 
             public int level;
             public float experience;

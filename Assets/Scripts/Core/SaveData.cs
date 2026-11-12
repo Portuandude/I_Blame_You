@@ -13,7 +13,7 @@ namespace IBlameYou.Core
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
         private const string KeyRecentClears = "Recent.Clears";
-        private const string KeyRecentDefeats = "Recent.Defeats";
+        private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
         private const string KeyRecentBlame = "Recent.Blame";
         private const string KeyRelicCodex = "Codex.Relics";
 
@@ -81,20 +81,21 @@ namespace IBlameYou.Core
         public static string RecentClearSummary(bool devMode) =>
             ClearPace.RecentSummary(PlayerPrefs.GetString(ModeKey(KeyRecentClears, devMode), ""));
 
-        // 최근 쓰러진 곳 5개 (진행도·주 경로 순번·방 수, ClearPace.AddRecentDefeat 형식). 모드별로 따로. 어려운 구간 찾기용.
-        public static void RecordRecentDefeat(float progress, int pathStep, int mainRooms)
+        // 최근 쓰러진 곳 5개 (그 판에 간 가장 먼 방 거리, ClearPace.AddRecentDefeat 형식). 모드별로 따로. 어려운 구간 찾기용.
+        // 방 격자가 아닌 스테이지(거리 -1)와 기능 테스트는 기록하지 않는다.
+        public static void RecordRecentDefeat(int farthest)
         {
-            if (GameSession.FeatureTest) return;
+            if (GameSession.FeatureTest || farthest < 0) return;
             string key = ModeKey(KeyRecentDefeats, GameSession.DevMode);
-            PlayerPrefs.SetString(key, ClearPace.AddRecentDefeat(PlayerPrefs.GetString(key, ""), progress, pathStep, mainRooms));
+            PlayerPrefs.SetString(key, ClearPace.AddRecentDefeat(PlayerPrefs.GetString(key, ""), farthest));
             PlayerPrefs.Save();
         }
 
-        // 시작 화면용 "최근 쓰러진 곳 N판 평균 진행도 P%" 한 줄. 기록이 없으면 빈 문자열.
+        // 시작 화면용 "최근 쓰러진 곳 N판 평균 시작 방에서 M칸까지" 한 줄. 기록이 없으면 빈 문자열.
         public static string RecentDefeatSummary(bool devMode) =>
             ClearPace.RecentDefeatSummary(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
 
-        // 최근 쓰러진 곳 평균 진행도(0~100). 기록이 없으면 -1. 게임오버 창 "평소보다 더/덜 갔다" 비교용 (기록하기 전에 읽는다).
+        // 최근 쓰러진 판들이 간 가장 먼 방 거리 평균. 기록이 없으면 -1. 게임오버 창 "평소보다 더/덜 갔다" 비교용 (기록하기 전에 읽는다).
         public static int RecentDefeatAverage(bool devMode) =>
             ClearPace.RecentDefeatAverage(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
 
