@@ -8,6 +8,8 @@
   Assets/Resources/Village/Flowers0~2.png  16x8   꽃 덤불 세 가지 (분홍·노랑·하늘)
   Assets/Resources/Village/Fence.png       16x10  나무 울타리 한 칸 (가로로 이어 붙인다)
   Assets/Resources/Village/Fountain.png    40x28  작은 분수 (돌 그릇 + 물줄기)
+  Assets/Resources/Village/NpcChef_0~3.png      20x22  식당 주인: 요리사 모자 쓴 분홍 슬라임 (눈 없음, 숨쉬기 4프레임)
+  Assets/Resources/Village/NpcMerchant_0~3.png  20x22  상인: 깃털 모자 쓴 하늘색 슬라임
 
     python3 Tools/ArtGen/generate_village.py
 """
@@ -160,6 +162,45 @@ def fountain():
     return img.resize((w, h), Image.LANCZOS)
 
 
+NPC_W, NPC_H = 20, 22
+NPC_SQUASH = (0.0, 0.6, 1.0, 0.6)   # 숨쉬기: 프레임마다 납작해지는 정도 (0~1)
+
+
+def npc(kind, frame):
+    """모자 쓴 슬라임 (슬라임은 눈 없음 규칙). 바닥에 붙은 채 위아래로 숨 쉰다."""
+    img = canvas(NPC_W, NPC_H)
+    d = ImageDraw.Draw(img)
+    sq = NPC_SQUASH[frame]
+    body, light = (COLORS["berry"], hexrgba("ffb3d4")) if kind == "chef" else (hexrgba("4099ff"), hexrgba("c8f4ff"))
+    top = 11 + sq * 1.2                 # 몸 윗면 (납작해질수록 내려옴)
+    half = 7.5 + sq * 0.6               # 몸 반폭 (납작해질수록 넓어짐)
+    cx = NPC_W / 2
+    d.rounded_rectangle([(cx - half - 1.2) * SS, (top - 1.2) * SS, (cx + half + 1.2) * SS, NPC_H * SS - 1],
+                        radius=int(6 * SS), fill=OUTLINE)
+    d.rounded_rectangle([(cx - half) * SS, top * SS, (cx + half) * SS, (NPC_H - 1.2) * SS],
+                        radius=int(5 * SS), fill=body)
+    d.ellipse([(cx - half + 1.5) * SS, (top + 1.2) * SS, (cx - half + 4.5) * SS, (top + 3.6) * SS], fill=light)  # 광택
+    for x in (cx - 4.5, cx + 2.5):                                                                              # 볼터치
+        d.ellipse([x * SS, (top + 5.5) * SS, (x + 2) * SS, (top + 6.6) * SS], fill=hexrgba("ff8fb8"))
+    hat_base = top + 0.6
+    if kind == "chef":
+        r(d, cx - 4.6, hat_base - 3.2, cx + 4.6, hat_base + 0.4, OUTLINE, 1)                # 띠
+        r(d, cx - 3.8, hat_base - 2.5, cx + 3.8, hat_base - 0.3, COLORS["cream"])
+        for ox in (-3, 0, 3):                                                               # 뭉게 윗부분
+            d.ellipse([(cx + ox - 3) * SS, (hat_base - 9.5) * SS, (cx + ox + 3) * SS, (hat_base - 2.2) * SS], fill=OUTLINE)
+        for ox in (-3, 0, 3):
+            d.ellipse([(cx + ox - 2.2) * SS, (hat_base - 8.7) * SS, (cx + ox + 2.2) * SS, (hat_base - 2.6) * SS], fill=COLORS["cream"])
+    else:
+        r(d, cx - 6.5, hat_base - 1.6, cx + 6.5, hat_base + 0.6, OUTLINE, 1)                # 챙
+        r(d, cx - 5.7, hat_base - 1.0, cx + 5.7, hat_base, COLORS["dusk"])
+        r(d, cx - 4, hat_base - 6.2, cx + 4, hat_base - 0.8, OUTLINE, 1.4)                  # 모자 몸
+        r(d, cx - 3.2, hat_base - 5.4, cx + 3.2, hat_base - 1.2, COLORS["dusk"], 1)
+        r(d, cx - 3.2, hat_base - 2.6, cx + 3.2, hat_base - 1.6, COLORS["gold"])            # 금띠
+        d.ellipse([(cx + 1.5) * SS, (hat_base - 10) * SS, (cx + 4.5) * SS, (hat_base - 4.5) * SS], fill=OUTLINE)  # 깃털
+        d.ellipse([(cx + 2.1) * SS, (hat_base - 9.4) * SS, (cx + 3.9) * SS, (hat_base - 5) * SS], fill=COLORS["berry"])
+    return img.resize((NPC_W, NPC_H), Image.LANCZOS)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     restaurant().save(os.path.join(OUT, "Restaurant.png"))
@@ -169,6 +210,9 @@ def generate():
         flowers(i).save(os.path.join(OUT, f"Flowers{i}.png"))
     fence().save(os.path.join(OUT, "Fence.png"))
     fountain().save(os.path.join(OUT, "Fountain.png"))
+    for kind, name in (("chef", "NpcChef"), ("merchant", "NpcMerchant")):
+        for f in range(len(NPC_SQUASH)):
+            npc(kind, f).save(os.path.join(OUT, f"{name}_{f}.png"))
 
 
 if __name__ == "__main__":
