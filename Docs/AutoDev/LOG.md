@@ -4,7 +4,7 @@
 
 ## 2026-11-12 08:40 UTC
 - 브랜치/PR: `claude/project-thread-vsrh9q` → #44 (develop 대상, 자동 머지 켬). #43 머지 뒤 develop에서 시작
-- 완료: [버그] 협동 봉인문이 지형에 박힘 — 벽 높이를 월드 y로 재던 것을 방 안 좌표로(`ChunkData.GateHeight`), 봉인문 안내 문구 삭제(틀리면 벽 번쩍임), 테스트 `GatesNeverOverlapTerrain` (리뷰 APPROVE, LOW 2건 반영). 로컬 111/111
+- 완료: [버그] 협동 봉인문이 지형에 박힘 — 벽 높이를 월드 y로 재던 것을 방 안 좌표로(`ChunkData.GateHeight`), 봉인문 안내 문구 삭제(틀리면 벽 번쩍임), 테스트 `GatesNeverOverlapTerrain` (리뷰 APPROVE, LOW 2건 반영) / 순간이동 입력 W/A/S/D + Enter(도움말·시작 화면 키캡), 아래 순간이동이 움직이는·스위치 발판도 뚫음(`TeleportSkill.IsPlatform`, 테스트 2개) (리뷰 MEDIUM 1건 반영). 로컬 113/113
 - 실패/보류: 진행 중
 - 다음 실행 메모: (진행 중)
 
