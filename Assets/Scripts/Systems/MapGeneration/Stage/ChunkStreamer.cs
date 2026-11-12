@@ -387,11 +387,15 @@ namespace IBlameYou.Systems
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
                 VillageDecor.Build(root, origin.x, cols, ground); // 따뜻한 색조·울타리·가로등·꽃·분수
+                // 식당 주인·상인은 각 건물 문 오른쪽 벽 앞 (문 앞 W 범위 ±1.2 안이라 말을 걸며 창을 연다)
+                VillageNpc.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt + VillageNpcOffset, ground), VillageService.Restaurant);
+                VillageNpc.Create(root, new Vector2(origin.x + cols * VillageShopAt + VillageNpcOffset, ground), VillageService.Shop);
             }
         }
 
         private const float VillageRestaurantAt = 0.3f; // 방 가로 비율 (문 앞을 비워 두려고 양 끝에서 떨어뜨림)
         private const float VillageShopAt = 0.7f;
+        private const float VillageNpcOffset = 1.3f; // 건물 가운데에서 NPC까지 (문 폭 ±0.6 밖, 건물 폭 ±1.75 안)
 
         private static Vector3 EnemyPosition(Vector2 origin, ChunkFeature f) =>
             new Vector3(origin.x + f.X + 0.5f, origin.y + f.Y + SpawnLift, 0f);
