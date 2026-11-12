@@ -99,6 +99,7 @@ namespace IBlameYou.UI
             RunStats.Reset();
             RunGold.Reset();
             RunGold.Arrived += OnGoldArrived; // 동전이 닿으면 골드 숫자가 톡 튄다 (SkillHUD.Gold.cs)
+            RunStats.GoldSpentNow += OnGoldSpent; // 골드를 쓰면 알약 아래 빨간 -N (SkillHUD.Gold.cs)
             EnemyController.Killed += OnEnemyKilled;
             health.Damaged += OnPlayerDamaged;
             InitializeRelics();
@@ -140,6 +141,7 @@ namespace IBlameYou.UI
             StageEvents.Cleared -= OnStageCleared;
             EnemyController.Killed -= OnEnemyKilled;
             RunGold.Arrived -= OnGoldArrived;
+            RunStats.GoldSpentNow -= OnGoldSpent;
             if (health != null) health.Damaged -= OnPlayerDamaged;
             if (progression != null)
             {
