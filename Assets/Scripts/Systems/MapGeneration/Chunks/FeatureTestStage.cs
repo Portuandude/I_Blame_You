@@ -1,0 +1,60 @@
+namespace IBlameYou.Systems
+{
+    // 기능 테스트 모드 맵 (2026-11-12 플레이테스트 피드백: 7·8·11·19번 "테스트 불가").
+    // 적이 없는 짧은 외길: 텅 빈 방 → 빈 방 → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 빈 방(오른쪽 벽).
+    // 몬스터·유물은 이 맵 위에서 FeatureTestTools(키)로 불러 시험한다. 순수 C#이라 EditMode 테스트에서 그대로 검증한다.
+    public static class FeatureTestStage
+    {
+        public const int Seed = 4242; // 항상 같은 맵 (지형 모양만 시드를 탄다)
+        public const int Height = StageGenerator.StartHeight;
+        private const int MaxAttempts = 24;
+
+        // 순서 = 청크 번호. FeatureTestTools의 "구역으로 이동" 키(1~5)가 이 순서를 쓴다.
+        public static readonly ChunkKind[] Order =
+        {
+            ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.Rest
+        };
+
+        public static readonly string[] Names = { "텅 빈 방", "빈 방", "협동 봉인문", "이중 스위치 발판", "끝 방" };
+
+        public static StageData Build()
+        {
+            var stage = new StageData { Seed = Seed };
+            int height = Height;
+            for (int index = 0; index < Order.Length; index++)
+            {
+                var kind = Order[index];
+                ChunkData chunk = null;
+                for (int attempt = 0; attempt < MaxAttempts && chunk == null; attempt++)
+                {
+                    var candidate = ChunkGenerator.Generate(Seed, index, kind, 1f, height, attempt);
+                    candidate.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy); // 적은 키로만 부른다
+                    if (StageValidator.Validate(candidate, out _)) chunk = candidate;
+                }
+
+                if (chunk == null) chunk = ChunkGenerator.Fallback(index, kind, 1f, height);
+                if (kind == ChunkKind.ElementGate) MakeCoopGate(chunk);
+                if (index == Order.Length - 1) chunk.FillColumn(ChunkData.Width - 1, ChunkData.Height); // 끝 벽
+
+                stage.Chunks.Add(chunk);
+                height = chunk.ExitHeight;
+            }
+
+            return stage;
+        }
+
+        // 봉인문을 협동 봉인문으로: 첫 속성은 A 방어막, 둘째는 B 마법 (RoomShaper 보물 곁방 문과 같은 규칙).
+        private static void MakeCoopGate(ChunkData chunk)
+        {
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.ElementGate) continue;
+                f.ShieldFirst = true;
+                f.HasSecondElement = true;
+                f.SecondElementIndex = (f.ElementIndex + 1) % ChunkGenerator.GateElementCount;
+                chunk.Features[i] = f;
+            }
+        }
+    }
+}
