@@ -128,13 +128,24 @@ namespace IBlameYou.Tests
             Assert.AreEqual("공용", RelicBook.Owner(RelicId.LuckyPouch));
             Assert.AreEqual("몬스터가 떨어뜨리는 골드 +50%", RelicBook.Description(RelicId.LuckyPouch));
             Assert.Contains(RelicId.LuckyPouch, RelicBook.All);
-            Assert.AreEqual(27, RelicBook.All.Length);
             Assert.AreEqual(0, RelicBook.LuckyPouchGold(0));
             Assert.AreEqual(2, RelicBook.LuckyPouchGold(1));
             Assert.AreEqual(3, RelicBook.LuckyPouchGold(2));
             Assert.AreEqual(6, RelicBook.LuckyPouchGold(4));
             Assert.AreEqual(15, RelicBook.LuckyPouchGold(10));
             Assert.AreEqual(150, RelicBook.LuckyPouchGold(100));
+        }
+
+        // 단골 도장 (2026-11-12): 마을에서 사는 값 -20%. 맨 뒤 번호 27, 공용.
+        [Test]
+        public void RegularStamp_DiscountsVillage()
+        {
+            Assert.AreEqual(27, (int)RelicId.RegularStamp);
+            Assert.AreEqual("단골 도장", RelicBook.Name(RelicId.RegularStamp));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.RegularStamp));
+            Assert.AreEqual("마을에서 사는 값 -20%", RelicBook.Description(RelicId.RegularStamp));
+            Assert.Contains(RelicId.RegularStamp, RelicBook.All);
+            Assert.AreEqual(28, RelicBook.All.Length);
         }
 
         [Test]
