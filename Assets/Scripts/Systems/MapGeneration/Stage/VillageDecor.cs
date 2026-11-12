@@ -19,8 +19,11 @@ namespace IBlameYou.Systems
 
         private static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
 
-        // root: 마을 방 청크 루트, left: 방 왼쪽 월드 x, cols: 방 가로 칸 수, ground: 바닥 월드 y
-        public static void Build(Transform root, float left, int cols, float ground)
+        private const float RestaurantBowlTop = 3.35f; // 식당 간판 그릇 위 (Restaurant.png 56px 중 아래에서 53px, 16px = 1유닛)
+
+        // root: 마을 방 청크 루트, left: 방 왼쪽 월드 x, cols: 방 가로 칸 수, ground: 바닥 월드 y,
+        // restaurantAt: 식당 건물 가운데의 방 가로 비율 (김이 간판 그릇에서 올라간다)
+        public static void Build(Transform root, float left, int cols, float ground, float restaurantAt)
         {
             var background = root.Find("Background");
             if (background != null && background.TryGetComponent<SpriteRenderer>(out var tint)) tint.color = WarmTint;
@@ -41,6 +44,10 @@ namespace IBlameYou.Systems
             Place(decor, Load("Fountain"), cols * FountainAt, -2);
             foreach (float at in LampsAt) Place(decor, Load("Lamp"), cols * at, -4);
             for (int i = 0; i < FlowersAt.Length; i++) Place(decor, Load("Flowers" + (i % 3)), cols * FlowersAt[i], -1);
+
+            var lamps = new List<float>();
+            foreach (float at in LampsAt) lamps.Add(cols * at);
+            VillageAmbience.Create(decor, new Vector3(cols * restaurantAt, RestaurantBowlTop, 0f), lamps); // 김·반딧불
         }
 
         private static void Place(Transform parent, Sprite sprite, float x, int order)
