@@ -240,7 +240,7 @@ namespace IBlameYou.Tests
 
                         var arrivals = new List<(int x, int y)>(geometry.Arrivals.Values);
                         string reason;
-                        Assert.IsFalse(StageValidator.ValidateRoom(geometry.Chunk, arrivals, new[] { (f.X, f.Y) }, out reason),
+                        Assert.IsFalse(StageValidator.ValidateRoom(geometry.Chunk, arrivals, new List<(int x, int y)> { (f.X, f.Y) }, out reason),
                             $"{where}: 선반이 걷기·점프로 닿는 필수 경로에 있다");
                         StringAssert.Contains("가는 길이 없음", reason, $"{where}: 선반 칸에 설 수는 있어야 한다");
                     }
@@ -288,10 +288,11 @@ namespace IBlameYou.Tests
                     {
                         sideGates++;
                         chest = (ChunkData.Width / 2, chunk.EntryHeight);
-                        Assert.AreEqual(DoorDir.Right, room.Doors, $"{where}: 좌우 곁방은 오른쪽 문 하나");
-                        Assert.Less(gate.X, ChunkData.Width - 2, $"{where}: 문 칸과 겹침");
+                        Assert.That(room.Doors, Is.EqualTo(DoorDir.Right).Or.EqualTo(DoorDir.Left), $"{where}: 좌우 곁방은 문 하나");
+                        Assert.That(gate.X, Is.InRange(2, ChunkData.Width - 3), $"{where}: 문 칸과 겹침");
                     }
-                    Assert.Less(chest.x, gate.X, $"{where}: 상자는 봉인문 안쪽");
+                    if (room.Doors == DoorDir.Left) Assert.Greater(chest.x, gate.X, $"{where}: 상자는 봉인문 안쪽 (왼쪽 문)");
+                    else Assert.Less(chest.x, gate.X, $"{where}: 상자는 봉인문 안쪽");
                     Assert.AreEqual(chest.y, gate.Y, where);
 
                     for (int y = gate.Y; y < ChunkData.Height - 1; y++)
