@@ -455,7 +455,31 @@ namespace IBlameYou.Systems
                 placed++;
             }
 
+            PlaceStalactites(chunk, heights, occupied, rng);
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
+        }
+
+        // 떨어지는 종유석: 난이도 StalactiteMinDifficulty 이상 동굴 천장에 1개, StalactiteSecondDifficulty 이상이면 2개.
+        // 분출구와 2칸 넘게 떨어진 열, 서로 6칸 이상 떨어진 열. 매달린 칸 = 천장 바로 아래 빈 칸.
+        public const float StalactiteMinDifficulty = 0.35f;
+        public const float StalactiteSecondDifficulty = 0.7f;
+
+        private static void PlaceStalactites(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            if (chunk.Difficulty < StalactiteMinDifficulty) return;
+            int count = chunk.Difficulty >= StalactiteSecondDifficulty ? 2 : 1;
+            int lastX = -100;
+            for (int placed = 0, tries = 0; placed < count && tries < 40; tries++)
+            {
+                int x = rng.Next(5, W - 5);
+                if (IsNear(occupied, x, 2) || Math.Abs(x - lastX) < 6) continue;
+                int y = heights[x];
+                while (y < H && !chunk.IsSolid(x, y)) y++;
+                if (y >= H || y - 1 <= heights[x]) continue; // 천장 없음 / 너무 낮음
+                chunk.AddFeature(FeatureKind.Stalactite, x, y - 1);
+                lastX = x;
+                placed++;
+            }
         }
 
         // 긴 낭떠러지 위에 무너지는 발판만 이어진다. 멈추면 떨어진다.

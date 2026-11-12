@@ -52,8 +52,9 @@ namespace IBlameYou.Systems
         BlinkWard,      // 마력 안개: X ~ X + Width - 1 열 전체(바닥~천장). 안에서는 순간이동·대시가 흩어진다 (스위치 발판 낭떠러지를 건너뛰지 못하게).
                         // 검증기는 걷기 점프 기준이라 무시한다
         Reward,         // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
-        BlinkPlatform   // 깜빡 발판: Width칸 발판 (Crumble과 같은 자리 규칙, 윗면 = Y + 1). 박자에 맞춰 나타났다 사라진다.
+        BlinkPlatform,  // 깜빡 발판: Width칸 발판 (Crumble과 같은 자리 규칙, 윗면 = Y + 1). 박자에 맞춰 나타났다 사라진다.
                         // Direction = 박자 순번 (0, 1, 2…: 왼쪽부터 차례로 늦게). 검증기는 발판으로 본다 (보일 때 밟으면 되므로)
+        Stalactite      // 동굴 종유석: (X, Y)는 천장 바로 아래 매달린 칸. 플레이어가 아래로 오면 떨어진다. 몸이 없어 길을 막지 않는다 (검증에서는 무시)
     }
 
     public enum StageEnemy
