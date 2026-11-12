@@ -280,7 +280,20 @@ namespace IBlameYou.Systems
             if (health == null || health.IsDead || health.IsInvulnerable) return;
 
             DamageCalculator.Strike(TrapCommon.Source, enemy, DamageKind.Physical, Element.Neutral, EnemyDamageMultiplier);
+            PlayEnemyBonk(other.bounds);
             Shatter();
+        }
+
+        // 적을 맞혔을 때만 나는 연출: 머리 위 노란 "쾅!" + 머리에 부딪히는 번쩍 + 아주 짧은 흔들림.
+        // 플레이어가 맞을 때(빨간 피해 숫자·피격 흔들림)와 달리 노란 글자라 "적을 끌어들여 맞혔다"가 보인다.
+        private static readonly Color BonkColor = new Color(1f, 0.86f, 0.3f);
+
+        private void PlayEnemyBonk(Bounds enemyBounds)
+        {
+            var head = new Vector3(enemyBounds.center.x, enemyBounds.max.y, 0f);
+            EffectLibrary.PlayHit(Element.Neutral, head, 1.2f);
+            DamageNumbers.ShowText(head + Vector3.up * 0.55f, "쾅!", BonkColor, 0.9f);
+            if (CameraNear()) IBlameYou.Core.CameraFollow.ShakeMain(0.1f, 0.06f);
         }
 
         private void Shatter()
