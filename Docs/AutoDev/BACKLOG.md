@@ -9,7 +9,7 @@
 
 ## 다음 (2026-11-11 22:40 자동 실행이 추가)
 
-- TODO: 별사탕 연출 — 별사탕으로 마나가 찰 때 머리 위로 작은 별사탕이 톡 (`MedalGlintFx.Create(..., "StarCandy")`, 도토리 주머니와 겹치면 옆으로 비켜서)
+- DONE (claude/project-thread-wp6c3h): 별사탕 연출 — 별사탕으로 마나가 찰 때 머리 위로 작은 별사탕이 톡 (`MedalGlintFx.Create(..., "StarCandy")`, 도토리 주머니와 겹치면 옆으로 비켜서)
 - TODO: 젤리 방석 무너짐 방울 — 젤리 방석으로 버틴 발판이 무너질 때 나무 먼지 대신(또는 함께) 분홍 젤리 방울이 톡톡 튀게 (`CrumblingPlatform.Crumble` 끝)
 - TODO: 보상 구슬 자석 마무리 — 끌려오기 시작할 때 작은 "슝" 소리, 벽 너머 플레이어에게는 끌려가지 않게 (`ArenaReward.FindMagnetTarget`, 한쪽 발판은 막지 않게 주의)
 
