@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+- DONE (claude/project-thread-wp6c3h): 별사탕 연출 — 별사탕으로 마나가 찰 때 머리 위로 작은 별사탕이 톡 (`MedalGlintFx.Create(..., "StarCandy")`, 도토리 주머니와 겹치면 옆으로 비켜서)
+- DONE (claude/project-thread-wp6c3h): 젤리 방석 무너짐 방울 — 젤리 방석으로 버틴 발판이 무너질 때 나무 먼지 대신(또는 함께) 분홍 젤리 방울이 톡톡 튀게 (`CrumblingPlatform.Crumble` 끝)
+- DONE (claude/project-thread-wp6c3h): 보상 구슬 자석 마무리 — 끌려오기 시작할 때 작은 "슝" 소리, 벽 너머 플레이어에게는 끌려가지 않게 (`ArenaReward.FindMagnetTarget`, 한쪽 발판은 막지 않게 주의)
+- DONE (claude/project-thread-wp6c3h): 유물 말굽 자석 — 보상 구슬 자석 반경 1.5 → 4유닛 (`RelicId.HorseshoeMagnet`=24, 공용, `ArenaReward.MagnetRadius`를 유물에 따라, 아이콘 `generate_relic_icons.py`·테스트, 유물 25종)
+- DONE (claude/project-thread-wp6c3h): 자석 꼬리 — 끌려오는 보상 구슬 뒤로 분홍 잔상이 짧게 남게 (`Afterimage` 재사용 가능 여부 확인, 끌려올 때만)
+- DONE (claude/project-thread-wp6c3h): 말굽 자석 연출 — 말굽 자석으로 먼 구슬이 끌려오기 시작할 때 머리 위로 작은 말굽 자석 아이콘이 톡 (`MedalGlintFx.Create(..., "HorseshoeMagnet")`, 1.5유닛 밖에서 잡혔을 때만)
 - DONE (claude/project-thread-rtmaz9): 젤리 방석 연출 — 젤리 방석으로 버티는 동안 발판이 흔들리는 대신 분홍빛으로 말랑하게 눌렸다 튀어 오르게 (`CrumblingPlatform.Crumble`의 흔들림 구간, 플레이어가 젤리 방석을 가졌을 때만)
 - DONE (claude/project-thread-rtmaz9): 꿀단지 보상 구슬 — 꿀단지가 있으면 전투 구역 보상 구슬에 금빛 테두리 반짝을 둘러 "더 많이 찬다"가 보이게 (`ArenaReward` 비주얼, 둘 중 한 명이라도 가졌으면)
 - DONE (claude/project-thread-rtmaz9): 도감 창 23칸 확인 — 유물 23종이 된 도감 창(`StartMenu` 267줄 근처)이 좁은 화면에서 넘치지 않는지 칸 배치를 확인하고, 넘치면 줄 수를 늘리거나 칸을 줄인다

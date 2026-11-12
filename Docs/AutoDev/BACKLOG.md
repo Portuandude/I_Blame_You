@@ -7,17 +7,11 @@
 
 - TODO (사람 필요: 15분 플레이테스트 뒤 판단): 숨 고르기 방 채우기 — 체크포인트가 빠진 휴식(Rest) 방이 빈 평지가 됐다. 회복 없이 볼거리만(반짝이는 버섯·나비 장식, 다음 방 미리보기 표지판 등) 두거나, 방 리듬 완충을 이동 방으로 바꿀지 플레이테스트 뒤 판단. 회복 구슬을 두면 회복 수지가 다시 커지므로 넣지 않는다
 
-## 다음 (2026-11-11 22:40 자동 실행이 추가)
+## 다음 (2026-11-12 03:40 자동 실행이 추가)
 
-- DONE (claude/project-thread-wp6c3h): 별사탕 연출 — 별사탕으로 마나가 찰 때 머리 위로 작은 별사탕이 톡 (`MedalGlintFx.Create(..., "StarCandy")`, 도토리 주머니와 겹치면 옆으로 비켜서)
-- DONE (claude/project-thread-wp6c3h): 젤리 방석 무너짐 방울 — 젤리 방석으로 버틴 발판이 무너질 때 나무 먼지 대신(또는 함께) 분홍 젤리 방울이 톡톡 튀게 (`CrumblingPlatform.Crumble` 끝)
-- DONE (claude/project-thread-wp6c3h): 보상 구슬 자석 마무리 — 끌려오기 시작할 때 작은 "슝" 소리, 벽 너머 플레이어에게는 끌려가지 않게 (`ArenaReward.FindMagnetTarget`, 한쪽 발판은 막지 않게 주의)
-
-## 다음 (2026-11-12 자동 실행이 추가)
-
-- DONE (claude/project-thread-wp6c3h): 유물 말굽 자석 — 보상 구슬 자석 반경 1.5 → 4유닛 (`RelicId.HorseshoeMagnet`=24, 공용, `ArenaReward.MagnetRadius`를 유물에 따라, 아이콘 `generate_relic_icons.py`·테스트, 유물 25종)
-- DONE (claude/project-thread-wp6c3h): 자석 꼬리 — 끌려오는 보상 구슬 뒤로 분홍 잔상이 짧게 남게 (`Afterimage` 재사용 가능 여부 확인, 끌려올 때만)
-- DONE (claude/project-thread-wp6c3h): 말굽 자석 연출 — 말굽 자석으로 먼 구슬이 끌려오기 시작할 때 머리 위로 작은 말굽 자석 아이콘이 톡 (`MedalGlintFx.Create(..., "HorseshoeMagnet")`, 1.5유닛 밖에서 잡혔을 때만)
+- TODO: 유물 종이비행기 — 순간이동 재사용 대기 -20% (`TeleportSkill` 재사용 대기 값 확인, 주인 A/B/공용은 순간이동 담당에 맞춰, 아이콘·테스트, 유물 26종, 맨 뒤 번호 25)
+- TODO: 화면 밖 보상 구슬 길잡이 — 줍지 않은 보상 구슬이 카메라 밖에 있으면 화면 가장자리에 작은 분홍 하트 화살표 (구슬 쪽, 같은 방·옆 방 안에서만, `ArenaReward` 목록 + HUD IMGUI)
+- TODO: 젤리 방울 소리 — 젤리 방울이 튈 때 아주 작은 "똑똑" (`Tools/AudioGen`, JellySquish와 겹치지 않게 0.2초 늦게, 카메라 12유닛 안일 때만)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
