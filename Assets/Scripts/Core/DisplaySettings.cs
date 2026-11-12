@@ -4,7 +4,7 @@ using UnityEngine;
 namespace IBlameYou.Core
 {
     // 화면 설정 (2026-11-12 플레이테스트 21번): 화면 비율 16:9 고정(레터박스), 해상도, 창 / 테두리 없는 창 / 전체 화면.
-    // PlayerPrefs에 저장하고, 시작할 때 SaveData.LoadSettings에서 한 번 적용한다. 계산 규칙은 Chunks/DisplayRules.
+    // PlayerPrefs에 저장하고, 실행 뒤 처음 시작 화면에서(SaveData.LoadSettings) 한 번 적용한다. 계산 규칙은 Chunks/DisplayRules.
     public static class DisplaySettings
     {
         private const string KeyResolution = "Settings.Resolution";
@@ -17,10 +17,19 @@ namespace IBlameYou.Core
         public static int MonitorWidth => Display.main != null && Display.main.systemWidth > 0 ? Display.main.systemWidth : Screen.currentResolution.width;
         public static int MonitorHeight => Display.main != null && Display.main.systemHeight > 0 ? Display.main.systemHeight : Screen.currentResolution.height;
 
+        private static bool loaded;
+
+        // 실행마다 한 번만 (시작 화면으로 돌아올 때마다 다시 적용하면 창이 깜빡이거나 손으로 바꾼 크기가 되돌아간다).
         public static void Load()
         {
-            Resolution = DisplayRules.Sanitize(PlayerPrefs.GetInt(KeyResolution, -1), MonitorWidth, MonitorHeight);
-            Mode = DisplayRules.SanitizeMode(PlayerPrefs.GetInt(KeyWindowMode, DisplayRules.Borderless));
+            if (loaded) return;
+            loaded = true;
+            int saved = PlayerPrefs.GetInt(KeyResolution, -1);
+            if (saved < 0) saved = System.Array.IndexOf(DisplayRules.Resolutions, (Screen.width, Screen.height)); // 처음 실행: 지금 창 크기가 목록에 있으면 그것을 보여 준다
+            Resolution = DisplayRules.Sanitize(saved, MonitorWidth, MonitorHeight);
+            int defaultMode = Screen.fullScreenMode == FullScreenMode.Windowed ? DisplayRules.Windowed
+                : Screen.fullScreenMode == FullScreenMode.ExclusiveFullScreen ? DisplayRules.Fullscreen : DisplayRules.Borderless;
+            Mode = DisplayRules.SanitizeMode(PlayerPrefs.GetInt(KeyWindowMode, defaultMode));
             if (PlayerPrefs.HasKey(KeyResolution)) Apply(); // 처음 실행(저장 없음)은 Unity 기본 화면을 그대로 둔다
             EnsureLetterbox();
         }
@@ -133,7 +142,7 @@ namespace IBlameYou.Core
             const float height = 300f;
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
             GUI.Box(rect, GUIContent.none, panel);
-            GUI.Box(rect, GUIContent.none, panel);
+            GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
             var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
             var center = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), "화면 설정", head);
@@ -157,7 +166,7 @@ namespace IBlameYou.Core
 
             y += 56f;
             GUI.Label(new Rect(rect.x + 24f, y, rect.width - 48f, 40f),
-                "화면 비율은 16:9로 고정 (창 비율이 다르면 검은 띠). 에디터에서는 해상도·창 모드가 바뀌지 않는다",
+                "화면 비율은 16:9로 고정 (창 비율이 다르면 검은 띠). 테두리 없는 창은 모니터 해상도로 보일 수 있다. 에디터에서는 해상도·창 모드가 바뀌지 않는다",
                 new GUIStyle(body) { fontSize = 13, alignment = TextAnchor.MiddleCenter });
 
             y += 50f;
