@@ -29,6 +29,7 @@ namespace IBlameYou.Core
         {
             generation++;
             InFlight = 0;
+            lastPouchGlint = -10f; // 새 판: 지난 판 간격 기록을 지운다 (도메인 리로드를 꺼도)
         }
 
         public static EnemyRank RankOf(EnemyController enemy)
