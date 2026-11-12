@@ -114,7 +114,7 @@ namespace IBlameYou.UI
             float headerWidth = style.CalcSize(header).x;
             float width = headerWidth + items.Count * (EndEquipmentGap + RelicListIconSize);
             var equipRect = new Rect(rect.xMax - width, rect.y, width, rect.height);
-            DrawEndRelics(new Rect(rect.x, rect.y, rect.width - width - 14f, rect.height));
+            DrawEndRelics(new Rect(rect.x, rect.y, Mathf.Max(0f, rect.width - width - 14f), rect.height));
 
             float x = equipRect.x;
             GUI.Label(new Rect(x, rect.y, headerWidth + 2f, rect.height), header, style);
