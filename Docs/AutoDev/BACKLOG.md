@@ -36,7 +36,9 @@ DIRECTION ① "플레이 감각 다듬기" 안의 세로 방 다양화. ContentI
 
 - DONE (claude/project-thread-p0jxnt): 세로 방 모양 4 "무너지는 계단" (`ShaftStyle.CrumbleStairs`) — 지그재그 계단에서 맨 위 판·맨 아래 판을 뺀 판들을 무너지는 발판(`FeatureKind.Crumble`)으로. 난이도 30% 이상 위 문 있는 방에서만 나온다. 검증기는 무너지는 발판을 발판으로 보므로 길은 그대로. 테스트(모든 모양 등장·검증 통과·함정이 무너지는 판 밑을 피함)·LevelDesign 문서
 - DONE (claude/project-thread-p0jxnt): 세로 방 모양 5 "깜빡 계단" (`ShaftStyle.BlinkStairs`) — 지그재그 판이 아래부터 차례로 깜빡인다(`FeatureKind.BlinkPlatform`, 박자 순번 = 아래부터). 난이도 45% 이상 (위 문 있는 세로 방은 거의 난이도 20~55%라서). 맨 위 판은 고정. 테스트·문서
-- TODO: 중간보스 곡 — 지금 쌍둥이 슬라임 기사도 스테이지 보스와 같은 `Boss` 곡을 쓴다. 기사 둘(불·물) 느낌의 짧은 반복 곡 `MidBoss`를 `Tools/AudioGen`으로 만들고 `ArenaZone`에서 중간보스 구역이면 그 곡 (보스 곡과 구별해 "아직 끝이 아니다" 느낌)
+- DONE (claude/project-thread-p0jxnt): 중간보스 곡 — 지금 쌍둥이 슬라임 기사도 스테이지 보스와 같은 `Boss` 곡을 쓴다. 기사 둘(불·물) 느낌의 짧은 반복 곡 `MidBoss`를 `Tools/AudioGen`으로 만들고 `ArenaZone`에서 중간보스 구역이면 그 곡 (보스 곡과 구별해 "아직 끝이 아니다" 느낌)
+- TODO: 광폭화 소리·연출 — 고블린 대전사·짝 잃은 슬라임 기사가 광폭화할 때 지금은 "광폭화!" 글자만 뜬다. 낮게 으르렁 올라가는 효과음 `Enrage`(Tools/AudioGen) + 짧은 화면 흔들림(`CameraFollow.ShakeMain`)을 `EnrageAbility.Begin`에 더한다
+- TODO: 일시정지 메뉴 안내 문구 "스테이지 1은 15분 안팎" → 지금 기준(15~30분)으로 고치기
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
