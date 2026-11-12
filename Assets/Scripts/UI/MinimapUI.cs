@@ -29,6 +29,7 @@ namespace IBlameYou.UI
         private static readonly Color TreasureColor = new Color(1f, 0.85f, 0.3f);   // gold
         private static readonly Color RestColor = new Color(0.5f, 0.97f, 1f);       // aqua
         private static readonly Color StartColor = new Color(0.6f, 1f, 0.45f);
+        private static readonly Color VillageColor = new Color(1f, 0.63f, 0.48f);   // 살구색 (NPC 마을, #ffa07a)
 
         private ChunkStreamer streamer;
         private PlayerControlState control;
@@ -316,7 +317,7 @@ namespace IBlameYou.UI
             public bool Loaded;
             public GUIStyle Tile;
             public GUIStyle Panel;
-            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock, Check;
+            public Texture2D Boss, MidBoss, Elite, Treasure, Rest, Start, Lock, Check, Village;
         }
 
         private static MapArt art;
@@ -335,6 +336,7 @@ namespace IBlameYou.UI
             art.Start = Resources.Load<Texture2D>("UI/HUD/Flag");
             art.Lock = Resources.Load<Texture2D>("UI/HUD/MapLock");
             art.Check = Resources.Load<Texture2D>("UI/HUD/MapCheck");
+            art.Village = Resources.Load<Texture2D>("UI/HUD/MapHouse"); // NPC 마을 (Tools/ArtGen/generate_hud.py)
         }
 
         private static GUIStyle NineSlice(string path, int border)
@@ -356,6 +358,7 @@ namespace IBlameYou.UI
                 case RoomKind.Treasure: return art.Treasure;
                 case RoomKind.Spring: return art.Rest; // 숨 고르기 방(Rest)은 체크포인트 제거(2026-11-10)로 표시 없음
                 case RoomKind.Start: return art.Start;
+                case RoomKind.Village: return art.Village;
                 default: return null;
             }
         }
@@ -388,14 +391,14 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을", legend);
                 return;
             }
 
             var items = new[]
             {
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Check, "돌파")
+                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Village, "마을"), (art.Check, "돌파")
             };
             float itemWidth = Mathf.Min(92f, rect.width / items.Length); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * items.Length / 2f;
@@ -472,6 +475,7 @@ namespace IBlameYou.UI
                 case RoomKind.Treasure: return TreasureColor;
                 case RoomKind.Spring: return RestColor; // 숨 고르기 방(Rest)은 표시 없음
                 case RoomKind.Start: return StartColor;
+                case RoomKind.Village: return VillageColor;
                 default: return null;
             }
         }
