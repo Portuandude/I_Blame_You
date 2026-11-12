@@ -39,6 +39,12 @@ namespace IBlameYou.Systems
         private float nextWhooshTime;
         private float magnetRadius = IBlameYou.Player.RelicBook.MagnetRadius;
         private float magnetRelicTimer;
+        private SpriteRenderer orbRenderer;
+        private float trailTimer;
+        // 자석 꼬리: 끌려오는 동안 구슬 뒤로 분홍 잔상이 짧게 남는다 (Afterimage, 빨라졌을 때만)
+        private const float TrailInterval = 0.05f;
+        private const float TrailMinSpeed = 3f;
+        private static readonly Color TrailColor = new Color(1f, 0.6f, 0.75f);
         private const float WhooshCooldown = 0.6f;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
@@ -61,6 +67,7 @@ namespace IBlameYou.Systems
             var renderer = EffectLibrary.CreateVisual(go.transform, "Orb", frames, 10f, true,
                 new Color(1f, 0.45f, 0.55f), 0.7f, 3);
             reward.visual = renderer.transform;
+            reward.orbRenderer = renderer;
             reward.visual.localPosition = new Vector3(0f, FloatHeight, 0f);
 
             var rimGo = new GameObject("HoneyRim");
@@ -120,6 +127,16 @@ namespace IBlameYou.Systems
             Vector3 goal = magnetTarget.position + Vector3.up * 0.6f;
             Vector3 next = Vector3.MoveTowards(orbCenter, goal, magnetSpeed * Time.deltaTime);
             transform.position += next - orbCenter;
+
+            if (magnetSpeed >= TrailMinSpeed)
+            {
+                trailTimer -= Time.deltaTime;
+                if (trailTimer <= 0f)
+                {
+                    trailTimer = TrailInterval;
+                    Afterimage.Spawn(orbRenderer, TrailColor, 0.5f, 0.18f);
+                }
+            }
         }
 
         private Transform FindMagnetTarget()
