@@ -8,7 +8,7 @@ namespace IBlameYou.Tests.EditMode
         [Test]
         public void With_AddsBit_HasReadsIt()
         {
-            int mask = RelicCodex.With(0, 3);
+            long mask = RelicCodex.With(0, 3);
             mask = RelicCodex.With(mask, 17);
             Assert.IsTrue(RelicCodex.Has(mask, 3));
             Assert.IsTrue(RelicCodex.Has(mask, 17));
@@ -19,16 +19,16 @@ namespace IBlameYou.Tests.EditMode
         [Test]
         public void OutOfRange_Ignored()
         {
-            Assert.AreEqual(5, RelicCodex.With(5, -1));
-            Assert.AreEqual(5, RelicCodex.With(5, 31));
-            Assert.IsFalse(RelicCodex.Has(-1, 31));
+            Assert.AreEqual(5L, RelicCodex.With(5, -1));
+            Assert.AreEqual(5L, RelicCodex.With(5, 62));
+            Assert.IsFalse(RelicCodex.Has(-1, 62));
             Assert.IsFalse(RelicCodex.Has(-1, -1));
         }
 
         [Test]
         public void Count_And_Summary()
         {
-            int mask = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 5), 20);
+            long mask = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 5), 20);
             Assert.AreEqual(3, RelicCodex.Count(mask, 21));
             Assert.AreEqual(2, RelicCodex.Count(mask, 18), "전체 수 밖의 번호는 세지 않는다");
             Assert.AreEqual("유물 도감 2/18", RelicCodex.Summary(mask, 18));
@@ -38,12 +38,12 @@ namespace IBlameYou.Tests.EditMode
         [Test]
         public void Complete_Needs_Every_Relic()
         {
-            int all3 = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 1), 2);
+            long all3 = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 1), 2);
             Assert.IsTrue(RelicCodex.Complete(all3, 3));
             Assert.IsFalse(RelicCodex.Complete(all3, 4), "하나 빠지면 미완성");
             Assert.IsTrue(RelicCodex.Complete(all3 | (1 << 9), 3), "전체 수 밖의 번호는 상관없다");
             Assert.IsFalse(RelicCodex.Complete(0, 0), "유물이 없으면 완성도 없다");
-            Assert.IsFalse(RelicCodex.Complete(-1, 32), "31종을 넘으면 담을 수 없다");
+            Assert.IsFalse(RelicCodex.Complete(-1, 63), "62종을 넘으면 담을 수 없다");
             Assert.AreEqual("유물 도감 3/3 ★", RelicCodex.Summary(all3, 3));
             Assert.AreEqual("유물 도감 3/4", RelicCodex.Summary(all3, 4));
         }
@@ -79,6 +79,40 @@ namespace IBlameYou.Tests.EditMode
         {
             Assert.AreEqual(RelicCodex.GridMaxCellHeight, RelicCodex.GridCellHeight(4, 2000f));
             Assert.AreEqual(RelicCodex.GridMinCellHeight, RelicCodex.GridCellHeight(8, 300f));
+        }
+
+        // 2026-11-12: 31종을 넘는 유물도 담는다 (int → long). 31번 이후 비트도 쓰고 센다.
+        [Test]
+        public void HoldsRelicsPast31()
+        {
+            long mask = RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 30), 31), 61);
+            Assert.IsTrue(RelicCodex.Has(mask, 30));
+            Assert.IsTrue(RelicCodex.Has(mask, 31));
+            Assert.IsTrue(RelicCodex.Has(mask, 61));
+            Assert.IsFalse(RelicCodex.Has(mask, 32));
+            Assert.AreEqual(3, RelicCodex.Count(mask, 62));
+            long all40 = 0;
+            for (int i = 0; i < 40; i++) all40 = RelicCodex.With(all40, i);
+            Assert.IsTrue(RelicCodex.Complete(all40, 40));
+            Assert.AreEqual("유물 도감 40/40 ★", RelicCodex.Summary(all40, 40));
+        }
+
+        // 저장은 31비트씩 둘로 (PlayerPrefs int). 예전 int 저장값은 Low로 그대로 읽히고, 나눴다 합치면 원래대로.
+        [Test]
+        public void SplitsForSaveAndJoinsBack()
+        {
+            long mask = RelicCodex.With(RelicCodex.With(RelicCodex.With(RelicCodex.With(0, 0), 28), 30), 31);
+            mask = RelicCodex.With(mask, 61);
+            int low = RelicCodex.Low(mask);
+            int high = RelicCodex.High(mask);
+            Assert.GreaterOrEqual(low, 0);
+            Assert.GreaterOrEqual(high, 0);
+            Assert.AreEqual(mask, RelicCodex.Join(low, high));
+            Assert.AreEqual((1 << 0) | (1 << 28) | (1 << 30), low);
+            Assert.AreEqual(1 | (1 << 30), high);
+            int oldSave = (1 << 3) | (1 << 27); // 예전 int 기록 (28종 시절)
+            Assert.AreEqual((long)oldSave, RelicCodex.Join(oldSave, 0));
+            Assert.AreEqual((long)int.MaxValue, RelicCodex.Join(-1, 0), "부호 비트는 버린다");
         }
     }
 }
