@@ -3,7 +3,7 @@ using UnityEngine;
 namespace IBlameYou.Systems
 {
     // 동굴 천장의 종유석: 플레이어가 바로 아래로 오면 잠깐 흔들려 예고하고 떨어진다.
-    // 떨어지는 동안 닿으면 물리 피해, 땅(발판 포함)에 닿거나 너무 멀리 떨어지면 부서진다. 몇 초 뒤 천장에서 다시 자란다.
+    // 떨어지는 동안 닿으면 물리 피해(적은 2배), 땅(발판 포함)에 닿거나 너무 멀리 떨어지면 부서진다. 몇 초 뒤 천장에서 다시 자란다.
     // 매달려 있을 때는 몸이 없어서 점프하다 머리를 부딪히지 않는다 (동굴 천장이 바닥 + 5~6칸이라 매달린 칸에 머리가 닿는다).
     public class Stalactite : MonoBehaviour
     {
@@ -17,6 +17,7 @@ namespace IBlameYou.Systems
         private const float RegrowDelay = 5f;
         private const float RegrowTime = 0.6f;
         private const float DamageMultiplier = 1f;
+        private const float EnemyDamageMultiplier = 2f; // 적에게는 2배: 종유석 아래로 적을 끌어들이면 이득이 되게
         private const float SoundRange = 12f;          // FlameJetTrap과 같다
         private const float TipOffset = 0.45f;         // 그림 가운데에서 뾰족한 끝까지
         private const float LookupInterval = 0.5f;     // 플레이어를 못 찾았을 때 다시 찾는 간격
@@ -193,12 +194,30 @@ namespace IBlameYou.Systems
         {
             if (phase != Phase.Fall) return;
             var player = TrapCommon.PlayerFrom(other);
-            if (player == null) return;
+            if (player == null)
+            {
+                StrikeEnemy(other);
+                return;
+            }
 
             var health = player.GetComponent<HealthSystem>();
             if (health == null || health.IsDead || health.IsInvulnerable) return;
 
             TrapCommon.Strike(player, DamageKind.Physical, Element.Neutral, DamageMultiplier);
+            Shatter();
+        }
+
+        // 떨어지는 종유석은 적도 맞힌다 (함정 중 유일하게: 플레이어가 적을 아래로 끌어들일 수 있다).
+        // 적의 감지 범위 같은 트리거 콜라이더는 몸이 아니므로 무시한다. 맞히면 부서진다.
+        private void StrikeEnemy(Collider2D other)
+        {
+            if (other == null || other.isTrigger) return;
+            var enemy = other.GetComponentInParent<IBlameYou.Enemies.EnemyController>();
+            if (enemy == null) return;
+            var health = enemy.GetComponent<HealthSystem>();
+            if (health == null || health.IsDead || health.IsInvulnerable) return;
+
+            DamageCalculator.Strike(TrapCommon.Source, enemy, DamageKind.Physical, Element.Neutral, EnemyDamageMultiplier);
             Shatter();
         }
 
