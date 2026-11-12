@@ -311,5 +311,35 @@ namespace IBlameYou.Tests
             Assert.Greater(shaftGates, 0, "세로 곁방 협동 봉인문이 한 번도 안 나옴");
             Assert.Greater(sideGates + shaftGates, 5, "협동 봉인문이 너무 드묾");
         }
+
+        // 봉인문 벽은 방 안 좌표로 잰 빈 열만 막는다: 바닥 칸부터 첫 막힌 칸 아래까지, 지형 칸과 겹치지 않는다.
+        // (2026-11-12 플레이테스트 버그: 높이를 월드 y로 재서 아래 줄 방의 문이 위 방 지형까지 뚫고 올라갔다)
+        [Test]
+        public void GatesNeverOverlapTerrain()
+        {
+            int gates = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    var chunk = RoomShaper.Build(seed, room).Chunk;
+                    foreach (var gate in chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate))
+                    {
+                        gates++;
+                        string where = $"seed {seed} room {room.Index} ({room.Kind}, Y {room.Y}) gate ({gate.X},{gate.Y})";
+                        int height = chunk.GateHeight(gate.X, gate.Y);
+                        Assert.GreaterOrEqual(height, 4, $"{where}: 문양 두 개가 들어갈 높이");
+                        Assert.IsTrue(chunk.IsSolid(gate.X, gate.Y - 1), $"{where}: 바닥 위에 선다");
+                        for (int y = gate.Y; y < gate.Y + height && y < ChunkData.Height; y++)
+                            Assert.IsFalse(chunk.IsSolid(gate.X, y), $"{where}: ({gate.X},{y}) 지형과 겹침");
+                        if (gate.Y + height < ChunkData.Height)
+                            Assert.IsTrue(chunk.IsSolid(gate.X, gate.Y + height), $"{where}: 천장까지 막아야 넘지 못함");
+                        else
+                            Assert.AreEqual(ChunkData.Height + ChunkData.GateOverTop, gate.Y + height, where);
+                    }
+                }
+            }
+            Assert.Greater(gates, 5, "봉인문이 너무 드묾");
+        }
     }
 }
