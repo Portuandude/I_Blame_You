@@ -55,7 +55,7 @@ namespace IBlameYou.Player
         {
             if (Input.GetKeyDown(KeyCode.W))
             {
-                interactWDownAt = Time.unscaledTime;
+                interactWDownAt = state.AKeyboardBlocked || state.MovementFrozen ? -1f : Time.unscaledTime; // 잠긴 동안(창을 W로 닫은 프레임 등) 누른 W는 톡으로 치지 않는다
                 interactEnterDuringW = false;
             }
             if (Input.GetKey(KeyCode.W) && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))) interactEnterDuringW = true;
