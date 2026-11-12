@@ -106,6 +106,12 @@ namespace IBlameYou.Systems
         // 보스를 마지막으로 쓰러뜨린 순간은 BossDefeatFx 슬로모션이 먼저 걸려 HitStop은 timeScale이 1이 아니라 저절로 빠진다.
         private static void PlayHitFeel(CombatStats attacker, HealthSystem health, bool critical)
         {
+            // 플레이어가 맞았을 때도 아주 짧게 멈춰 "맞았다"를 몸으로 느끼게 (함정 포함). 쓰러지는 일격은 사망 연출 슬로모션이 먼저 걸려 저절로 빠진다
+            if (!health.IsDead && health.GetComponent<IBlameYou.Player.PlayerCombat>() != null)
+            {
+                HitStop.Play(HitStop.HurtDuration);
+                return;
+            }
             if (attacker == null || attacker.GetComponent<IBlameYou.Player.PlayerCombat>() == null) return;
             var enemy = health.GetComponent<IBlameYou.Enemies.EnemyController>();
             if (enemy == null) return;

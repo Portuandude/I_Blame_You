@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 히트스톱 (전투 손맛, 2026-11-12): 플레이어 공격이 적을 쓰러뜨리거나 치명타가 들어간 순간 시간이 아주 잠깐 거의 멈춘다.
+    // 히트스톱 (전투 손맛, 2026-11-12): 플레이어 공격이 적을 쓰러뜨리거나 치명타가 들어간 순간, 플레이어가 맞은 순간 시간이 아주 잠깐 거의 멈춘다.
     // - 길이는 실제 시간으로 잰다. timeScale이 1일 때만 걸고, 끝날 때 아직 이 값(StopScale)일 때만 1로 되돌린다
     //   (그사이 일시정지·특성 창·유물 창·보스 격파 슬로모션·사망 연출이 timeScale을 바꿨으면 그쪽이 되돌리게 둔다. BossDefeatFx와 같은 규칙).
     // - 이미 멈춰 있는 중에 더 긴 요청이 오면 끝나는 시각만 늦춘다. 광역 마법이 여러 마리를 한꺼번에 쓰러뜨려도
@@ -13,6 +13,7 @@ namespace IBlameYou.Systems
         public const float KillDuration = 0.05f;   // 일반 적을 쓰러뜨렸을 때 (실제 시간, 초)
         public const float CritDuration = 0.03f;   // 치명타 (쓰러뜨리지 않았을 때)
         public const float EliteDuration = 0.09f;  // 정예 (어미 슬라임·고블린 대전사)를 쓰러뜨렸을 때
+        public const float HurtDuration = 0.04f;   // 플레이어가 맞았을 때 (쓰러지지 않았을 때)
         public const float Cooldown = 0.12f;       // 끝난 뒤 이 동안은 새로 걸지 않는다
 
         private static HitStop instance;
