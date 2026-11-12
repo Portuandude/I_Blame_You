@@ -546,6 +546,20 @@ def elite_warn():
     return normalize(fade_edges(out))
 
 
+def enrage():
+    """광폭화: 낮은 톱니 으르렁(빠른 트레몰로)이 한 옥타브 위로 끌려 올라가고 끝에 쿵, 약 0.8초. 무섭지만 짧게."""
+    n = int(0.8 * SR)
+    t = np.arange(n) / SR
+    f = note_hz("E2") * (1 + np.clip(t / 0.6, 0, 1))  # 0.6초 동안 한 옥타브 위로
+    growl = osc("saw", f, n) * (0.55 + 0.45 * np.sin(2 * np.pi * 22 * t))
+    growl = lowpass(growl, 1200) * env_adsr(n, 0.02, 0.1, 0.8, 0.2) * 0.55
+    rasp = bandpass(noise(n), 300, 1500) * env_adsr(n, 0.02, 0.1, 0.5, 0.2) * 0.15
+    out = growl + rasp
+    m = int(0.3 * SR)
+    tb = np.arange(m) / SR
+    mix_at(out, osc("sine", 110 * np.exp(-tb * 12) + 40, m) * env_exp(m, 0.12) * 0.8, int(0.5 * SR))
+    return normalize(fade_edges(out))
+
 def village_found():
     """마을 첫 발견: 오르골 세 음 G5-C6-E6 + 마지막 음 길게, 약 1.4초 (music_box는 배경음악 쪽에 있다)."""
     n = int(1.4 * SR)
@@ -987,7 +1001,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
-        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
+        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
