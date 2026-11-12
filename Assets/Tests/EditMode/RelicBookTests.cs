@@ -156,7 +156,6 @@ namespace IBlameYou.Tests
             Assert.AreEqual("공용", RelicBook.Owner(RelicId.PiggyBank));
             Assert.AreEqual("마을에 처음 들어가면 가진 골드의 25% 이자 (최대 50)", RelicBook.Description(RelicId.PiggyBank));
             Assert.Contains(RelicId.PiggyBank, RelicBook.All);
-            Assert.AreEqual(29, RelicBook.All.Length);
             Assert.AreEqual(0, RelicBook.PiggyBankInterest(-5));
             Assert.AreEqual(0, RelicBook.PiggyBankInterest(0));
             Assert.AreEqual(0, RelicBook.PiggyBankInterest(3));
@@ -165,6 +164,18 @@ namespace IBlameYou.Tests
             Assert.AreEqual(49, RelicBook.PiggyBankInterest(199));
             Assert.AreEqual(50, RelicBook.PiggyBankInterest(200));
             Assert.AreEqual(50, RelicBook.PiggyBankInterest(1000));
+        }
+
+        // 보물 지도 (2026-11-12): 미니맵에 마을 위치. 맨 뒤 번호 29, 공용.
+        [Test]
+        public void TreasureMap_ChartsVillage()
+        {
+            Assert.AreEqual(29, (int)RelicId.TreasureMap);
+            Assert.AreEqual("보물 지도", RelicBook.Name(RelicId.TreasureMap));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.TreasureMap));
+            Assert.AreEqual("미니맵에 마을 위치가 미리 보인다", RelicBook.Description(RelicId.TreasureMap));
+            Assert.Contains(RelicId.TreasureMap, RelicBook.All);
+            Assert.AreEqual(30, RelicBook.All.Length);
         }
 
         [Test]
