@@ -27,6 +27,7 @@ namespace IBlameYou.Core
             GameSession.DevMode = PlayerPrefs.GetInt(KeyDevMode, GameSession.DevMode ? 1 : 0) != 0;
             GameAudio.MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, GameAudio.MusicVolume));
             GameAudio.SfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, GameAudio.SfxVolume));
+            DisplaySettings.Load(); // 해상도·창 모드 적용, 16:9 레터박스
         }
 
         public static void SaveSettings()
@@ -56,6 +57,7 @@ namespace IBlameYou.Core
         // 클리어 시간을 기록한다. 이전 기록보다 빠르면(또는 첫 기록이면) true.
         public static bool RecordClearTime(float seconds)
         {
+            if (GameSession.FeatureTest) return false; // 기능 테스트 모드는 기록하지 않는다
             if (seconds <= 0f) return false;
             bool dev = GameSession.DevMode;
             float best = BestClearTime(dev);
@@ -68,6 +70,7 @@ namespace IBlameYou.Core
         // 최근 클리어 기록 5개 (걸린 시간·목표 시간·방 수, ClearPace.AddRecent 형식). 모드별로 따로.
         public static void RecordRecentClear(float seconds, float targetSeconds, int rooms)
         {
+            if (GameSession.FeatureTest) return;
             if (seconds <= 0f) return;
             string key = ModeKey(KeyRecentClears, GameSession.DevMode);
             PlayerPrefs.SetString(key, ClearPace.AddRecent(PlayerPrefs.GetString(key, ""), seconds, targetSeconds, rooms));
@@ -81,6 +84,7 @@ namespace IBlameYou.Core
         // 최근 쓰러진 곳 5개 (진행도·주 경로 순번·방 수, ClearPace.AddRecentDefeat 형식). 모드별로 따로. 어려운 구간 찾기용.
         public static void RecordRecentDefeat(float progress, int pathStep, int mainRooms)
         {
+            if (GameSession.FeatureTest) return;
             string key = ModeKey(KeyRecentDefeats, GameSession.DevMode);
             PlayerPrefs.SetString(key, ClearPace.AddRecentDefeat(PlayerPrefs.GetString(key, ""), progress, pathStep, mainRooms));
             PlayerPrefs.Save();
@@ -97,6 +101,7 @@ namespace IBlameYou.Core
         // 최근 10판 "누구 탓?" 판정 (BlameVerdict.AddRecent 형식). 모드별로 따로. 클리어·게임오버 모두.
         public static void RecordBlame(float wastedA, float wastedB)
         {
+            if (GameSession.FeatureTest) return;
             string key = ModeKey(KeyRecentBlame, GameSession.DevMode);
             PlayerPrefs.SetString(key, BlameVerdict.AddRecent(PlayerPrefs.GetString(key, ""), BlameVerdict.Judge(wastedA, wastedB)));
             PlayerPrefs.Save();
@@ -108,6 +113,7 @@ namespace IBlameYou.Core
         // 유물을 고르면 도감에 남긴다. 처음 고른 유물이면 true.
         public static bool RecordRelic(int relicId)
         {
+            if (GameSession.FeatureTest) return false; // 기능 테스트 모드는 기록하지 않는다
             bool dev = GameSession.DevMode;
             int mask = RelicCodexMask(dev);
             if (RelicCodex.Has(mask, relicId)) return false;
@@ -131,6 +137,7 @@ namespace IBlameYou.Core
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)
         {
+            if (GameSession.FeatureTest) return false; // 기능 테스트 모드는 기록하지 않는다
             bool dev = GameSession.DevMode;
             if (level <= BestLevel(dev)) return false;
             PlayerPrefs.SetInt(ModeKey(KeyBestLevel, dev), level);

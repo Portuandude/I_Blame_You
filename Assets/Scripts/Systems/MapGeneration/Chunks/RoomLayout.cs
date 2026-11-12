@@ -4,6 +4,8 @@ using System.Collections.Generic;
 namespace IBlameYou.Systems
 {
     // 방 격자형 스테이지의 배치 (Docs/LevelDesign.md). 던그리드·아이작처럼 방들이 격자 칸에 놓이고 문으로 이어진다.
+    // 스테이지 1 = 가로 4 × 세로 3 격자에 방 9~12개 (2026-11-12 사람 확정). 시작 방은 가운데 줄 안쪽 두 칸 중 하나,
+    // 방들은 나무 모양(고리 없음)으로 이어지고, 시작 방에서 멀수록(방 거리) 어렵다. 가장 먼 방이 보스, 중간 거리에 중간보스.
     // 방 하나 = 격자 한 칸 = 화면 하나. 방 안의 지형은 청크 생성기(ChunkGenerator)가 만들고, 여기서는 어느 칸에 어떤 방이
     // 어느 문으로 이어지는지만 정한다. UnityEngine 없이 돌아서 EditMode 테스트와 Tools/StageGen에서 그대로 검증한다.
 
@@ -25,7 +27,7 @@ namespace IBlameYou.Systems
         Combat,    // 들어가면 문이 잠기는 전투 방
         Elite,     // 정예 전투 방 (유물 상자)
         Rest,      // 숨 고르기 방 (전투 사이 완충. 체크포인트는 2026-11-10 제거)
-        MidBoss,   // 중간보스 방 (경로의 55%)
+        MidBoss,   // 중간보스 방 (보스까지 거리의 55% 안팎)
         Boss,      // 마지막 방 + 출구
         Treasure,  // 막다른 곁방: 유물 상자
         Spring     // 막다른 곁방: 회복 샘
@@ -43,7 +45,9 @@ namespace IBlameYou.Systems
         public DoorDir ExitDoor;     // 주 경로에서 나가는 문 (보스 방과 곁방은 None)
         public bool MainPath;        // 시작 → 보스 경로 위의 방
         public int PathIndex = -1;   // 주 경로 순번 (곁방은 -1)
-        public int ParentIndex = -1; // 곁방이 붙은 주 경로 방의 Index
+        public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (진행도·"쓰러진 곳" 기준)
+        public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
+        public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
 
         // 위/아래 문이 있는 방은 세로로 오르내리는 방(탑·굴)이다.
         // 곁방으로 가는 위/아래 문도 포함한다 (지형을 세로 방으로 만들어야 하므로).
@@ -82,67 +86,373 @@ namespace IBlameYou.Systems
 
     public static class RoomLayout
     {
-        public const float MidBossProgress = 0.55f;  // 중간보스는 주 경로의 55% 지점 (사람 결정 2026-11-09)
-        public const int MaxRise = 4;                // 시작 방 높이에서 위아래로 이만큼까지만
-        public const int MaxVerticalRun = 2;         // 위/아래로 연달아 이어지는 방은 최대 2번
-        public const int MinSideRooms = 2;
-        public const int MaxSideRooms = 4;
-        private const int SideSalt = 0x5eed;
+        public const int GridWidth = 4;
+        public const int GridHeight = 3;
+        public const int MinRooms = 9;
+        public const int MaxRooms = 12;
+        public const int MinBossDistance = 4;        // 시작 → 보스 문 수 (중간보스 앞뒤에 방이 하나씩은 있게)
+        public const float MidBossProgress = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
+        public const int MinRewardRooms = 2;         // 막다른 보상 곁방 (보물 상자 / 회복 샘)
+        public const int MaxRewardRooms = 3;
+        public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
+        public const float MaxSeconds = 30f * 60f;
+        public const float BacktrackSeconds = 12f;   // 곁가지를 들어갔다 나오는 데 문 하나당 더 드는 시간 (어림)
+        private const int MaxAttempts = 400;
+        private const int MaxElites = 2;
+        public const int MinFights = 1;              // 중간보스·보스 말고 일반/정예 전투 방 최소 수
+        public const float MinFightDifficulty = 0.15f; // 시작 방 바로 옆은 보스 거리가 짧을 때(4~5)만 전투 방이 될 수 있다
 
-        // 주 경로 방 순서는 StagePlanner의 청크 순서를 그대로 쓰고, 55% 자리에 중간보스 방을 끼운다.
+        private static readonly DoorDir[] Dirs = { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down };
+
+        // targetSeconds: 목표 시간 (15~30분으로 자른다). 방 수와 전투 방 수가 이것을 따라간다.
         public static RoomLayoutData Generate(int seed, float targetSeconds)
         {
-            var plan = StagePlanner.Plan(seed, PlanSeconds(targetSeconds));
-            var path = new List<(RoomKind kind, ChunkKind chunk, float difficulty)>();
-            foreach (var entry in plan) path.Add((KindOf(entry.Key), entry.Key, entry.Value));
-
-            int midIndex = PickMidBossIndex(path);
-            float midDifficulty = path[Math.Min(midIndex, path.Count - 1)].difficulty;
-            path.Insert(midIndex, (RoomKind.MidBoss, ChunkKind.EliteArena, midDifficulty));
-            // 방 리듬: 중간보스 바로 뒤는 숨 고르기 방 (문 잠기는 방이 연달아 오지 않게). 이미 휴식이면 그대로
-            if (path[midIndex + 1].kind != RoomKind.Rest)
-                path.Insert(midIndex + 1, (RoomKind.Rest, ChunkKind.Rest, midDifficulty));
-
-            var layout = new RoomLayoutData { Seed = seed, MidBossPathIndex = midIndex };
+            float target = Math.Max(MinSeconds, Math.Min(MaxSeconds, targetSeconds));
             var rng = new Random(seed);
-            PlaceMainPath(layout, path, rng);
-            PlaceSideRooms(layout, new Random(seed ^ SideSalt));
-            UpdateBounds(layout);
+            RoomLayoutData best = null;
+            for (int attempt = 0; attempt < MaxAttempts && best == null; attempt++)
+                best = TryBuild(seed, rng, target);
+            if (best == null) best = Snake(seed, target); // 이론상 오지 않는다 (테스트가 지킨다)
+            return best;
+        }
+
+        // 방 거리 기준 예상 시간: 방마다 StagePlanner 어림 + 곁가지 왕복(문 하나당 BacktrackSeconds × 2).
+        public static float EstimatedSeconds(RoomLayoutData layout)
+        {
+            float total = 0f;
+            foreach (var room in layout.Rooms)
+            {
+                total += room.Kind == RoomKind.MidBoss ? StagePlanner.EstimatedSeconds(ChunkKind.EliteArena) : StagePlanner.EstimatedSeconds(room.Chunk);
+                if (!room.MainPath) total += 2f * BacktrackSeconds;
+            }
+
+            return total;
+        }
+
+        private static RoomLayoutData TryBuild(int seed, Random rng, float target)
+        {
+            // 목표가 길수록 방이 많다 (15분 → 9~11, 30분 → 12)
+            float t = (target - MinSeconds) / (MaxSeconds - MinSeconds);
+            int count = Math.Min(MaxRooms, rng.Next(MinRooms, MaxRooms) + (int)Math.Round(t * 3));
+            int startX = rng.Next(1, 3);
+            var cells = new bool[GridWidth, GridHeight];
+            cells[startX, 1] = true;
+            var free = new List<(int x, int y)>();
+            for (int x = 0; x < GridWidth; x++)
+                for (int y = 0; y < GridHeight; y++)
+                    if (!(x == startX && y == 1)) free.Add((x, y));
+            Shuffle(free, rng);
+            for (int i = 0; i < count - 1; i++) cells[free[i].x, free[i].y] = true;
+
+            var layout = new RoomLayoutData { Seed = seed };
+            var byCell = new RoomData[GridWidth, GridHeight];
+            var order = new List<(int x, int y)> { (startX, 1) };
+            for (int y = 0; y < GridHeight; y++)
+                for (int x = 0; x < GridWidth; x++)
+                    if (cells[x, y] && !(x == startX && y == 1)) order.Add((x, y));
+            foreach (var cell in order)
+            {
+                var room = new RoomData { X = cell.x, Y = cell.y };
+                byCell[cell.x, cell.y] = room;
+                layout.Rooms.Add(room);
+            }
+
+            if (!BuildTree(layout, byCell, rng)) return null;
+            if (!Measure(layout, byCell[startX, 1], out var boss)) return null;
+
+            MarkMainPath(layout, boss);
+            if (!AssignKinds(layout, rng, target)) return null;
+            Reindex(layout);
+            layout.MinX = 0;
+            layout.MaxX = GridWidth - 1;
+            layout.MinY = 0;
+            layout.MaxY = GridHeight - 1;
             return layout;
         }
 
-        // 방 격자 모드는 계획에 중간보스 방과 그 뒤 숨 고르기 방이 더 끼므로, 그 몫을 빼고 계획해 전체가 목표 시간에 맞게 한다.
-        public static float PlanSeconds(float targetSeconds) =>
-            targetSeconds - StagePlanner.EstimatedSeconds(ChunkKind.EliteArena) - StagePlanner.EstimatedSeconds(ChunkKind.Rest);
+        // 나무 잇기 (무작위 크루스칼): 이웃 칸 사이 이음마다 무작위 값을 매기고 작은 것부터 고리가 생기지 않게 잇는다.
+        // 위/아래 이음은 값에 VerticalPenalty를 더해 덜 고른다 (세로 방은 전투·퍼즐이 될 수 없어서). 시작 방은 위/아래 문을 갖지 않는다.
+        public const double VerticalPenalty = 0.45;
 
-        // 방 count개짜리 주 경로에서 중간보스가 설 순번.
-        public static int MidBossIndex(int count) => (int)Math.Round(MidBossProgress * (count - 1), MidpointRounding.AwayFromZero);
-
-        // 중간보스를 끼울 자리 (path[index] 앞). 바로 앞 방이 문 잠기는 전투 방이 아닌 자리 중에서, 끼운 뒤 최종 경로
-        // (중간보스 + 뒤 휴식 방이 새로 들어가는지까지 셈)에서의 진행도가 55%에 가장 가까운 곳을 고른다.
-        // 바로 뒤가 전투 방이어도 사이에 휴식 방이 들어가므로 괜찮다. 마땅한 곳이 없으면 55% 자리 (경로 안으로 자름).
-        internal static int PickMidBossIndex(List<(RoomKind kind, ChunkKind chunk, float difficulty)> path)
+        private static bool BuildTree(RoomLayoutData layout, RoomData[,] byCell, Random rng)
         {
-            int best = -1;
-            double bestGap = double.MaxValue;
-            for (int k = 2; k <= path.Count - 2; k++)
-            {
-                if (IsFight(path[k - 1].kind)) continue;
-                int final = path.Count + 1 + (path[k].kind != RoomKind.Rest ? 1 : 0);
-                double gap = Math.Abs(k / (double)(final - 1) - MidBossProgress);
-                if (gap < bestGap - 1e-9)
+            var start = layout.Rooms[0];
+            var edges = new List<(double key, RoomData a, RoomData b, DoorDir dir)>();
+            for (int y = 0; y < GridHeight; y++)
+                for (int x = 0; x < GridWidth; x++)
                 {
-                    best = k;
-                    bestGap = gap;
+                    var a = byCell[x, y];
+                    if (a == null) continue;
+                    if (x + 1 < GridWidth && byCell[x + 1, y] != null)
+                        edges.Add((rng.NextDouble(), a, byCell[x + 1, y], DoorDir.Right));
+                    if (y + 1 < GridHeight && byCell[x, y + 1] != null && a != start && byCell[x, y + 1] != start)
+                        edges.Add((rng.NextDouble() + VerticalPenalty, a, byCell[x, y + 1], DoorDir.Up));
+                }
+            edges.Sort((p, q) => p.key.CompareTo(q.key));
+
+            var parent = new Dictionary<RoomData, RoomData>();
+            foreach (var room in layout.Rooms) parent[room] = room;
+            Func<RoomData, RoomData> Find = r =>
+            {
+                while (parent[r] != r) r = parent[r] = parent[parent[r]];
+                return r;
+            };
+
+            int linked = 0;
+            foreach (var e in edges)
+            {
+                if (Find(e.a) == Find(e.b)) continue;
+                Link(e.a, e.b, e.dir);
+                parent[Find(e.a)] = Find(e.b);
+                linked++;
+            }
+
+            return linked == layout.Rooms.Count - 1;
+        }
+
+        private static bool IsVerticalRoom(RoomData room) => (room.Doors & (DoorDir.Up | DoorDir.Down)) != 0;
+
+        // a에서 dir 쪽 이웃 b와 문으로 잇는다.
+        private static void Link(RoomData a, RoomData b, DoorDir dir)
+        {
+            a.Doors |= dir;
+            b.Doors |= Opposite(dir);
+        }
+
+        // 시작 방에서 너비 우선으로 거리·부모를 매기고 보스 방을 고른다: 가장 먼 막다른 방 중 좌우 문 하나뿐인 방 (왼쪽 문 우선).
+        private static bool Measure(RoomLayoutData layout, RoomData start, out RoomData boss)
+        {
+            boss = null;
+            foreach (var room in layout.Rooms) room.Distance = -1;
+            start.Distance = 0;
+            var queue = new Queue<RoomData>();
+            queue.Enqueue(start);
+            while (queue.Count > 0)
+            {
+                var room = queue.Dequeue();
+                foreach (var dir in Dirs)
+                {
+                    if ((room.Doors & dir) == 0) continue;
+                    var next = layout.Neighbor(room, dir);
+                    if (next == null || next.Distance >= 0) continue;
+                    next.Distance = room.Distance + 1;
+                    next.TreeParentIndex = layout.Rooms.IndexOf(room);
+                    next.EntryDoor = Opposite(dir);
+                    queue.Enqueue(next);
                 }
             }
 
-            if (best >= 0) return best;
-            return Math.Max(0, Math.Min(MidBossIndex(path.Count + 2), path.Count - 1));
+            int far = 0;
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Distance < 0) return false;
+                far = Math.Max(far, room.Distance);
+            }
+            if (far < MinBossDistance) return false;
+
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Distance != far || room.IsVertical || DoorCount(room) != 1) continue;
+                if (boss == null || room.Doors == DoorDir.Left) boss = room;
+            }
+
+            return boss != null; // 왼쪽 문이면 지형 그대로, 오른쪽 문이면 RoomShaper가 보스 지형을 좌우로 뒤집는다
         }
 
-        private static bool IsFight(RoomKind kind) =>
-            kind == RoomKind.Combat || kind == RoomKind.Elite || kind == RoomKind.MidBoss || kind == RoomKind.Boss;
+        // 보스 → 시작으로 거슬러 올라가며 주 경로를 표시한다. 곁가지 방의 ParentIndex는 가장 가까운 주 경로 조상.
+        private static void MarkMainPath(RoomLayoutData layout, RoomData boss)
+        {
+            var room = boss;
+            while (room != null)
+            {
+                room.MainPath = true;
+                room.PathIndex = room.Distance;
+                if (room.TreeParentIndex < 0) break;
+                var up = layout.Rooms[room.TreeParentIndex];
+                up.ExitDoor = Opposite(room.EntryDoor);
+                room = up;
+            }
+
+            foreach (var r in layout.Rooms)
+            {
+                if (r.MainPath) continue;
+                var a = r;
+                while (!a.MainPath) a = layout.Rooms[a.TreeParentIndex];
+                r.ParentIndex = layout.Rooms.IndexOf(a);
+            }
+
+            float bossDistance = boss.Distance;
+            foreach (var r in layout.Rooms) r.Difficulty = Math.Min(1f, r.Distance / bossDistance);
+        }
+
+        // 방 종류: 시작·보스·중간보스(+뒤 휴식)·보상 곁방을 먼저 정하고, 나머지는 거리(난이도)에 따라 이동·퍼즐·전투.
+        private static bool AssignKinds(RoomLayoutData layout, Random rng, float target)
+        {
+            var start = layout.Rooms[0];
+            start.Kind = RoomKind.Start;
+            start.Chunk = ChunkKind.Start;
+            RoomData boss = null;
+            var path = new List<RoomData>();
+            foreach (var r in layout.Rooms) if (r.MainPath) path.Add(r);
+            path.Sort((a, b) => a.PathIndex.CompareTo(b.PathIndex));
+            boss = path[path.Count - 1];
+            boss.Kind = RoomKind.Boss;
+            boss.Chunk = ChunkKind.Boss;
+
+            // 중간보스: 주 경로 2 ~ 보스-2 중 좌우 방, 55%에 가장 가까운 곳. 바로 뒤 방은 숨 고르기
+            RoomData mid = null;
+            double bestGap = double.MaxValue;
+            for (int i = 2; i <= path.Count - 3; i++)
+            {
+                if (path[i].IsVertical) continue;
+                double gap = Math.Abs(i / (double)(path.Count - 1) - MidBossProgress);
+                if (gap < bestGap - 1e-9)
+                {
+                    bestGap = gap;
+                    mid = path[i];
+                }
+            }
+            if (mid == null) return false;
+            mid.Kind = RoomKind.MidBoss;
+            mid.Chunk = ChunkKind.EliteArena;
+            layout.MidBossPathIndex = mid.PathIndex;
+            var afterMid = path[mid.PathIndex + 1];
+            if (afterMid != boss)
+            {
+                afterMid.Kind = RoomKind.Rest;
+                afterMid.Chunk = ChunkKind.Rest;
+            }
+
+            // 보상 곁방: 주 경로 밖 막다른 방 중 2~3개 (먼 곳부터). 모자라면 이 배치는 버린다
+            var leaves = new List<RoomData>();
+            foreach (var r in layout.Rooms) if (!r.MainPath && DoorCount(r) == 1) leaves.Add(r);
+            if (leaves.Count < MinRewardRooms) return false;
+            // 세로 막다른 방부터 (세로 방은 전투·퍼즐이 될 수 없으니 보상으로 쓰는 게 낫다), 그다음 먼 곳부터
+            leaves.Sort((a, b) =>
+            {
+                if (a.IsVertical != b.IsVertical) return a.IsVertical ? -1 : 1;
+                return b.Distance.CompareTo(a.Distance);
+            });
+            int rewards = Math.Min(layout.Rooms.Count >= MaxRooms ? MaxRewardRooms : MinRewardRooms, leaves.Count);
+            for (int i = 0; i < rewards; i++)
+            {
+                leaves[i].Kind = i % 2 == 0 ? RoomKind.Treasure : RoomKind.Spring;
+                leaves[i].Chunk = ChunkKind.Rest;
+            }
+
+            // 나머지 방 (거리 순서로): 세로 문이 있으면 이동 방, 좌우 방은 이동·퍼즐·전투
+            var rest = new List<RoomData>();
+            foreach (var r in layout.Rooms) if (r.Chunk == ChunkKind.Start && r != start) rest.Add(r); // Chunk 기본값 = Start → 아직 안 정한 방
+            rest.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+            var last = ChunkKind.Start;
+            bool gatePlaced = false;
+            foreach (var r in rest)
+            {
+                r.Kind = RoomKind.Travel;
+                r.Chunk = StagePlanner.PickTravel(rng, r.Difficulty, last, !gatePlaced && !r.IsVertical);
+                if (r.IsVertical && r.Chunk == ChunkKind.ElementGate) r.Chunk = ChunkKind.Plains;
+                if (r.Chunk == ChunkKind.ElementGate) gatePlaced = true;
+                if (!r.IsVertical && (r.Chunk == ChunkKind.ElementGate || r.Chunk == ChunkKind.MovingBridge)) r.Kind = RoomKind.Puzzle;
+                last = r.Chunk;
+            }
+
+            // 이중 스위치 발판: 판마다 하나. 진행도 50%에 가장 가까운 좌우 이동·퍼즐 방
+            RoomData bridge = null;
+            // 주 경로 우선, 시작 방 바로 옆(거리 1)은 전투 방 후보로 남기려고 뒤로 미룬다
+            foreach (var r in rest)
+            {
+                if (r.IsVertical || r.Chunk == ChunkKind.ElementGate) continue;
+                if (bridge == null || BridgeScore(r) < BridgeScore(bridge)) bridge = r;
+            }
+            if (bridge == null) return false;
+            bridge.Kind = RoomKind.Puzzle;
+            bridge.Chunk = ChunkKind.SwitchBridge;
+
+            // 전투: 진행도 15% 이후 좌우 이동·퍼즐 방을 예상 시간이 목표에 닿을 때까지 전투 방으로 (멀수록 먼저 → 정예는 30% 이후 먼 곳에 최대 2개).
+            // 주 경로에서는 문 잠기는 방이 연달아 오지 않게 한다.
+            var candidates = new List<RoomData>();
+            foreach (var r in rest)
+                if (!r.IsVertical && r != bridge && r.Chunk != ChunkKind.ElementGate && r.Difficulty >= MinFightDifficulty) candidates.Add(r);
+            Shuffle(candidates, rng);
+            candidates.Sort((a, b) => b.Distance.CompareTo(a.Distance)); // List.Sort는 불안정하지만 난수 섞기 뒤라 같은 거리 안 순서는 시드마다 달라진다
+            int elites = 0;
+            int fights = 0;
+            foreach (var r in candidates)
+            {
+                if (fights >= MinFights && EstimatedSeconds(layout) >= target) break;
+                if (r.MainPath && (Locks(layout, path, r.PathIndex - 1) || Locks(layout, path, r.PathIndex + 1))) continue;
+                bool elite = elites < MaxElites && r.Difficulty >= 0.3f && rng.Next(3) == 0;
+                r.Kind = elite ? RoomKind.Elite : RoomKind.Combat;
+                r.Chunk = elite ? ChunkKind.EliteArena : ChunkKind.Arena;
+                if (elite) elites++;
+                fights++;
+            }
+
+            return fights >= MinFights; // 전투 방이 모자란 배치(세로 방이 너무 많은 경우)는 버린다
+        }
+
+        private static double BridgeScore(RoomData r) =>
+            Math.Abs(r.Difficulty - StagePlanner.SwitchBridgeProgress) + (r.Distance <= 1 ? 1.0 : 0.0) + (r.MainPath ? 0.0 : 0.6); // 주 경로 우선. 다만 4×3 격자의 주 경로는 대개 세로 방·중간보스·휴식·보스로 차서 곁가지에 놓인다
+
+        private static bool Locks(RoomLayoutData layout, List<RoomData> path, int index) =>
+            index >= 0 && index < path.Count && path[index].LocksDoors;
+
+        // 주 경로가 먼저(PathIndex 순), 곁가지가 뒤(거리 순)인 Rooms 순서로 다시 번호를 매긴다.
+        private static void Reindex(RoomLayoutData layout)
+        {
+            var old = new List<RoomData>(layout.Rooms);
+            var sorted = new List<RoomData>(layout.Rooms);
+            sorted.Sort((a, b) =>
+            {
+                if (a.MainPath != b.MainPath) return a.MainPath ? -1 : 1;
+                int c = a.Distance.CompareTo(b.Distance);
+                if (c != 0) return c;
+                c = a.Y.CompareTo(b.Y);
+                return c != 0 ? c : a.X.CompareTo(b.X);
+            });
+            var map = new Dictionary<int, int>();
+            for (int i = 0; i < sorted.Count; i++) map[old.IndexOf(sorted[i])] = i;
+            layout.Rooms.Clear();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var r = sorted[i];
+                r.Index = i;
+                if (r.TreeParentIndex >= 0) r.TreeParentIndex = map[r.TreeParentIndex];
+                if (r.ParentIndex >= 0) r.ParentIndex = map[r.ParentIndex];
+                layout.Rooms.Add(r);
+            }
+        }
+
+        // 비상용: 다른 난수열로 TryBuild를 더 오래 돌린다 (시드 0~2000 × 목표 10가지에서 한 번도 오지 않음)
+        private static RoomLayoutData Snake(int seed, float target)
+        {
+            var rng = new Random(seed ^ 0x51ab);
+            for (int i = 0; i < 10000; i++)
+            {
+                var layout = TryBuild(seed, rng, target);
+                if (layout != null) return layout;
+            }
+
+            throw new InvalidOperationException($"방 격자를 만들지 못함 (seed {seed})");
+        }
+
+        private static int DoorCount(RoomData room)
+        {
+            int n = 0;
+            foreach (var dir in Dirs) if ((room.Doors & dir) != 0) n++;
+            return n;
+        }
+
+        private static void Shuffle<T>(List<T> list, Random rng)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                var swap = list[i];
+                list[i] = list[j];
+                list[j] = swap;
+            }
+        }
 
         public static RoomKind KindOf(ChunkKind chunk)
         {
@@ -184,144 +494,6 @@ namespace IBlameYou.Systems
                 case DoorDir.Up: return DoorDir.Down;
                 case DoorDir.Down: return DoorDir.Up;
                 default: return DoorDir.None;
-            }
-        }
-
-        // 주 경로: 시작 방(0,0)에서 오른쪽으로 나아가며, 이동 방끼리는 가끔 위/아래로 이어진다.
-        // x는 줄지 않으므로 오른쪽 칸은 항상 비어 있다 (막다른 길이 생기지 않는다).
-        private static void PlaceMainPath(RoomLayoutData layout, List<(RoomKind kind, ChunkKind chunk, float difficulty)> path, Random rng)
-        {
-            int x = 0, y = 0, verticalRun = 0, verticalSteps = 0;
-            DoorDir lastVertical = DoorDir.None;
-            RoomData previous = null;
-            int lastChance = -1; // 위/아래로 이을 수 있는 마지막 순번
-            for (int i = 2; i < path.Count; i++)
-                if (CanBeVertical(path[i - 1].kind) && CanBeVertical(path[i].kind) && path[i - 1].kind != RoomKind.Start) lastChance = i;
-            for (int i = 0; i < path.Count; i++)
-            {
-                var room = new RoomData
-                {
-                    Index = layout.Rooms.Count, Kind = path[i].kind, Chunk = path[i].chunk, Difficulty = path[i].difficulty,
-                    MainPath = true, PathIndex = i
-                };
-
-                if (previous != null)
-                {
-                    var step = DoorDir.Right;
-                    bool vertical = CanBeVertical(previous.Kind) && CanBeVertical(room.Kind) && previous.Kind != RoomKind.Start
-                        && verticalRun < MaxVerticalRun;
-                    if (vertical)
-                    {
-                        // 오른쪽 3 : 위 1 : 아래 1. 같은 세로 줄에서 방향을 바꾸면 지나온 칸과 겹치므로 같은 방향만 잇는다.
-                        bool upOk = y + 1 <= MaxRise && (lastVertical == DoorDir.None || lastVertical == DoorDir.Up) && layout.At(x, y + 1) == null;
-                        bool downOk = y - 1 >= -MaxRise && (lastVertical == DoorDir.None || lastVertical == DoorDir.Down) && layout.At(x, y - 1) == null;
-                        int roll = rng.Next(5);
-                        if (roll == 3 && upOk) step = DoorDir.Up;
-                        else if (roll == 4 && downOk) step = DoorDir.Down;
-                        else if (roll >= 3 && (upOk || downOk)) step = upOk ? DoorDir.Up : DoorDir.Down;
-                        // 짧은 스테이지(15분)에서 경로 1/3이 지나도록(또는 세로로 이을 수 있는 마지막 자리까지) 세로 방이 없으면 한 번은 오르내리게 한다 (세로 플레이 보장)
-                        if (step == DoorDir.Right && verticalSteps == 0 && (i >= path.Count / 3 || i == lastChance) && (upOk || downOk))
-                            step = upOk ? DoorDir.Up : DoorDir.Down;
-                    }
-
-                    var (dx, dy) = Offset(step);
-                    x += dx;
-                    y += dy;
-                    if (step == DoorDir.Right)
-                    {
-                        verticalRun = 0;
-                        lastVertical = DoorDir.None;
-                    }
-                    else
-                    {
-                        verticalRun++;
-                        verticalSteps++;
-                        lastVertical = step;
-                    }
-
-                    previous.ExitDoor = step;
-                    previous.Doors |= step;
-                    room.EntryDoor = Opposite(step);
-                    room.Doors |= room.EntryDoor;
-                }
-
-                room.X = x;
-                room.Y = y;
-                layout.Rooms.Add(room);
-                previous = room;
-            }
-        }
-
-        // 막다른 곁방 2~4개: 유물 상자(보물)와 회복 샘을 번갈아. 이동·휴식 방의 빈 이웃 칸에 붙인다 (시작 방 바로 옆과 보스 앞은 제외).
-        private static void PlaceSideRooms(RoomLayoutData layout, Random rng)
-        {
-            var mainRooms = new List<RoomData>(layout.MainPathRooms());
-            int want = rng.Next(MinSideRooms, MaxSideRooms + 1);
-            var candidates = new List<(RoomData parent, DoorDir dir)>();
-            foreach (var room in mainRooms)
-            {
-                if (!CanBeVertical(room.Kind) || room.PathIndex < 2 || room.PathIndex > mainRooms.Count - 3) continue;
-                foreach (var dir in new[] { DoorDir.Up, DoorDir.Down, DoorDir.Left })
-                {
-                    if ((room.Doors & dir) != 0) continue;
-                    int dy = Offset(dir).dy;
-                    if (Math.Abs(room.Y + dy) > MaxRise + 1) continue;
-                    candidates.Add((room, dir));
-                }
-            }
-
-            // 진행도 전체에 고르게 퍼지도록 후보를 구간으로 나눠 하나씩 고른다.
-            int placed = 0;
-            for (int part = 0; part < want && candidates.Count > 0; part++)
-            {
-                int from = candidates.Count * part / want;
-                int to = Math.Max(from + 1, candidates.Count * (part + 1) / want);
-                for (int tries = 0; tries < 8; tries++)
-                {
-                    var (parent, dir) = candidates[rng.Next(from, Math.Min(to, candidates.Count))];
-                    var (dx, dy) = Offset(dir);
-                    int cx = parent.X + dx, cy = parent.Y + dy;
-                    if (layout.At(cx, cy) != null || (parent.Doors & dir) != 0) continue;
-                    if (TouchesOtherRoom(layout, cx, cy, parent)) continue; // 미니맵에서 지름길처럼 보이지 않게
-
-                    var side = new RoomData
-                    {
-                        Index = layout.Rooms.Count, X = cx, Y = cy,
-                        Kind = placed % 2 == 0 ? RoomKind.Treasure : RoomKind.Spring,
-                        Chunk = ChunkKind.Rest, Difficulty = parent.Difficulty,
-                        MainPath = false, ParentIndex = parent.Index,
-                        EntryDoor = Opposite(dir), Doors = Opposite(dir)
-                    };
-                    parent.Doors |= dir;
-                    layout.Rooms.Add(side);
-                    placed++;
-                    break;
-                }
-            }
-        }
-
-        private static bool TouchesOtherRoom(RoomLayoutData layout, int x, int y, RoomData parent)
-        {
-            foreach (var dir in new[] { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down })
-            {
-                var (dx, dy) = Offset(dir);
-                var other = layout.At(x + dx, y + dy);
-                if (other != null && other != parent) return true;
-            }
-
-            return false;
-        }
-
-        private static void UpdateBounds(RoomLayoutData layout)
-        {
-            layout.MinX = layout.MinY = int.MaxValue;
-            layout.MaxX = layout.MaxY = int.MinValue;
-            foreach (var room in layout.Rooms)
-            {
-                layout.MinX = Math.Min(layout.MinX, room.X);
-                layout.MaxX = Math.Max(layout.MaxX, room.X);
-                layout.MinY = Math.Min(layout.MinY, room.Y);
-                layout.MaxY = Math.Max(layout.MaxY, room.Y);
             }
         }
     }

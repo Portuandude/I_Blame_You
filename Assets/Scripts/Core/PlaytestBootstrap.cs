@@ -29,6 +29,7 @@ namespace IBlameYou.Core
         private SkillHUD hud;
         private DevCheats cheats;
         private MinimapUI minimap;
+        private FeatureTestTools featureTools;
 
         private void Start()
         {
@@ -66,7 +67,8 @@ namespace IBlameYou.Core
             var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
             var groundTile = artConfig != null ? artConfig.groundTile : null;
 
-            if (resume == null) RunSave.Clear();
+            bool featureTest = GameSession.FeatureTest && resume == null;
+            if (resume == null && !featureTest) RunSave.Clear(); // 기능 테스트는 이어하던 런을 지우지 않는다
             int runSeed = resume != null ? resume.seed : randomSeedEachRun ? Random.Range(1, 1000000) : seed;
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
@@ -77,7 +79,15 @@ namespace IBlameYou.Core
             StageEvents.InSideRoom = false;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
-            if (roomGrid)
+            StageData featureStage = null;
+            if (featureTest)
+            {
+                // 기능 테스트 모드: 적 없는 시험용 외길 (FeatureTestStage). 몬스터·유물은 FeatureTestTools 키로 부른다
+                runSeed = FeatureTestStage.Seed;
+                featureStage = FeatureTestStage.Build();
+                streamer.Initialize(featureStage, groundTile, spawner);
+            }
+            else if (roomGrid)
             {
                 var layout = RoomLayout.Generate(runSeed, targetSeconds);
                 StageEvents.MainRooms = System.Linq.Enumerable.Count(layout.MainPathRooms());
@@ -123,8 +133,14 @@ namespace IBlameYou.Core
                 minimap = gameObject.AddComponent<MinimapUI>();
                 minimap.Initialize(streamer, player);
             }
-            StageEvents.StageName = "스테이지 1";
-            if (resume != null)
+            StageEvents.StageName = featureTest ? "기능 테스트" : "스테이지 1";
+            if (featureTest)
+            {
+                featureTools = gameObject.AddComponent<FeatureTestTools>();
+                featureTools.Initialize(player, streamer, featureStage, spawner, Restart);
+                StageEvents.PostNotice("기능 테스트 모드 — F6 도구 목록");
+            }
+            else if (resume != null)
             {
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
                 StageEvents.PostNotice($"이어하기: 저장한 곳에서 다시 시작 (시드 {runSeed})");
@@ -239,6 +255,7 @@ namespace IBlameYou.Core
             if (hud != null) Destroy(hud);
             if (cheats != null) Destroy(cheats);
             if (minimap != null) Destroy(minimap);
+            if (featureTools != null) Destroy(featureTools);
             if (player != null) Destroy(player);
             if (streamer != null) Destroy(streamer.gameObject); // 청크, 적, 함정이 모두 이 아래에 있다
             foreach (var projectile in FindObjectsByType<Projectile>(FindObjectsSortMode.None)) Destroy(projectile.gameObject);

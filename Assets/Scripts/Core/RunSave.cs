@@ -64,6 +64,7 @@ namespace IBlameYou.Core
 
         public static void Save(Data data)
         {
+            if (GameSession.FeatureTest) return; // 기능 테스트 모드는 이어하던 런을 건드리지 않는다
             if (data == null) return;
             data.version = Version;
             PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
@@ -74,6 +75,7 @@ namespace IBlameYou.Core
         // (저장 시점으로 시간을 되감아 최고 클리어 기록이 짧아지는 것 방지).
         public static void UpdateElapsed(float elapsed)
         {
+            if (GameSession.FeatureTest) return; // 기능 테스트 모드는 이어하던 런을 건드리지 않는다
             var data = Load();
             if (data == null || elapsed <= data.elapsed) return;
             data.elapsed = elapsed;
@@ -82,6 +84,7 @@ namespace IBlameYou.Core
 
         public static void Clear()
         {
+            if (GameSession.FeatureTest) return; // 기능 테스트 모드는 이어하던 런을 건드리지 않는다
             if (!PlayerPrefs.HasKey(Key)) return;
             PlayerPrefs.DeleteKey(Key);
             PlayerPrefs.Save();

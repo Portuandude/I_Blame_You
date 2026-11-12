@@ -229,19 +229,21 @@ def draw_goblin(spec, pose):
     c.ellipse(hx + 19 * s, hy - 2 * s, 6 * s, 4.5 * s, shade(skin, 0.9), highlight=False)
     # 눈
     eye_y = hy + 0.5 * s  # 투구 챙(hy+2) 아래로 보이게
-    # 큰 눈 + 반짝임 점 + 볼터치 (Docs/ArtStyle.md: 귀엽지만 화려하게)
-    eye_h = 2.6 * s if pose.squint else 7 * s
-    if pose.x_eyes:  # 피격: 질끈 감은 X 눈
-        c.limb((hx + 4.5 * s, eye_y - 3.5 * s), (hx + 11.5 * s, eye_y + 3.5 * s), 2.2 * s, OUTLINE, outline=False)
-        c.limb((hx + 4.5 * s, eye_y + 3.5 * s), (hx + 11.5 * s, eye_y - 3.5 * s), 2.2 * s, OUTLINE, outline=False)
+    # 평범한 고블린 눈 (2026-11-12 사람 지시: 큰 눈이 너무 올망졸망 → 작고 날카로운 눈): 위로 치켜 올라간 가는 아몬드 눈,
+    # 누런 흰자 + 작은 세로 동공, 반짝임 점·볼터치 없음, 사납게 내리깐 눈썹
+    if pose.x_eyes:  # 피격: 질끈 감은 X 눈 (작게)
+        c.limb((hx + 6 * s, eye_y - 2.2 * s), (hx + 11 * s, eye_y + 2.2 * s), 1.8 * s, OUTLINE, outline=False)
+        c.limb((hx + 6 * s, eye_y + 2.2 * s), (hx + 11 * s, eye_y - 2.2 * s), 1.8 * s, OUTLINE, outline=False)
+    elif pose.squint:
+        c.limb((hx + 4.5 * s, eye_y - 0.5 * s), (hx + 12.5 * s, eye_y + 1.5 * s), 1.6 * s, OUTLINE, outline=False)
     else:
-        c.ellipse(hx + 8 * s, eye_y, 6.2 * s, eye_h, rgba("fff8e6"), highlight=False)
-    if not pose.squint and not pose.x_eyes:
-        c.ellipse(hx + 10 * s, eye_y - 0.5 * s, 3.8 * s, 4.8 * s, OUTLINE, outline=False, highlight=False)
-        c.ellipse(hx + 8.6 * s, eye_y + 1.6 * s, 1.5 * s, 1.5 * s, rgba("fff4d6"), outline=False, highlight=False)
-        c.ellipse(hx + 11.4 * s, eye_y - 2.2 * s, 0.8 * s, 0.8 * s, rgba("fff4d6"), outline=False, highlight=False)
-    c.ellipse(hx + 1 * s, eye_y - 6.5 * s, 4 * s, 2.2 * s, rgba("ff6fae", 140), outline=False, highlight=False)  # 볼터치
-    c.limb((hx + 2 * s, eye_y + 8.5 * s), (hx + 13 * s, eye_y + 7 * s), 2.2 * s, OUTLINE, outline=False)  # 찡그린 눈썹
+        # 바깥(+x) 끝이 위로 올라간 가는 눈
+        eye = [(hx + 3.5 * s, eye_y - 0.5 * s), (hx + 8 * s, eye_y - 2.6 * s), (hx + 13.5 * s, eye_y + 1.2 * s),
+               (hx + 9 * s, eye_y + 2.6 * s)]
+        c.polygon(eye, rgba("f0dc6a"), outline=False)
+        c.polyline(eye + [eye[0]], 1.1 * s, OUTLINE, outline=False)  # 가는 눈 테두리
+        c.ellipse(hx + 9 * s, eye_y + 0.1 * s, 1.0 * s, 2.0 * s, rgba("3a1010"), outline=False, highlight=False)  # 세로 동공
+    c.limb((hx + 3 * s, eye_y + 5.5 * s), (hx + 14 * s, eye_y + 3.4 * s), 1.8 * s, OUTLINE, outline=False)  # 사납게 내리깐 눈썹
     # 입 + 송곳니
     if pose.mouth_open:
         c.ellipse(hx + 11 * s, hy - 9 * s, 6 * s, 4 * s, rgba("5a1a1a"), highlight=False)
@@ -1574,6 +1576,11 @@ if __name__ == "__main__":
     if "--switch" in sys.argv:  # 마법 스위치 룬 그림만
         generate_rune_switch()
         print("switch done")
+        sys.exit(0)
+    if "--goblins" in sys.argv:  # 고블린 4종 그림만 (모든 프레임 + 경직)
+        generate_goblins()
+        generate_goblin_hurt()
+        print("goblins done")
         sys.exit(0)
     if "--hurt" in sys.argv:  # 적 경직 그림만 (다른 그림은 그대로)
         generate_goblin_hurt()

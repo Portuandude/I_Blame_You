@@ -1,4 +1,4 @@
-"""I Blame You! 슬라임 원본 프레임에 귀여운 얼굴을 얹는다 (Docs/ArtStyle.md: 큰 눈, 반짝임 점, 볼터치).
+"""I Blame You! 슬라임 원본 프레임에 반짝임 별을 얹는다 (2026-11-12부터 눈·입·볼터치 없음: 사람 지시 "눈이 징그럽다").
 
 원본 실루엣·프레임 수·캔버스 크기·피벗은 그대로 두고, 프레임마다 몸 영역(알파)을 재서 눈 위치를 정한다.
 투구 쓴 슬라임 기사(중간보스 쌍둥이 기사용)도 같은 프레임에 몸 색을 바꾸고 투구·깃털을 씌워
@@ -53,40 +53,8 @@ def face(image, mode):
     def S(*v):
         return [x * SS for x in v]
 
-    for side, ex in ((-1, cx - gap), (1, cx + gap)):
-        if mode == "hurt":  # 질끈: 왼눈 '>' 오른눈 '<'
-            tip = ex - side * r * 0.55
-            back = ex + side * r * 0.75
-            d.line(S(back, cy - r * 0.8, tip, cy, back, cy + r * 0.8), fill=OUTLINE, width=int(2.4 * SS), joint="curve")
-            continue
-        if mode == "squint":  # 찡그림: 아래로 휜 짧은 선
-            d.arc(S(ex - r * 0.8, cy - r * 0.5, ex + r * 0.8, cy + r * 0.7), 200, 340, fill=OUTLINE, width=int(2.2 * SS))
-            continue
-        if mode == "x":
-            for dx, dy in ((1, 1), (1, -1)):
-                d.line(S(ex - r * 0.7 * dx, cy - r * 0.7 * dy, ex + r * 0.7 * dx, cy + r * 0.7 * dy), fill=OUTLINE, width=int(2.2 * SS))
-            continue
-        d.ellipse(S(ex - r - 1.5, cy - r * 1.15 - 1.5, ex + r + 1.5, cy + r * 1.15 + 1.5), fill=OUTLINE)
-        d.ellipse(S(ex - r, cy - r * 1.15, ex + r, cy + r * 1.15), fill=(255, 255, 255, 255))
-        pr = r * 0.68
-        px, py = ex + r * 0.25, cy + r * 0.1
-        d.ellipse(S(px - pr, py - pr * 1.1, px + pr, py + pr * 1.1), fill=OUTLINE)
-        d.ellipse(S(px - pr * 0.55, py - pr * 0.8, px - pr * 0.05, py - pr * 0.3), fill=COLORS["cream"])
-        d.ellipse(S(px + pr * 0.2, py + pr * 0.25, px + pr * 0.45, py + pr * 0.5), fill=COLORS["cream"])
-
-    # 볼터치와 작은 입
-    blush = COLORS["berry"][:3] + (130,)
-    for bx in (cx - gap * 1.9, cx + gap * 1.9):
-        d.ellipse(S(bx - r * 0.7, cy + r * 1.1, bx + r * 0.7, cy + r * 1.55), fill=blush)
-    if mode == "hurt":  # 놀라 벌린 동그란 입
-        d.ellipse(S(cx - r * 0.42, cy + r * 0.75, cx + r * 0.42, cy + r * 1.55), fill=OUTLINE)
-        d.ellipse(S(cx - r * 0.22, cy + r * 1.1, cx + r * 0.22, cy + r * 1.45), fill=COLORS["berry"])
-    elif mode == "squint":  # 물결 입
-        d.arc(S(cx - r * 0.5, cy + r * 0.8, cx, cy + r * 1.3), 200, 340, fill=OUTLINE, width=int(1.6 * SS))
-        d.arc(S(cx, cy + r * 0.8, cx + r * 0.5, cy + r * 1.3), 20, 160, fill=OUTLINE, width=int(1.6 * SS))
-    if mode == "open":
-        d.arc(S(cx - r * 0.45, cy + r * 0.7, cx + r * 0.45, cy + r * 1.4), 20, 160, fill=OUTLINE, width=int(1.6 * SS))
-
+    # 눈·입·볼터치는 그리지 않는다 (2026-11-12 사람 지시: 슬라임 눈이 징그럽다 → 모든 슬라임 그림에서 눈 삭제).
+    # 귀여움은 원본 몸 광택 + 아래 반짝임 별로. 피격·쓰러짐(mode)은 몸 찌그러짐(squash)만으로 보인다.
     # 몸 왼쪽 위 반짝임 별 (화려하게)
     sx, sy, sr = left + w * 0.24, top + h * 0.22, max(2.5, r * 0.45)
     k = 0.25

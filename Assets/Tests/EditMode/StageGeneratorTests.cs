@@ -409,6 +409,28 @@ namespace IBlameYou.Tests
             }
         }
 
+        // 깜빡 발판 다리 (Docs/ContentIdeas.md 퍼즐 1): 무너지는 발판 다리의 변형. 난이도 40% 이상에서만, 박자 순번이 왼쪽부터 0, 1, 2…
+        [Test]
+        public void BlinkBridgesAppearLateWithSequentialBeats()
+        {
+            int blinkBridges = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.6f })
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.CrumbleBridge, difficulty, 6, 0);
+                    var blinks = chunk.Features.FindAll(f => f.Kind == FeatureKind.BlinkPlatform);
+                    if (blinks.Count == 0) continue;
+                    Assert.GreaterOrEqual(difficulty, ChunkGenerator.BlinkBridgeMinDifficulty, $"seed {seed}");
+                    Assert.AreEqual(0, chunk.Features.FindAll(f => f.Kind == FeatureKind.Crumble).Count, $"seed {seed}: 한 다리는 한 종류");
+                    for (int i = 0; i < blinks.Count; i++) Assert.AreEqual(i, blinks[i].Direction, $"seed {seed}");
+                    blinkBridges++;
+                }
+            }
+
+            Assert.Greater(blinkBridges, 20, "깜빡 발판 다리가 거의 안 나옴");
+        }
+
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)
 
         // x열에서 땅 위 첫 빈 칸 높이 (서 있는 칸).

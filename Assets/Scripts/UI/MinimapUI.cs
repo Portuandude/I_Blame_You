@@ -187,7 +187,7 @@ namespace IBlameYou.UI
                 float length = line.Kind == MapLink.Full ? cell : cell * 0.85f;
                 var end = new Vector2(c.x + dx * length, c.y - dy * length);
                 Fill(Rect.MinMaxRect(Mathf.Min(c.x, end.x) - link / 2f, Mathf.Min(c.y, end.y) - link / 2f,
-                    Mathf.Max(c.x, end.x) + link / 2f, Mathf.Max(c.y, end.y) + link / 2f), Link);
+                    Mathf.Max(c.x, end.x) + link / 2f, Mathf.Max(c.y, end.y) + link / 2f), LinkColor(layout, line));
             }
 
             foreach (var room in layout.Rooms)
@@ -474,6 +474,16 @@ namespace IBlameYou.UI
                 case RoomKind.Start: return StartColor;
                 default: return null;
             }
+        }
+
+        // 보스·중간보스 방으로 들어가는 통로는 그 방 색으로 (안 가 봤어도 "저기가 보스 입구"를 알 수 있게, 2026-11-12 플레이테스트)
+        private static Color LinkColor(RoomLayoutData layout, MapLinkLine line)
+        {
+            var a = line.From;
+            var b = layout.Neighbor(line.From, line.Dir);
+            if ((a != null && a.Kind == RoomKind.Boss) || (b != null && b.Kind == RoomKind.Boss)) return BossColor;
+            if ((a != null && a.Kind == RoomKind.MidBoss) || (b != null && b.Kind == RoomKind.MidBoss)) return MidBossColor;
+            return Link;
         }
 
         private static void Fill(Rect rect, Color color)

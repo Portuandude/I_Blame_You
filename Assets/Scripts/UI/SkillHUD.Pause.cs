@@ -11,12 +11,19 @@ namespace IBlameYou.UI
     public partial class SkillHUD
     {
         private bool paused;
+        private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
 
         public bool Paused => paused;
 
         private void UpdatePauseInput()
         {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
+
+            if (paused && displayWindow.IsOpen)
+            {
+                displayWindow.Close(); // Esc는 화면 설정 창만 닫는다
+                return;
+            }
 
             if (paused)
             {
@@ -36,6 +43,7 @@ namespace IBlameYou.UI
         {
             if (!paused) return;
             paused = false;
+            displayWindow.Close();
             Time.timeScale = 1f;
             SaveData.SaveVolume();
             if (!deathHandled && !stageCleared) control.Locked = false;
@@ -51,7 +59,7 @@ namespace IBlameYou.UI
             GUI.color = previous;
 
             const float width = 360f;
-            const float height = 350f;
+            const float height = 404f;
             var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
@@ -61,6 +69,8 @@ namespace IBlameYou.UI
             float x = rect.x + 40f;
             float buttonWidth = rect.width - 80f;
 
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = !displayWindow.IsOpen; // 화면 설정 창 아래 조작(음량 막대 포함)이 클릭을 가로채지 않게
             GameAudio.MusicVolume = PauseVolumeSlider(new Rect(x, rect.y + 64f, buttonWidth, 28f), "배경음악", GameAudio.MusicVolume);
             GameAudio.SfxVolume = PauseVolumeSlider(new Rect(x, rect.y + 96f, buttonWidth, 28f), "효과음", GameAudio.SfxVolume);
 
@@ -79,12 +89,18 @@ namespace IBlameYou.UI
                 RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
                 restart?.Invoke(true);
             }
+            else if (GUI.Button(new Rect(x, rect.y + 302f, buttonWidth, 44f), "화면 설정", menuButton))
+            {
+                displayWindow.Show();
+            }
+            GUI.enabled = wasEnabled;
 
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 298f, rect.width - 20f, 50f),
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 352f, rect.width - 20f, 50f),
                 "볼륨은 저장된다. 스테이지 1은 15분 안팎이라 런 진행은 저장되지 않는다 (시작 화면으로 나가면 새로 시작)",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, 320f, height));
+            displayWindow.Draw(panel, small, menuButton);
         }
 
         // 일시정지 메뉴 옆: 이번 런에서 A/B가 찍은 특성과 고른 유물 (서로 뭘 골랐는지 확인용).

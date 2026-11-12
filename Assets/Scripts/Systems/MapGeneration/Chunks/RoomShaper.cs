@@ -69,7 +69,9 @@ namespace IBlameYou.Systems
         public static bool HasPairGate(RoomData room) =>
             room.Kind == RoomKind.Treasure && room.Difficulty >= PairGateMinDifficulty;
 
-        public static int PairGateX(RoomData room) => room.IsVertical ? ShaftPairGateX : SidePairGateX;
+        // 좌우 곁방은 4×3 격자에서 문이 왼쪽에 날 수도 있다: 그때는 봉인문을 거울 자리(왼쪽 문과 가운데 상자 사이)에
+        public static int PairGateX(RoomData room) =>
+            room.IsVertical ? ShaftPairGateX : (room.Doors & DoorDir.Left) != 0 ? W - 1 - SidePairGateX : SidePairGateX;
 
         private static void AddPairGate(int seed, RoomData room, ChunkData chunk)
         {
@@ -113,12 +115,44 @@ namespace IBlameYou.Systems
             for (int attempt = 0; attempt < MaxAttempts; attempt++)
             {
                 var chunk = ChunkGenerator.Generate(seed, room.Index, room.Chunk, room.Difficulty, StageGenerator.StartHeight, attempt);
+                if (MirrorsBoss(room)) Mirror(chunk);
                 result = Finish(chunk, room);
                 if (result.Valid) return result;
             }
 
-            var fallback = Finish(ChunkGenerator.Fallback(room.Index, room.Chunk, room.Difficulty, StageGenerator.StartHeight), room);
+            var fallbackChunk = ChunkGenerator.Fallback(room.Index, room.Chunk, room.Difficulty, StageGenerator.StartHeight);
+            if (MirrorsBoss(room)) Mirror(fallbackChunk);
+            var fallback = Finish(fallbackChunk, room);
             return fallback.Valid ? fallback : result;
+        }
+
+        // 보스 방이 오른쪽 문으로 들어오면 (4×3 격자에서 보스가 왼쪽 끝에 놓인 경우) 보스 지형을 좌우로 뒤집어
+        // 출구가 들어온 문 반대쪽(왼쪽 끝)에 오게 한다.
+        public static bool MirrorsBoss(RoomData room) => room.Kind == RoomKind.Boss && (room.Doors & DoorDir.Right) != 0;
+
+        // 청크를 좌우로 뒤집는다: 타일, 기능 위치(폭이 있는 것은 오른쪽 끝이 새 왼쪽 끝), 화살 방향, 입구·출구 높이.
+        // 움직이는 발판은 오른쪽으로만 오가므로 보스 방처럼 발판이 없는 청크에만 쓴다.
+        internal static void Mirror(ChunkData chunk)
+        {
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W / 2; x++)
+                {
+                    var t = chunk.Tiles[x, y];
+                    chunk.Tiles[x, y] = chunk.Tiles[W - 1 - x, y];
+                    chunk.Tiles[W - 1 - x, y] = t;
+                }
+
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                f.X = W - f.X - Math.Max(1, f.Width);
+                if (f.Kind == FeatureKind.ArrowTrap) f.Direction = -f.Direction;
+                chunk.Features[i] = f;
+            }
+
+            int entry = chunk.EntryHeight;
+            chunk.EntryHeight = chunk.ExitHeight;
+            chunk.ExitHeight = entry;
         }
 
         private static RoomGeometry Finish(ChunkData chunk, RoomData room)

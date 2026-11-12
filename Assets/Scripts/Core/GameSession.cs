@@ -11,5 +11,9 @@ namespace IBlameYou.Core
         public static bool SharedKeyboard => true;
 
         public static bool Started { get; set; }
+
+        // 기능 테스트 모드: 적 없는 시험용 맵(FeatureTestStage)에서 몬스터·유물·협동 기능을 키로 불러 시험한다.
+        // 기록(최고 기록·최근 판·유물 도감)은 남기지 않는다 (SaveData.Record*). 시작 화면 버튼이 정한다.
+        public static bool FeatureTest { get; set; }
     }
 }

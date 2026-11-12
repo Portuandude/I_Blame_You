@@ -279,6 +279,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width);
                         break;
+                    case FeatureKind.BlinkPlatform:
+                        BlinkPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width, f.Direction);
+                        break;
                     case FeatureKind.BlinkWard:
                         // 낭떠러지 열 전체 (낙사선 아래부터 천장 위까지): 순간이동·대시로 건너뛰지 못하게
                         BlinkWard.Create(root, new Vector2(ox + f.X, oy + f.Y - 6f), f.Width, ChunkData.Height + 8f);
@@ -360,7 +363,7 @@ namespace IBlameYou.Systems
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
-            RoomDoorMarkers.Create(root, origin, room, geometries[index]);
+            RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms);
             // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
@@ -678,15 +681,8 @@ namespace IBlameYou.Systems
             RoomEntered?.Invoke(index);
         }
 
-        // 진행도 = 주 경로에서 몇 번째 방인지 (곁방은 붙어 있는 방 기준).
-        private float RoomProgress(int index)
-        {
-            var room = rooms.Rooms[index];
-            if (!room.MainPath && room.ParentIndex >= 0) room = rooms.Rooms[room.ParentIndex];
-            int last = 0;
-            foreach (var r in rooms.Rooms) if (r.MainPath) last = Mathf.Max(last, r.PathIndex);
-            return last > 0 ? Mathf.Clamp01(room.PathIndex / (float)last) : 0f;
-        }
+        // 진행도 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        private float RoomProgress(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()
         {

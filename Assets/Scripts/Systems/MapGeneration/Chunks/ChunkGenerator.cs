@@ -387,8 +387,17 @@ namespace IBlameYou.Systems
             for (; x < W; x++) heights[x] = current;
             ApplyHeights(chunk, heights);
 
-            foreach (var c in crumbles) chunk.AddFeature(FeatureKind.Crumble, c[0], c[1], c[2]);
+            // 변형: 깜빡 발판 다리 (Docs/ContentIdeas.md 퍼즐 1). 난이도 40% 이상에서 절반 확률, 발판이 왼쪽부터 차례로 깜빡인다
+            bool blink = chunk.Difficulty >= BlinkBridgeMinDifficulty && rng.Next(2) == 0;
+            for (int i = 0; i < crumbles.Count; i++)
+            {
+                var c = crumbles[i];
+                if (blink) chunk.AddFeature(FeatureKind.BlinkPlatform, c[0], c[1], c[2], i);
+                else chunk.AddFeature(FeatureKind.Crumble, c[0], c[1], c[2]);
+            }
         }
+
+        public const float BlinkBridgeMinDifficulty = 0.4f;
 
         // 평평한 전투 구역. 들어가면 양쪽이 막히고 적이 나온다. 발판 두 개로 위아래 동선을 만든다.
         private static void BuildArena(ChunkData chunk, int[] heights, Random rng, bool elite)
