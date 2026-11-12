@@ -145,7 +145,8 @@ namespace IBlameYou.Player
                 jumpQueued = true;
             }
 
-            if (RoleInput.DashDown(control) && !isDashing && !stunned && stamina.TryConsume(dashStaminaCost))
+            // 마력 안개(스위치 발판 낭떠러지) 안에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
+            if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Contains(rb.position) && stamina.TryConsume(dashStaminaCost))
             {
                 StartDash();
             }
@@ -218,6 +219,13 @@ namespace IBlameYou.Player
             {
                 rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
                 dashTimeRemaining -= Time.fixedDeltaTime;
+                // 대시하다 마력 안개에 들어가면 그 자리에서 흩어진다: 가로 속도를 걷기 속도로 낮춰 대시 거리로 건너뛰지 못하게.
+                if (BlinkWard.Contains(rb.position))
+                {
+                    EndDash();
+                    rb.linearVelocity = new Vector2(dashDirection * walkSpeed, 0f);
+                    return;
+                }
                 if (dashTimeRemaining <= 0f)
                 {
                     EndDash();

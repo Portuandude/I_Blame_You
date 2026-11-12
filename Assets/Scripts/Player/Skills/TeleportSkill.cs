@@ -70,9 +70,12 @@ namespace IBlameYou.Player
 
             // 갈 거리를 먼저 정한다: 갈 곳이 없으면 마나를 쓰지 않고 실패만 알린다.
             float travel = PlanTravel(direction);
-            if (travel < TeleportRules.MinTravel)
+            // 마력 안개(스위치 발판 낭떠러지): 출발·도착·지나는 길이 닿으면 흩어진다.
+            bool warded = travel >= TeleportRules.MinTravel && BlinkWard.Touches(rb.position, rb.position + direction * travel);
+            if (travel < TeleportRules.MinTravel || warded)
             {
-                SkillMessages.Post(ManaUser.PlayerA, dy < 0 ? "순간이동 불가: 아래에 안전하게 설 곳이 없음" : "순간이동 불가: 막혀 있음", true);
+                SkillMessages.Post(ManaUser.PlayerA, warded ? "순간이동 불가: 마력 안개가 흩뜨림"
+                    : dy < 0 ? "순간이동 불가: 아래에 안전하게 설 곳이 없음" : "순간이동 불가: 막혀 있음", true);
                 EffectLibrary.PlayOneShot(rb.position, EffectLibrary.TeleportFrames, 30f, new Color(1f, 0.45f, 0.45f, 0.45f), 0.6f);
                 return;
             }
