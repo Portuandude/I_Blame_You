@@ -76,6 +76,9 @@ namespace IBlameYou.Systems
             RelicBannerView.Create(position, frames != null ? frames[0] : null, text);
         }
 
+        // 젤리 방울: 젤리 방석으로 버틴 발판이 무너질 때 분홍 방울이 톡톡 튄다 (그림 파일 없이 JellyDropFx가 만든다).
+        public static void JellyDrops(Vector3 position, int count) => JellyDropFx.Burst(position, count);
+
         // 무거운 착지 충격파 (중간보스 등장). feet = 바닥 위 발밑.
         public static void Shockwave(Vector3 feet, float scale)
         {
