@@ -145,7 +145,26 @@ namespace IBlameYou.Tests
             Assert.AreEqual("공용", RelicBook.Owner(RelicId.RegularStamp));
             Assert.AreEqual("마을에서 사는 값 -20%", RelicBook.Description(RelicId.RegularStamp));
             Assert.Contains(RelicId.RegularStamp, RelicBook.All);
-            Assert.AreEqual(28, RelicBook.All.Length);
+        }
+
+        // 돼지 저금통 (2026-11-12): 판에서 마을에 처음 들어가면 가진 골드의 25% 이자, 최대 50. 맨 뒤 번호 28, 공용.
+        [Test]
+        public void PiggyBank_PaysCappedInterest()
+        {
+            Assert.AreEqual(28, (int)RelicId.PiggyBank);
+            Assert.AreEqual("돼지 저금통", RelicBook.Name(RelicId.PiggyBank));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.PiggyBank));
+            Assert.AreEqual("마을에 처음 들어가면 가진 골드의 25% 이자 (최대 50)", RelicBook.Description(RelicId.PiggyBank));
+            Assert.Contains(RelicId.PiggyBank, RelicBook.All);
+            Assert.AreEqual(29, RelicBook.All.Length);
+            Assert.AreEqual(0, RelicBook.PiggyBankInterest(-5));
+            Assert.AreEqual(0, RelicBook.PiggyBankInterest(0));
+            Assert.AreEqual(0, RelicBook.PiggyBankInterest(3));
+            Assert.AreEqual(1, RelicBook.PiggyBankInterest(4));
+            Assert.AreEqual(25, RelicBook.PiggyBankInterest(100));
+            Assert.AreEqual(49, RelicBook.PiggyBankInterest(199));
+            Assert.AreEqual(50, RelicBook.PiggyBankInterest(200));
+            Assert.AreEqual(50, RelicBook.PiggyBankInterest(1000));
         }
 
         [Test]
