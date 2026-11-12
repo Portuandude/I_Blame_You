@@ -13,13 +13,26 @@ namespace IBlameYou.Core
         [SerializeField] private Vector2 offset = new Vector2(0f, 1f);
         [SerializeField] private float zDistance = -10f;
 
+        [Header("Look Ahead")]
+        [Tooltip("움직이는 쪽을 이만큼(유닛) 더 보여 준다")]
+        [SerializeField] private float lookAheadDistance = 2f;
+        [SerializeField] private float lookAheadSmoothTime = 0.6f;
+        [Tooltip("이보다 빨리 떨어지면 아래를 더 보여 주기 시작 (유닛/초)")]
+        [SerializeField] private float fallLookStartSpeed = 8f;
+        [SerializeField] private float fallLookFullSpeed = 18f;
+        [SerializeField] private float fallLookDistance = 3f;
+        [SerializeField] private float fallLookSmoothTime = 0.25f;
+
         [Header("Shake On Hit")]
         [SerializeField] private float shakeDuration = 0.25f;
         [SerializeField] private float shakeMagnitude = 0.3f;
 
         private Camera cam;
         private Transform target;
+        private Rigidbody2D targetBody;
         private HealthSystem targetHealth;
+        private float lookX, lookXVelocity;   // 앞보기: 움직이는 쪽으로 더 보기
+        private float lookY, lookYVelocity;   // 빠르게 떨어질 때 아래로 더 보기
         private Rect? bounds;
 
         // 흔들림을 얹기 전의 순수 추적 위치. SmoothDamp 상태가 흔들림에 오염되지 않도록 따로 들고 있는다.
@@ -41,6 +54,7 @@ namespace IBlameYou.Core
             if (targetHealth != null) targetHealth.Damaged -= OnTargetDamaged;
 
             target = newTarget;
+            targetBody = newTarget != null ? newTarget.GetComponent<Rigidbody2D>() : null;
             targetHealth = newTarget != null ? newTarget.GetComponent<HealthSystem>() : null;
             if (targetHealth != null) targetHealth.Damaged += OnTargetDamaged;
 
@@ -52,6 +66,8 @@ namespace IBlameYou.Core
         {
             if (target == null) return;
 
+            lookX = lookXVelocity = 0f; // 방을 옮기면 앞보기는 다시 천천히 쌓는다
+            lookY = lookYVelocity = 0f;
             followPosition = Clamp(DesiredPosition());
             velocity = Vector3.zero;
             transform.position = followPosition;
@@ -87,6 +103,7 @@ namespace IBlameYou.Core
         {
             if (target == null) return;
 
+            UpdateLook();
             followPosition = Clamp(Vector3.SmoothDamp(followPosition, DesiredPosition(), ref velocity, smoothTime));
 
             Vector3 shake = Vector3.zero;
@@ -102,7 +119,23 @@ namespace IBlameYou.Core
 
         private Vector3 DesiredPosition()
         {
-            return new Vector3(target.position.x + offset.x, target.position.y + offset.y, zDistance);
+            return new Vector3(target.position.x + offset.x + lookX, target.position.y + offset.y + lookY, zDistance);
+        }
+
+        // 앞보기: 가로로 움직이면 그쪽으로 lookAheadDistance만큼 더 보여 준다 (멈추면 그대로 두어 화면이 왔다 갔다 하지 않게).
+        // 아래 보기: 빨리 떨어질수록 아래를 더 보여 줘 세로 방·낭떠러지에서 착지할 곳이 먼저 보이게. 방 경계 제한은 그대로 받는다.
+        private void UpdateLook()
+        {
+            if (targetBody == null) { lookX = 0f; lookY = 0f; return; }
+            Vector2 v = targetBody.linearVelocity;
+            float dt = Time.deltaTime;
+
+            float wantX = lookX;
+            if (Mathf.Abs(v.x) > 1f) wantX = Mathf.Sign(v.x) * lookAheadDistance;
+            lookX = Mathf.SmoothDamp(lookX, wantX, ref lookXVelocity, lookAheadSmoothTime, Mathf.Infinity, dt);
+
+            float wantY = -fallLookDistance * Mathf.InverseLerp(fallLookStartSpeed, fallLookFullSpeed, -v.y);
+            lookY = Mathf.SmoothDamp(lookY, wantY, ref lookYVelocity, fallLookSmoothTime, Mathf.Infinity, dt);
         }
 
         private Vector3 Clamp(Vector3 position)
