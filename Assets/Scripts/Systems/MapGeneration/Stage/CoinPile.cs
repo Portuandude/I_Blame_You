@@ -101,7 +101,11 @@ namespace IBlameYou.Systems
 
             collected = true;
             int got = IBlameYou.Core.RunGold.OnCoinPile(player.transform, transform.position + Vector3.up * 0.4f, amount);
-            if (got > 0) StageEvents.PostNotice($"동전 무더기: 골드 +{got}");
+            if (got > 0)
+            {
+                GameAudio.PlaySfx("CoinPile", 0.7f); // 짤랑짤랑 (동전이 닿을 때마다 나는 Coin과 따로)
+                StageEvents.PostNotice($"동전 무더기: 골드 +{got}");
+            }
             onCollected?.Invoke();
             Destroy(gameObject);
         }
