@@ -16,6 +16,7 @@ namespace IBlameYou.Core
         private const float CoinSfxGap = 0.05f;           // 동전 소리는 이 간격보다 촘촘하게 겹치지 않는다
         private static readonly Vector3 TargetOffset = Vector3.up * 0.8f;
         private static readonly Vector3 PouchGlintOffset = new Vector3(0.55f, 1.4f, 0f); // 복주머니 (도토리·훈장 머리 위와 안 겹치게 오른쪽)
+        private static readonly Vector3 PiggyGlintOffset = new Vector3(-0.55f, 1.4f, 0f); // 돼지 저금통 (복주머니 반대쪽)
         private const float PouchGlintGap = 0.6f;         // 여럿을 한꺼번에 잡아도 복주머니는 이 간격보다 자주 뜨지 않는다
         private static float lastPouchGlint = -10f;
 
@@ -74,8 +75,8 @@ namespace IBlameYou.Core
             int interest = RelicBook.PiggyBankInterest(Mathf.Max(0, RunStats.Gold - InFlight));
             if (interest <= 0) return 0;
             RunStats.AddGold(interest);
-            VfxPlayer.PiggyBankGlint(player, PouchGlintOffset);
-            LaunchCoins(player.position + PouchGlintOffset, player, interest);
+            VfxPlayer.PiggyBankGlint(player, PiggyGlintOffset);
+            LaunchCoins(player.position + PiggyGlintOffset, player, interest);
             return interest;
         }
 
