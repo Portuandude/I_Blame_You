@@ -12,6 +12,7 @@ namespace IBlameYou.Core
         private const string KeySfxVolume = "Settings.SfxVolume";
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
+        private const string KeyBestGold = "Best.Gold"; // 한 판에 모은 골드(RunStats.GoldEarned) 최고
         private const string KeyRecentClears = "Recent.Clears";
         private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
         private const string KeyRecentBlame = "Recent.Blame";
@@ -53,6 +54,20 @@ namespace IBlameYou.Core
 
         // 지금까지 도달한 가장 높은 레벨. 기록이 없으면 0.
         public static int BestLevel(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestLevel, devMode), 0);
+
+        // 한 판에 모은 골드(쓴 것 포함, RunStats.GoldEarned) 최고. 기록이 없으면 0.
+        public static int BestGold(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestGold, devMode), 0);
+
+        // 이번 판에 모은 골드를 기록한다. 이전 최고보다 많으면 true. 기능 테스트 모드는 기록하지 않는다.
+        public static bool RecordGold(int earned)
+        {
+            if (GameSession.FeatureTest) return false;
+            bool dev = GameSession.DevMode;
+            if (earned <= BestGold(dev)) return false;
+            PlayerPrefs.SetInt(ModeKey(KeyBestGold, dev), earned);
+            PlayerPrefs.Save();
+            return true;
+        }
 
         // 클리어 시간을 기록한다. 이전 기록보다 빠르면(또는 첫 기록이면) true.
         public static bool RecordClearTime(float seconds)
