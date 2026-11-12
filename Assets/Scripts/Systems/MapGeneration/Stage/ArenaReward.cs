@@ -36,6 +36,8 @@ namespace IBlameYou.Systems
         private Transform magnetTarget;
         private float magnetSpeed;
         private float magnetCheckTimer;
+        private float nextWhooshTime;
+        private const float WhooshCooldown = 0.6f;
 
         // position: 구슬이 놓일 바닥 위 가운데 (월드). dropped: 방금 떨어진 것이면 등장 이펙트를 보여준다 (청크를 다시 만들 때는 false).
         public static ArenaReward Create(Transform parent, Vector2 position, bool dropped, System.Action onCollected)
@@ -92,8 +94,12 @@ namespace IBlameYou.Systems
             {
                 magnetCheckTimer = MagnetCheckInterval;
                 var found = FindMagnetTarget();
-                // 끌려오기 시작할 때 작게 "슝" (멈췄다 다시 끌려와도 한 번씩)
-                if (found != null && magnetTarget == null) GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
+                // 끌려오기 시작할 때 작게 "슝" (벽 모서리에서 잡혔다 놓쳤다 해도 0.6초에 한 번만)
+                if (found != null && magnetTarget == null && Time.time >= nextWhooshTime)
+                {
+                    GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
+                    nextWhooshTime = Time.time + WhooshCooldown;
+                }
                 magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
             }
