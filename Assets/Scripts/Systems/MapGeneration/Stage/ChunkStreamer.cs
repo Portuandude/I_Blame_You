@@ -272,6 +272,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.ArrowTrap:
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f), f.Direction);
                         break;
+                    case FeatureKind.Stalactite:
+                        Stalactite.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f));
+                        break;
                     case FeatureKind.MovingPlatform:
                         // 같은 청크의 발판 두 개(갈아타기)는 반 박자 엇갈려 움직인다. 스위치 발판은 멈춘 채로 만들고 아래에서 룬에 잇는다.
                         var moving = MovingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width, f.Direction,

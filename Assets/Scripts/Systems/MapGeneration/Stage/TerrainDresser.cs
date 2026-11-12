@@ -122,6 +122,7 @@ namespace IBlameYou.Systems
                     case FeatureKind.Spikes:
                     case FeatureKind.FlameJet:
                     case FeatureKind.ArrowTrap:
+                    case FeatureKind.Stalactite:
                     case FeatureKind.Exit:
                     case FeatureKind.Reward:
                     case FeatureKind.PlatformSwitch:
