@@ -36,6 +36,8 @@ namespace IBlameYou.Player
         PaperPlane,  // 종이비행기: 순간이동 마나 × PaperPlaneTeleportCost (A, TeleportSkill.CostMultiplier). 순간이동은 재사용 대기가 없어 백로그 원안(대기 -20%) 대신 마나
         LuckyPouch,  // 복주머니: 몬스터가 떨어뜨리는 골드 × (1 + LuckyPouchGoldBonus), 반올림 (공용, Core/RunGold.OnEnemyKilled)
         RegularStamp, // 단골 도장: 마을 식당·장비 상점에서 사는 값 × RegularStampPriceRate (공용, UI/SkillHUD.Village·Shop). 팔기·리롤 값은 그대로
+        PiggyBank,   // 돼지 저금통: 판에서 마을에 처음 들어가면 가진 골드 × PiggyBankRate (최대 PiggyBankMax) 이자 (공용, Core/RunGold.OnVillageFound)
+        TreasureMap, // 보물 지도: 미니맵에 안 가 본 마을 방이 흐린 칸·흐린 집 아이콘으로 보인다 (공용, UI/MinimapUI.IsCharted, MinimapRules.Look charted)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -74,6 +76,8 @@ namespace IBlameYou.Player
         public const float PaperPlaneTeleportCost = 0.75f; // 순간이동 마나 20 → 15
         public const float LuckyPouchGoldBonus = 0.5f;     // 몬스터 골드 +50%
         public const float RegularStampPriceRate = 0.8f;   // 마을에서 사는 값 -20%
+        public const float PiggyBankRate = 0.25f;          // 마을에 처음 들어갈 때 가진 골드의 25%
+        public const int PiggyBankMax = 50;                // 이자 최대 (중간보스 골드 50~100의 절반 아래)
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
         public static readonly RelicId[] All =
@@ -83,7 +87,8 @@ namespace IBlameYou.Player
             RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
             RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
             RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion, RelicId.StarCandy,
-            RelicId.HorseshoeMagnet, RelicId.PaperPlane, RelicId.LuckyPouch, RelicId.RegularStamp
+            RelicId.HorseshoeMagnet, RelicId.PaperPlane, RelicId.LuckyPouch, RelicId.RegularStamp,
+            RelicId.PiggyBank, RelicId.TreasureMap
         };
 
         public static string Name(RelicId id)
@@ -117,6 +122,8 @@ namespace IBlameYou.Player
                 case RelicId.PaperPlane: return "종이비행기";
                 case RelicId.LuckyPouch: return "복주머니";
                 case RelicId.RegularStamp: return "단골 도장";
+                case RelicId.PiggyBank: return "돼지 저금통";
+                case RelicId.TreasureMap: return "보물 지도";
                 default: return "집중 구슬";
             }
         }
@@ -150,6 +157,8 @@ namespace IBlameYou.Player
                 case RelicId.StarCandy: return $"레벨이 오를 때마다 마나 +{StarCandyMana:0}";
                 case RelicId.HorseshoeMagnet: return $"보상 구슬이 {HorseshoeMagnetRadius:0}칸 밖에서도 끌려온다";
                 case RelicId.RegularStamp: return $"마을에서 사는 값 -{Math.Round((1f - RegularStampPriceRate) * 100f)}%";
+                case RelicId.TreasureMap: return "미니맵에 마을 위치가 미리 보인다";
+                case RelicId.PiggyBank: return $"마을에 처음 들어가면 가진 골드의 {Math.Round(PiggyBankRate * 100f)}% 이자 (최대 {PiggyBankMax})";
                 case RelicId.LuckyPouch: return $"몬스터가 떨어뜨리는 골드 +{Math.Round(LuckyPouchGoldBonus * 100f)}%";
                 case RelicId.PaperPlane: return $"순간이동 마나 -{Math.Round((1f - PaperPlaneTeleportCost) * 100f)}%";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
@@ -180,6 +189,10 @@ namespace IBlameYou.Player
         // 복주머니: 몬스터 한 마리가 떨어뜨린 골드(amount)를 늘린 값. 반올림(.5는 올림)이라 1골드도 2골드가 된다. 0 이하는 그대로.
         public static int LuckyPouchGold(int amount) =>
             amount <= 0 ? amount : (int)Math.Round(amount * (1.0 + LuckyPouchGoldBonus), MidpointRounding.AwayFromZero);
+
+        // 돼지 저금통: 가진 골드(gold)에 붙는 이자. 내림이라 3골드 이하는 0, 200골드부터는 최대값.
+        public static int PiggyBankInterest(int gold) =>
+            gold <= 0 ? 0 : Math.Min(PiggyBankMax, (int)Math.Floor(gold * (double)PiggyBankRate));
 
         // 별똥 조각: 0~1 난수(roll)가 확률 밑이면 터진다. 난수는 부르는 쪽이 넘긴다 (테스트 고정용).
         public static bool StarShardProcs(float roll) => roll < StarShardChance;

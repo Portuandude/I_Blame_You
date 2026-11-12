@@ -272,8 +272,9 @@ namespace IBlameYou.Core
         private static string RecordLine(bool dev)
         {
             int level = SaveData.BestLevel(dev);
+            int gold = SaveData.BestGold(dev); // 한 판에 모은 골드
             string mode = dev ? "개발자 모드" : "일반 모드";
-            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")}";
+            string line = $"최고 기록 ({mode})  클리어 {SaveData.FormatTime(SaveData.BestClearTime(dev))} · 최고 레벨 {(level > 0 ? level.ToString() : "-")} · 최고 골드 {(gold > 0 ? gold.ToString() : "-")}";
             string recent = SaveData.RecentClearSummary(dev); // 최근 5판 평균 (15분 조정 판단용)
             if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
             string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 판들이 간 방 거리 평균 (어려운 구간 찾기용)

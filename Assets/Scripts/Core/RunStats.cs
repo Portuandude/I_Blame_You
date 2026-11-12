@@ -8,11 +8,12 @@ namespace IBlameYou.Core
         public static int ArenasCleared { get; set; }
         public static int GatesOpened { get; set; }
         public static int NewRelics { get; set; } // 이번 판에 처음 유물 도감에 오른 유물 수 (결과 창 최애 줄 끝)
-        public static int NewRelicMask { get; private set; } // 이번 판에 처음 도감에 오른 유물 (RelicCodex 비트 마스크, 결과 창 유물 줄 NEW 점)
+        public static long NewRelicMask { get; private set; } // 이번 판에 처음 도감에 오른 유물 (RelicCodex 비트 마스크, 결과 창 유물 줄 NEW 점)
         public static bool CodexCompleted { get; set; } // 이번 판에 유물 도감을 다 채웠다 (결과 창 금색 "유물 도감 완성!")
         public static int Gold { get; private set; } // 이번 판 골드 (그 판 안에서만, 다음 판으로 안 넘어감 — RunGold)
         public static int GoldEarned { get; private set; } // 이번 판에 들어온 골드 합계 (동전·장비 판매, 결과 창 "모음")
         public static int GoldSpent { get; private set; }  // 이번 판에 마을에서 쓴 골드 합계 (식당·상점, 결과 창 "씀")
+        public static event System.Action<int> GoldSpentNow; // 골드를 썼다 (쓴 양). HUD 골드 알약 아래 빨간 "-N" (SkillHUD.Gold)
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
@@ -50,6 +51,7 @@ namespace IBlameYou.Core
             if (amount < 0 || Gold - System.Math.Max(0, reserved) < amount) return false;
             Gold -= amount;
             GoldSpent += amount;
+            if (amount > 0) GoldSpentNow?.Invoke(amount);
             return true;
         }
 

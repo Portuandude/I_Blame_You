@@ -738,7 +738,8 @@ namespace IBlameYou.Systems
             if (entered.Kind == RoomKind.Village && firstVisit)
             {
                 // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
-                StageEvents.PostNotice("마을 발견! 식당·장비 상점");
+                int interest = IBlameYou.Core.RunGold.OnVillageFound(player); // 돼지 저금통 이자 (없으면 0)
+                StageEvents.PostNotice(interest > 0 ? $"마을 발견! 저금통 이자 +{interest}" : "마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
             }
             RoomEntered?.Invoke(index);

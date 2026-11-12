@@ -131,6 +131,9 @@ namespace IBlameYou.Systems
         // 복주머니(몬스터 골드 +50%): 더 받은 골드가 있으면 머리 위로 작은 복주머니가 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
         public static void LuckyPouchGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "LuckyPouch");
 
+        // 돼지 저금통(마을 이자): 머리 위로 작은 돼지 저금통이 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
+        public static void PiggyBankGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "PiggyBank");
+
         // 단골 도장(마을 할인): 할인받아 사면 머리 위로 작은 도장이 톡. 마을 창이 게임을 멈춰도 보이게 실제 시간으로.
         public static void StampGlint(Transform follow, Vector3 offset) =>
             MedalGlintFx.CreateFromPath(follow, offset, "UI/HUD/Relics/RegularStamp", true);

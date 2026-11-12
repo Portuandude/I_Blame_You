@@ -31,7 +31,7 @@ namespace IBlameYou.Core
         public void Draw(GUIStyle panel, GUIStyle body, GUIStyle recordSmall, GUIStyle button)
         {
             var all = IBlameYou.Player.RelicBook.All;
-            int mask = SaveData.RelicCodexMask(codexDevMode);
+            long mask = SaveData.RelicCodexMask(codexDevMode);
             // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄이고, 그래도 넘치면 가로 칸을 늘린다 (RelicCodex.Grid*)
             int columns = RelicCodex.GridColumns(all.Length, Screen.width, Screen.height);
             int rows = RelicCodex.GridRows(all.Length, columns);

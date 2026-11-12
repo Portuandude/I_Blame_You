@@ -396,6 +396,44 @@ def regular_stamp(d):
     d.polygon(star_points(21.5, 20.5, 2.0, 0.9), fill=hexrgba("ffd84d"))
 
 
+def piggy_bank(d):
+    # 돼지 저금통: 통통한 분홍 돼지 몸 + 등의 동전 구멍에 반쯤 들어간 금화, 동그란 코·짧은 다리·귀 (마을에 처음 들어가면 이자)
+    pink = hexrgba("ff9ec4")
+    dark_pink = hexrgba("e2669a")
+    gold = hexrgba("ffd84d")
+    dark_gold = hexrgba("d9a21e")
+    outlined_poly(d, [(5, 19), (8, 19), (8, 22.5), (5, 22.5)], dark_pink, 0.9)     # 뒷다리
+    outlined_poly(d, [(14, 19), (17, 19), (17, 22.5), (14, 22.5)], dark_pink, 0.9) # 앞다리
+    outlined_ellipse(d, 1.5, 8.5, 20.5, 21, pink)                                  # 몸
+    outlined_poly(d, [(13, 9.5), (16.5, 5.5), (17.5, 10.5)], pink, 0.9)            # 귀
+    outlined_ellipse(d, 17.5, 12, 22.5, 17.5, pink, 1.0)                           # 코
+    d.ellipse(E(19.0, 13.8, 19.9, 15.2), fill=dark_pink)                           # 콧구멍
+    d.ellipse(E(20.4, 13.8, 21.3, 15.2), fill=dark_pink)
+    outlined_ellipse(d, 6.5, 2, 13.5, 9, gold, 1.0)                                # 동전 (구멍에 꽂힘)
+    d.rectangle(E(9.5, 3.6, 10.5, 7.4), fill=dark_gold)
+    d.rectangle(E(6, 8.6, 14, 9.8), fill=dark_pink)                                # 동전 구멍
+    d.ellipse(E(14.6, 11.6, 16.0, 13.2), fill=OUTLINE)                             # 눈
+    shine(d, 5.5, 12.5, 1.0)
+    d.polygon(star_points(2.8, 4.0, 2.0, 0.9), fill=CREAM)
+
+
+def treasure_map(d):
+    # 보물 지도: 양 끝이 말린 크림색 양피지 + 점선 길 + 빨간 X 대신 작은 살구색 집 (미니맵에 마을 위치가 미리 보인다)
+    paper = hexrgba("f3dfb0")
+    roll = hexrgba("d9b77a")
+    red = hexrgba("e8455a")
+    house = hexrgba("ffb38a")
+    outlined_poly(d, [(3, 4), (21, 4), (21, 20), (3, 20)], paper, 1.1)              # 종이
+    outlined_ellipse(d, 1, 3, 5, 21, roll, 1.0)                                    # 왼쪽 말림
+    outlined_ellipse(d, 19, 3, 23, 21, roll, 1.0)                                  # 오른쪽 말림
+    for x, y in [(7, 16), (9, 14.5), (11, 13.5), (13, 12)]:                        # 점선 길
+        d.ellipse(E(x - 0.6, y - 0.6, x + 0.6, y + 0.6), fill=red)
+    outlined_poly(d, [(14, 11), (18, 11), (18, 15), (14, 15)], house, 0.9)         # 집 몸
+    outlined_poly(d, [(13, 11.2), (16, 7.5), (19, 11.2)], red, 0.9)                # 집 지붕
+    d.rectangle(E(15.4, 12.8, 16.6, 15), fill=hexrgba("8a5a3c"))                   # 문
+    shine(d, 6.5, 7.0, 0.9)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -425,6 +463,8 @@ ICONS = {
     "PaperPlane": paper_plane,
     "LuckyPouch": lucky_pouch,
     "RegularStamp": regular_stamp,
+    "PiggyBank": piggy_bank,
+    "TreasureMap": treasure_map,
 }
 
 

@@ -8,6 +8,7 @@ namespace IBlameYou.UI
     // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
     // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
     // 탐험가의 나침반 유물이 있으면 안 가 본 방도 흐린 칸 + 흐린 종류 아이콘으로 보이고 통로 실선이 지도 전체를 잇는다 (MinimapRules.Look).
+    // 보물 지도 유물이 있으면 안 가 본 마을 방만 흐린 칸 + 흐린 집 아이콘으로 보인다.
     // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
     // 보물 상자, 샘 하트, 시작 깃발 — Tools/ArtGen/generate_hud.py → Resources/UI/HUD). 그림이 없으면 예전 색 네모.
@@ -123,7 +124,7 @@ namespace IBlameYou.UI
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
             var faint = new System.Collections.Generic.List<RoomData>();
-            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index) faint.Add(room);
+            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index && !IsCharted(room.Index)) faint.Add(room); // 보물 지도로 이미 보이던 마을은 다시 숨겼다 띄우지 않는다
             faint.Sort((a, b) => (Mathf.Abs(a.X - current.X) + Mathf.Abs(a.Y - current.Y))
                 .CompareTo(Mathf.Abs(b.X - current.X) + Mathf.Abs(b.Y - current.Y)));
             float step = faint.Count > 1 ? Mathf.Min(0.08f, CompassSpread / (faint.Count - 1)) : 0f;
@@ -414,8 +415,17 @@ namespace IBlameYou.UI
 
         private RoomLook LookOf(int index, RoomData current)
         {
-            var look = MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass());
+            var look = MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass(), IsCharted(index));
             return look == RoomLook.Faint && WaitingReveal(index) ? RoomLook.Hidden : look;
+        }
+
+        // 보물 지도: 마을 방은 안 가 봤어도 흐린 칸 + 흐린 집 아이콘 (나침반 획득 연출은 없음)
+        private bool IsCharted(int index)
+        {
+            if (relics == null && playerObject != null) relics = playerObject.GetComponent<PlayerRelics>();
+            if (relics == null || !relics.Has(RelicId.TreasureMap)) return false;
+            var rooms = streamer.Rooms.Rooms;
+            return index >= 0 && index < rooms.Count && rooms[index].Kind == RoomKind.Village;
         }
 
         private bool HasCompass()

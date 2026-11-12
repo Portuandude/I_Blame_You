@@ -25,6 +25,10 @@ namespace IBlameYou.Tests
             Assert.AreEqual(RoomLook.Full, MinimapRules.Look(true, false, true));
             Assert.AreEqual(RoomLook.Full, MinimapRules.Look(false, true, false));
             Assert.AreEqual(RoomLook.Full, MinimapRules.Look(true, false, false));
+            // 보물 지도: 표시된 방(마을)만 나침반 없이도 흐리게, 가 봤으면 Full
+            Assert.AreEqual(RoomLook.Faint, MinimapRules.Look(false, false, false, true));
+            Assert.AreEqual(RoomLook.Full, MinimapRules.Look(true, false, false, true));
+            Assert.AreEqual(RoomLook.Faint, MinimapRules.Look(false, false, true, true));
         }
 
         [Test]

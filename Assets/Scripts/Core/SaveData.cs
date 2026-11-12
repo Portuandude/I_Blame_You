@@ -12,10 +12,12 @@ namespace IBlameYou.Core
         private const string KeySfxVolume = "Settings.SfxVolume";
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
+        private const string KeyBestGold = "Best.Gold"; // 한 판에 모은 골드(RunStats.GoldEarned) 최고
         private const string KeyRecentClears = "Recent.Clears";
         private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
         private const string KeyRecentBlame = "Recent.Blame";
-        private const string KeyRelicCodex = "Codex.Relics";
+        private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
+        private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
 
         private static bool settingsLoaded;
 
@@ -53,6 +55,20 @@ namespace IBlameYou.Core
 
         // 지금까지 도달한 가장 높은 레벨. 기록이 없으면 0.
         public static int BestLevel(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestLevel, devMode), 0);
+
+        // 한 판에 모은 골드(쓴 것 포함, RunStats.GoldEarned) 최고. 기록이 없으면 0.
+        public static int BestGold(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestGold, devMode), 0);
+
+        // 이번 판에 모은 골드를 기록한다. 이전 최고보다 많으면 true. 기능 테스트 모드는 기록하지 않는다.
+        public static bool RecordGold(int earned)
+        {
+            if (GameSession.FeatureTest) return false;
+            bool dev = GameSession.DevMode;
+            if (earned <= BestGold(dev)) return false;
+            PlayerPrefs.SetInt(ModeKey(KeyBestGold, dev), earned);
+            PlayerPrefs.Save();
+            return true;
+        }
 
         // 클리어 시간을 기록한다. 이전 기록보다 빠르면(또는 첫 기록이면) true.
         public static bool RecordClearTime(float seconds)
@@ -109,16 +125,19 @@ namespace IBlameYou.Core
         }
 
         // 유물 도감: 한 번이라도 고른 유물 (RelicCodex 비트 마스크). 모드별로 따로.
-        public static int RelicCodexMask(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyRelicCodex, devMode), 0);
+        public static long RelicCodexMask(bool devMode) =>
+            RelicCodex.Join(PlayerPrefs.GetInt(ModeKey(KeyRelicCodex, devMode), 0), PlayerPrefs.GetInt(ModeKey(KeyRelicCodexHigh, devMode), 0));
 
         // 유물을 고르면 도감에 남긴다. 처음 고른 유물이면 true.
         public static bool RecordRelic(int relicId)
         {
             if (GameSession.FeatureTest) return false; // 기능 테스트 모드는 기록하지 않는다
             bool dev = GameSession.DevMode;
-            int mask = RelicCodexMask(dev);
+            long mask = RelicCodexMask(dev);
             if (RelicCodex.Has(mask, relicId)) return false;
-            PlayerPrefs.SetInt(ModeKey(KeyRelicCodex, dev), RelicCodex.With(mask, relicId));
+            long next = RelicCodex.With(mask, relicId);
+            PlayerPrefs.SetInt(ModeKey(KeyRelicCodex, dev), RelicCodex.Low(next));
+            PlayerPrefs.SetInt(ModeKey(KeyRelicCodexHigh, dev), RelicCodex.High(next));
             PlayerPrefs.Save();
             return true;
         }
