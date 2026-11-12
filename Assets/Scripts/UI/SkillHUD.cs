@@ -97,6 +97,8 @@ namespace IBlameYou.UI
             }
             runStartTime = Time.time;
             RunStats.Reset();
+            RunGold.Reset();
+            RunGold.Arrived += OnGoldArrived; // 동전이 닿으면 골드 숫자가 톡 튄다 (SkillHUD.Gold.cs)
             EnemyController.Killed += OnEnemyKilled;
             health.Damaged += OnPlayerDamaged;
             InitializeRelics();
@@ -105,6 +107,7 @@ namespace IBlameYou.UI
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             if (!RunStats.Ended) RunStats.Kills++;
+            if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
         }
 
         private void OnPlayerDamaged(float amount)
@@ -134,6 +137,7 @@ namespace IBlameYou.UI
             StageEvents.Notice -= OnStageNotice;
             StageEvents.Cleared -= OnStageCleared;
             EnemyController.Killed -= OnEnemyKilled;
+            RunGold.Arrived -= OnGoldArrived;
             if (health != null) health.Damaged -= OnPlayerDamaged;
             if (progression != null)
             {
@@ -292,6 +296,7 @@ namespace IBlameYou.UI
 
             DrawLowHealthWarning(); // 화면 가장자리 효과라 다른 UI보다 먼저(아래에) 그린다
             DrawStatusPanel();
+            DrawGoldPill(); // 골드 (SkillHUD.Gold.cs)
             DrawStageBar();
             DrawLevelBar();
             DrawRelicList();
@@ -498,6 +503,7 @@ namespace IBlameYou.UI
             var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
+            DrawEndGold(rect); // 이번 판 골드 (SkillHUD.Gold.cs)
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
                 new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
@@ -533,6 +539,7 @@ namespace IBlameYou.UI
             var previousMatrix = BeginEndScreenPop(rect);
             GUI.Box(rect, GUIContent.none, panel);
             DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
+            DrawEndGold(rect); // 이번 판 골드 (SkillHUD.Gold.cs)
             string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
             GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
                 $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
