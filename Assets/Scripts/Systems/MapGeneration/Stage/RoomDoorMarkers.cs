@@ -72,6 +72,7 @@ namespace IBlameYou.Systems
         }
 
         // 그 문 너머가 보스·중간보스 방이면 그 종류 (지금 방이 그 방이면 장식하지 않는다: 안에서는 이미 안다).
+        // 보스·중간보스 방은 늘 좌우 방이라(RoomLayout, 테스트로 고정) 그 방으로 가는 문은 좌우 문뿐이다 — 위/아래 구멍은 장식할 일이 없다.
         private static RoomKind? BossKindBehind(RoomLayoutData layout, RoomData room, DoorDir dir)
         {
             if (layout == null || room.Kind == RoomKind.Boss || room.Kind == RoomKind.MidBoss) return null;
@@ -114,17 +115,30 @@ namespace IBlameYou.Systems
             var glow = Add(null, sprite, new Vector2(x + inward * 1.2f, bottom + 0.08f), new Vector2(3f, 0.16f), CurtainOrder);
             bossGlows.Add((glow, tint));
 
-            var texture = Resources.Load<Texture2D>(kind == RoomKind.Boss ? "UI/HUD/Crown" : "UI/HUD/MapHelmet");
-            if (texture == null) return; // 그림이 없으면 기둥·색만
+            var iconSprite = GateIcon(kind);
+            if (iconSprite == null) return; // 그림이 없으면 기둥·색만
             var go = new GameObject("BossGateIcon");
             go.transform.SetParent(transform, false);
             var home = new Vector3(x + inward * 0.55f, bottom + height + 1.7f, 0f);
             go.transform.position = home;
             var icon = go.AddComponent<SpriteRenderer>();
-            icon.sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f),
-                Mathf.Max(texture.width, texture.height) / 1.1f); // 약 1.1유닛 크기
+            icon.sprite = iconSprite;
             icon.sortingOrder = FrameOrder + 2;
             bossIcons.Add((go.transform, home));
+        }
+
+        // 왕관/투구 그림은 종류마다 한 번만 만든다 (방을 다시 들어올 때마다 Sprite를 새로 만들면 쌓인다, 리뷰 MEDIUM).
+        private static readonly Dictionary<RoomKind, Sprite> gateIcons = new Dictionary<RoomKind, Sprite>();
+
+        private static Sprite GateIcon(RoomKind kind)
+        {
+            if (gateIcons.TryGetValue(kind, out var cached) && cached != null) return cached;
+            var texture = Resources.Load<Texture2D>(kind == RoomKind.Boss ? "UI/HUD/Crown" : "UI/HUD/MapHelmet");
+            if (texture == null) return null;
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f),
+                Mathf.Max(texture.width, texture.height) / 1.1f); // 약 1.1유닛 크기
+            gateIcons[kind] = sprite;
+            return sprite;
         }
 
         private SpriteRenderer Add(List<SpriteRenderer> list, Sprite sprite, Vector2 center, Vector2 size, int order)
