@@ -29,6 +29,8 @@ DIRECTION ① "방 종류 늘리기"의 연장. 회복 구슬은 회복 수지 �
 - DONE (claude/project-thread-d80q0t): 두 갈래 길 위 길 끝 발판에 동전 무더기 (적 없는 대신 틈·무너지는 발판을 건넌 보상)
 - DONE (claude/project-thread-d80q0t): 기둥 숲에서 가장 높은 기둥 머리에 동전 무더기 (난이도 30% 이상, 무너지는 머리는 피함)
 - DONE (claude/project-thread-d80q0t): 종유석 흔들림 때 작은 돌 부스러기가 떨어지는 예고 (그림자 예고와 함께)
+- DONE (claude/project-thread-d80q0t): 선반 세로 방(이동 방, 난이도 30%+) 궁수가 지키는 높은 선반에 동전 무더기
+- DONE (claude/project-thread-d80q0t): 동전 무더기 전용 효과음 `CoinPile` (짤랑짤랑 다섯 음)
 
 ## 다음 (2026-11-12 23:10 자동 실행이 추가 — 레벨 재설계 2차: 가로 지형 늘리기)
 
