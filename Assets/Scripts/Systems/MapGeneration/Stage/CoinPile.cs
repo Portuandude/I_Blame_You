@@ -97,6 +97,7 @@ namespace IBlameYou.Systems
             if (player == null) return;
             var health = player.GetComponent<HealthSystem>();
             if (health != null && health.IsDead) return;
+            if (IBlameYou.Core.RunStats.Ended) return; // 판이 끝난 뒤에는 줍지 않고 그대로 둔다 (기록에도 남기지 않음)
 
             collected = true;
             int got = IBlameYou.Core.RunGold.OnCoinPile(player.transform, transform.position + Vector3.up * 0.4f, amount);
