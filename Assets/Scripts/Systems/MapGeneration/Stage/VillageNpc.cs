@@ -54,8 +54,13 @@ namespace IBlameYou.Systems
             return npc;
         }
 
+        private static readonly System.Collections.Generic.Dictionary<string, Sprite[]> frameCache =
+            new System.Collections.Generic.Dictionary<string, Sprite[]>();
+
+        // 방을 다시 불러올 때마다 Sprite를 새로 만들지 않게 이름별로 한 번만 만든다 (리뷰 LOW)
         private static Sprite[] LoadFrames(string name)
         {
+            if (frameCache.TryGetValue(name, out var cached) && cached.Length > 0 && cached[0] != null) return cached;
             var list = new System.Collections.Generic.List<Sprite>();
             for (int i = 0; i < 4; i++)
             {
@@ -64,7 +69,9 @@ namespace IBlameYou.Systems
                 tex.filterMode = FilterMode.Point;
                 list.Add(Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0f), VillageBuilding.PixelsPerUnit));
             }
-            return list.ToArray();
+            var frames = list.ToArray();
+            frameCache[name] = frames;
+            return frames;
         }
 
         private void CreateBubble()
