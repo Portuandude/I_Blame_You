@@ -3,6 +3,19 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
+## 다음 (2026-11-12 23:00 자동 실행이 추가 — 조작감: 점프 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기" 안의 조작감. 지금 점프는 땅에 닿은 그 순간에만 눌러야 하고 높이가 늘 같다.
+점프 최대 거리(검증기 `RunJumpReach` 7칸)는 바꾸지 않는다. 스위치 발판 낭떠러지(9~10칸)를 달리기 점프로 건널 수 없어야 한다.
+
+- DONE (claude/project-thread-3647un): 코요테 타임 — 발판 끝에서 떨어진 뒤 0.08초 안에는 아직 점프할 수 있다 (달리기 9 × 0.08 = 0.7칸 → 최대 약 8칸, 9칸 낭떠러지는 여전히 못 건넘). 대시 중·경직 중·점프 직후에는 안 됨
+- DONE (claude/project-thread-3647un): 점프 입력 버퍼 — 착지 0.12초 전에 누른 Space도 착지하자마자 점프로 쓴다
+- DONE (claude/project-thread-3647un): 짧게 누르면 낮은 점프 — 올라가는 중에 Space를 떼면 위 속도를 절반으로 (최대 높이·거리는 그대로)
+- DONE (claude/project-thread-3647un): 천장 모서리 보정 — 점프하다 머리가 천장 모서리에 0.3칸 이하로만 걸리면 옆으로 살짝 밀어 그대로 올라가게
+- DONE (claude/project-thread-3647un): 카메라 앞보기 — 가로로 움직이는 쪽을 2칸 더 보여 줌 (멈추면 유지, 0.6초에 걸쳐 부드럽게). 가로로 긴 방(3화면)에서 앞이 안 보이는 문제
+- DONE (claude/project-thread-3647un): 떨어질 때 아래 보기 — 낙하 속도 8~18에 따라 카메라를 최대 3칸 아래로 (세로 방·낭떠러지에서 착지할 곳이 먼저 보이게)
+- DONE (claude/project-thread-3647un): 최대 낙하 속도 — 아주 높은 곳에서 떨어질 때 속도를 20으로 제한해 착지 자리를 읽을 시간을 준다 (가로 거리 검증 기준은 그대로)
+
 ## 2026-11-12 22:40·22:50 실행 (claude/project-thread-60srw3, claude/project-thread-p0jxnt)
 
 - DONE (claude/project-thread-60srw3): 골드 쓰기 표시 — 마을에서 골드를 쓰면 HUD 골드 알약 아래에 빨간 "-N"이 떠올라 사라지고 숫자가 잠깐 붉게 (`RunStats.TrySpendGold` → 이벤트, `UI/SkillHUD.Gold`)
