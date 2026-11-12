@@ -11,7 +11,13 @@
 
 - DONE (claude/project-thread-wp6c3h): 별사탕 연출 — 별사탕으로 마나가 찰 때 머리 위로 작은 별사탕이 톡 (`MedalGlintFx.Create(..., "StarCandy")`, 도토리 주머니와 겹치면 옆으로 비켜서)
 - DONE (claude/project-thread-wp6c3h): 젤리 방석 무너짐 방울 — 젤리 방석으로 버틴 발판이 무너질 때 나무 먼지 대신(또는 함께) 분홍 젤리 방울이 톡톡 튀게 (`CrumblingPlatform.Crumble` 끝)
-- TODO: 보상 구슬 자석 마무리 — 끌려오기 시작할 때 작은 "슝" 소리, 벽 너머 플레이어에게는 끌려가지 않게 (`ArenaReward.FindMagnetTarget`, 한쪽 발판은 막지 않게 주의)
+- DONE (claude/project-thread-wp6c3h): 보상 구슬 자석 마무리 — 끌려오기 시작할 때 작은 "슝" 소리, 벽 너머 플레이어에게는 끌려가지 않게 (`ArenaReward.FindMagnetTarget`, 한쪽 발판은 막지 않게 주의)
+
+## 다음 (2026-11-12 자동 실행이 추가)
+
+- TODO: 유물 말굽 자석 — 보상 구슬 자석 반경 1.5 → 4유닛 (`RelicId.HorseshoeMagnet`=24, 공용, `ArenaReward.MagnetRadius`를 유물에 따라, 아이콘 `generate_relic_icons.py`·테스트, 유물 25종)
+- TODO: 자석 꼬리 — 끌려오는 보상 구슬 뒤로 분홍 잔상이 짧게 남게 (`Afterimage` 재사용 가능 여부 확인, 끌려올 때만)
+- TODO: 말굽 자석 연출 — 말굽 자석으로 먼 구슬이 끌려오기 시작할 때 머리 위로 작은 말굽 자석 아이콘이 톡 (`MedalGlintFx.Create(..., "HorseshoeMagnet")`, 1.5유닛 밖에서 잡혔을 때만)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
