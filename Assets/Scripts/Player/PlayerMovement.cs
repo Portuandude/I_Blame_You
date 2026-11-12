@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -23,6 +24,8 @@ namespace IBlameYou.Player
         [SerializeField] private float jumpBufferTime = 0.12f;
         [Tooltip("올라가는 중에 점프 키를 떼면 위 속도에 곱하는 값 (짧게 누르면 낮은 점프)")]
         [SerializeField] private float jumpCutMultiplier = 0.5f;
+        [Tooltip("점프하다 머리가 천장 모서리에 이만큼(유닛, 1칸 = 1) 이하로만 걸리면 옆으로 밀어 그대로 올라간다")]
+        [SerializeField] private float cornerCorrection = 0.3f;
 
         [Header("Run Stamina")]
         [SerializeField] private float runStaminaDrainPerSecond = 25f;
@@ -67,6 +70,11 @@ namespace IBlameYou.Player
         private bool jumpCutArmed;       // 이번 점프가 올라가는 중이라 키를 떼면 낮은 점프가 될 수 있음
         private bool jumpCutRequested;   // Update에서 키를 뗀 것을 봤고 다음 물리 프레임에 위 속도를 줄인다
         private const float JumpLockTime = 0.1f;
+        private const float CornerStep = 0.05f;
+        private Collider2D bodyCollider;
+        private ContactFilter2D solidFilter;
+        private readonly List<RaycastHit2D> cornerHits = new List<RaycastHit2D>();
+        private readonly List<Collider2D> cornerOverlaps = new List<Collider2D>();
         private bool isDashing;
         private float dashTimeRemaining;
         private float dashDirection;
@@ -111,6 +119,14 @@ namespace IBlameYou.Player
             groundLayer = layer;
         }
 
+        // 천장 모서리 보정용 필터. groundLayer가 Awake 뒤(ConfigureGroundCheck)에 정해질 수 있어 쓸 때마다 맞춘다.
+        private void RefreshSolidFilter()
+        {
+            solidFilter = new ContactFilter2D();
+            solidFilter.SetLayerMask(groundLayer);
+            solidFilter.useTriggers = false;
+        }
+
         // MovingPlatform이 자기 FixedUpdate(먼저 실행)에서 부른다. 발판 위에 있는 프레임에만 들어온다.
         public void SetPlatformVelocity(Vector2 velocity)
         {
@@ -129,6 +145,7 @@ namespace IBlameYou.Player
             animator = GetComponentInChildren<Animator>();
             combatStats = GetComponent<CombatStats>();
             defaultGravityScale = rb.gravityScale;
+            bodyCollider = GetComponent<CapsuleCollider2D>();
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,
             // 캡슐/원형 콜라이더가 바닥 모서리에 걸리면 캐릭터가 넘어지듯 회전한다. 항상 잠가둔다.
@@ -325,6 +342,54 @@ namespace IBlameYou.Player
             {
                 transform.localScale = new Vector3(Mathf.Sign(moveInput), 1f, 1f);
             }
+
+            TryCornerCorrection();
+        }
+
+        // 천장 모서리 보정: 올라가다가 머리가 천장 모서리에 조금만 걸리면(옆으로 cornerCorrection 이하만 밀면 비는 자리)
+        // 그쪽으로 몸을 옮겨 점프가 툭 끊기지 않게 한다. 한쪽 발판(아래에서 통과)은 천장으로 보지 않는다.
+        private void TryCornerCorrection()
+        {
+            if (bodyCollider == null || rb.linearVelocity.y <= 0f || cornerCorrection <= 0f) return;
+            RefreshSolidFilter();
+            Bounds b = bodyCollider.bounds;
+            Vector2 center = b.center;
+            Vector2 size = new Vector2(b.size.x - 0.02f, b.size.y - 0.02f);
+            float distance = rb.linearVelocity.y * Time.fixedDeltaTime + 0.02f;
+            if (!HeadBlocked(center, size, distance)) return;
+
+            for (float step = CornerStep; step <= cornerCorrection + 0.001f; step += CornerStep)
+            {
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    Vector2 shifted = center + new Vector2(side * step, 0f);
+                    if (SolidOverlap(shifted, size) || HeadBlocked(shifted, size, distance)) continue;
+                    rb.position += new Vector2(side * step, 0f);
+                    return;
+                }
+            }
+        }
+
+        private bool HeadBlocked(Vector2 center, Vector2 size, float distance)
+        {
+            Physics2D.BoxCast(center, size, 0f, Vector2.up, solidFilter, cornerHits, distance);
+            foreach (var hit in cornerHits)
+            {
+                if (hit.collider == null || hit.collider.usedByEffector || hit.collider.attachedRigidbody == rb) continue;
+                if (hit.normal.y < -0.5f) return true; // 위에서 막는 면 (옆벽에 스친 것은 빼기)
+            }
+            return false;
+        }
+
+        private bool SolidOverlap(Vector2 center, Vector2 size)
+        {
+            Physics2D.OverlapBox(center, size, 0f, solidFilter, cornerOverlaps);
+            foreach (var other in cornerOverlaps)
+            {
+                if (other == null || other.usedByEffector || other.attachedRigidbody == rb) continue;
+                return true;
+            }
+            return false;
         }
 
         private void OnDrawGizmosSelected()
