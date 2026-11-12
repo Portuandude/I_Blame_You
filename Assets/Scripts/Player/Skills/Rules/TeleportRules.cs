@@ -3,9 +3,9 @@ using System;
 namespace IBlameYou.Player
 {
     // 순간이동의 방향·거리 규칙 (순수 C#, EditMode 테스트 대상). 물리 조회는 TeleportSkill이 하고 그 결과만 여기로 넘긴다.
-    // - 방향은 상/하/좌/우 넷뿐: 방향키 입력에서 가장 큰 축 하나만 쓴다 (같으면 세로 우선). 입력이 없으면 바라보는 쪽.
+    // - 방향은 상/하/좌/우 넷뿐: W/A/S/D 입력에서 가장 큰 축 하나만 쓴다 (같으면 세로 우선). 입력이 없으면 바라보는 쪽.
     // - 좌/우/위: 땅·발판에 막히면 그 앞에서 멈춘다 (위로 갈 때는 발판 아래면도 막는다).
-    // - 아래: 발판은 뚫고 내려가지만 땅은 뚫지 않는다. 낙사 방지로, 도착 지점 바로 아래(MaxSafeDrop 안)에 디딜 곳이 있고
+    // - 아래: 발판 역할 오브젝트(한쪽 발판·움직이는/스위치 발판·무너지는 발판)는 뚫고 내려가지만 땅은 뚫지 않는다. 낙사 방지로, 도착 지점 바로 아래(MaxSafeDrop 안)에 디딜 곳이 있고
     //   그곳이 낙사 높이보다 위인 지점까지만 간다. 그런 지점이 MinTravel 이상 떨어진 곳에 하나도 없으면 발동하지 않는다.
     public static class TeleportRules
     {
@@ -14,7 +14,7 @@ namespace IBlameYou.Player
         public const float Step = 0.25f;       // 아래 방향에서 안전한 지점을 찾을 때 거리를 줄여 가는 간격
         public const float Skin = 0.05f;       // 막힌 면 앞에서 남기는 틈
 
-        // 방향키 입력(x, y)을 네 방향 하나로 바꾼다. dx, dy 중 하나만 ±1이 된다.
+        // W/A/S/D 입력(x, y)을 네 방향 하나로 바꾼다. dx, dy 중 하나만 ±1이 된다.
         public static void Cardinal(float x, float y, int facing, out int dx, out int dy)
         {
             const float dead = 0.01f;

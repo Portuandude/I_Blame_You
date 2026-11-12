@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace IBlameYou.Player
 {
-    // 플레이어 A의 순간이동 (기획서 2.5). 방향키로 상/하/좌/우 중 하나를 잡고 Enter. 미니게임 없이 바로 발동하고 마나를 쓴다.
-    // 방향키를 안 누르고 있으면 바라보는 방향으로. 벽 점프가 없으므로 세로 이동 수단을 겸한다.
-    // 좌/우/위는 땅·발판 앞에서 멈추고, 아래는 발판을 뚫되 낙사하지 않는 지점까지만 간다 (규칙: TeleportRules).
+    // 플레이어 A의 순간이동 (기획서 2.5). W/A/S/D로 상/하/좌/우 중 하나를 잡고 Enter. 미니게임 없이 바로 발동하고 마나를 쓴다.
+    // 아무 방향도 안 누르고 있으면 바라보는 방향으로. 벽 점프가 없으므로 세로 이동 수단을 겸한다.
+    // 좌/우/위는 땅·발판 앞에서 멈추고, 아래는 발판(한쪽 발판·움직이는/스위치 발판·무너지는 발판)을 뚫되 낙사하지 않는 지점까지만 간다 (규칙: TeleportRules).
     [RequireComponent(typeof(PlayerControlState))]
     [RequireComponent(typeof(ManaSystem))]
     [RequireComponent(typeof(Rigidbody2D))]
@@ -126,7 +126,8 @@ namespace IBlameYou.Player
         }
 
         // 발 밑 얇은 상자를 아래로 밀어 처음 닿는 디딜 곳까지의 거리 (없으면 PositiveInfinity).
-        // solidOnly: 위에서만 밟히는 발판은 건너뛴다 (뚫고 내려갈 수 있으므로).
+        // solidOnly: 발판 역할 오브젝트는 건너뛴다 (뚫고 내려갈 수 있으므로): 위에서만 밟히는 발판(effector)과
+        //   UnsafeGround가 붙은 발판(움직이는·스위치 발판은 effector 없는 단단한 상자라 예전에는 아래 순간이동을 막았다).
         // 무너지는 발판·움직이는 발판(UnsafeGround)은 내려선 뒤 떨어질 수 있으니 안전한 착지로 치지 않는다.
         private float FeetCast(Vector2 origin, float width, float maxDistance, bool solidOnly)
         {
@@ -136,7 +137,7 @@ namespace IBlameYou.Player
             for (int i = 0; i < count; i++)
             {
                 var hit = castResults[i];
-                if (solidOnly && hit.collider.usedByEffector) continue;
+                if (solidOnly && IsPlatform(hit.collider)) continue;
                 float d = Mathf.Max(hit.distance - 0.05f, 0f);
                 if (d > nearest) continue;
                 bool unsafeHere = hit.collider.GetComponentInParent<UnsafeGround>() != null;
@@ -147,6 +148,9 @@ namespace IBlameYou.Player
             if (!solidOnly && nearestUnsafe) return float.PositiveInfinity; // 처음 닿는 곳이 불안한 발판이면 안전하지 않다
             return nearest;
         }
+
+        private static bool IsPlatform(Collider2D collider) =>
+            collider.usedByEffector || collider.GetComponentInParent<UnsafeGround>() != null;
 
         private void Teleport(Vector2 direction, float travel)
         {

@@ -10,7 +10,7 @@ namespace IBlameYou.Player
     // 플레이어 A (이동·방어)                  플레이어 B (공격)
     //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타
     //   Shift 달리기, Left Ctrl 대쉬             상단 1~5: 공격 스킬 선택 → 영창 타이핑 → Enter
-    //   방향키 + Enter: 순간이동
+    //   W/A/S/D + Enter: 순간이동 (2026-11-12 방향키에서 바꿈)
     //   넘패드 1~5: 속성 방어막 → W/A/S/D 순서 입력
     //
     // 개발자 모드: 상단 1~5 = A 방어막 즉시, 6~9·0 = B 공격 스킬 즉시 (미니게임 생략).
@@ -44,14 +44,14 @@ namespace IBlameYou.Player
             !state.AKeyboardBlocked && !state.MovementFrozen &&
             (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter));
 
-        // 순간이동 방향: 누르고 있는 방향키 (대각선 가능). 아무것도 안 누르면 zero.
+        // 순간이동 방향: 누르고 있는 W/A/S/D (대각선 가능, 네 방향 고르기는 TeleportRules.Cardinal). 아무것도 안 누르면 zero.
         public static Vector2 TeleportDirection()
         {
             var dir = Vector2.zero;
-            if (Input.GetKey(KeyCode.RightArrow)) dir.x += 1f;
-            if (Input.GetKey(KeyCode.LeftArrow)) dir.x -= 1f;
-            if (Input.GetKey(KeyCode.UpArrow)) dir.y += 1f;
-            if (Input.GetKey(KeyCode.DownArrow)) dir.y -= 1f;
+            if (Input.GetKey(KeyCode.D)) dir.x += 1f;
+            if (Input.GetKey(KeyCode.A)) dir.x -= 1f;
+            if (Input.GetKey(KeyCode.W)) dir.y += 1f;
+            if (Input.GetKey(KeyCode.S)) dir.y -= 1f;
             return dir.normalized;
         }
 
