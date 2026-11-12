@@ -1,5 +1,6 @@
 using System;
 using IBlameYou.Enemies;
+using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -42,6 +43,8 @@ namespace IBlameYou.Core
             if (enemy.GetComponent<BossSummon>() != null) return; // 보스가 되풀이해 소환하는 적은 골드 없음
             var rank = RankOf(enemy);
             int amount = GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
+            var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
+            if (relics != null && relics.Has(RelicId.LuckyPouch)) amount = RelicBook.LuckyPouchGold(amount); // 복주머니 +50%
             if (amount <= 0) return;
 
             RunStats.AddGold(amount);
