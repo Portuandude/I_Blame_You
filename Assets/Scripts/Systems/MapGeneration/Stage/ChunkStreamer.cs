@@ -475,7 +475,8 @@ namespace IBlameYou.Systems
             });
         }
 
-                // 런 진행 저장용: 지금까지의 기록을 꺼내거나(Export), 저장된 기록으로 되돌린다(Import, 청크를 만들기 전에 부를 것).
+        // 바닥에 남은 장비(groundEquipment)는 런 저장에 넣지 않는다: 2026-11-10부터 런 이어하기 저장을 쓰지 않음 (RunSave). 스테이지 2 저장을 다시 쓰게 되면 함께 넣을 것.
+        // 런 진행 저장용: 지금까지의 기록을 꺼내거나(Export), 저장된 기록으로 되돌린다(Import, 청크를 만들기 전에 부를 것).
         public StageRecords ExportRecords()
         {
             var records = new StageRecords

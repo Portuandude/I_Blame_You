@@ -56,6 +56,19 @@ namespace IBlameYou.Systems
             icon.sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width); // 1유닛
         }
 
+        // 방금 생긴 자리에 플레이어가 가만히 서 있으면(Rigidbody 수면) Enter가 오지 않을 수 있어, 처음 한 번 직접 겹침을 본다 (RelicChest와 같음).
+        private void Start()
+        {
+            var box = GetComponent<BoxCollider2D>();
+            if (box == null) return;
+            var center = (Vector2)transform.position + box.offset;
+            foreach (var hit in Physics2D.OverlapBoxAll(center, box.size, 0f))
+            {
+                var player = TrapCommon.PlayerFrom(hit);
+                if (player != null) { touching = player; break; }
+            }
+        }
+
         // 위아래로 살짝 떠 있는다
         private void LateUpdate()
         {
