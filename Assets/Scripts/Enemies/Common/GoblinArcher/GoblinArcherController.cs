@@ -53,7 +53,11 @@ namespace IBlameYou.Enemies
                 return;
             }
 
-            if (target == null) return;
+            if (target == null)
+            {
+                spotted = false; // 플레이어가 없어졌다 돌아오면(되살아남 등) 다시 알아챔
+                return;
+            }
 
             float dx = target.position.x - transform.position.x;
             float distance = Vector2.Distance(transform.position, target.position);
