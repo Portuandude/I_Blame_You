@@ -124,6 +124,7 @@ namespace IBlameYou.Systems
 
             var clip = Load($"Audio/Music/{name}");
             currentMusicName = name;
+            musicPitch = 1f; // 곡 파일이 없어도 이전 곡 빠르기는 원래대로
             if (clip == null) return;
 
             var next = currentMusic == musicA ? musicB : musicA;
