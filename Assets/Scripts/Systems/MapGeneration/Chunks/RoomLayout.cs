@@ -358,7 +358,7 @@ namespace IBlameYou.Systems
 
             // 이중 스위치 발판: 판마다 하나. 진행도 50%에 가장 가까운 좌우 이동·퍼즐 방
             RoomData bridge = null;
-            // 시작 방 바로 옆(거리 1)은 전투 방 후보로 남기려고 뒤로 미룬다
+            // 주 경로 우선, 시작 방 바로 옆(거리 1)은 전투 방 후보로 남기려고 뒤로 미룬다
             foreach (var r in rest)
             {
                 if (r.IsVertical || r.Chunk == ChunkKind.ElementGate) continue;
@@ -392,7 +392,7 @@ namespace IBlameYou.Systems
         }
 
         private static double BridgeScore(RoomData r) =>
-            Math.Abs(r.Difficulty - StagePlanner.SwitchBridgeProgress) + (r.Distance <= 1 ? 1.0 : 0.0);
+            Math.Abs(r.Difficulty - StagePlanner.SwitchBridgeProgress) + (r.Distance <= 1 ? 1.0 : 0.0) + (r.MainPath ? 0.0 : 0.6); // 주 경로 우선. 다만 4×3 격자의 주 경로는 대개 세로 방·중간보스·휴식·보스로 차서 곁가지에 놓인다
 
         private static bool Locks(RoomLayoutData layout, List<RoomData> path, int index) =>
             index >= 0 && index < path.Count && path[index].LocksDoors;
@@ -423,7 +423,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 비상용: 가운데 줄 → 오른쪽 끝에서 위 줄 → 왼쪽, 아래 줄은 곁방 둘. (테스트는 모든 시드에서 TryBuild가 성공하는지 본다)
+        // 비상용: 다른 난수열로 TryBuild를 더 오래 돌린다 (시드 0~2000 × 목표 10가지에서 한 번도 오지 않음)
         private static RoomLayoutData Snake(int seed, float target)
         {
             var rng = new Random(seed ^ 0x51ab);
