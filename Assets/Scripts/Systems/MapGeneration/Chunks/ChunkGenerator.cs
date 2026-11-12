@@ -42,6 +42,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Climb: BuildClimb(chunk, heights, occupied, rng); break;
                 case ChunkKind.Cave: BuildCave(chunk, heights, occupied, rng); break;
                 case ChunkKind.Pillars: BuildPillars(chunk, heights, occupied, rng); break;
+                case ChunkKind.TwinPath: BuildTwinPath(chunk, heights, occupied, rng); break;
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
@@ -293,6 +294,47 @@ namespace IBlameYou.Systems
             }
 
             ApplyHeights(chunk, heights);
+        }
+
+        // 두 갈래 길: 평평한 아래 길에는 가시 줄과 적, 위에는 발판 계단(2칸씩)으로 오르는 발판 줄이 출구 앞까지 이어진다.
+        // 위 길은 적이 없는 대신 발판 사이 틈(1~2칸)과 무너지는 발판(난이도가 오를수록 많이)을 건너야 한다. 떨어지면 아래 길로 이어 간다.
+        // 아래 길의 머리 위 여유: 발판 줄 칸이 바닥 + TwinPathWalkRise - 1행이라 점프 최고 높이(2.45칸)에 머리가 닿지 않는다.
+        public const int TwinPathWalkRise = 6;   // 위 길 윗면 = 바닥 + 6
+        public const int TwinPathWalkStart = 9;  // 위 길 첫 발판 열 (앞은 계단)
+        public const int TwinPathWalkEnd = W - 5; // 위 길 마지막 발판 열 (뒤 4칸은 내려설 출구 평지)
+
+        private static void BuildTwinPath(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            int ground = Math.Min(chunk.EntryHeight, MaxGround);
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+
+            // 계단: 윗면 바닥 + 2, + 4 (한 번에 2칸씩)
+            chunk.SetRow(3, 5, ground + 1, StageTile.Platform);
+            chunk.SetRow(6, 8, ground + 3, StageTile.Platform);
+
+            int row = ground + TwinPathWalkRise - 1;
+            float crumbleChance = 0.25f + 0.5f * chunk.Difficulty;
+            int x = TwinPathWalkStart;
+            bool first = true;
+            while (x <= TwinPathWalkEnd)
+            {
+                int width = Math.Min(rng.Next(3, 6), TwinPathWalkEnd - x + 1);
+                // 첫 발판은 계단에서 올라서는 곳이라 늘 단단하다. 너무 짧게 남은 끝 조각도 단단한 발판
+                bool crumble = !first && width >= 2 && rng.NextDouble() < crumbleChance;
+                if (crumble) chunk.AddFeature(FeatureKind.Crumble, x, row, width);
+                else chunk.SetRow(x, x + width - 1, row, StageTile.Platform);
+                first = false;
+                x += width;
+                if (x > TwinPathWalkEnd) break;
+                x += rng.Next(1, 3); // 틈 1~2칸 (같은 높이라 걸어 점프로 넘는다)
+            }
+
+            // 아래 길: 계단·출구를 피해 가시 줄, 그다음 적 (PlaceEnemies는 가시 근처를 피한다)
+            Mark(occupied, 4, 4);
+            int strips = 1 + (chunk.Difficulty >= 0.5f ? 1 : 0);
+            for (int i = 0; i < strips; i++) PlaceSpikeStrip(chunk, heights, occupied, rng, 2);
+            PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
         }
 
         // 평지에 가시 줄이 이어진다. 3칸짜리 가시 위에는 발판을 놓아 밟고 건널 수 있게 한다.
