@@ -22,14 +22,8 @@ DIRECTION ① "플레이 감각 다듬기" 안의 세로 방 다양화. ContentI
 
 ## 다음 (2026-11-12 23:10 자동 실행이 추가 — 레벨 재설계 2차: 가로 지형 늘리기)
 
-DIRECTION ① "방 종류 늘리기" 중 사람 선택이 필요 없는 지형 변형만 (ContentIdeas 퍼즐·이벤트·적 배치는 사람이 고른 뒤).
+DIRECTION ① "방 종류 늘리기" 중 사람 선택이 필요 없는 지형 변형만 (ContentIdeas 퍼즐·이벤트·적 배치는 사람이 고른 뒤). 6개 모두 끝 → BACKLOG_ARCHIVE.
 
-- DONE (claude/project-thread-dihyb7): 새 이동 지형 "기둥 숲"(`ChunkKind.Pillars`, 진행도 20%+) — 바닥 없는 낭떠러지 위로 폭 1~2칸 기둥이 높낮이 ±2칸으로 솟는다. 간격 2~3칸(오를 때 2칸). 난이도 50%+면 기둥 머리 하나가 무너지는 발판. 섬(Pits)보다 좁고 들쭉날쭉해 점프 정확도를 본다
-- DONE (claude/project-thread-dihyb7): 새 이동 지형 "두 갈래 길"(`ChunkKind.TwinPath`, 25%+) — 아래 길은 가시 줄 + 적, 위 길은 발판 계단으로 올라가는 발판 줄(무너지는 발판 섞임). 둘 다 출구로 이어진다. 싸울지 뛸지 고르는 방
-- DONE (claude/project-thread-dihyb7): 동굴 "떨어지는 종유석" 함정(`FeatureKind.Stalactite`, 동굴 난이도 35%+) — 천장에 매달린 종유석이 플레이어가 아래에 오면 0.4초 흔들린 뒤 떨어진다. 맞으면 피해, 땅에 닿으면 부서짐. 그림 생성
-- DONE (claude/project-thread-dihyb7): 새 지형 마무리 — 기둥 숲·두 갈래 길 배경 색, 스테이지 미리보기·문서(`LevelDesign.md`, GDD) 반영
-- TODO: 종유석 소리 — 흔들릴 때 바위 떨림 "StoneCrack", 부서질 때 돌 쿵 + 수정 찰랑 "RockShatter" (Tools/AudioGen)
-- TODO: 종유석 그림자 예고 — 흔들리기 시작하면 바로 아래 땅에 작은 그림자가 생기고 떨어질수록 진해진다 (어디로 떨어질지 보이게)
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
 
