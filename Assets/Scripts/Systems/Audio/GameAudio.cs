@@ -25,6 +25,8 @@ namespace IBlameYou.Systems
         private AudioSource musicB;
         private AudioSource currentMusic;
         private string currentMusicName;
+        private float musicPitch = 1f; // 지금 곡의 목표 빠르기 (곡을 바꾸면 1로 돌아간다)
+        private const float MusicPitchSpeed = 0.5f; // 초당 바뀌는 빠르기 (1 → 1.08이 0.16초)
 
         private static GameAudio Instance
         {
@@ -50,6 +52,13 @@ namespace IBlameYou.Systems
             if (instance == null) return;
             instance.currentMusic = null;
             instance.currentMusicName = null;
+        }
+
+        // 지금 곡을 조금 빠르게/느리게 (예: 중간보스 짝이 쓰러져 남은 기사가 광폭화하면 1.08). 다음 곡으로 바뀌면 1로 돌아간다.
+        public static void SetMusicPitch(float pitch)
+        {
+            if (instance == null) return;
+            instance.musicPitch = Mathf.Clamp(pitch, 0.5f, 2f);
         }
 
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
@@ -120,6 +129,8 @@ namespace IBlameYou.Systems
             var next = currentMusic == musicA ? musicB : musicA;
             next.clip = clip;
             next.volume = 0f;
+            next.pitch = 1f;
+            musicPitch = 1f;
             next.Play();
             currentMusic = next;
         }
@@ -130,6 +141,7 @@ namespace IBlameYou.Systems
             float step = Time.unscaledDeltaTime / MusicFadeTime * Mathf.Max(MusicVolume, 0.1f); // 볼륨이 0이어도 이전 곡은 꺼지게
             Fade(musicA, step);
             Fade(musicB, step);
+            if (currentMusic != null) currentMusic.pitch = Mathf.MoveTowards(currentMusic.pitch, musicPitch, Time.unscaledDeltaTime * MusicPitchSpeed);
         }
 
         private void Fade(AudioSource source, float step)
