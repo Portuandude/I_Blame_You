@@ -260,6 +260,36 @@ namespace IBlameYou.Tests
             Assert.AreEqual(5, seen.Count, "지그재그·양 갈래·선반·무너지는 계단·깜빡 계단이 모두 나와야 함");
         }
 
+        // 선반 세로 방: 이동 방이고 난이도 문턱 이상이면 높은 선반 위에 동전 무더기 하나 (발판 위 빈 칸). 다른 모양에는 없다.
+        [Test]
+        public void ShelfShaftsPutCoinPileOnHighShelf()
+        {
+            int piles = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    var chunk = RoomShaper.BuildShaft(seed, room, style).Chunk;
+                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                    bool expected = style == RoomShaper.ShaftStyle.Shelves && room.Kind == RoomKind.Travel
+                        && room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty;
+                    string tag = $"seed {seed} room {room.Index} {style}";
+                    Assert.AreEqual(expected ? 1 : 0, found.Count, tag);
+                    foreach (var c in found)
+                    {
+                        Assert.AreEqual(RoomShaper.ShelfRowHigh + 1, c.Y, tag);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), tag + ": 선반 위");
+                        Assert.IsFalse(chunk.IsSolid(c.X, c.Y), tag);
+                        piles++;
+                    }
+                }
+            }
+
+            Assert.Greater(piles, 0, "선반 동전이 한 번도 안 나옴");
+        }
+
         // 무너지는/깜빡 계단: 난이도 기준 이상에서만 나오고, 맨 위 판·맨 아래 판은 타일 발판 그대로,
         // 그 사이 판은 타일 없이 무너지는/깜빡 발판 기능으로 바뀐다. 깜빡 계단 박자는 아래 판부터 0, 1, 2….
         [Test]
