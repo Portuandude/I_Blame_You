@@ -547,6 +547,56 @@ namespace IBlameYou.Tests
             Assert.Greater(spikes, 600, "아래 길 가시가 거의 없음");
         }
 
+        // 동전 무더기 (위험한 길 보상): 두 갈래 길은 위 길 마지막 단단한 발판 위, 기둥 숲은 문턱 이상에서 가장 높은 단단한 기둥 머리 위.
+        // 늘 서는 칸(빈 칸, 바로 아래가 땅이나 발판)에 놓이고 청크마다 하나 이하.
+        [Test]
+        public void CoinPilesSitOnRiskyPathEnds()
+        {
+            int twin = 0, pillar = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var path = ChunkGenerator.Generate(seed, 3, ChunkKind.TwinPath, difficulty, entry, 0);
+                        var piles = path.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        int row = entry + ChunkGenerator.TwinPathWalkRise - 1;
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(row + 1, c.Y, tag + ": 위 길 발판 위");
+                            Assert.AreEqual(StageTile.Platform, path.Get(c.X, row), tag + ": 단단한 발판 위");
+                            Assert.Greater(c.X, ChunkGenerator.TwinPathWalkStart + 4, tag + ": 위 길 끝 쪽");
+                            twin++;
+                        }
+
+                        var pillars = ChunkGenerator.Generate(seed, 3, ChunkKind.Pillars, difficulty, entry, 0);
+                        piles = pillars.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        Assert.LessOrEqual(piles.Count, 1, tag);
+                        if (difficulty < ChunkGenerator.PillarCoinMinDifficulty) Assert.AreEqual(0, piles.Count, tag + ": 문턱 아래");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(c.Y, Surface(pillars, c.X), tag + ": 기둥 머리 위");
+                            foreach (var f in pillars.Features)
+                                if (f.Kind == FeatureKind.Crumble)
+                                    Assert.IsFalse(c.X >= f.X && c.X < f.X + f.Width, tag + ": 무너지는 머리 위");
+                            for (int x = 4; x < ChunkData.Width - 4; x++)
+                            {
+                                bool crumbleCol = pillars.Features.Exists(f => f.Kind == FeatureKind.Crumble && x >= f.X && x < f.X + f.Width);
+                                if (!crumbleCol) Assert.LessOrEqual(Surface(pillars, x), c.Y, tag + $": 더 높은 기둥 ({x})");
+                            }
+                            pillar++;
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(twin, 1000, "두 갈래 길 동전이 거의 없음");
+            Assert.Greater(pillar, 800, "기둥 숲 동전이 거의 없음");
+        }
+
         // 떨어지는 종유석: 동굴 난이도 문턱 이상에서만, 천장 바로 아래 빈 칸에 매달리고, 분출구와 2칸 넘게·서로 6칸 이상 떨어진다.
         [Test]
         public void StalactitesHangUnderCaveCeilingLate()

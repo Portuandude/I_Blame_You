@@ -78,6 +78,17 @@ namespace IBlameYou.Systems
 
         public int Roll(EnemyRank rank, Random rng) => Roll(rank, rng.NextDouble(), rng.NextDouble());
 
+        // 동전 무더기 (위험한 길 끝 보상): 난이도 0 → 3골드, 1 → 6골드. 일반 몹 한 마리(평균 1.25)보다 넉넉하고 정예(10~20)보다는 적게.
+        public const int CoinPileMin = 3;
+        public const int CoinPileMax = 6;
+
+        public static int CoinPileGold(float difficulty)
+        {
+            if (difficulty < 0f) difficulty = 0f;
+            if (difficulty > 1f) difficulty = 1f;
+            return CoinPileMin + (int)Math.Round((CoinPileMax - CoinPileMin) * difficulty, MidpointRounding.AwayFromZero);
+        }
+
         // 골드 양을 동전 몇 개로 나눠 뿌릴지 (동전 하나 = 1·5·10·50 골드). 화면이 동전으로 덮이지 않게 큰 단위부터.
         public static readonly int[] CoinValues = { 50, 10, 5, 1 };
 
