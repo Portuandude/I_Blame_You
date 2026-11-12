@@ -190,15 +190,5 @@ namespace IBlameYou.UI
             }
             GUI.Label(new Rect(row.x + 46f, row.y + 22f, row.width - 310f, 20f), stats.ToString(), smallRich);
         }
-
-        private static string SlotName(EquipSlot slot)
-        {
-            switch (slot)
-            {
-                case EquipSlot.Robe: return "로브";
-                case EquipSlot.Staff: return "지팡이";
-                default: return "신발";
-            }
-        }
     }
 }
