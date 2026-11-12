@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-12 14:21 UTC
+- 브랜치/PR: `claude/project-thread-zpaf21` → #49 (develop 대상, 자동 머지 켬). 14:00 실행의 인수인계로 시작, #48 head(b6f0226) 위에서 작업, #48은 실행 중 머지됨
+- 완료 (진행 중 갱신): ① 마을 방 꾸미기(따뜻한 색조·울타리·가로등·꽃·분수 `Stage/VillageDecor`) ② 마을 NPC(모자 슬라임 2명, 숨쉬기, 말풍선 `Stage/VillageNpc`) ③ 마을 곡 `Village`(90 BPM 오르골) ④ 식당 음식 아이콘 5종 + 머리 위 톡 ⑤ 결과 창 장비 3칸. 적대적 리뷰 2회, LOW 3건 반영
+- 실패/보류: 없음
+- 다음 실행 메모: 백로그 "마을 손맛" 5개. 플레이테스트 필요: 마을 꾸미기·NPC 말풍선 위치, 마을 곡 전환, 음식 아이콘, 결과 창 장비 줄
+
 ## 2026-11-12 14:00 UTC
 - 브랜치/PR: `claude/project-thread-41del8` → #48 (develop 대상, 자동 머지 켬). #47(장비) 머지 전에 그 위에서 시작, #47은 실행 중 머지됨
 - 완료 (7개, 동작 변경은 모두 적대적 리뷰 APPROVE, HIGH 1·LOW 몇 건 반영): ① 진행도(%) 시스템 삭제 — HUD 막대 → 스테이지 이름 꼬리표, 게임오버·시작 화면 기록은 "시작 방에서 N칸"(새 저장 키), 내부 기준은 방 깊이(`StageEvents.Depth`) ② NPC 마을 방(`RoomKind.Village`, 판마다 하나, 좌우 막다른 곁방·거리 2+·보스 옆 아님, 건물 2채 `Stage/VillageBuilding`, 미니맵 집) ③ 식당(음식 5종 `Data/VillageFood`, 방문마다 종류별 한 번, 도시락 `LunchboxGuard`) ④ 장비 상점(`Data/EquipmentShop` 진열 4·같은 부위 장비 판매가만큼 깎기·팔기·리롤, `UI/SkillHUD.Shop`) ⑤ 화면 밖 보상 구슬 길잡이 하트 ⑥ 젤리 방울 "똑똑" `JellyDrip` ⑦ 유물 종이비행기(26종). 상호작용 키: 건물 앞 W 짧게 톡(W+Enter 순간이동과 안 겹침) 또는 ↑. 로컬 154/154
