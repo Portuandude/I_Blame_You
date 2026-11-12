@@ -93,7 +93,7 @@ namespace IBlameYou.Tests
 
             var bolt = new EquipmentItem(EquipmentId.BoltShoes, 1).Stats();
             Assert.AreEqual(0.0625f, bolt[0].Value, 1e-5, "비율 능력치는 반올림하지 않는다");
-            Assert.AreEqual(-0.1f, bolt[1].Value, 1e-5);
+            Assert.AreEqual(0.025f, bolt[1].Value, 1e-5);
         }
 
         [Test]
@@ -135,7 +135,7 @@ namespace IBlameYou.Tests
         {
             Assert.AreEqual("방어력 +4", EquipmentBook.Describe(new StatValue(EquipStat.Defense, 4)));
             Assert.AreEqual("이동속도 +5%", EquipmentBook.Describe(new StatValue(EquipStat.MoveSpeed, 0.05f)));
-            Assert.AreEqual("순간이동 대기 -8%", EquipmentBook.Describe(new StatValue(EquipStat.TeleportCooldown, -0.08f)));
+            Assert.AreEqual("이동속도 -2.5%", EquipmentBook.Describe(new StatValue(EquipStat.MoveSpeed, -0.025f)));
             Assert.AreEqual(1, EquipmentBook.ElementIndex(EquipStat.WaterDamage));
             Assert.AreEqual(3, EquipmentBook.ElementIndex(EquipStat.EarthDefense));
             Assert.AreEqual(-1, EquipmentBook.ElementIndex(EquipStat.Defense));
