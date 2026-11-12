@@ -61,6 +61,10 @@ namespace IBlameYou.Player
 
         public bool IsRunning => isRunning;
         public bool IsGrounded => isGrounded;
+        // 확실히 땅에 서 있는지: 점프를 눌렀는데 아직 물리 프레임이 안 돌아 isGrounded가 남아 있는 순간도 공중으로 본다
+        // (마력 안개 근처 공중 금지를 점프 직후 순간이동으로 피하지 못하게, BlinkWard.Blocks).
+        // 같은 프레임에 Space를 눌렀는데 이 Update가 아직 안 돈 경우(실행 순서)도 공중으로 본다.
+        public bool IsGroundedStable => isGrounded && !jumpQueued && !Input.GetKeyDown(KeyCode.Space) && rb.linearVelocity.y <= 0.1f;
         // 발밑 높이 (몸 기준). 발밑에 붙이는 효과(레벨업 빛기둥 등)가 쓴다.
         public float FeetLocalY => groundCheck != null ? groundCheck.localPosition.y : 0f;
         public bool IsDashing => isDashing;
@@ -145,7 +149,8 @@ namespace IBlameYou.Player
                 jumpQueued = true;
             }
 
-            if (RoleInput.DashDown(control) && !isDashing && !stunned && stamina.TryConsume(dashStaminaCost))
+            // 마력 안개(스위치 발판 낭떠러지) 안이나, 공중에서 안개 가까이에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
+            if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Blocks(rb.position, IsGroundedStable) && stamina.TryConsume(dashStaminaCost))
             {
                 StartDash();
             }
@@ -218,6 +223,13 @@ namespace IBlameYou.Player
             {
                 rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
                 dashTimeRemaining -= Time.fixedDeltaTime;
+                // 대시하다 마력 안개에 들어가면 그 자리에서 흩어진다: 가로 속도를 걷기 속도로 낮춰 대시 거리로 건너뛰지 못하게.
+                if (BlinkWard.Contains(rb.position))
+                {
+                    EndDash();
+                    rb.linearVelocity = new Vector2(dashDirection * walkSpeed, 0f);
+                    return;
+                }
                 if (dashTimeRemaining <= 0f)
                 {
                     EndDash();

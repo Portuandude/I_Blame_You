@@ -23,6 +23,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.CrumbleBridge: return 30f;
                 case ChunkKind.ElementGate: return 30f;
                 case ChunkKind.MovingBridge: return 30f;
+                case ChunkKind.SwitchBridge: return 40f; // 룬 두 번 쏘기 + 발판 두 번 기다리기
                 case ChunkKind.Arena: return 70f;
                 case ChunkKind.EliteArena: return 100f;
                 case ChunkKind.Rest: return 20f;
@@ -35,6 +36,9 @@ namespace IBlameYou.Systems
         private const int MaxGates = 1;                 // 스테이지당 봉인문 퍼즐 최대 개수
         public const float GateMinProgress = 0.25f;     // 이 진행도 구간에서만 봉인문이 나온다 (초반 조작 연습 뒤, 보스 앞 휴식 전)
         public const float GateMaxProgress = 0.85f;
+        // 이중 스위치 퍼즐(SwitchBridge)은 진행도가 이 값을 넘은 뒤 첫 이동 방으로 꼭 한 번 나온다.
+        // (예전에는 무작위 발판 낭떠러지의 80% 이후 변형뿐이라, 이동 방이 78% 언저리에서 끝나는 15분 판에서는 거의 안 나왔다.)
+        public const float SwitchBridgeProgress = 0.5f;
         private static readonly float[] EliteAt = { 0.3f }; // 진행도가 여기를 넘은 뒤 첫 전투 구역은 정예 (15분: 정예 0.3 → 중간보스 0.55 → 보스)
         public static readonly IReadOnlyList<float> EliteProgress = Array.AsReadOnly(EliteAt);
 
@@ -48,6 +52,7 @@ namespace IBlameYou.Systems
             int elitesPlaced = 0;
             int arenasSinceRest = 0;
             int gatesPlaced = 0;
+            bool switchBridgePlaced = false;
             ChunkKind last = ChunkKind.Start;
 
             Action<ChunkKind> add = kind =>
@@ -66,6 +71,11 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < travelCount && elapsed < targetSeconds - reserve; i++)
                 {
                     var travel = PickTravel(rng, elapsed / targetSeconds, last, gatesPlaced < MaxGates);
+                    if (!switchBridgePlaced && (float)(elapsed / targetSeconds) >= SwitchBridgeProgress)
+                    {
+                        travel = ChunkKind.SwitchBridge; // 난수열은 그대로 소비해 다른 방 배치가 덜 흔들리게
+                        switchBridgePlaced = true;
+                    }
                     if (travel == ChunkKind.ElementGate) gatesPlaced++;
                     add(travel);
                 }

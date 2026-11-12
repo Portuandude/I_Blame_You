@@ -28,7 +28,8 @@ namespace IBlameYou.Systems
         Arena,         // 들어가면 문이 닫히고 적이 나오는 전투 구역
         EliteArena,    // 정예 전투 구역
         Rest,          // 숨 고르기 평지 (체크포인트는 2026-11-10 제거). 곁방 지형으로도 쓴다
-        Boss           // 마지막 전투 + 출구
+        Boss,          // 마지막 전투 + 출구
+        SwitchBridge   // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
     }
 
     public enum FeatureKind
@@ -46,6 +47,8 @@ namespace IBlameYou.Systems
         PlatformSwitch, // 마법 스위치 룬. (X, Y)는 룬이 선 칸 (바닥 바로 위). ElementIndex 속성 마법을 맞히면 짝 발판이 잠시 움직인다.
                         // 짝: 청크의 k번째 PlatformSwitch ↔ k번째 SwitchDriven MovingPlatform (Features 순서)
                         // 몸이 지나가는 트리거라 길을 막지 않는다 (검증에서는 무시)
+        BlinkWard,      // 마력 안개: X ~ X + Width - 1 열 전체(바닥~천장). 안에서는 순간이동·대시가 흩어진다 (스위치 발판 낭떠러지를 건너뛰지 못하게).
+                        // 검증기는 걷기 점프 기준이라 무시한다
         Reward          // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
     }
 
@@ -111,6 +114,18 @@ namespace IBlameYou.Systems
             }
 
             return 0;
+        }
+
+        // 봉인문 높이: (x, floorY)부터 위로 처음 막힌 칸 바로 아래까지 (방 지역 좌표, 칸 수).
+        // 위가 끝까지 비어 있으면 청크 위 GateOverTop칸까지 막아 점프로 넘지 못하게 한다 (방 사이 간격 8유닛 안).
+        // 월드 높이가 아니라 방 안 높이로 재야 한다: 방 격자에서는 방마다 원점 y가 달라서 위·아래 방 지형까지 뚫고 나간다.
+        public const int GateOverTop = 2;
+
+        public int GateHeight(int x, int floorY)
+        {
+            for (int y = Math.Max(0, floorY); y < Height; y++)
+                if (IsSolid(x, y)) return y - floorY;
+            return Height - floorY + GateOverTop;
         }
 
         public void FillColumn(int x, int height)

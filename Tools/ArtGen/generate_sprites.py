@@ -1455,9 +1455,24 @@ def rune_switch_glow_frames():
     return frames
 
 
+def rune_arrow_sprite():
+    """마법 스위치 룬을 가리키는 빛 화살 무늬 (오른쪽을 향한 겹 갈매기 >>, 60 × 60 = 0.6유닛). 흰색으로 그려 속성 색으로 물들인다.
+    안내 문구 대신 모양으로 "저기를 쏴라"를 알린다 (2026-11-12)."""
+    w, h = 60, 60
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    for x0, alpha in ((10, 170), (28, 255)):
+        pts = [(x0 * S, 12 * S), ((x0 + 18) * S, 30 * S), (x0 * S, 48 * S)]
+        d.line(pts, fill=OUTLINE, width=12 * S, joint="curve")
+        d.line(pts, fill=(255, 255, 255, alpha), width=7 * S, joint="curve")
+    return finish(img, w, h)
+
+
 def generate_rune_switch():
     base = os.path.join(ROOT, "Assets", "Resources", "Stage")
-    for name, frames in {"RuneSwitch": [rune_switch_sprite()], "RuneSwitchGlow": rune_switch_glow_frames()}.items():
+    for name, frames in {"RuneSwitch": [rune_switch_sprite()], "RuneSwitchGlow": rune_switch_glow_frames(),
+                         "RuneArrow": [rune_arrow_sprite()]}.items():
         folder = os.path.join(base, name)
         os.makedirs(folder, exist_ok=True)
         for i, img in enumerate(frames):
@@ -1484,6 +1499,7 @@ def generate_stage_art():
         "RuneSigil_Wind": [rune_sigil("Wind")],
         "RuneSwitch": [rune_switch_sprite()],
         "RuneSwitchGlow": rune_switch_glow_frames(),
+        "RuneArrow": [rune_arrow_sprite()],
     }
     for name, frames in sets.items():
         folder = os.path.join(base, name)

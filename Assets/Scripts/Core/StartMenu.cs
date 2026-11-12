@@ -24,12 +24,7 @@ namespace IBlameYou.Core
         private bool recordsExpanded; // 접힌 기록 줄을 펼쳤는지 (H 또는 클릭)
         private Vector2 recordScroll;
         private bool recordsTogglePending;
-        private bool codexOpen; // 유물 도감 창 (C 또는 도감 줄 클릭)
-        private int codexCursor = -1;   // 도감 창에서 고른 칸 (방향키/WASD 또는 마우스). -1이면 없음
-        private Vector2 codexLastMouse; // 마우스가 움직였는지 보려고 (움직이면 마우스 쪽이 우선)
-        private bool codexDevMode;      // 도감 창이 보여 주는 모드 (열 때 메뉴 토글 값, 창 안에서 Tab으로 바꾼다)
-        private readonly System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons =
-            new System.Collections.Generic.Dictionary<IBlameYou.Player.RelicId, Texture2D>();
+        private readonly RelicCodexWindow codex = new RelicCodexWindow(); // 유물 도감 창 (C 또는 도감 줄 클릭). 게임 중에도 같은 창 (SkillHUD.Codex)
         private GUIStyle button;
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
@@ -78,14 +73,14 @@ namespace IBlameYou.Core
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
             var e = Event.current;
-            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codexOpen && e.keyCode == KeyCode.Escape)))
+            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
             {
-                codexOpen = e.keyCode == KeyCode.C ? !codexOpen : false;
-                if (codexOpen) OpenCodex(); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
+                if (e.keyCode == KeyCode.C && !codex.IsOpen) codex.Show(devMode); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
+                else codex.Close();
                 e.Use();
             }
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = !codexOpen; // 도감 창이 열려 있으면 뒤 메뉴는 누를 수 없게
+            GUI.enabled = !codex.IsOpen; // 도감 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
@@ -104,8 +99,7 @@ namespace IBlameYou.Core
             GUILayout.Space(8f);
             if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
             {
-                codexOpen = true;
-                OpenCodex();
+                codex.Show(devMode);
             }
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
@@ -149,7 +143,7 @@ namespace IBlameYou.Core
             GUI.enabled = true;
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
-            if (codexOpen) DrawCodex();
+            if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
         }
 
         // 제목: 진한 외곽선 + gold 테두리 + 크림 글자, 위아래로 둥실, 둘레에 반짝이 별 4개가 번갈아 깜빡임.
@@ -255,147 +249,6 @@ namespace IBlameYou.Core
             return h + 12f * 4f;                      // 요소 사이 기본 여백
         }
 
-        private void OpenCodex()
-        {
-            codexCursor = -1;
-            codexDevMode = devMode;
-        }
-
-        // 유물 도감 창: 모든 유물을 격자로. 한 번이라도 고른 유물은 아이콘·이름, 아직이면 흐린 아이콘 + "???". C/Esc/닫기로 닫는다.
-        private void DrawCodex()
-        {
-            var all = IBlameYou.Player.RelicBook.All;
-            int mask = SaveData.RelicCodexMask(codexDevMode);
-            // 낮은 창에서도 닫기 버튼까지 화면 안에 들어오게 칸 높이를 줄이고, 그래도 넘치면 가로 칸을 늘린다 (RelicCodex.Grid*)
-            int columns = RelicCodex.GridColumns(all.Length, Screen.width, Screen.height);
-            int rows = RelicCodex.GridRows(all.Length, columns);
-            const float cell = RelicCodex.GridCellWidth;
-            float cellHeight = RelicCodex.GridCellHeight(rows, Screen.height);
-            float iconSize = Mathf.Min(44f, cellHeight - 36f);
-            float width = columns * cell + 40f;
-            float height = 70f + rows * cellHeight + 36f + 56f; // 36: 마우스 올린 유물 설명 (좁은 창에선 두 줄)
-            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
-
-            var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = previous;
-            GUI.Box(rect, GUIContent.none, panel);
-            GUI.Box(rect, GUIContent.none, panel);
-
-            var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), $"유물 도감 ({(codexDevMode ? "개발자 모드" : "일반 모드")})", head);
-            GUI.Label(new Rect(rect.x, rect.y + 42f, rect.width, 22f), SaveData.RelicCodexSummary(codexDevMode, all.Length),
-                new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
-
-            // 칸 고르기: 방향키/WASD로 옮기고, 마우스를 움직이면 마우스가 올라간 칸(칸 밖이면 없음)으로 바뀐다.
-            var e = Event.current;
-            if (e.type == EventType.KeyDown)
-            {
-                int step = 0;
-                switch (e.keyCode)
-                {
-                    case KeyCode.LeftArrow: case KeyCode.A: step = -1; break;
-                    case KeyCode.RightArrow: case KeyCode.D: step = 1; break;
-                    case KeyCode.UpArrow: case KeyCode.W: step = -columns; break;
-                    case KeyCode.DownArrow: case KeyCode.S: step = columns; break;
-                    case KeyCode.Tab: // 다른 모드 도감 보기 (고른 칸은 그대로 두고 설명만 그 모드 기준으로)
-                        codexDevMode = !codexDevMode;
-                        e.Use();
-                        return; // 이번 이벤트에서는 그리지 않는다 (다음 Repaint에서 새 모드로)
-                }
-                if (step != 0)
-                {
-                    int next = codexCursor < 0 ? 0 : codexCursor + step;
-                    if (next >= 0 && next < all.Length) codexCursor = next; // 가장자리에서는 멈춘다
-                    e.Use();
-                }
-            }
-            bool mouseMoved = e.type != EventType.KeyDown && e.mousePosition != codexLastMouse; // 키 이벤트의 마우스 위치는 믿지 않는다 (리뷰 LOW)
-            if (mouseMoved) codexLastMouse = e.mousePosition;
-            if (codexCursor >= all.Length) codexCursor = -1;
-
-            var name = new GUIStyle(recordSmall) { alignment = TextAnchor.UpperCenter, fontSize = 12 };
-            int mouseCell = -1;
-            for (int i = 0; i < all.Length; i++)
-            {
-                var id = all[i];
-                bool known = RelicCodex.Has(mask, (int)id);
-                var cellRect = new Rect(rect.x + 20f + (i % columns) * cell, rect.y + 70f + (i / columns) * cellHeight, cell, cellHeight);
-                if (cellRect.Contains(e.mousePosition)) mouseCell = i;
-                var icon = CodexIcon(id);
-                if (icon != null)
-                {
-                    GUI.color = known ? Color.white : new Color(0.15f, 0.12f, 0.25f, 0.6f); // 모르는 유물은 어두운 실루엣
-                    GUI.DrawTexture(new Rect(cellRect.center.x - iconSize / 2f, cellRect.y + 4f, iconSize, iconSize), icon, ScaleMode.ScaleToFit);
-                    GUI.color = previous;
-                }
-                if (known) DrawOwnerBadge(IBlameYou.Player.RelicBook.Owner(id), new Vector2(cellRect.center.x - iconSize / 2f, cellRect.y + 4f + iconSize));
-                GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
-                    known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
-            }
-
-            if (mouseMoved) codexCursor = mouseCell;
-            int hovered = codexCursor;
-            if (hovered >= 0)
-                DrawCellFrame(new Rect(rect.x + 20f + (hovered % columns) * cell, rect.y + 70f + (hovered / columns) * cellHeight, cell, cellHeight), previous);
-
-            // 고른 칸의 설명 한 줄: 모은 유물이면 "[A] 설명", 아직이면 "아직 모르는 유물". 안 골랐으면 안내 문구.
-            string info = hovered < 0 ? "칸에 마우스를 올리거나 방향키로 고르면 설명 · Tab: 다른 모드"
-                : RelicCodex.Has(mask, (int)all[hovered])
-                    ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
-                    : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
-            var infoStyle = new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter, wordWrap = true, clipping = TextClipping.Clip };
-            GUI.color = hovered >= 0 && RelicCodex.Has(mask, (int)all[hovered]) ? OutlinedLabel.Cream : new Color(1f, 1f, 1f, 0.6f);
-            GUI.Label(new Rect(rect.x + 10f, rect.yMax - 90f, rect.width - 20f, 36f), info, infoStyle);
-            GUI.color = previous;
-
-            if (GUI.Button(new Rect(rect.center.x - 150f, rect.yMax - 48f, 160f, 36f), codexDevMode ? "Tab: 일반 보기" : "Tab: 개발자 보기",
-                    new GUIStyle(button) { fontSize = 16 })) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
-                codexDevMode = !codexDevMode;
-            if (GUI.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) codexOpen = false;
-        }
-
-        // 모은 유물 아이콘 왼쪽 아래에 주인 배지: A는 하늘색, B는 주황 글자 (공용은 표시 없음). corner = 아이콘 왼쪽 아래.
-        private GUIStyle ownerBadge;
-
-        private void DrawOwnerBadge(string owner, Vector2 corner)
-        {
-            if (owner != "A" && owner != "B") return;
-            if (ownerBadge == null)
-                ownerBadge = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
-            var rect = new Rect(corner.x - 6f, corner.y - 12f, 14f, 14f);
-            var previous = GUI.color;
-            GUI.color = new Color(0.12f, 0.08f, 0.22f, 0.85f * previous.a); // 진한 바탕 사각
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = previous;
-            ownerBadge.normal.textColor = owner == "A" ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.65f, 0.3f);
-            GUI.Label(rect, owner, ownerBadge);
-        }
-
-        // 고른 칸 둘레에 금색 테두리 (2px, 칸 안쪽으로 조금 들여서).
-        private static void DrawCellFrame(Rect cellRect, Color restore)
-        {
-            var r = new Rect(cellRect.x + 4f, cellRect.y + 1f, cellRect.width - 8f, cellRect.height - 2f);
-            const float t = 2f;
-            GUI.color = OutlinedLabel.Gold;
-            GUI.DrawTexture(new Rect(r.x, r.y, r.width, t), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.x, r.yMax - t, r.width, t), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.x, r.y, t, r.height), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.xMax - t, r.y, t, r.height), Texture2D.whiteTexture);
-            GUI.color = restore;
-        }
-
-        private Texture2D CodexIcon(IBlameYou.Player.RelicId id)
-        {
-            if (!codexIcons.TryGetValue(id, out var icon))
-            {
-                icon = Resources.Load<Texture2D>("UI/HUD/Relics/" + id);
-                codexIcons[id] = icon; // 없어도(null) 기억해서 매 프레임 다시 찾지 않는다
-            }
-            return icon;
-        }
-
         private static string RecordLine(bool dev)
         {
             int level = SaveData.BestLevel(dev);
@@ -410,14 +263,14 @@ namespace IBlameYou.Core
         }
 
         private const string DevModeHelp =
-            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 방향키+Enter\n" +
+            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
             "A  방어막 상단 1~5 (불/물/바람/땅/무) 즉시 발동\n" +
             "B  평타 마우스 좌클릭 (마우스 쪽으로)\n" +
             "B  공격 스킬 상단 6~9, 0 (불/물/바람/땅/무) 즉시 발동, 마우스 방향\n" +
             "치트  F1 무적 · F2 마나 무한 · F3 방 안의 적 처치 · F4 체력 회복";
 
         private const string NormalModeHelp =
-            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 방향키+Enter\n" +
+            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
             "A  방어막 넘패드 1~5 → 화면에 뜬 순서대로 W/A/S/D (입력 중 캐릭터 정지, 틀리면 마나만 소모)\n" +
             "B  평타 마우스 좌클릭\n" +
             "B  공격 스킬 상단 1~5 → 영창문을 똑같이 타이핑 → Enter (오타면 마나만 소모, Esc 취소)\n" +

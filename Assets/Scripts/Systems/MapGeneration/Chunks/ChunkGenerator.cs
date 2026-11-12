@@ -44,6 +44,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
+                case ChunkKind.SwitchBridge: BuildDoubleMovingBridge(chunk, heights, rng, true); break;
                 case ChunkKind.Arena: BuildArena(chunk, heights, rng, false); break;
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
@@ -461,6 +462,9 @@ namespace IBlameYou.Systems
 
             int ground = chunk.EntryHeight;
             int gap = rng.Next(7, chunk.Difficulty > 0.6f ? 11 : 9);
+            // 스위치 변형은 같은 난수열을 먼저 정해 둔다 (폭이 달라져야 하므로).
+            bool switched = chunk.Difficulty >= SwitchBridgeMinDifficulty && rng.Next(SwitchBridgeOneIn) == 0;
+            if (switched) gap = rng.Next(SwitchBridgeMinGap, SwitchBridgeMaxGap + 1);
             int right = MovingBridgeLeft + gap; // 건너편 절벽이 시작되는 열
             int far = Clamp(ground + PickDelta(rng, -1, 0, 0));
             for (int x = 0; x < W; x++) heights[x] = x < MovingBridgeLeft ? ground : x < right ? 0 : far;
@@ -471,7 +475,9 @@ namespace IBlameYou.Systems
 
             // 변형: 마법 스위치 발판. 발판은 멈춰 있고, 건너편 절벽 첫 칸에 선 룬에 B가 같은 속성 마법을 맞히면 잠시 오간다.
             // 룬은 몸이 지나가는 트리거라 길을 막지 않고, 출발 쪽 절벽 끝에서 수평으로 쏜 마법(서 있는 높이 +0.7)이 닿는 높이에 있다.
-            if (chunk.Difficulty >= SwitchBridgeMinDifficulty && rng.Next(SwitchBridgeOneIn) == 0)
+            // 멈춘 발판은 흐릿한 잠든 발판이라 밟을 수 없고(그 위에서 뛰어 거리를 줄이지 못하게, MovingPlatform), 낭떠러지에는
+            // 마력 안개가 깔려 순간이동·대시로 건너뛰지 못한다 (안개 근처 공중 포함, BlinkWard). 폭 9~10칸 > 달리기 점프(약 7.3칸) (2026-11-12 플레이테스트: 대시·순간이동으로 건너짐).
+            if (switched)
             {
                 int last = chunk.Features.Count - 1;
                 var platform = chunk.Features[last];
@@ -481,8 +487,12 @@ namespace IBlameYou.Systems
                 {
                     Kind = FeatureKind.PlatformSwitch, X = right, Y = far, Width = 1, ElementIndex = rng.Next(GateElementCount)
                 });
+                chunk.AddFeature(FeatureKind.BlinkWard, MovingBridgeLeft, 0, gap);
             }
         }
+
+        public const int SwitchBridgeMinGap = 9;
+        public const int SwitchBridgeMaxGap = 10; // 출발 쪽 땅 끝에서 룬까지 gap + 1칸 ≤ 물 마법 사거리 12
 
         public const float SwitchBridgeMinDifficulty = 0.5f;
         public const int SwitchBridgeOneIn = 2; // 진행도 50% 이후 한 발판 낭떠러지의 절반
@@ -495,7 +505,8 @@ namespace IBlameYou.Systems
         // 둘째 발판이 기둥 반대편에서 기다리고 있다 (놓치면 기둥에서 한 바퀴 기다린다).
         // 두 낭떠러지 폭이 같아 두 발판의 주기가 같다 (엇갈림이 유지된다). 폭 9칸 = 달리기 점프(약 7.3칸)·걷기 점프+공중 대쉬(약 8.1칸)로도
         // 못 건너는 폭 (검증기는 걷기 점프 기준이라 이 여유는 여기서 따로 잡는다). 달리기 점프+대쉬(약 11칸)는 막지 못한다.
-        private static void BuildDoubleMovingBridge(ChunkData chunk, int[] heights, Random rng)
+        // forceSwitch: 이중 스위치로 고정 (ChunkKind.SwitchBridge).
+        private static void BuildDoubleMovingBridge(ChunkData chunk, int[] heights, Random rng, bool forceSwitch = false)
         {
             int ground = chunk.EntryHeight;
             int gap = DoubleBridgeGap;
@@ -520,7 +531,7 @@ namespace IBlameYou.Systems
 
             // 변형: 이중 스위치 발판. 두 발판 모두 멈춰 있고, 각 발판 건너편 첫 칸(기둥 첫 칸, 건너편 절벽 첫 칸)에 서로 다른 속성 룬.
             // 첫 룬은 출발 쪽 절벽에서, 둘째 룬은 기둥 위에서 쏴서 맞힌다 (둘 다 10칸 거리).
-            if (chunk.Difficulty >= DoubleSwitchBridgeMinDifficulty && rng.Next(DoubleSwitchBridgeOneIn) == 0)
+            if (forceSwitch || (chunk.Difficulty >= DoubleSwitchBridgeMinDifficulty && rng.Next(DoubleSwitchBridgeOneIn) == 0))
             {
                 int count = chunk.Features.Count;
                 for (int i = count - 2; i < count; i++)
@@ -533,6 +544,8 @@ namespace IBlameYou.Systems
                 int second = (first + 1 + rng.Next(GateElementCount - 1)) % GateElementCount;
                 chunk.Features.Add(new ChunkFeature { Kind = FeatureKind.PlatformSwitch, X = pillar, Y = top, Width = 1, ElementIndex = first });
                 chunk.Features.Add(new ChunkFeature { Kind = FeatureKind.PlatformSwitch, X = right, Y = far, Width = 1, ElementIndex = second });
+                chunk.AddFeature(FeatureKind.BlinkWard, MovingBridgeLeft, 0, gap);
+                chunk.AddFeature(FeatureKind.BlinkWard, secondLeft, 0, gap);
             }
         }
 

@@ -154,7 +154,8 @@ namespace IBlameYou.Systems
                 case ChunkKind.Rest: return RoomKind.Rest;
                 case ChunkKind.Boss: return RoomKind.Boss;
                 case ChunkKind.ElementGate:
-                case ChunkKind.MovingBridge: return RoomKind.Puzzle;
+                case ChunkKind.MovingBridge:
+                case ChunkKind.SwitchBridge: return RoomKind.Puzzle;
                 default: return RoomKind.Travel;
             }
         }

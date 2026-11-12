@@ -6,7 +6,7 @@ namespace IBlameYou.UI
 {
     // 화면 아래 조작 도움말 줄. 귀엽게: 키 이름은 작은 둥근 키캡(CuteButton 그림 재사용), 줄마다 반투명 알약 배경(Pill).
     // A/B 플레이어 묶음은 각자 색 이름표로 시작한다. 화면이 좁으면 항목 단위로 줄을 나눠 아래에서 위로 쌓는다.
-    // 키 이름에 '+'가 있으면(방향키+Enter) 키캡을 나눠 그리고 사이에 작은 '+'를 둔다.
+    // 키 이름에 '+'가 있으면(W/A/S/D+Enter) 키캡을 나눠 그리고 사이에 작은 '+'를 둔다.
     public partial class SkillHUD
     {
         private const float HelpRowHeight = 26f;
@@ -171,7 +171,7 @@ namespace IBlameYou.UI
             Add(null, default, "Space", "점프");
             Add(null, default, "Shift", "달리기");
             Add(null, default, "L.Ctrl", "대쉬");
-            Add(null, default, "방향키+Enter", "순간이동");
+            Add(null, default, "W/A/S/D+Enter", "순간이동");
             if (dev) Add(null, default, "1~5", "방어막");
             else Add(null, default, "넘패드 1~5", "방어막(→W/A/S/D)");
 
@@ -186,11 +186,12 @@ namespace IBlameYou.UI
                 Add(null, default, "F3", "적 처치");
                 Add(null, default, "F4", "회복");
             }
+            Add(null, default, "C", "유물 도감");
             Add(null, default, "Esc", "일시정지");
             return items;
         }
 
-        // "방향키+Enter" → ["방향키", "Enter"]. '+' 하나뿐이거나 끝에 붙은 경우는 그대로 둔다.
+        // "W/A/S/D+Enter" → ["W/A/S/D", "Enter"]. '+' 하나뿐이거나 끝에 붙은 경우는 그대로 둔다.
         private static string[] SplitKeys(string keys)
         {
             var parts = keys.Split('+');
