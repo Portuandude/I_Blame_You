@@ -110,6 +110,7 @@ namespace IBlameYou.UI
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             if (!RunStats.Ended) RunStats.Kills++;
+            CountKillStreak(enemy); // "N연속!" (SkillHUD.KillStreak.cs)
             if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
         }
 
