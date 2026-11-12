@@ -116,8 +116,25 @@ namespace IBlameYou.Tests
             Assert.AreEqual("A", RelicBook.Owner(RelicId.PaperPlane));
             Assert.AreEqual("순간이동 마나 -25%", RelicBook.Description(RelicId.PaperPlane));
             Assert.Contains(RelicId.PaperPlane, RelicBook.All);
-            Assert.AreEqual(26, RelicBook.All.Length);
             Assert.That(RelicBook.PaperPlaneTeleportCost, Is.InRange(0.5f, 0.95f));
+        }
+
+        // 복주머니 (2026-11-12): 몬스터 골드 +50%, 반올림(.5 올림). 맨 뒤 번호 26, 공용.
+        [Test]
+        public void LuckyPouch_RaisesMonsterGold()
+        {
+            Assert.AreEqual(26, (int)RelicId.LuckyPouch);
+            Assert.AreEqual("복주머니", RelicBook.Name(RelicId.LuckyPouch));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.LuckyPouch));
+            Assert.AreEqual("몬스터가 떨어뜨리는 골드 +50%", RelicBook.Description(RelicId.LuckyPouch));
+            Assert.Contains(RelicId.LuckyPouch, RelicBook.All);
+            Assert.AreEqual(27, RelicBook.All.Length);
+            Assert.AreEqual(0, RelicBook.LuckyPouchGold(0));
+            Assert.AreEqual(2, RelicBook.LuckyPouchGold(1));
+            Assert.AreEqual(3, RelicBook.LuckyPouchGold(2));
+            Assert.AreEqual(6, RelicBook.LuckyPouchGold(4));
+            Assert.AreEqual(15, RelicBook.LuckyPouchGold(10));
+            Assert.AreEqual(150, RelicBook.LuckyPouchGold(100));
         }
 
         [Test]
