@@ -28,6 +28,8 @@ namespace IBlameYou.Enemies
         private bool recovering;
         private float phaseTimeRemaining;
         private float nextShotTime;
+        private bool spotted; // 플레이어를 알아챈 상태 (발견 "!"를 한 번만)
+        private const float LoseRangeMultiplier = 1.25f;
 
         public void ConfigureObstacleLayer(LayerMask layer)
         {
@@ -55,7 +57,13 @@ namespace IBlameYou.Enemies
 
             float dx = target.position.x - transform.position.x;
             float distance = Vector2.Distance(transform.position, target.position);
+            if (spotted && distance > detectionRange * LoseRangeMultiplier) spotted = false; // 멀어지면 다음에 다시 알아챔
             if (distance > detectionRange) return;
+            if (!spotted)
+            {
+                spotted = true;
+                ShowNotice(); // 알아챈 순간 머리 위 "!"
+            }
 
             SetFacing(dx >= 0f ? 1f : -1f);
 

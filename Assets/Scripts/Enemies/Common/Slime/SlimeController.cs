@@ -292,7 +292,9 @@ namespace IBlameYou.Enemies
             }
 
             float distance = Vector2.Distance(transform.position, target.position);
+            bool wasChasing = chasing;
             chasing = chasing ? distance <= detectionRange * loseRangeMultiplier : distance <= detectionRange;
+            if (chasing && !wasChasing) ShowNotice(); // 알아챈 순간 머리 위 "!"
         }
 
         private bool WallAhead(float direction)
