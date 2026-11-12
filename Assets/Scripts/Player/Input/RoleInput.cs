@@ -35,6 +35,10 @@ namespace IBlameYou.Player
         public static bool JumpDown(PlayerControlState state) =>
             !state.AKeyboardBlocked && !state.MovementFrozen && Input.GetKeyDown(KeyCode.Space);
 
+        // 점프 키를 누르고 있는지 (짧게 누르면 낮은 점프). 막혀 있으면 뗀 것으로 본다.
+        public static bool JumpHeld(PlayerControlState state) =>
+            !state.AKeyboardBlocked && Input.GetKey(KeyCode.Space);
+
         public static bool RunHeld(PlayerControlState state) =>
             !state.AKeyboardBlocked && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
