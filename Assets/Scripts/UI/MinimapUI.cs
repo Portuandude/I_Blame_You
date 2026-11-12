@@ -124,7 +124,7 @@ namespace IBlameYou.UI
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
             var faint = new System.Collections.Generic.List<RoomData>();
-            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index) faint.Add(room);
+            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index && !IsCharted(room.Index)) faint.Add(room); // 보물 지도로 이미 보이던 마을은 다시 숨겼다 띄우지 않는다
             faint.Sort((a, b) => (Mathf.Abs(a.X - current.X) + Mathf.Abs(a.Y - current.Y))
                 .CompareTo(Mathf.Abs(b.X - current.X) + Mathf.Abs(b.Y - current.Y)));
             float step = faint.Count > 1 ? Mathf.Min(0.08f, CompassSpread / (faint.Count - 1)) : 0f;
