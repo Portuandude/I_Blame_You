@@ -16,7 +16,7 @@ namespace IBlameYou.Core
     public class PlaytestBootstrap : MonoBehaviour
     {
         [Header("Stage")]
-        [SerializeField] private float targetMinutes = 15f; // 스테이지 1 목표 15분 안팎 (2026-11-10 사람 결정)
+        [SerializeField] private float targetMinutes = 20f; // 스테이지 목표 15~30분의 기본값 (2026-11-12 사람 결정 15~30분, 넓은 방으로 예상 약 15~19분)
         [SerializeField] private bool randomSeedEachRun = true; // 끄면 아래 seed로 항상 같은 맵
         [SerializeField] private int seed = 0;
         [Tooltip("방 격자형 스테이지 (Docs/LevelDesign.md). 끄면 예전 외길 청크 스테이지")]

@@ -2,7 +2,7 @@ using System;
 
 namespace IBlameYou.Systems
 {
-    // 클리어 결과 창의 "목표 시간 비교" 한 줄 (사람 결정 2026-11-10: 스테이지 1 = 15분).
+    // 클리어 결과 창의 "목표 시간 비교" 한 줄 (사람 결정 2026-11-10: 스테이지 1 = 15분, 2026-11-12 15~30분·기본 목표 20분).
     // 15분 조정이 맞는지 플레이테스트에서 바로 보이게, 목표보다 빨랐는지(초록)·느렸는지(주황)와 이번 시드의 방 수를 적는다.
     // UnityEngine 없이 돌아서 EditMode 테스트로 고정한다. 색은 SkillHUD가 IsFast를 보고 고른다.
     public static class ClearPace

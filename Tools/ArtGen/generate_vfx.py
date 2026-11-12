@@ -14,6 +14,7 @@ generate_magic_fx.py 의 Fx(색 층 + 흐린 빛 층)로 그린다. 모두 런�
   Assets/Resources/Effects/HeartOrb/00~07          회복 구슬 반복: 통통한 berry 하트 + aqua 마나 고리 (80x80)
   Assets/Resources/Effects/HeartPop/00~07          회복 구슬 주울 때: 하트·별이 위로 톡톡 튐 (128x128)
   Assets/Resources/Effects/ShieldShatter/00~07     방어막 깨짐: 거품이 유리 조각 10개로 흩어지고 aqua 반짝임 (192x192, 방어막 그림과 같은 중심)
+  Assets/Resources/Effects/Coin/00~07              골드 동전 반복: 통통한 금화가 빙글 돌고 cream 반짝임 (48x48)
   Assets/Resources/Effects/RelicBanner/00          유물 이름 띠 (360x80, 가운데에 글자가 올라간다)
 
     python3 Tools/ArtGen/generate_vfx.py [미리보기.png]
@@ -436,11 +437,38 @@ def shield_shatter_frames():
     return frames
 
 
+COIN_DARK = (196, 132, 30, 255)
+
+
+def coin_frames():
+    """골드 동전: 통통한 금화가 옆으로 빙글 돈다 (가로 폭이 cos로 줄었다 늘었다), 가운데 별 무늬, 넓을 때 cream 반짝임. 8프레임 반복."""
+    frames = []
+    w = h = 48
+    cx, cy = w / 2, h / 2
+    for i in range(8):
+        t = i / 8
+        squeeze = max(0.18, abs(math.cos(2 * math.pi * t)))
+        rx, ry = 14 * squeeze, 14
+        fx = Fx(w, h)
+        fx.ellipse(cx, cy, rx + 4, ry + 4, alpha(GOLD, 60), light=True)
+        fx.ellipse(cx, cy, rx + 1.6, ry + 1.6, COIN_DARK)          # 테두리
+        fx.ellipse(cx, cy, rx, ry, GOLD)
+        if squeeze > 0.45:
+            fx.ellipse(cx, cy, rx * 0.68, ry * 0.68, alpha(COIN_DARK, 150))
+            fx.ellipse(cx, cy, rx * 0.6, ry * 0.6, GOLD)
+            fx.star(cx, cy, 6 * squeeze, alpha(CREAM, 230))
+        fx.ellipse(cx - rx * 0.45, cy - ry * 0.5, max(1.2, rx * 0.22), ry * 0.18, alpha(CREAM, 220))  # 윗쪽 빛
+        if i in (0, 4):
+            fx.star(cx + rx * 0.7, cy - ry * 0.75, 4.5, CREAM, light=True)
+        frames.append(fx.finish(glow=2))
+    return frames
+
+
 SETS = {"Dust": dust_frames, "LevelUp": levelup_frames, "DeathPop": deathpop_frames, "Sparkle": sparkle_frames,
         "ClearBurst": clearburst_frames,
         "ChestOpen": chest_open_frames, "RelicBanner": relic_banner_frames, "Shockwave": shockwave_frames,
         "HeartOrb": heart_orb_frames, "HeartPop": heart_pop_frames,
-        "ShieldShatter": shield_shatter_frames}
+        "ShieldShatter": shield_shatter_frames, "Coin": coin_frames}
 
 
 def generate():

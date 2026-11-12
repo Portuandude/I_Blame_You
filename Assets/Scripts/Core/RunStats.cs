@@ -10,6 +10,7 @@ namespace IBlameYou.Core
         public static int NewRelics { get; set; } // 이번 판에 처음 유물 도감에 오른 유물 수 (결과 창 최애 줄 끝)
         public static int NewRelicMask { get; private set; } // 이번 판에 처음 도감에 오른 유물 (RelicCodex 비트 마스크, 결과 창 유물 줄 NEW 점)
         public static bool CodexCompleted { get; set; } // 이번 판에 유물 도감을 다 채웠다 (결과 창 금색 "유물 도감 완성!")
+        public static int Gold { get; private set; } // 이번 판 골드 (그 판 안에서만, 다음 판으로 안 넘어감 — RunGold)
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
@@ -24,9 +25,16 @@ namespace IBlameYou.Core
             NewRelics = 0;
             NewRelicMask = 0;
             CodexCompleted = false;
+            Gold = 0;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
             System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
+        }
+
+        // 골드는 판이 끝난 뒤(보스 처치 → 클리어)에도 받는다: 보스 골드가 클리어와 같은 순간에 들어오기 때문.
+        public static void AddGold(int amount)
+        {
+            if (amount > 0) Gold += amount;
         }
 
         public static void AddArenaCleared()

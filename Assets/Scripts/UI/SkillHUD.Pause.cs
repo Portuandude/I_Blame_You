@@ -111,7 +111,7 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
 
             var text = new System.Text.StringBuilder();
-            text.Append($"<b>이번 런</b>  레벨 {RunLevel} · {SaveData.FormatTime(RunElapsed)}\n");
+            text.Append($"<b>이번 런</b>  레벨 {RunLevel} · {SaveData.FormatTime(RunElapsed)} · <color=#ffd84d>골드 {RunStats.Gold}</color>\n");
             if (mana != null) // 지금까지 날린 마나와 지금 판정 (결과 창 "누구 탓?" 미리보기, Chunks/BlameVerdict)
                 text.Append(BlameVerdict.Running(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB))).Append('\n');
             text.Append("\n<b>특성</b>\n");

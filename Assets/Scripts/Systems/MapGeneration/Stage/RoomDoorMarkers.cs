@@ -45,7 +45,7 @@ namespace IBlameYou.Systems
             if ((room.Doors & DoorDir.Left) != 0 && geometry.Arrivals.TryGetValue(DoorDir.Left, out var left))
                 markers.AddSideDoor(sprite, origin, 0, left.y, BossKindBehind(layout, room, DoorDir.Left), 1);
             if ((room.Doors & DoorDir.Right) != 0 && geometry.Arrivals.TryGetValue(DoorDir.Right, out var right))
-                markers.AddSideDoor(sprite, origin, ChunkData.Width - 1, right.y, BossKindBehind(layout, room, DoorDir.Right), -1);
+                markers.AddSideDoor(sprite, origin, right.x, right.y, BossKindBehind(layout, room, DoorDir.Right), -1);
 
             float holeLeft = origin.x + RoomShaper.HoleX0;
             float holeWidth = RoomShaper.HoleX1 - RoomShaper.HoleX0 + 1;

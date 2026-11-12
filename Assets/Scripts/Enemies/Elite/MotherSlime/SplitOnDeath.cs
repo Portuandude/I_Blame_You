@@ -30,6 +30,7 @@ namespace IBlameYou.Enemies
             {
                 float offset = (i - (count - 1) / 2f) * spread;
                 var slime = SlimeSpawner.Spawn(transform.position + new Vector3(offset, 0.3f, 0f), EffectLibrary.Config);
+                if (slime != null && GetComponent<BossSummon>() != null) slime.gameObject.AddComponent<BossSummon>(); // 보스 소환 어미의 새끼도 골드 없음
                 if (group != null)
                 {
                     slime.transform.SetParent(((Component)group).transform, true);

@@ -300,7 +300,11 @@ namespace IBlameYou.Enemies
                 var position = new Vector3(x, transform.position.y + 1.5f, 0f);
                 EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.5f, 1f, 0.7f), 1.4f);
                 var mother = MotherSlimeSpawner.Spawn(position, EffectLibrary.Config);
-                if (mother != null) brood.RegisterEnemy(mother.GetComponent<HealthSystem>());
+                if (mother != null)
+                {
+                    mother.gameObject.AddComponent<BossSummon>(); // 소환된 적은 골드 없음 (Core/RunGold)
+                    brood.RegisterEnemy(mother.GetComponent<HealthSystem>());
+                }
                 yield return new WaitForSeconds(0.25f);
             }
 

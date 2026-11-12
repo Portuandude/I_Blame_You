@@ -86,11 +86,21 @@ namespace IBlameYou.Systems
 
     public class ChunkData
     {
+        // 구간 하나(화면 하나)의 폭. 넓은 방은 구간 여러 개를 이어 붙인 청크라 실제 폭은 Cols (Stitch, 2026-11-12 "큰 방").
         public const int Width = 32;
         public const int Height = 24;
 
-        public readonly StageTile[,] Tiles = new StageTile[Width, Height];
+        public readonly int Cols;
+        public readonly StageTile[,] Tiles;
         public readonly List<ChunkFeature> Features = new List<ChunkFeature>();
+
+        public ChunkData() : this(Width) { }
+
+        public ChunkData(int cols)
+        {
+            Cols = cols;
+            Tiles = new StageTile[cols, Height];
+        }
 
         public int Index;
         public ChunkKind Kind;
@@ -101,7 +111,7 @@ namespace IBlameYou.Systems
 
         public StageTile Get(int x, int y)
         {
-            if (x < 0 || x >= Width || y < 0 || y >= Height) return StageTile.Empty;
+            if (x < 0 || x >= Cols || y < 0 || y >= Height) return StageTile.Empty;
             return Tiles[x, y];
         }
 
@@ -139,7 +149,7 @@ namespace IBlameYou.Systems
         {
             for (int x = x0; x <= x1; x++)
             {
-                if (x >= 0 && x < Width && y >= 0 && y < Height) Tiles[x, y] = tile;
+                if (x >= 0 && x < Cols && y >= 0 && y < Height) Tiles[x, y] = tile;
             }
         }
 
@@ -159,6 +169,38 @@ namespace IBlameYou.Systems
             });
         }
 
+        // 구간들을 왼쪽부터 이어 붙여 넓은 방 청크 하나로 만든다 (RoomShaper.BuildHorizontal).
+        // 타일은 그대로 옮기고 기능 X는 그 구간이 시작하는 열만큼 민다. 입구 높이 = 첫 구간, 출구 높이 = 마지막 구간.
+        // 적 번호는 Index*100부터 다시 매긴다 (구간마다 같은 방 번호로 만들어 번호가 겹치므로).
+        // 종류·난이도·번호·시도 횟수는 main(주 구간: 전투·보스 등 방 종류를 정하는 구간)의 것을 쓴다.
+        public static ChunkData Stitch(IList<ChunkData> parts, ChunkData main)
+        {
+            int cols = 0;
+            foreach (var part in parts) cols += part.Cols;
+            var chunk = new ChunkData(cols)
+            {
+                Index = main.Index, Kind = main.Kind, Difficulty = main.Difficulty, Attempts = main.Attempts,
+                EntryHeight = parts[0].EntryHeight, ExitHeight = parts[parts.Count - 1].ExitHeight
+            };
+            int offset = 0;
+            int enemyId = main.Index * 100;
+            foreach (var part in parts)
+            {
+                for (int x = 0; x < part.Cols; x++)
+                    for (int y = 0; y < Height; y++)
+                        chunk.Tiles[offset + x, y] = part.Tiles[x, y];
+                foreach (var feature in part.Features)
+                {
+                    var f = feature;
+                    f.X += offset;
+                    if (f.Kind == FeatureKind.Enemy) f.Id = enemyId++;
+                    chunk.Features.Add(f);
+                }
+                offset += part.Cols;
+            }
+            return chunk;
+        }
+
         public bool HasFeature(FeatureKind kind)
         {
             foreach (var feature in Features) if (feature.Kind == kind) return true;
@@ -173,6 +215,14 @@ namespace IBlameYou.Systems
         public int Seed;
         public float EstimatedSeconds;
 
-        public int WidthTiles => Chunks.Count * ChunkData.Width;
+        public int WidthTiles
+        {
+            get
+            {
+                int total = 0;
+                foreach (var chunk in Chunks) total += chunk.Cols;
+                return total;
+            }
+        }
     }
 }

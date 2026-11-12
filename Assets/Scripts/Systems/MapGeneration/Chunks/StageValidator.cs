@@ -9,7 +9,6 @@ namespace IBlameYou.Systems
     // 2) 입구에서 갈 수 있는 모든 칸에서 다시 출구로 갈 수 있어야 한다 (빠지면 못 나오는 구덩이 금지. 낭떠러지는 떨어지면 복귀하니 괜찮다).
     public static class StageValidator
     {
-        private const int W = ChunkData.Width;
         private const int H = ChunkData.Height;
 
         // 숙련자 지름길 거리 (2026-11-10 사람 결정: 달리기·대쉬로 발판 없이 건너는 것을 허용한다). 검증에는 쓰지 않는다:
@@ -34,7 +33,7 @@ namespace IBlameYou.Systems
 
             int startX = 0;
             int startY = chunk.EntryHeight;
-            int goalX = W - 1;
+            int goalX = chunk.Cols - 1;
             int goalY = chunk.ExitHeight;
 
             foreach (var feature in chunk.Features)
@@ -46,8 +45,8 @@ namespace IBlameYou.Systems
             if (!Standable(chunk, support, startX, startY)) { reason = $"입구({startX},{startY})에 설 수 없음"; return false; }
             if (!Standable(chunk, support, goalX, goalY)) { reason = $"출구({goalX},{goalY})에 설 수 없음"; return false; }
 
-            var edges = new List<int>[W * H];
-            for (int x = 0; x < W; x++)
+            var edges = new List<int>[chunk.Cols * H];
+            for (int x = 0; x < chunk.Cols; x++)
             {
                 for (int y = 0; y < H; y++)
                 {
@@ -60,7 +59,7 @@ namespace IBlameYou.Systems
             if (!reachable[Id(goalX, goalY)]) { reason = "출구까지 가는 길이 없음"; return false; }
 
             // 거꾸로 된 그래프에서 출구로부터 탐색 = 출구로 갈 수 있는 칸들.
-            var reverse = new List<int>[W * H];
+            var reverse = new List<int>[chunk.Cols * H];
             for (int from = 0; from < edges.Length; from++)
             {
                 if (edges[from] == null) continue;
@@ -94,7 +93,7 @@ namespace IBlameYou.Systems
 
             var edges = BuildEdges(chunk, support);
             var reverse = Reverse(edges);
-            var canLeave = new bool[W * H];
+            var canLeave = new bool[chunk.Cols * H];
             foreach (var exit in exits)
             {
                 var toExit = Search(Id(exit.x, exit.y), reverse);
@@ -125,8 +124,8 @@ namespace IBlameYou.Systems
 
         private static List<int>[] BuildEdges(ChunkData chunk, bool[,] support)
         {
-            var edges = new List<int>[W * H];
-            for (int x = 0; x < W; x++)
+            var edges = new List<int>[chunk.Cols * H];
+            for (int x = 0; x < chunk.Cols; x++)
             {
                 for (int y = 0; y < H; y++)
                 {
@@ -140,7 +139,7 @@ namespace IBlameYou.Systems
 
         private static List<int>[] Reverse(List<int>[] edges)
         {
-            var reverse = new List<int>[W * H];
+            var reverse = new List<int>[edges.Length];
             for (int from = 0; from < edges.Length; from++)
             {
                 if (edges[from] == null) continue;
@@ -159,8 +158,8 @@ namespace IBlameYou.Systems
         // 발을 디딜 수 있는 칸: 땅, 발판, 무너지는 발판, 움직이는 발판이 지나는 칸 전부 (기다리면 언젠가 온다).
         private static bool[,] BuildSupport(ChunkData chunk)
         {
-            var support = new bool[W, H];
-            for (int x = 0; x < W; x++)
+            var support = new bool[chunk.Cols, H];
+            for (int x = 0; x < chunk.Cols; x++)
                 for (int y = 0; y < H; y++)
                     support[x, y] = chunk.Tiles[x, y] != StageTile.Empty;
 
@@ -171,7 +170,7 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < span; i++)
                 {
                     int x = feature.X + i;
-                    if (x >= 0 && x < W && feature.Y >= 0 && feature.Y < H) support[x, feature.Y] = true;
+                    if (x >= 0 && x < chunk.Cols && feature.Y >= 0 && feature.Y < H) support[x, feature.Y] = true;
                 }
             }
 
@@ -181,7 +180,7 @@ namespace IBlameYou.Systems
         // 몸이 지나갈 수 있는 칸 (발판은 뚫고 지나간다).
         private static bool Free(ChunkData chunk, int x, int y)
         {
-            if (x < 0 || x >= W) return false;
+            if (x < 0 || x >= chunk.Cols) return false;
             if (y >= H) return true;
             if (y < 0) return true;
             return chunk.Tiles[x, y] != StageTile.Solid;
@@ -189,7 +188,7 @@ namespace IBlameYou.Systems
 
         private static bool Standable(ChunkData chunk, bool[,] support, int x, int y)
         {
-            if (x < 0 || x >= W || y < 1 || y >= H - 1) return false;
+            if (x < 0 || x >= chunk.Cols || y < 1 || y >= H - 1) return false;
             return support[x, y - 1] && Free(chunk, x, y) && Free(chunk, x, y + 1);
         }
 
@@ -213,7 +212,7 @@ namespace IBlameYou.Systems
                 for (int dx = 1; dx <= 5; dx++)
                 {
                     int tx = x + dir * dx;
-                    if (tx < 0 || tx >= W) break;
+                    if (tx < 0 || tx >= chunk.Cols) break;
 
                     for (int dy = maxUp; dy >= -H; dy--)
                     {
@@ -258,7 +257,7 @@ namespace IBlameYou.Systems
 
         private static bool[] Search(int start, List<int>[] edges)
         {
-            var visited = new bool[W * H];
+            var visited = new bool[edges.Length];
             var queue = new Queue<int>();
             visited[start] = true;
             queue.Enqueue(start);
