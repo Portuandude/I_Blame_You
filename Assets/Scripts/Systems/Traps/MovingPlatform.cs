@@ -160,7 +160,8 @@ namespace IBlameYou.Systems
             {
                 bool wasIdle = Idle;
                 if (Time.time >= holdUntil && (Time.time < activeUntil || !AtEnd(clock))) clock += Time.fixedDeltaTime;
-                bool shouldGhost = Idle && !HasRider();
+                // 잠든 발판은 Activate로만 깨어난다 (꺼진 콜라이더의 bounds는 비어 있어 위를 볼 수 없다).
+                bool shouldGhost = Idle && (ghost || !HasRider());
                 if (shouldGhost != ghost)
                 {
                     ghost = shouldGhost;
