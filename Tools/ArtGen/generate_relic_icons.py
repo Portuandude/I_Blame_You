@@ -349,6 +349,19 @@ def horseshoe_magnet(d):
     d.polygon(star_points(21.5, 20.5, 2.0, 0.9), fill=CREAM)
 
 
+def paper_plane(d):
+    # 종이비행기: 오른쪽 위로 나는 하얀 종이비행기 + 접힌 하늘색 날개 그림자, 뒤로 끌리는 순간이동 빛 점선·반짝
+    white = (255, 255, 255, 255)
+    fold = hexrgba("9fd8ff")
+    outlined_poly(d, [(2.5, 12.5), (21.5, 3.5), (10.5, 19.5)], white, grow=1.3)     # 큰 날개
+    d.polygon(P((10.5, 19.5), (21.5, 3.5), (11.5, 13.2)), fill=fold)                 # 접힌 쪽 그림자
+    d.line(P((21.5, 3.5), (11.5, 13.2)), fill=OUTLINE, width=int(0.9 * SS))          # 접힌 선
+    for i, (x, y) in enumerate(((5.5, 19.5), (3.5, 21.5), (1.8, 23.0))):             # 뒤로 끌리는 빛 점
+        r = 1.1 - i * 0.3
+        d.ellipse(E(x - r, y - r, x + r, y + r), fill=hexrgba("b892ff"))
+    d.polygon(star_points(19.5, 17.5, 2.2, 1.0), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -375,6 +388,7 @@ ICONS = {
     "JellyCushion": jelly_cushion,
     "StarCandy": star_candy,
     "HorseshoeMagnet": horseshoe_magnet,
+    "PaperPlane": paper_plane,
 }
 
 
