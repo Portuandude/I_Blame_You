@@ -38,6 +38,7 @@ namespace IBlameYou.Systems
         private float magnetSpeed;
         private float magnetCheckTimer;
         private float nextWhooshTime;
+        private float foundEdgeDistance; // 마지막으로 찾은 플레이어 몸 가장자리까지 거리 (FindMagnetTarget)
         private float magnetRadius = IBlameYou.Player.RelicBook.MagnetRadius;
         private float magnetRelicTimer;
         private SpriteRenderer orbRenderer;
@@ -117,8 +118,10 @@ namespace IBlameYou.Systems
                     GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
                     nextWhooshTime = Time.time + WhooshCooldown;
                     // 말굽 자석 덕분에 기본 거리 밖에서 잡혔으면 머리 위로 말굽 자석이 톡
-                    Vector2 orb = transform.position + Vector3.up * FloatHeight;
-                    if (((Vector2)found.position - orb).magnitude > IBlameYou.Player.RelicBook.MagnetRadius)
+                    // (몸 가장자리까지 거리로 판단, 잡힌 그 플레이어가 유물을 가졌을 때만)
+                    var foundRelics = found.GetComponent<IBlameYou.Player.PlayerRelics>();
+                    if (foundRelics != null && foundRelics.Has(IBlameYou.Player.RelicId.HorseshoeMagnet)
+                        && foundEdgeDistance > IBlameYou.Player.RelicBook.MagnetRadius)
                         VfxPlayer.HorseshoeGlint(found, HorseshoeGlintOffset); // 곧 주우면 꿀단지가 가운데에 뜨므로 왼쪽으로 비켜서
                 }
                 magnetTarget = found;
@@ -168,6 +171,15 @@ namespace IBlameYou.Systems
                     best = player.transform;
                 }
             }
+            // 고른 플레이어 몸 가장자리까지 가장 가까운 거리 (OverlapCircle은 가장자리로 잡는다)
+            foundEdgeDistance = float.MaxValue;
+            if (best != null)
+                for (int i = 0; i < count; i++)
+                {
+                    var player = TrapCommon.PlayerFrom(MagnetHits[i]);
+                    if (player == null || player.transform != best) continue;
+                    foundEdgeDistance = Mathf.Min(foundEdgeDistance, (MagnetHits[i].ClosestPoint(center) - center).magnitude);
+                }
             return best;
         }
 
