@@ -12,7 +12,10 @@ namespace IBlameYou.Systems
         private const float BubbleHeight = 2.05f;
         private const float GlyphWidth = 0.3f * BubbleScale; // 한글 한 글자 대략 폭 (RelicBannerView와 같은 글자 크기 기준)
         private const float BubbleScale = 0.55f;
-        private const float TalkRange = 2.6f;               // 이 거리 안에 플레이어가 있으면 말풍선
+        private const float TalkRange = 2.6f;
+        private const float ReactionTime = 1.5f;           // 사고팔 때 반응 말풍선 시간 (창을 닫은 뒤)
+        private const float HopTime = 0.3f;
+        private const float HopHeight = 0.25f;               // 이 거리 안에 플레이어가 있으면 말풍선
         private static readonly Color BubbleColor = new Color(1f, 0.957f, 0.839f);   // cream
         private static readonly Color OutlineColor = new Color(0.094f, 0.078f, 0.102f); // outline #18141a
 
@@ -33,6 +36,10 @@ namespace IBlameYou.Systems
         private string[] lines;
         private int lineIndex = -1;
         private bool near;
+        private Vector3 basePosition;
+        private VillageService service;
+        private string reaction;          // 사고팔 때 받은 대사 (창이 닫혀 게임이 다시 흐르면 보여 준다)
+        private float reactionLeft;       // 반응 말풍선이 남은 시간 (게임 시간)
         private PlayerMovement player;
         private float time;
 
@@ -44,7 +51,10 @@ namespace IBlameYou.Systems
             go.transform.position = groundPosition;
 
             var npc = go.AddComponent<VillageNpc>();
+            npc.basePosition = go.transform.position;
             npc.lines = chef ? ChefLines : MerchantLines;
+            npc.service = service;
+            StageEvents.VillageNpcSay += npc.OnSay;
             npc.frames = LoadFrames(chef ? "NpcChef" : "NpcMerchant");
             npc.body = go.AddComponent<SpriteRenderer>();
             npc.body.sortingOrder = -2; // 건물(-3) 앞, 플레이어(1) 뒤
@@ -112,6 +122,16 @@ namespace IBlameYou.Systems
             return go.transform;
         }
 
+        private void OnDestroy() => StageEvents.VillageNpcSay -= OnSay;
+
+        // 창이 열려 게임이 멈춘 동안 받은 대사는 마지막 것만 남겼다가, 창이 닫히면 ReactionTime 동안 보여 준다.
+        private void OnSay(VillageService who, string line)
+        {
+            if (who != service || string.IsNullOrEmpty(line)) return;
+            reaction = line;
+            reactionLeft = ReactionTime;
+        }
+
         private void Update()
         {
             time += Time.deltaTime;
@@ -121,8 +141,25 @@ namespace IBlameYou.Systems
             bool nowNear = PlayerNear();
             if (nowNear && !near) Say();
             near = nowNear;
-            bubble.SetActive(near);
-            if (near) bubble.transform.localPosition = new Vector3(0f, BubbleHeight + Mathf.Sin(time * 3f) * 0.04f, 0f);
+
+            float hop = 0f;
+            if (reaction != null && Time.timeScale > 0f)
+            {
+                if (reactionLeft == ReactionTime) SetText(reaction); // 첫 프레임에 대사를 바꿔 끼운다
+                reactionLeft -= Time.deltaTime;
+                float t = ReactionTime - reactionLeft;
+                if (t < HopTime) hop = Mathf.Sin(t / HopTime * Mathf.PI) * HopHeight; // 톡 뛰기 한 번
+                if (reactionLeft <= 0f)
+                {
+                    reaction = null;
+                    if (near && lineIndex >= 0) SetText(lines[lineIndex]); // 다시 평소 대사
+                }
+            }
+            transform.position = basePosition + Vector3.up * hop; // 말풍선은 자식이라 같이 뛴다
+
+            bool show = near || reaction != null && Time.timeScale > 0f;
+            bubble.SetActive(show);
+            if (show) bubble.transform.localPosition = new Vector3(0f, BubbleHeight + Mathf.Sin(time * 3f) * 0.04f, 0f);
         }
 
         private bool PlayerNear()
@@ -136,7 +173,11 @@ namespace IBlameYou.Systems
         private void Say()
         {
             lineIndex = (lineIndex + 1) % lines.Length;
-            string text = lines[lineIndex];
+            if (reaction == null) SetText(lines[lineIndex]); // 반응 말풍선이 떠 있으면 그 대사를 덮지 않는다
+        }
+
+        private void SetText(string text)
+        {
             label.text = text;
             float width = text.Length * GlyphWidth + 0.4f;
             labelBack.localScale = new Vector3(width, 0.5f, 1f);

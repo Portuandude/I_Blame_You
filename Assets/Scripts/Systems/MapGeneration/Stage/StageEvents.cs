@@ -37,6 +37,11 @@ namespace IBlameYou.Systems
 
         public static bool RaiseVillageInteract(VillageService service) =>
             VillageInteractRequested != null && VillageInteractRequested(service);
+
+        // 마을 NPC 반응: 식당에서 사면 식당 주인, 상점에서 사고팔거나 리롤하면 상인이 말풍선 한 줄 + 톡 뛰기 (VillageNpc가 듣는다).
+        public static event Action<VillageService, string> VillageNpcSay;
+
+        public static void RaiseVillageNpcSay(VillageService service, string line) => VillageNpcSay?.Invoke(service, line);
     }
 
     // 분열 같은 효과로 새로 생긴 적을 같은 묶음(전투 구역 등)에 넣는다.
