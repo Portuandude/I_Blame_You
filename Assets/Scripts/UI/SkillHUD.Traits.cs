@@ -37,7 +37,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (!Input.GetKeyDown(KeyCode.Tab) || relicWindowOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (!Input.GetKeyDown(KeyCode.Tab) || relicWindowOpen || equipCardOpen || deathHandled || stageCleared || health.IsDead) return;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return; // 영창/미니게임 중에는 열지 않는다
 
             traitWindowOpen = true;

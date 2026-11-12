@@ -102,6 +102,7 @@ namespace IBlameYou.UI
             EnemyController.Killed += OnEnemyKilled;
             health.Damaged += OnPlayerDamaged;
             InitializeRelics();
+            InitializeEquipmentCard();
         }
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
@@ -145,8 +146,9 @@ namespace IBlameYou.UI
                 progression.TraitRaised -= OnTraitRaised;
             }
             ShutdownRelics();
+            ShutdownEquipmentCard();
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || relicWindowOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -167,6 +169,7 @@ namespace IBlameYou.UI
             CloseTraitWindow();
             ClosePauseMenu();
             CloseRelicWindow();
+            CloseEquipCard();
             CloseCodex();
             stageCleared = true;
             RunStats.Ended = true;
@@ -220,6 +223,7 @@ namespace IBlameYou.UI
                 CloseTraitWindow();
                 ClosePauseMenu();
                 CloseRelicWindow();
+                CloseEquipCard();
                 CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
@@ -241,6 +245,7 @@ namespace IBlameYou.UI
             if (!UpdateCodexInput()) // 도감(C)이 열려 있으면 Esc·Tab은 도감 몫 (SkillHUD.Codex.cs)
             {
                 UpdateRelicWindowInput();
+                UpdateEquipCardInput();
                 UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
                 UpdateTraitWindowInput();
             }
@@ -308,6 +313,7 @@ namespace IBlameYou.UI
             DrawHelp();
             DrawTraitWindow();
             DrawRelicWindow();
+            DrawEquipCard();
             DrawPauseMenu();
             DrawCodexWindow();
             DrawDeathFade();

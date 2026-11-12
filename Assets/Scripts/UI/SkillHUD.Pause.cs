@@ -31,7 +31,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (traitWindowOpen || relicWindowOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (traitWindowOpen || relicWindowOpen || equipCardOpen || deathHandled || stageCleared || health.IsDead) return;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return;
 
             paused = true;
