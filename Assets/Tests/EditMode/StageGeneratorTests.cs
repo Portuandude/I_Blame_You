@@ -670,6 +670,30 @@ namespace IBlameYou.Tests
             }
             Assert.Greater(spikes, 1000, "가시밭 동전이 거의 없음");
 
+            int caves = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.2f, 0.45f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8, 12 })
+                    {
+                        string tag = $"cave seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Cave, difficulty, entry, 0);
+                        var piles = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                        var stalactites = chunk.Features.FindAll(f => f.Kind == FeatureKind.Stalactite);
+                        Assert.AreEqual(stalactites.Count > 0 ? 1 : 0, piles.Count, tag + ": 종유석이 있을 때만 하나");
+                        foreach (var c in piles)
+                        {
+                            Assert.AreEqual(stalactites[stalactites.Count - 1].X, c.X, tag + ": 마지막 종유석 아래");
+                            Assert.AreEqual(Surface(chunk, c.X), c.Y, tag + ": 바닥 위");
+                            Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.FlameJet && System.Math.Abs(f.X - c.X) <= 1), tag + ": 분출구 옆");
+                            caves++;
+                        }
+                    }
+                }
+            }
+            Assert.Greater(caves, 600, "동굴 동전이 거의 없음");
+
             Assert.Greater(pits, 600, "섬 동전이 거의 없음");
             Assert.Greater(climb, 1000, "절벽 오르기 동전이 거의 없음");
         }

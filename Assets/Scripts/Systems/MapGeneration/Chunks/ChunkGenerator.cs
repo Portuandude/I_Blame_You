@@ -508,6 +508,13 @@ namespace IBlameYou.Systems
             }
 
             PlaceStalactites(chunk, heights, occupied, rng);
+
+            // 동전 무더기: 마지막 종유석 바로 아래 바닥 (주우러 가면 종유석이 흔들린다 — 피하며 줍는 보상).
+            // 종유석이 없는 동굴(난이도 문턱 아래)에는 두지 않는다. 난수·occupied를 건드리지 않아 기존 지형·적 그대로
+            int stalactiteX = -1;
+            foreach (var f in chunk.Features) if (f.Kind == FeatureKind.Stalactite) stalactiteX = f.X;
+            if (stalactiteX >= 0) chunk.AddFeature(FeatureKind.CoinPile, stalactiteX, heights[stalactiteX]);
+
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
         }
 
