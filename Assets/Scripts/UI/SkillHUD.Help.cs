@@ -186,6 +186,7 @@ namespace IBlameYou.UI
                 Add(null, default, "F3", "적 처치");
                 Add(null, default, "F4", "회복");
             }
+            Add(null, default, "C", "유물 도감");
             Add(null, default, "Esc", "일시정지");
             return items;
         }

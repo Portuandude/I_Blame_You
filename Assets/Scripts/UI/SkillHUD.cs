@@ -142,7 +142,7 @@ namespace IBlameYou.UI
             }
             ShutdownRelics();
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || relicWindowOpen || deathSlowMotion) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -163,6 +163,7 @@ namespace IBlameYou.UI
             CloseTraitWindow();
             ClosePauseMenu();
             CloseRelicWindow();
+            CloseCodex();
             stageCleared = true;
             RunStats.Ended = true;
             RunSave.Clear(); // 끝난 런은 이어 할 수 없다
@@ -215,6 +216,7 @@ namespace IBlameYou.UI
                 CloseTraitWindow();
                 ClosePauseMenu();
                 CloseRelicWindow();
+                CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
                 defeatUsualPercent = stageCleared ? -1 : SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다"), 클리어 뒤 쓰러짐은 비교 안 함
@@ -232,9 +234,12 @@ namespace IBlameYou.UI
 
             UpdateDeathSequence();
 
-            UpdateRelicWindowInput();
-            UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
-            UpdateTraitWindowInput();
+            if (!UpdateCodexInput()) // 도감(C)이 열려 있으면 Esc·Tab은 도감 몫 (SkillHUD.Codex.cs)
+            {
+                UpdateRelicWindowInput();
+                UpdatePauseInput(); // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
+                UpdateTraitWindowInput();
+            }
 
             if (GameOverReady || stageCleared)
             {
@@ -299,6 +304,7 @@ namespace IBlameYou.UI
             DrawTraitWindow();
             DrawRelicWindow();
             DrawPauseMenu();
+            DrawCodexWindow();
             DrawDeathFade();
             if (deathHandled) DrawGameOver();
             else if (stageCleared) DrawStageClear();
