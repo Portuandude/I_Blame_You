@@ -46,6 +46,8 @@ namespace IBlameYou.Systems
         PlatformSwitch, // 마법 스위치 룬. (X, Y)는 룬이 선 칸 (바닥 바로 위). ElementIndex 속성 마법을 맞히면 짝 발판이 잠시 움직인다.
                         // 짝: 청크의 k번째 PlatformSwitch ↔ k번째 SwitchDriven MovingPlatform (Features 순서)
                         // 몸이 지나가는 트리거라 길을 막지 않는다 (검증에서는 무시)
+        BlinkWard,      // 마력 안개: X ~ X + Width - 1 열 전체(바닥~천장). 안에서는 순간이동·대시가 흩어진다 (스위치 발판 낭떠러지를 건너뛰지 못하게).
+                        // 검증기는 걷기 점프 기준이라 무시한다
         Reward          // 회복 구슬 (ArenaReward와 같은 것). (X, Y)는 구슬이 놓이는 서는 칸. 순간이동 지름길 선반에 놓인다
     }
 
