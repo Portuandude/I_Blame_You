@@ -15,8 +15,6 @@ namespace IBlameYou.UI
         private GUIStyle codexBody;
         private GUIStyle codexSmall;
 
-        public bool CodexOpen => codexLocked;
-
         // true면 이번 프레임 키 입력을 도감이 가져갔다 (일시정지·특성 창 입력을 건너뛴다).
         private bool UpdateCodexInput()
         {
