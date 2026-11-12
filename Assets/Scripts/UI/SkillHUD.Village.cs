@@ -98,6 +98,7 @@ namespace IBlameYou.UI
         // 음식 아이콘: Tools/ArtGen/generate_food_icons.py → Resources/UI/HUD/Food/<FoodId>.png (24x24)
         private const float FoodIconSize = 28f;
         private static readonly Vector3 FoodGlintOffset = new Vector3(0f, 1.5f, 0f); // 머리 위 (유물 반짝 연출과 같은 높이)
+        private static readonly Vector3 StampGlintOffset = new Vector3(0.6f, 1.3f, 0f); // 단골 도장 (음식 아이콘 오른쪽)
         private readonly System.Collections.Generic.Dictionary<FoodId, Texture2D> foodIcons =
             new System.Collections.Generic.Dictionary<FoodId, Texture2D>();
 
@@ -126,6 +127,7 @@ namespace IBlameYou.UI
             int price = VillagePrice.Apply(food.Price, rate);
             if (!RunStats.TrySpendGold(price, RunGold.InFlight)) return;
             restaurantVisit.TryBuy(food.Id, price, false, false, rate); // 위에서 이미 확인함: 기록만
+            if (price < food.Price) VfxPlayer.StampGlint(health.transform, StampGlintOffset); // 단골 도장 할인 쾅
             ApplyFood(food);
             villageMessage = $"<color=#7dff8a>{food.Name}: {food.Describe()}</color>";
             GameAudio.PlaySfx("Coin", 0.7f);
