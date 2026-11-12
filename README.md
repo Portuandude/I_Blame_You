@@ -86,7 +86,7 @@ Assets/
   Resources/Effects/StunStars/ # 적 경직 어질어질 별 12프레임 (generate_skill_fx.py, Systems/Effects/StunStars)
   Resources/UI/HUD/           # HUD 캡슐 바·빛 테두리·패널·하트·별·왕관·깃발 (Tools/ArtGen/generate_hud.py, UI/SkillHUD.Bars·UI/CapsuleBar)
   Resources/Audio/{Music,SFX}/    # 배경음악, Cast_/Hit_<속성>, Jump/Dash/Hurt/EnemyDie/LevelUp·Checkpoint/GateOpen/Pickup/ArenaLock·Jingle_* 효과음 (런타임 로드, Tools/AudioGen)
-  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/발판/무너지는 발판/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
+  Resources/Stage/<이름>/         # 가시/화염 분출구/화살 발사대/종유석/발판/무너지는 발판/전투 구역 문/구역 보상 구슬/봉인문·문양/출구 그림 (런타임 로드, Tools/ArtGen)
   Resources/Bosses/SlimeKing/     # 슬라임 킹 왕관, 내려찍기 그림자 (런타임 로드, Tools/ArtGen)
   Scenes/                     # testScene (플레이테스트), Boot/, Chapters/
   Scripts/
@@ -116,7 +116,7 @@ Assets/
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
-      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), BlinkPlatform(깜빡 발판: 보임 2초 → 깜빡 경고 0.6초 → 사라짐 1.4초, 발판마다 0.7초씩 늦게 — 무너지는 다리 방의 변형, 난이도 40% 이상 절반 확률, 후보 목록 `Docs/ContentIdeas.md`), MovingPlatform(움직이는 발판), TrapCommon
+      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), Stalactite(동굴 떨어지는 종유석), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), BlinkPlatform(깜빡 발판: 보임 2초 → 깜빡 경고 0.6초 → 사라짐 1.4초, 발판마다 0.7초씩 늦게 — 무너지는 다리 방의 변형, 난이도 40% 이상 절반 확률, 후보 목록 `Docs/ContentIdeas.md`), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
@@ -139,7 +139,7 @@ Trash/                        # 삭제 대신 보관하는 파일함 (CLAUDE.md 
 
 맵은 손으로 만들지 않고 시드 하나로 매번 새로 만든다 (기본은 실행할 때마다 무작위 시드, `PlaytestBootstrap`의 `randomSeedEachRun`을 끄면 `seed` 고정).
 
-- 스테이지 = 32×24 타일(1타일 = 1유닛) 청크를 가로로 이어 붙인 것. 청크 종류: 시작, 평지, 언덕, 낭떠러지, 가시밭, 절벽, 동굴, 무너지는 다리, 봉인문(맵 퍼즐), 움직이는 발판(컨트롤 퍼즐), 전투, 정예 전투, 휴식(체크포인트), 보스.
+- 스테이지 = 32×24 타일(1타일 = 1유닛) 청크를 가로로 이어 붙인 것. 청크 종류: 시작, 평지, 언덕, 낭떠러지, 가시밭, 절벽, 동굴, 무너지는 다리, 기둥 숲, 두 갈래 길, 봉인문(맵 퍼즐), 움직이는 발판(컨트롤 퍼즐), 전투, 정예 전투, 휴식(체크포인트), 보스.
 - `StagePlanner`가 청크 종류별 예상 시간(가안)을 더해 목표 15분(2026-11-10 사람 결정, 30분에서 줄임)이 될 때까지 이동 구간 1~3개 + 전투 구역을 번갈아 놓는다. 진행도가 오를수록 어려운 지형·함정·적이 늘고, 30% 지점에 정예 전투(그다음 고비는 55% 중간보스), 마지막에 숨 고르기 + 보스. 방 격자 모드는 중간보스 방과 그 뒤 숨 고르기 방 몫을 빼고 계획해(`RoomLayout.PlanSeconds`) 전체가 15분 안팎(시드 200개 평균 약 15.4분, 주 경로 19방 안팎).
 - 지형 규칙은 점프 능력에서 나왔다 (최대 2칸 오르기, 최대 3칸 낭떠러지). `StageValidator`가 청크마다 통과 가능 여부와 빠지면 못 나오는 구덩이를 검사하고, 실패하면 다시 만든다.
 - 게임 중에는 `ChunkStreamer`가 플레이어 좌우 2청크만 씬에 만들고 3청크보다 멀어지면 치운다 (마인크래프트 방식). 쓰러뜨린 적, 돌파한 전투 구역, 주운 구역 보상은 기록해 둔다.
