@@ -11,6 +11,8 @@ namespace IBlameYou.Core
         public static int NewRelicMask { get; private set; } // 이번 판에 처음 도감에 오른 유물 (RelicCodex 비트 마스크, 결과 창 유물 줄 NEW 점)
         public static bool CodexCompleted { get; set; } // 이번 판에 유물 도감을 다 채웠다 (결과 창 금색 "유물 도감 완성!")
         public static int Gold { get; private set; } // 이번 판 골드 (그 판 안에서만, 다음 판으로 안 넘어감 — RunGold)
+        public static int GoldEarned { get; private set; } // 이번 판에 들어온 골드 합계 (동전·장비 판매, 결과 창 "모음")
+        public static int GoldSpent { get; private set; }  // 이번 판에 마을에서 쓴 골드 합계 (식당·상점, 결과 창 "씀")
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
@@ -26,6 +28,8 @@ namespace IBlameYou.Core
             NewRelicMask = 0;
             CodexCompleted = false;
             Gold = 0;
+            GoldEarned = 0;
+            GoldSpent = 0;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
             System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
@@ -34,7 +38,9 @@ namespace IBlameYou.Core
         // 골드는 판이 끝난 뒤(보스 처치 → 클리어)에도 받는다: 보스 골드가 클리어와 같은 순간에 들어오기 때문.
         public static void AddGold(int amount)
         {
-            if (amount > 0) Gold += amount;
+            if (amount <= 0) return;
+            Gold += amount;
+            GoldEarned += amount;
         }
 
         // 마을에서 골드를 쓴다 (식당·장비 상점). reserved: 아직 날아오는 동전 몫(RunGold.InFlight) — 화면 숫자만큼만 쓸 수 있게.
@@ -43,6 +49,7 @@ namespace IBlameYou.Core
         {
             if (amount < 0 || Gold - System.Math.Max(0, reserved) < amount) return false;
             Gold -= amount;
+            GoldSpent += amount;
             return true;
         }
 

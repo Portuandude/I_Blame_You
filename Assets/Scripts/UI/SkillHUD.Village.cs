@@ -45,7 +45,7 @@ namespace IBlameYou.UI
             if (service == VillageService.Restaurant) restaurantVisit.BeginVisit(StageEvents.VillageVisit);
             control.Locked = true;
             Time.timeScale = 0f;
-            GameAudio.PlaySfx("RelicOpen", 0.4f);
+            GameAudio.PlaySfx("ShopBell", 0.8f, 0.03f); // 가게 문 종 딸랑 (Tools/AudioGen shop_bell)
             return true;
         }
 
@@ -91,6 +91,23 @@ namespace IBlameYou.UI
         private bool HealthFull => health.Current >= health.Max - 0.01f;
         private bool ManaFull => mana.Current >= mana.Max - 0.01f;
 
+        // 음식 아이콘: Tools/ArtGen/generate_food_icons.py → Resources/UI/HUD/Food/<FoodId>.png (24x24)
+        private const float FoodIconSize = 28f;
+        private static readonly Vector3 FoodGlintOffset = new Vector3(0f, 1.5f, 0f); // 머리 위 (유물 반짝 연출과 같은 높이)
+        private readonly System.Collections.Generic.Dictionary<FoodId, Texture2D> foodIcons =
+            new System.Collections.Generic.Dictionary<FoodId, Texture2D>();
+
+        private Texture2D FoodIcon(FoodId id)
+        {
+            if (!foodIcons.TryGetValue(id, out var icon))
+            {
+                icon = Resources.Load<Texture2D>("UI/HUD/Food/" + id);
+                foodIcons[id] = icon; // 없어도(null) 기억해서 매 프레임 다시 찾지 않는다
+                if (icon != null) icon.filterMode = FilterMode.Point;
+            }
+            return icon;
+        }
+
         private void BuyFood(FoodInfo food)
         {
             var check = restaurantVisit.Check(food.Id, SpendableGold, HealthFull, ManaFull);
@@ -107,6 +124,7 @@ namespace IBlameYou.UI
             villageMessage = $"<color=#7dff8a>{food.Name}: {food.Describe()}</color>";
             GameAudio.PlaySfx("Coin", 0.7f);
             GameAudio.PlaySfx("Pickup", 0.6f);
+            StageEvents.RaiseVillageNpcSay(VillageService.Restaurant, "맛있게 드세요!"); // 창을 닫으면 식당 주인이 톡
         }
 
         private void ApplyFood(FoodInfo food)
@@ -136,6 +154,7 @@ namespace IBlameYou.UI
                     break;
             }
             StageEvents.PostNotice($"{food.Name} 냠!");
+            VfxPlayer.FoodGlint(health.transform, FoodGlintOffset, food.Id.ToString()); // 산 음식이 머리 위로 톡
         }
 
         // 창 뒤 화면을 어둡게
@@ -192,8 +211,17 @@ namespace IBlameYou.UI
                 GUI.Box(row, GUIContent.none, panel);
                 string name = check == FoodBuyCheck.Ok ? $"<b>{food.Name}</b>" : $"<color=#8a8a8a><b>{food.Name}</b></color>";
                 string desc = check == FoodBuyCheck.AlreadyBought ? "<color=#8a8a8a>다 먹었어요</color>" : food.Describe();
-                GUI.Label(new Rect(row.x + 10f, row.y + 2f, row.width - 150f, 20f), $"{i + 1}. {name}", new GUIStyle(label) { richText = true });
-                GUI.Label(new Rect(row.x + 28f, row.y + 20f, row.width - 160f, 18f), desc, new GUIStyle(small) { richText = true });
+                var icon = FoodIcon(food.Id);
+                if (icon != null)
+                {
+                    var tint = GUI.color;
+                    if (check == FoodBuyCheck.AlreadyBought) GUI.color = new Color(tint.r, tint.g, tint.b, tint.a * 0.4f); // 다 먹은 건 흐리게
+                    GUI.DrawTexture(new Rect(row.x + 6f, row.y + (row.height - FoodIconSize) / 2f, FoodIconSize, FoodIconSize), icon, ScaleMode.ScaleToFit);
+                    GUI.color = tint;
+                }
+                float textX = row.x + FoodIconSize + 12f;
+                GUI.Label(new Rect(textX, row.y + 2f, row.xMax - 130f - textX, 20f), $"{i + 1}. {name}", new GUIStyle(label) { richText = true });
+                GUI.Label(new Rect(textX + 18f, row.y + 20f, row.xMax - 130f - textX - 18f, 18f), desc, new GUIStyle(small) { richText = true });
 
                 var buy = new Rect(row.xMax - 120f, row.y + 5f, 110f, row.height - 10f);
                 bool wasEnabled = GUI.enabled;

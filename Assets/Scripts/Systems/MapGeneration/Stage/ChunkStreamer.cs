@@ -386,11 +386,17 @@ namespace IBlameYou.Systems
                 int cols = RoomCols(index);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
+                VillageDecor.Build(root, origin.x, cols, ground, VillageRestaurantAt); // 따뜻한 색조·울타리·가로등·꽃·분수·김·반딧불
+                // 식당 주인·상인은 각 건물 문 오른쪽 벽 앞 (문 앞 W 범위 ±1.2 안이라 말을 걸며 창을 연다)
+                VillageNpc.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt + VillageNpcOffset, ground), VillageService.Restaurant);
+                VillageNpc.Create(root, new Vector2(origin.x + cols * VillageShopAt + VillageNpcOffset, ground), VillageService.Shop);
             }
         }
 
         private const float VillageRestaurantAt = 0.3f; // 방 가로 비율 (문 앞을 비워 두려고 양 끝에서 떨어뜨림)
         private const float VillageShopAt = 0.7f;
+        private const string VillageMusic = "Village"; // Resources/Audio/Music/Village (Tools/AudioGen village_theme)
+        private const float VillageNpcOffset = 1.3f; // 건물 가운데에서 NPC까지 (문 폭 ±0.6 밖, 건물 폭 ±1.75 안)
 
         private static Vector3 EnemyPosition(Vector2 origin, ChunkFeature f) =>
             new Vector3(origin.x + f.X + 0.5f, origin.y + f.Y + SpawnLift, 0f);
@@ -706,7 +712,7 @@ namespace IBlameYou.Systems
         {
             doorReadyTime = Time.time + DoorCooldown;
             reapplyCameraBounds = true;
-            visitedRooms.Add(index);
+            bool firstVisit = visitedRooms.Add(index);
             FallRecovery.FloorY = Origin(index).y;
             var follow = Camera.main != null ? Camera.main.GetComponent<IBlameYou.Core.CameraFollow>() : null;
             if (follow != null)
@@ -726,6 +732,15 @@ namespace IBlameYou.Systems
                 StageEvents.StageSeed = stage.Seed;
             }
             StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
+            // 마을에 있는 동안은 잔잔한 마을 곡, 나오면 깊이에 맞는 던전 곡 (다른 곡이 나오던 중이면 건드리지 않는다)
+            if (entered.Kind == RoomKind.Village) GameAudio.PlayMusic(VillageMusic);
+            else if (GameAudio.CurrentMusic == VillageMusic) GameAudio.PlayMusic(ArenaZone.StageMusicFor(StageEvents.Depth));
+            if (entered.Kind == RoomKind.Village && firstVisit)
+            {
+                // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
+                StageEvents.PostNotice("마을 발견! 식당·장비 상점");
+                GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
+            }
             RoomEntered?.Invoke(index);
         }
 

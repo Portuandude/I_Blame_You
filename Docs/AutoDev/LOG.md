@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-12 14:21 UTC
+- 브랜치/PR: `claude/project-thread-zpaf21` → #49 (develop 대상, 자동 머지 켬). 14:00 실행의 인수인계로 시작, #48 head(b6f0226) 위에서 작업, #48은 실행 중 머지됨
+- 완료 (10개, 동작 변경은 적대적 리뷰 3회 APPROVE, HIGH 1·LOW 5건 반영): ① 마을 방 꾸미기(따뜻한 색조·울타리·가로등·꽃·분수 `Stage/VillageDecor`) ② 마을 NPC(모자 슬라임 2명, 숨쉬기, 말풍선 `Stage/VillageNpc`) ③ 마을 곡 `Village`(90 BPM 오르골) ④ 식당 음식 아이콘 5종 + 머리 위 톡 ⑤ 결과 창 장비 3칸 ⑥ 마을 첫 발견 알림 + `VillageFound` ⑦ NPC 반응 말풍선 + 톡 뛰기(`StageEvents.VillageNpcSay`) ⑧ 가게 종 `ShopBell`·리롤 주사위 `Reroll` ⑨ 분위기 입자(간판 김·반딧불 `Stage/VillageAmbience`) ⑩ 결과 창 "모음 N · 씀 M" 골드(`RunStats.GoldEarned/GoldSpent`). 리뷰 HIGH: 첫 발견 블록이 마을 곡 else를 가로채 재방문 때 곡이 바로 꺼짐 → 고침
+- 실패/보류: 없음. 백로그 TODO는 사람 판단 대기(숨 고르기 방)만 남음
+- 다음 실행 메모: 백로그가 비었으니 GDD 로드맵·ContentIdeas(사람 고르기 전이면 고르지 말 것)·코드 상태로 3~5개 추가. 플레이테스트 필요: 마을 꾸미기·NPC 말풍선·반응 위치, 마을 곡 전환(재방문 포함), 음식 아이콘, 결과 창 장비 줄·골드 줄, 종·리롤 소리 크기
+
 ## 2026-11-12 14:00 UTC
 - 브랜치/PR: `claude/project-thread-41del8` → #48 (develop 대상, 자동 머지 켬). #47(장비) 머지 전에 그 위에서 시작, #47은 실행 중 머지됨
 - 완료 (7개, 동작 변경은 모두 적대적 리뷰 APPROVE, HIGH 1·LOW 몇 건 반영): ① 진행도(%) 시스템 삭제 — HUD 막대 → 스테이지 이름 꼬리표, 게임오버·시작 화면 기록은 "시작 방에서 N칸"(새 저장 키), 내부 기준은 방 깊이(`StageEvents.Depth`) ② NPC 마을 방(`RoomKind.Village`, 판마다 하나, 좌우 막다른 곁방·거리 2+·보스 옆 아님, 건물 2채 `Stage/VillageBuilding`, 미니맵 집) ③ 식당(음식 5종 `Data/VillageFood`, 방문마다 종류별 한 번, 도시락 `LunchboxGuard`) ④ 장비 상점(`Data/EquipmentShop` 진열 4·같은 부위 장비 판매가만큼 깎기·팔기·리롤, `UI/SkillHUD.Shop`) ⑤ 화면 밖 보상 구슬 길잡이 하트 ⑥ 젤리 방울 "똑똑" `JellyDrip` ⑦ 유물 종이비행기(26종). 상호작용 키: 건물 앞 W 짧게 톡(W+Enter 순간이동과 안 겹침) 또는 ↑. 로컬 154/154
@@ -13,9 +19,3 @@
 - 완료 (7개, 동작 변경은 모두 적대적 리뷰 APPROVE, MEDIUM 2·LOW 몇 건 반영): ① 장비·마을 설계 문서 `Docs/EquipmentDesign.md`([결정 필요] 2곳) ② 장비 순수 데이터(`Player/Equipment/Data`, 새 어셈블리 `IBlameYou.Equipment`: 12종·수식어 6등급·가격·판매가·리롤 비용) + 테스트 ③ `PlayerEquipment` 3칸 장착(빼고 더하기, 최대치 변경 시 현재값을 채우지 않음 → 끼고 빼기 회복 악용 막음, `AddMax(amount, fillCurrent)`) ④ 아이콘 12장(`Tools/ArtGen/generate_equipment_icons.py`) ⑤ 기능 테스트 F12 장비 창 ⑥ 일시정지 요약 장비 3칸 ⑦ 유물 상자를 열면 옆에 장비(`Stage/EquipmentPickup`, 중간보스 +1등급) + 비교 카드(1 바꿔 끼기 / 2 두고 가기, 바꾸면 옛 장비가 남음). 로컬 145/145
 - 실패/보류: 순간이동에는 재사용 대기가 없어 설계의 "순간이동 대기" 능력치를 뺐다(번개 신발 → 치명타 +2%). 바닥 장비는 런 저장에 안 들어감(런 저장 미사용)
 - 다음 실행 메모: BACKLOG "진행도 시스템 삭제"부터(그다음 마을·식당·상점). 플레이테스트 필요: 장비 비교 카드·바닥 장비 위치(상자 오른쪽 1.6칸), 일시정지 장비 줄, F12. 사람 결정: EquipmentDesign [결정 필요] 2곳(수식어 추가 능력치 여부, 마을이 곁방 수에 포함되는지)
-
-## 2026-11-12 10:16 UTC
-- 브랜치/PR: `claude/project-thread-cj1qcj` → #46 (develop 대상). #45 머지 뒤 develop에서 시작. 중간에 API 오류로 약 3시간 끊겼다가 13:44에 이어서 마무리
-- 완료 (2개, 둘 다 적대적 리뷰): ① 골드 드롭(`Chunks/GoldDrops` 표, `Core/RunGold` 금화 부채꼴 → 자석, "칭" 소리, HUD 골드 알약·결과 창·일시정지, 판마다 초기화. 리뷰 HIGH: 슬라임 킹이 분열해 골드 두 번 → 하나당 절반, MEDIUM: 보스 소환 어미 슬라임 골드 농사 → `Enemies/BossSummon` 표시로 제외) ② 큰 방(좌우 이동·퍼즐·전투·보스 방 = 3화면 96칸, 휴식 2화면, 들어오는 문 쪽에 이동 구간 `RoomData.Leads`를 `ChunkData.Stitch`로 이어 붙임, 가변 폭 청크, 칸 간격 `RoomLayout.CellCols`, 15분 미만 배치 버림 → 예상 15~19분, 기본 목표 20분). 로컬 135/135, 시드 300개 3512방 검증 실패·대체 지형 0
-- 실패/보류: 2웨이브 전투는 하지 않음(넓은 방으로 충분). 장비 설계 문서는 다음 실행으로 (13:41 새 실행이 시작됨)
-- 다음 실행 메모: BACKLOG "장비 설계 문서"부터. 플레이테스트 필요: 넓은 방 카메라 스크롤·문 통과·전투 구역 잠금 위치, 금화 연출·HUD 위치, 판 길이 실측(결과 창 목표 20분 비교)

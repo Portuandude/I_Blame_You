@@ -88,5 +88,62 @@ namespace IBlameYou.UI
 
             return y + 6f;
         }
+
+        // 결과 창 유물 줄: 오른쪽 끝에 이번 판 마지막 장비 3칸 아이콘 (Docs/EquipmentDesign.md 8절), 남은 폭에 유물 줄.
+        // 장비가 하나도 없으면 유물 줄만 (SkillHUD.RelicIcons.cs DrawEndRelics).
+        private const float EndEquipmentGap = 6f;
+
+        private void DrawEndRelicsAndEquipment(Rect rect)
+        {
+            var worn = Equipment;
+            var items = new List<EquipmentItem>();
+            if (worn != null)
+                foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot)))
+                {
+                    var item = worn.Get(slot);
+                    if (item != null && EquipmentIcon(item.Id) != null) items.Add(item);
+                }
+            if (items.Count == 0)
+            {
+                DrawEndRelics(rect);
+                return;
+            }
+
+            var style = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0), richText = true };
+            var header = new GUIContent("<color=#7fd8ff>장비</color>");
+            float headerWidth = style.CalcSize(header).x;
+            float width = headerWidth + items.Count * (EndEquipmentGap + RelicListIconSize);
+            var equipRect = new Rect(rect.xMax - width, rect.y, width, rect.height);
+            DrawEndRelics(new Rect(rect.x, rect.y, Mathf.Max(0f, rect.width - width - 14f), rect.height));
+
+            float x = equipRect.x;
+            GUI.Label(new Rect(x, rect.y, headerWidth + 2f, rect.height), header, style);
+            x += headerWidth;
+            var mouse = Event.current.mousePosition;
+            EquipmentItem hovered = null;
+            float hoveredCenter = 0f;
+            foreach (var item in items)
+            {
+                x += EndEquipmentGap;
+                var iconRect = new Rect(x, rect.y + (rect.height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize);
+                GUI.DrawTexture(iconRect, EquipmentIcon(item.Id), ScaleMode.ScaleToFit);
+                if (iconRect.Contains(mouse)) { hovered = item; hoveredCenter = iconRect.center.x; }
+                x += RelicListIconSize;
+            }
+
+            if (hovered == null) return;
+            // 마우스를 올린 장비 이름 (등급 색) 말풍선: 줄 바로 위
+            var tip = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(8, 8, 3, 3) };
+            tip.normal.textColor = OutlinedLabel.Cream;
+            var content = new GUIContent($"<color={GradeColor(hovered.Grade)}>{hovered.Name}</color>");
+            var size = tip.CalcSize(content);
+            float left = Mathf.Clamp(hoveredCenter - size.x * 0.5f, rect.x, rect.xMax - size.x);
+            var box = new Rect(left, rect.y - size.y - 2f, size.x, size.y);
+            var previous = GUI.color;
+            GUI.color = new Color(0.08f, 0.06f, 0.1f, 0.88f * previous.a);
+            GUI.DrawTexture(box, Texture2D.whiteTexture);
+            GUI.color = previous;
+            GUI.Label(box, content, tip);
+        }
     }
 }

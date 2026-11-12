@@ -53,6 +53,13 @@ namespace IBlameYou.UI
             if (coinIcon != null) GUI.DrawTexture(new Rect(row.x, row.y + 2f, 24f, 24f), coinIcon, ScaleMode.ScaleToFit, true);
             OutlinedLabel.Draw(new Rect(row.x + 28f, row.y, row.width - 28f, row.height), $"골드 {RunStats.Gold}", goldText,
                 OutlinedLabel.Gold, OutlinedLabel.Outline, 0f, 1.5f);
+            // 마을에서 골드를 썼으면 아래에 작게 "모음 N · 씀 M" (안 썼으면 남은 골드 = 모은 골드라 생략)
+            if (RunStats.GoldSpent > 0)
+            {
+                var style = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, wordWrap = false, clipping = TextClipping.Overflow };
+                style.normal.textColor = OutlinedLabel.Cream;
+                GUI.Label(new Rect(row.x - 40f, row.yMax, row.width + 40f, 20f), $"모음 {RunStats.GoldEarned} · 씀 {RunStats.GoldSpent}", style);
+            }
         }
 
         private static Rect ScaleAround(Rect r, float s) =>
