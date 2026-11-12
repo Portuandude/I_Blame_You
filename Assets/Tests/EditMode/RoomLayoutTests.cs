@@ -230,7 +230,7 @@ namespace IBlameYou.Tests
                 Assert.AreEqual(layout.MidBossPathIndex, mid.PathIndex);
                 Assert.That(mid.PathIndex, Is.InRange(2, main.Count - 3), $"seed {layout.Seed}: 시작·보스와 붙지 않음");
                 float progress = mid.PathIndex / (float)(main.Count - 1);
-                Assert.LessOrEqual(Math.Abs(progress - RoomLayout.MidBossProgress), 1f / (main.Count - 1) + 1e-4f, $"seed {layout.Seed}: {progress}");
+                Assert.LessOrEqual(Math.Abs(progress - RoomLayout.MidBossDepth), 1f / (main.Count - 1) + 1e-4f, $"seed {layout.Seed}: {progress}");
             }
         }
 
