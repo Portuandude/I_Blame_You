@@ -69,11 +69,11 @@ namespace IBlameYou.UI
             float x = rect.x + 40f;
             float buttonWidth = rect.width - 80f;
 
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = !displayWindow.IsOpen; // 화면 설정 창 아래 조작(음량 막대 포함)이 클릭을 가로채지 않게
             GameAudio.MusicVolume = PauseVolumeSlider(new Rect(x, rect.y + 64f, buttonWidth, 28f), "배경음악", GameAudio.MusicVolume);
             GameAudio.SfxVolume = PauseVolumeSlider(new Rect(x, rect.y + 96f, buttonWidth, 28f), "효과음", GameAudio.SfxVolume);
 
-            bool wasEnabled = GUI.enabled;
-            GUI.enabled = !displayWindow.IsOpen;
             if (GUI.Button(new Rect(x, rect.y + 140f, buttonWidth, 44f), "계속하기 (Esc)", menuButton))
             {
                 ClosePauseMenu();
