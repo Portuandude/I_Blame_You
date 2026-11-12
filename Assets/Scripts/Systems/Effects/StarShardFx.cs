@@ -23,11 +23,13 @@ namespace IBlameYou.Systems
         private float age;
         private float speed = StartSpeed;
         private bool arrived;
+        private Vector3 popVelocity = Vector3.up * PopSpeed;
 
         // 그림이 없으면 연출 없이 바로 onArrive (마나는 그대로 찬다).
         // scale: 크기 (기본 별 0.45), tint: 그림에 곱할 색 (기본 흰색 = 그대로).
+        // pop: 처음 튀는 속도 (유닛/초, 기본 = 위로 PopSpeed). 골드 동전은 여러 개가 부채꼴로 흩어지게 준다.
         public static void Launch(Vector3 from, Transform target, Vector3 targetOffset, Sprite[] frames, Action onArrive,
-            float scale = Scale, Color? tint = null)
+            float scale = Scale, Color? tint = null, Vector3? pop = null)
         {
             if (frames == null || frames.Length == 0 || target == null)
             {
@@ -44,6 +46,7 @@ namespace IBlameYou.Systems
             fx.target = target;
             fx.targetOffset = targetOffset;
             fx.onArrive = onArrive;
+            if (pop.HasValue) fx.popVelocity = pop.Value;
         }
 
         private void Update()
@@ -57,7 +60,7 @@ namespace IBlameYou.Systems
 
             if (age < PopTime)
             {
-                transform.position += Vector3.up * (PopSpeed * Time.deltaTime);
+                transform.position += popVelocity * Time.deltaTime;
                 return;
             }
 
