@@ -106,6 +106,7 @@ namespace IBlameYou.Player
             go.AddComponent<FallRecovery>();       // 낭떠러지에 떨어지면 마지막 안전한 땅으로
             go.AddComponent<PlayerProgression>();  // 경험치·레벨·특성 (A·B 공용)
             go.AddComponent<PlayerRelics>();       // 런 동안 얻은 유물 (A·B 공용)
+            go.AddComponent<PlayerEquipment>();    // 런 동안 낀 장비 로브·지팡이·신발 (A·B 공용 한 벌)
             CharacterLayers.Assign(go, CharacterLayers.PlayerLayerName);
 
             return go;

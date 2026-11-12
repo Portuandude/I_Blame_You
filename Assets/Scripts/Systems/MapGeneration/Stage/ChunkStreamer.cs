@@ -34,6 +34,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> clearedArenas = new HashSet<int>();
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
+        private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
@@ -445,10 +446,36 @@ namespace IBlameYou.Systems
         // 정예 구역 유물 상자. 이미 유물을 골랐으면 만들지 않는다.
         private void SpawnRelicChest(Transform root, int chunkIndex, Vector2 position, bool dropped)
         {
-            if (takenRelics.Contains(chunkIndex)) return;
-            RelicChest.Create(root, position, stage.Seed, chunkIndex, dropped, () => takenRelics.Add(chunkIndex));
+            var equipmentPosition = position + new Vector2(EquipmentOffsetX, 0f);
+            if (takenRelics.Contains(chunkIndex))
+            {
+                if (groundEquipment.TryGetValue(chunkIndex, out var left)) SpawnEquipment(root, chunkIndex, equipmentPosition, left, false);
+                return;
+            }
+
+            RelicChest.Create(root, position, stage.Seed, chunkIndex, dropped, () =>
+            {
+                takenRelics.Add(chunkIndex);
+                // 유물 상자를 열면 옆에 장비 하나 (Docs/EquipmentDesign.md 7절). 중간보스 상자는 수식어 한 등급 위.
+                int bonus = RoomShaper.IsMidBossArena(stage.Chunks[chunkIndex]) ? IBlameYou.Player.EquipmentOffer.MidBossGradeBonus : 0;
+                var item = IBlameYou.Player.EquipmentOffer.Roll(stage.Seed, chunkIndex, bonus);
+                groundEquipment[chunkIndex] = item;
+                if (root != null) SpawnEquipment(root, chunkIndex, equipmentPosition, item, true);
+            });
         }
 
+        private const float EquipmentOffsetX = 1.6f; // 유물 상자 오른쪽
+
+        private void SpawnEquipment(Transform root, int chunkIndex, Vector2 position, IBlameYou.Player.EquipmentItem item, bool dropped)
+        {
+            EquipmentPickup.Create(root, position, item, dropped, left =>
+            {
+                if (left == null) groundEquipment.Remove(chunkIndex);
+                else groundEquipment[chunkIndex] = left;
+            });
+        }
+
+        // 바닥에 남은 장비(groundEquipment)는 런 저장에 넣지 않는다: 2026-11-10부터 런 이어하기 저장을 쓰지 않음 (RunSave). 스테이지 2 저장을 다시 쓰게 되면 함께 넣을 것.
         // 런 진행 저장용: 지금까지의 기록을 꺼내거나(Export), 저장된 기록으로 되돌린다(Import, 청크를 만들기 전에 부를 것).
         public StageRecords ExportRecords()
         {

@@ -31,7 +31,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (traitWindowOpen || relicWindowOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (traitWindowOpen || relicWindowOpen || equipCardOpen || deathHandled || stageCleared || health.IsDead) return;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return;
 
             paused = true;
@@ -127,8 +127,6 @@ namespace IBlameYou.UI
                 if (progression.Points > 0) text.Append($"\n<color=#ffd84d>남은 포인트 {progression.Points} (Tab)</color>");
             }
 
-            text.Append("\n\n<b>유물</b>");
-            if (RelicCount == 0) text.Append("\n<color=#8a8a8a>없음 (정예 구역 돌파 보상)</color>");
 
             float x = rect.x + 12f;
             float width = rect.width - 24f;
@@ -138,6 +136,13 @@ namespace IBlameYou.UI
             float headHeight = Mathf.Min(small.CalcHeight(head, width), bottom - y); // 패널을 넘치지 않게
             GUI.Label(new Rect(x, y, width, headHeight), head, small);
             y += headHeight + 2f;
+
+            y = DrawEquipmentRows(x, y, width, bottom); // 장비 3칸 (SkillHUD.Equipment.cs)
+
+            var relicHead = new GUIContent("<b>유물</b>" + (RelicCount == 0 ? "\n<color=#8a8a8a>없음 (정예 구역 돌파 보상)</color>" : ""));
+            float relicHeadHeight = Mathf.Min(small.CalcHeight(relicHead, width), Mathf.Max(0f, bottom - y));
+            GUI.Label(new Rect(x, y, width, relicHeadHeight), relicHead, small);
+            y += relicHeadHeight + 2f;
 
             // 유물 줄: 18px 아이콘 + "이름 — 설명" (아이콘이 없으면 글자만 같은 들여쓰기로). 칸을 넘으면 거기서 자른다.
             for (int i = 0; i < RelicCount && y < bottom; i++)

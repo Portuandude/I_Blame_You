@@ -31,6 +31,13 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 최대 기력을 늘리거나 줄인다 (장비). 늘어난 만큼 현재 기력도 채우고, 줄면 새 최대치로 자른다.
+        public void AddMax(float amount, bool fillCurrent = true)
+        {
+            maxStamina = Mathf.Max(1f, maxStamina + amount);
+            SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
+        }
+
         public bool TryConsume(float amount)
         {
             if (amount <= 0f) return true;

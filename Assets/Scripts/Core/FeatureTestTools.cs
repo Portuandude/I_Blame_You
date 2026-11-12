@@ -17,6 +17,8 @@ namespace IBlameYou.Core
         // 유물 해제는 효과를 되돌리는 대신 시험 맵을 다시 만들고 남은 유물만 다시 단다 (유물 효과는 얻을 때 한 번 적용되므로).
         // 다시 만드는 동안 고른 유물·몬스터·미니게임 설정을 들고 있으려고 static으로 둔다.
         private static readonly List<RelicId> keptRelics = new List<RelicId>();
+        private static readonly List<EquipmentItem> keptEquipment = new List<EquipmentItem>(); // F12 장비 (맵을 다시 만들어도 다시 낀다)
+        private static int equipGrade; // F12 창에서 새로 낄 장비의 수식어 등급
         private static bool rebuilding;
         private static int monsterIndex;
         private static bool? menuDevMode; // 시험 중 F5로 바꾸기 전 시작 화면 설정 (나갈 때 되돌린다)
@@ -30,6 +32,7 @@ namespace IBlameYou.Core
         private bool helpOpen = true;
         private bool relicWindowOpen;
         private Vector2 relicScroll;
+        private bool equipWindowOpen;
         private int area;
         private GUIStyle box;
         private GUIStyle line;
@@ -49,12 +52,15 @@ namespace IBlameYou.Core
             if (!rebuilding)
             {
                 keptRelics.Clear();
+                keptEquipment.Clear();
                 menuDevMode = null;
             }
             rebuilding = false;
 
             var relics = PlayerRelics.For(player);
             foreach (var id in keptRelics) relics.Add(id);
+            var equipment = PlayerEquipment.For(player);
+            foreach (var item in keptEquipment) equipment.Equip(new EquipmentItem(item.Id, item.Grade));
         }
 
         private void OnDestroy()
@@ -73,8 +79,10 @@ namespace IBlameYou.Core
             if (Input.GetKeyDown(KeyCode.F8)) SpawnMonster();
             if (Input.GetKeyDown(KeyCode.F9)) relicWindowOpen = !relicWindowOpen;
             if (Input.GetKeyDown(KeyCode.F10)) JumpToArea((area + 1) % FeatureTestStage.Order.Length);
+            if (Input.GetKeyDown(KeyCode.F12)) equipWindowOpen = !equipWindowOpen;
             if (Input.GetKeyDown(KeyCode.F11)) StageEvents.RaiseCleared(); // 결과 창 + "누구 탓?" 도장 (판이 끝남, R로 다시)
             if (relicWindowOpen && Input.GetKeyDown(KeyCode.Escape)) relicWindowOpen = false;
+            if (equipWindowOpen && Input.GetKeyDown(KeyCode.Escape)) equipWindowOpen = false;
         }
 
         // 개발자 모드(숫자키 즉시 발동) ↔ 일반 모드(B 영창 타이핑, A 방어막 W/A/S/D 순서 입력). 모두 GameSession.DevMode를 매번 읽는다.
@@ -158,6 +166,7 @@ namespace IBlameYou.Core
             EnsureStyles();
             if (helpOpen) DrawHelp();
             if (relicWindowOpen) DrawRelicWindow();
+            if (equipWindowOpen && !relicWindowOpen) DrawEquipWindow();
         }
 
         private void DrawHelp()
@@ -170,8 +179,9 @@ namespace IBlameYou.Core
                 $"F10 다음 구역: {FeatureTestStage.Names[(area + 1) % FeatureTestStage.Order.Length]}\n" +
                 $"F5 미니게임 전환: {mode}\n" +
                 "F11 결과 창 (누구 탓? 도장)\n" +
+                "F12 장비 끼기·빼기\n" +
                 "F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복";
-            var rect = new Rect(Screen.width - 330f, 64f, 316f, 170f);
+            var rect = new Rect(Screen.width - 330f, 64f, 316f, 188f);
             GUI.Box(rect, GUIContent.none, box);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f), text, line);
         }
@@ -206,6 +216,49 @@ namespace IBlameYou.Core
                 }
             }
             GUI.EndScrollView();
+            if (!string.IsNullOrEmpty(GUI.tooltip))
+                GUI.Label(new Rect(rect.x + 12f, rect.yMax - 30f, rect.width - 24f, 24f), GUI.tooltip, line);
+        }
+
+        // F12: 장비 끼기·빼기 (Docs/EquipmentDesign.md). 장비는 빼면 능력치가 바로 되돌아가므로 맵을 다시 만들지 않는다.
+        private void DrawEquipWindow()
+        {
+            var equipment = PlayerEquipment.For(player);
+            float width = Mathf.Min(720f, Screen.width - 40f);
+            float height = Mathf.Min(300f, Screen.height - 40f);
+            var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
+            GUI.Box(rect, GUIContent.none, box);
+            GUI.Box(rect, GUIContent.none, box);
+            GUI.Label(new Rect(rect.x + 12f, rect.y + 8f, rect.width - 160f, 40f),
+                "<b>장비 끼기·빼기</b> — 누르면 그 칸에 끼고, ★을 누르면 뺀다. 오른쪽 버튼으로 새로 낄 수식어. F12/Esc 닫기", line);
+            string gradeName = EquipmentModifier.Name(equipGrade);
+            if (GUI.Button(new Rect(rect.xMax - 144f, rect.y + 10f, 132f, 30f), "수식어: " + (gradeName.Length == 0 ? "보통" : gradeName), cell))
+                equipGrade = equipGrade >= EquipmentModifier.MaxGrade ? EquipmentModifier.MinGrade : equipGrade + 1;
+
+            var slots = (EquipSlot[])Enum.GetValues(typeof(EquipSlot));
+            float colWidth = (rect.width - 24f - 8f * (slots.Length - 1)) / slots.Length;
+            for (int c = 0; c < slots.Length; c++)
+            {
+                var defs = EquipmentBook.OfSlot(slots[c]);
+                var current = equipment.Get(slots[c]);
+                for (int i = 0; i < defs.Count; i++)
+                {
+                    var def = defs[i];
+                    bool worn = current != null && current.Id == def.Id;
+                    var shown = worn ? current : new EquipmentItem(def.Id, equipGrade);
+                    var tip = new List<string>();
+                    foreach (var stat in shown.Stats()) tip.Add(EquipmentBook.Describe(stat));
+                    var r = new Rect(rect.x + 12f + c * (colWidth + 8f), rect.y + 52f + i * 40f, colWidth, 36f);
+                    if (GUI.Button(r, new GUIContent((worn ? "★ " : "   ") + shown.Name, $"{shown.Name}: {string.Join(", ", tip)} (가격 {shown.Price})"), cell))
+                    {
+                        if (worn) equipment.Unequip(slots[c]);
+                        else equipment.Equip(shown);
+                        keptEquipment.Clear();
+                        keptEquipment.AddRange(equipment.All);
+                    }
+                }
+            }
+
             if (!string.IsNullOrEmpty(GUI.tooltip))
                 GUI.Label(new Rect(rect.x + 12f, rect.yMax - 30f, rect.width - 24f, 24f), GUI.tooltip, line);
         }
