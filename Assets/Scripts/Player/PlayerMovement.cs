@@ -26,6 +26,8 @@ namespace IBlameYou.Player
         [SerializeField] private float jumpCutMultiplier = 0.5f;
         [Tooltip("점프하다 머리가 천장 모서리에 이만큼(유닛, 1칸 = 1) 이하로만 걸리면 옆으로 밀어 그대로 올라간다")]
         [SerializeField] private float cornerCorrection = 0.3f;
+        [Tooltip("최대 낙하 속도 (유닛/초). 아주 높은 곳에서 떨어져도 이보다 빨라지지 않아 착지 자리를 읽을 시간이 있다")]
+        [SerializeField] private float maxFallSpeed = 20f;
 
         [Header("Run Stamina")]
         [SerializeField] private float runStaminaDrainPerSecond = 25f;
@@ -290,6 +292,9 @@ namespace IBlameYou.Player
                 }
                 return;
             }
+
+            // 최대 낙하 속도 (세로 방·긴 낭떠러지). 가로 거리 검증 기준(JumpReach)은 걷기 점프 높이 안이라 바뀌지 않는다.
+            if (rb.linearVelocity.y < -maxFallSpeed) rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
 
             if (hitStun.IsStunned || control.MovementFrozen)
             {
