@@ -63,7 +63,8 @@ namespace IBlameYou.Player
         public bool IsGrounded => isGrounded;
         // 확실히 땅에 서 있는지: 점프를 눌렀는데 아직 물리 프레임이 안 돌아 isGrounded가 남아 있는 순간도 공중으로 본다
         // (마력 안개 근처 공중 금지를 점프 직후 순간이동으로 피하지 못하게, BlinkWard.Blocks).
-        public bool IsGroundedStable => isGrounded && !jumpQueued && rb.linearVelocity.y <= 0.1f;
+        // 같은 프레임에 Space를 눌렀는데 이 Update가 아직 안 돈 경우(실행 순서)도 공중으로 본다.
+        public bool IsGroundedStable => isGrounded && !jumpQueued && !Input.GetKeyDown(KeyCode.Space) && rb.linearVelocity.y <= 0.1f;
         // 발밑 높이 (몸 기준). 발밑에 붙이는 효과(레벨업 빛기둥 등)가 쓴다.
         public float FeetLocalY => groundCheck != null ? groundCheck.localPosition.y : 0f;
         public bool IsDashing => isDashing;
