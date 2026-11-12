@@ -37,8 +37,7 @@ namespace IBlameYou.Player
         CritChance,       // StatBlock.critChance (비율, 0.03 = 3%)
         MaxMana,          // ManaSystem.AddMax
         MoveSpeed,        // CombatStats.MoveSpeedMultiplier에 더함 (비율)
-        MaxStamina,       // StatBlock.maxStamina
-        TeleportCooldown, // 순간이동 재사용 대기 배율에 더함 (비율, 음수 = 짧아짐)
+        MaxStamina,       // StaminaSystem.AddMax
         FireDamage,
         WaterDamage,
         WindDamage,
@@ -85,7 +84,7 @@ namespace IBlameYou.Player
             Def(EquipmentId.ClothShoes, EquipSlot.Shoes, "헝겊 신발", 30, S(EquipStat.MoveSpeed, 0.04f)),
             Def(EquipmentId.FeatherShoes, EquipSlot.Shoes, "깃털 신발", 45, S(EquipStat.MoveSpeed, 0.03f), S(EquipStat.MaxStamina, 10), S(EquipStat.WindDefense, 8)),
             Def(EquipmentId.MudBoots, EquipSlot.Shoes, "진흙 장화", 45, S(EquipStat.MaxStamina, 20), S(EquipStat.EarthDefense, 8), S(EquipStat.WaterDefense, 4)),
-            Def(EquipmentId.BoltShoes, EquipSlot.Shoes, "번개 신발", 60, S(EquipStat.MoveSpeed, 0.05f), S(EquipStat.TeleportCooldown, -0.08f))
+            Def(EquipmentId.BoltShoes, EquipSlot.Shoes, "번개 신발", 60, S(EquipStat.MoveSpeed, 0.05f), S(EquipStat.CritChance, 0.02f))
         };
 
         public static IReadOnlyList<EquipmentDef> All => Defs;
@@ -101,7 +100,7 @@ namespace IBlameYou.Player
 
         // 비율 능력치 (소수 그대로 곱함, 표시는 %). 나머지는 정수로 반올림한다.
         public static bool IsPercent(EquipStat stat) =>
-            stat == EquipStat.CritChance || stat == EquipStat.MoveSpeed || stat == EquipStat.TeleportCooldown;
+            stat == EquipStat.CritChance || stat == EquipStat.MoveSpeed;
 
         // 속성 능력치면 Element 번호(불 0, 물 1, 바람 2, 땅 3), 아니면 -1.
         public static int ElementIndex(EquipStat stat)
@@ -122,7 +121,6 @@ namespace IBlameYou.Player
                 case EquipStat.MaxMana: return "최대 마나";
                 case EquipStat.MoveSpeed: return "이동속도";
                 case EquipStat.MaxStamina: return "기력";
-                case EquipStat.TeleportCooldown: return "순간이동 대기";
                 case EquipStat.FireDamage: return "불 피해";
                 case EquipStat.WaterDamage: return "물 피해";
                 case EquipStat.WindDamage: return "바람 피해";
@@ -135,7 +133,7 @@ namespace IBlameYou.Player
             }
         }
 
-        // "방어력 +4", "이동속도 +5%", "순간이동 대기 -8%"
+        // "방어력 +4", "이동속도 +5%"
         public static string Describe(StatValue value)
         {
             if (IsPercent(value.Stat))
