@@ -80,6 +80,15 @@ namespace IBlameYou.Core
             return interest;
         }
 
+        // 동전 무더기를 주웠을 때 (Stage/CoinPile). 몬스터 골드가 아니라 복주머니는 붙지 않는다. 받은 골드를 돌려준다 (판이 끝났으면 0).
+        public static int OnCoinPile(Transform player, Vector3 from, int amount)
+        {
+            if (player == null || RunStats.Ended || amount <= 0) return 0;
+            RunStats.AddGold(amount);
+            LaunchCoins(from, player, amount);
+            return amount;
+        }
+
         // amount 골드를 동전 여러 개로 나눠 from에서 부채꼴로 튀운 뒤 target에게 빨려 오게 한다. 닿을 때마다 InFlight가 줄고 HUD 숫자가 오른다.
         private static void LaunchCoins(Vector3 from, Transform target, int amount)
         {
