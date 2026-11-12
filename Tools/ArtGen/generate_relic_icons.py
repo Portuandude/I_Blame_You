@@ -362,6 +362,23 @@ def paper_plane(d):
     d.polygon(star_points(19.5, 17.5, 2.2, 1.0), fill=CREAM)
 
 
+def lucky_pouch(d):
+    # 복주머니: 통통한 빨간 비단 주머니 + 금색 끈 매듭·술, 앞의 금색 복 무늬 동그라미, 옆에 튀어나온 금화 (몬스터 골드 +50%)
+    silk = hexrgba("e8455a")
+    gold = hexrgba("ffd84d")
+    dark_gold = hexrgba("d9a21e")
+    outlined_ellipse(d, 2.5, 8, 17.5, 22.5, silk)                                  # 주머니 몸
+    outlined_poly(d, [(5.5, 3.5), (14.5, 3.5), (12.5, 9), (7.5, 9)], silk, 1.0)    # 주름진 입
+    d.rectangle(E(6.5, 8, 13.5, 9.8), fill=gold)                                   # 금색 끈
+    d.line(P((10, 9.8), (8.5, 13.5)), fill=gold, width=int(0.9 * SS))              # 술
+    outlined_ellipse(d, 6.8, 13.2, 13.2, 19.6, gold, 0.9)                          # 복 무늬 동그라미
+    d.ellipse(E(8.6, 15.0, 11.4, 17.8), fill=dark_gold)
+    outlined_ellipse(d, 15, 13, 22, 20, gold, 1.1)                                 # 금화
+    d.rectangle(E(18.0, 14.8, 19.0, 18.2), fill=dark_gold)                         # 금화 가운데 줄
+    shine(d, 5.6, 12.0, 1.0)
+    d.polygon(star_points(20.5, 5.5, 2.0, 0.9), fill=CREAM)
+
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -389,6 +406,7 @@ ICONS = {
     "StarCandy": star_candy,
     "HorseshoeMagnet": horseshoe_magnet,
     "PaperPlane": paper_plane,
+    "LuckyPouch": lucky_pouch,
 }
 
 
