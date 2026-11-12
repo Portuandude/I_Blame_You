@@ -16,11 +16,11 @@
 
 ## 다음 (2026-11-12 14:00 자동 실행이 추가: 마을 다듬기)
 
-- TODO: 마을 방 꾸미기 — 마을 방은 Rest 청크라 샘 방과 같은 청록 색조(`ChunkBuilder` Rest 틴트)를 받는다. 따뜻한 마을 색조 + 가로등·꽃·울타리 장식(그림 `Tools/ArtGen/generate_village.py`), 건물 사이 작은 분수. 적·함정은 계속 없게
-- TODO: 마을 NPC — 식당 주인·상인 작은 캐릭터(모자 쓴 슬라임 등, 눈 없음 규칙 확인: 슬라임은 눈 없음) 건물 문 옆에 Idle 2~4프레임. 가까이 가면 말풍선 한 줄
-- TODO: 마을 배경 음악 — 마을 방에 있는 동안 잔잔한 마을 곡(`Tools/AudioGen`, 90 BPM 오르골풍), 나오면 원래 던전 곡(깊이에 맞게 `ArenaZone.StageMusicFor`)
-- TODO: 식당 음식 아이콘 — 음식 5종 16~24px 아이콘(`Tools/ArtGen`), 식당 창 줄 왼쪽에. 산 음식은 머리 위에 잠깐 아이콘
-- TODO: 결과 창 장비 줄 — 게임오버·클리어 창에 이번 판 마지막 장비 3개를 작은 아이콘으로 (Docs/EquipmentDesign.md 8절, 유물 아이콘 줄 옆)
+- DONE (claude/project-thread-zpaf21): 마을 방 꾸미기 — 마을 방은 Rest 청크라 샘 방과 같은 청록 색조(`ChunkBuilder` Rest 틴트)를 받는다. 따뜻한 마을 색조 + 가로등·꽃·울타리 장식(그림 `Tools/ArtGen/generate_village.py`), 건물 사이 작은 분수. 적·함정은 계속 없게
+- DONE (claude/project-thread-zpaf21): 마을 NPC — 식당 주인·상인 작은 캐릭터(모자 쓴 슬라임 등, 눈 없음 규칙 확인: 슬라임은 눈 없음) 건물 문 옆에 Idle 2~4프레임. 가까이 가면 말풍선 한 줄
+- DONE (claude/project-thread-zpaf21): 마을 배경 음악 — 마을 방에 있는 동안 잔잔한 마을 곡(`Tools/AudioGen`, 90 BPM 오르골풍), 나오면 원래 던전 곡(깊이에 맞게 `ArenaZone.StageMusicFor`)
+- DONE (claude/project-thread-zpaf21): 식당 음식 아이콘 — 음식 5종 16~24px 아이콘(`Tools/ArtGen`), 식당 창 줄 왼쪽에. 산 음식은 머리 위에 잠깐 아이콘
+- DONE (claude/project-thread-zpaf21): 결과 창 장비 줄 — 게임오버·클리어 창에 이번 판 마지막 장비 3개를 작은 아이콘으로 (Docs/EquipmentDesign.md 8절, 유물 아이콘 줄 옆)
 
 ## 최우선 (2026-11-10 사람 결정 4건)
 
