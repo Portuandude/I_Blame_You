@@ -12,10 +12,10 @@ namespace IBlameYou.Systems
         private const float BubbleHeight = 2.05f;
         private const float GlyphWidth = 0.3f * BubbleScale; // 한글 한 글자 대략 폭 (RelicBannerView와 같은 글자 크기 기준)
         private const float BubbleScale = 0.55f;
-        private const float TalkRange = 2.6f;
+        private const float TalkRange = 2.6f;               // 이 거리 안에 플레이어가 있으면 말풍선
         private const float ReactionTime = 1.5f;           // 사고팔 때 반응 말풍선 시간 (창을 닫은 뒤)
         private const float HopTime = 0.3f;
-        private const float HopHeight = 0.25f;               // 이 거리 안에 플레이어가 있으면 말풍선
+        private const float HopHeight = 0.25f;
         private static readonly Color BubbleColor = new Color(1f, 0.957f, 0.839f);   // cream
         private static readonly Color OutlineColor = new Color(0.094f, 0.078f, 0.102f); // outline #18141a
 

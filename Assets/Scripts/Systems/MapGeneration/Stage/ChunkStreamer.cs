@@ -386,7 +386,7 @@ namespace IBlameYou.Systems
                 int cols = RoomCols(index);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt, ground), VillageService.Restaurant);
                 VillageBuilding.Create(root, new Vector2(origin.x + cols * VillageShopAt, ground), VillageService.Shop);
-                VillageDecor.Build(root, origin.x, cols, ground); // 따뜻한 색조·울타리·가로등·꽃·분수
+                VillageDecor.Build(root, origin.x, cols, ground, VillageRestaurantAt); // 따뜻한 색조·울타리·가로등·꽃·분수·김·반딧불
                 // 식당 주인·상인은 각 건물 문 오른쪽 벽 앞 (문 앞 W 범위 ±1.2 안이라 말을 걸며 창을 연다)
                 VillageNpc.Create(root, new Vector2(origin.x + cols * VillageRestaurantAt + VillageNpcOffset, ground), VillageService.Restaurant);
                 VillageNpc.Create(root, new Vector2(origin.x + cols * VillageShopAt + VillageNpcOffset, ground), VillageService.Shop);
@@ -734,13 +734,13 @@ namespace IBlameYou.Systems
             StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
             // 마을에 있는 동안은 잔잔한 마을 곡, 나오면 깊이에 맞는 던전 곡 (다른 곡이 나오던 중이면 건드리지 않는다)
             if (entered.Kind == RoomKind.Village) GameAudio.PlayMusic(VillageMusic);
+            else if (GameAudio.CurrentMusic == VillageMusic) GameAudio.PlayMusic(ArenaZone.StageMusicFor(StageEvents.Depth));
             if (entered.Kind == RoomKind.Village && firstVisit)
             {
                 // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
                 StageEvents.PostNotice("마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
             }
-            else if (GameAudio.CurrentMusic == VillageMusic) GameAudio.PlayMusic(ArenaZone.StageMusicFor(StageEvents.Depth));
             RoomEntered?.Invoke(index);
         }
 
