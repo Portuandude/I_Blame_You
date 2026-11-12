@@ -36,7 +36,11 @@ namespace IBlameYou.Systems
         private const int ArenaStartX = 2;  // ChunkGenerator.BuildArena의 전투 구역 시작 열 (기사 자리 기준)
 
         // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
-        public enum ShaftStyle { Zigzag, TwinStairs, Shelves }
+        // / 무너지는 계단(난이도 CrumbleStairsMinDifficulty 이상) / 깜빡 계단(BlinkStairsMinDifficulty 이상)
+        public enum ShaftStyle { Zigzag, TwinStairs, Shelves, CrumbleStairs, BlinkStairs }
+
+        public const float CrumbleStairsMinDifficulty = 0.3f;
+        public const float BlinkStairsMinDifficulty = 0.45f;
 
         public static RoomGeometry Build(int seed, RoomData room)
         {
@@ -212,7 +216,8 @@ namespace IBlameYou.Systems
         {
             if ((room.Doors & DoorDir.Up) == 0 || room.Difficulty < 0.15f) return ShaftStyle.Zigzag;
             var rng = new Random(unchecked(seed * 31 + room.Index * 7919 + 11)); // 지형 난수열과 따로 (지그재그 방 모양이 그대로 남게)
-            return (ShaftStyle)rng.Next(3);
+            int count = room.Difficulty >= BlinkStairsMinDifficulty ? 5 : room.Difficulty >= CrumbleStairsMinDifficulty ? 4 : 3;
+            return (ShaftStyle)rng.Next(count);
         }
 
         internal static RoomGeometry BuildShaft(int seed, RoomData room, ShaftStyle style)
@@ -247,6 +252,8 @@ namespace IBlameYou.Systems
                 if (style == ShaftStyle.TwinStairs) AddTwinStairs(chunk, g);
                 else AddStairs(chunk, g, rng);
                 if (style == ShaftStyle.Shelves) AddShelves(chunk, room, rng);
+                if (style == ShaftStyle.CrumbleStairs || style == ShaftStyle.BlinkStairs)
+                    MakeStairsUnsteady(chunk, g, style == ShaftStyle.BlinkStairs);
             }
 
             var geometry = new RoomGeometry { Chunk = chunk };
@@ -279,6 +286,37 @@ namespace IBlameYou.Systems
                 else chunk.SetRow(16, 21, row, StageTile.Platform);
                 left = !left;
             }
+        }
+
+        // 무너지는/깜빡 계단: 지그재그 계단에서 맨 위 판(위 문 아래)과 맨 아래 판(바닥에서 뛰어오르는 첫 판)을 뺀 판들을
+        // 타일 대신 무너지는 발판(Crumble) 또는 깜빡 발판(BlinkPlatform)으로 바꾼다. 둘 다 아래에서 뚫고 오르는 한쪽 발판이고
+        // 검증기는 발판으로 보므로 길은 지그재그와 같다. 깜빡 계단은 아래 판부터 박자 순번 0, 1, 2…라 물결이 위로 올라간다.
+        private static void MakeStairsUnsteady(ChunkData chunk, int g, bool blink)
+        {
+            int beat = 0;
+            for (int row = LowestStairRow(g) + 2; row < TopPlatformRow; row += 2)
+            {
+                int x0 = -1, x1 = -1;
+                for (int x = 0; x < W; x++)
+                {
+                    if (chunk.Tiles[x, row] != StageTile.Platform) continue;
+                    if (x0 < 0) x0 = x;
+                    x1 = x;
+                }
+
+                if (x0 < 0) continue;
+                for (int x = x0; x <= x1; x++) chunk.Tiles[x, row] = StageTile.Empty;
+                if (blink) chunk.AddFeature(FeatureKind.BlinkPlatform, x0, row, x1 - x0 + 1, beat++);
+                else chunk.AddFeature(FeatureKind.Crumble, x0, row, x1 - x0 + 1);
+            }
+        }
+
+        // 계단 맨 아래 판의 행 (TopPlatformRow에서 2칸씩 내려가 바닥 g보다 위인 마지막 행).
+        internal static int LowestStairRow(int g)
+        {
+            int row = TopPlatformRow;
+            while (row - 2 > g) row -= 2;
+            return row;
         }
 
         // 양 갈래 계단: 양쪽 벽 가까이(3~7, 24~28)와 안쪽(9~12, 19~22)을 2칸마다 번갈아 두어 왼쪽·오른쪽 어느 길로도 오른다.
@@ -411,6 +449,11 @@ namespace IBlameYou.Systems
             for (int y = g + 1; y <= g + 3 && y < H; y++)
                 for (int x = 0; x < W; x++)
                     if (chunk.Get(x, y) == StageTile.Platform) Block(safe, x, x);
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind != FeatureKind.Crumble && f.Kind != FeatureKind.BlinkPlatform) continue;
+                if (f.Y >= g + 1 && f.Y <= g + 3) Block(safe, f.X, f.X + f.Width - 1);
+            }
 
             foreach (var f in chunk.Features)
                 if (f.Kind == FeatureKind.Enemy && f.Y == g) Block(safe, f.X, f.X);

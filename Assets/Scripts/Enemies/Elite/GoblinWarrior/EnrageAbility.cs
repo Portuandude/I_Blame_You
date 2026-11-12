@@ -1,3 +1,4 @@
+using IBlameYou.Core;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -80,6 +81,8 @@ namespace IBlameYou.Enemies
             stats.MoveSpeedMultiplier = 1f + speedBonus;
             stats.AttackSpeedMultiplier = 1f + speedBonus;
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.8f, "광폭화!", new Color(1f, 0.3f, 0.2f), 1.3f);
+            GameAudio.PlaySfx("Enrage", 0.9f); // 낮게 으르렁 올라가는 소리 (Tools/AudioGen)
+            CameraFollow.ShakeMain(0.25f, 0.12f);
         }
 
         private void End()

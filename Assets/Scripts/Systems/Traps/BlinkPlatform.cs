@@ -17,6 +17,24 @@ namespace IBlameYou.Systems
         private const float GoneAlpha = 0.12f;
         private static readonly Color Body = new Color(0.55f, 0.85f, 1f); // 하늘빛 (무너지는 발판 나무색과 구별)
 
+        private const float CloudAlpha = 0.55f;
+        private static readonly Color CloudColor = new Color(1f, 0.97f, 1f); // 솜구름이 받쳐 줄 때는 하얀 솜빛
+
+        // 솜구름 유물을 가진 플레이어가 있는지 (발판마다 매 프레임 찾지 않게 0.5초마다 한 번 확인해 모든 발판이 나눠 쓴다)
+        private static float cottonCheckedAt = -10f;
+        private static bool cottonOwned;
+
+        private static bool CottonCloudOwned()
+        {
+            float since = Time.unscaledTime - cottonCheckedAt;
+            if (since >= 0f && since < 0.5f) return cottonOwned; // 시계가 되돌아갔으면(플레이 모드 재시작) 다시 확인
+            cottonCheckedAt = Time.unscaledTime;
+            cottonOwned = false;
+            foreach (var relics in FindObjectsByType<IBlameYou.Player.PlayerRelics>(FindObjectsSortMode.None))
+                if (relics.Has(IBlameYou.Player.RelicId.CottonCloud)) { cottonOwned = true; break; }
+            return cottonOwned;
+        }
+
         private BoxCollider2D solid;
         private SpriteRenderer[] renderers;
         private float offset;
@@ -59,17 +77,21 @@ namespace IBlameYou.Systems
         private void Apply()
         {
             float t = Phase;
-            bool solidNow = t < VisibleTime + WarnTime;
+            float grace = CottonCloudOwned() ? IBlameYou.Player.RelicBook.CottonCloudGrace : 0f;
+            bool cloud = t >= VisibleTime + WarnTime && t < VisibleTime + WarnTime + grace; // 솜구름이 잠깐 받쳐 주는 동안
+            bool solidNow = t < VisibleTime + WarnTime + grace;
             float alpha = 1f;
             if (t >= VisibleTime && t < VisibleTime + WarnTime)
                 alpha = Mathf.Repeat((t - VisibleTime) / 0.1f, 2f) < 1f ? 0.45f : 1f; // 0.1초마다 깜빡
+            else if (cloud)
+                alpha = CloudAlpha;
             else if (!solidNow)
                 alpha = GoneAlpha;
 
             if (solid.enabled != solidNow) solid.enabled = solidNow;
             foreach (var r in renderers)
             {
-                var c = r.color;
+                var c = cloud ? CloudColor : Body;
                 r.color = new Color(c.r, c.g, c.b, alpha);
             }
         }

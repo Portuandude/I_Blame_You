@@ -38,6 +38,7 @@ namespace IBlameYou.Player
         RegularStamp, // 단골 도장: 마을 식당·장비 상점에서 사는 값 × RegularStampPriceRate (공용, UI/SkillHUD.Village·Shop). 팔기·리롤 값은 그대로
         PiggyBank,   // 돼지 저금통: 판에서 마을에 처음 들어가면 가진 골드 × PiggyBankRate (최대 PiggyBankMax) 이자 (공용, Core/RunGold.OnVillageFound)
         TreasureMap, // 보물 지도: 미니맵에 안 가 본 마을 방이 흐린 칸·흐린 집 아이콘으로 보인다 (공용, UI/MinimapUI.IsCharted, MinimapRules.Look charted)
+        CottonCloud, // 솜구름: 깜빡 발판이 사라진 뒤에도 CottonCloudGrace초 더 밟힌다 (공용, Traps/BlinkPlatform)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -77,6 +78,7 @@ namespace IBlameYou.Player
         public const float LuckyPouchGoldBonus = 0.5f;     // 몬스터 골드 +50%
         public const float RegularStampPriceRate = 0.8f;   // 마을에서 사는 값 -20%
         public const float PiggyBankRate = 0.25f;          // 마을에 처음 들어갈 때 가진 골드의 25%
+        public const float CottonCloudGrace = 0.5f;        // 깜빡 발판(사라짐 1.4초) 중 처음 0.5초는 솜구름이 받쳐 준다
         public const int PiggyBankMax = 50;                // 이자 최대 (중간보스 골드 50~100의 절반 아래)
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
@@ -88,7 +90,7 @@ namespace IBlameYou.Player
             RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
             RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion, RelicId.StarCandy,
             RelicId.HorseshoeMagnet, RelicId.PaperPlane, RelicId.LuckyPouch, RelicId.RegularStamp,
-            RelicId.PiggyBank, RelicId.TreasureMap
+            RelicId.PiggyBank, RelicId.TreasureMap, RelicId.CottonCloud
         };
 
         public static string Name(RelicId id)
@@ -124,6 +126,7 @@ namespace IBlameYou.Player
                 case RelicId.RegularStamp: return "단골 도장";
                 case RelicId.PiggyBank: return "돼지 저금통";
                 case RelicId.TreasureMap: return "보물 지도";
+                case RelicId.CottonCloud: return "솜구름";
                 default: return "집중 구슬";
             }
         }
@@ -158,6 +161,7 @@ namespace IBlameYou.Player
                 case RelicId.HorseshoeMagnet: return $"보상 구슬이 {HorseshoeMagnetRadius:0}칸 밖에서도 끌려온다";
                 case RelicId.RegularStamp: return $"마을에서 사는 값 -{Math.Round((1f - RegularStampPriceRate) * 100f)}%";
                 case RelicId.TreasureMap: return "미니맵에 마을 위치가 미리 보인다";
+                case RelicId.CottonCloud: return $"깜빡 발판이 사라진 뒤에도 {CottonCloudGrace:0.0}초 더 밟힌다";
                 case RelicId.PiggyBank: return $"마을에 처음 들어가면 가진 골드의 {Math.Round(PiggyBankRate * 100f)}% 이자 (최대 {PiggyBankMax})";
                 case RelicId.LuckyPouch: return $"몬스터가 떨어뜨리는 골드 +{Math.Round(LuckyPouchGoldBonus * 100f)}%";
                 case RelicId.PaperPlane: return $"순간이동 마나 -{Math.Round((1f - PaperPlaneTeleportCost) * 100f)}%";

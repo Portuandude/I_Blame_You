@@ -175,7 +175,20 @@ namespace IBlameYou.Tests
             Assert.AreEqual("공용", RelicBook.Owner(RelicId.TreasureMap));
             Assert.AreEqual("미니맵에 마을 위치가 미리 보인다", RelicBook.Description(RelicId.TreasureMap));
             Assert.Contains(RelicId.TreasureMap, RelicBook.All);
-            Assert.AreEqual(30, RelicBook.All.Length);
+        }
+
+        // 솜구름 (2026-11-12): 깜빡 발판이 사라진 뒤에도 잠깐 밟힌다. 맨 뒤 번호 30, 공용. 받쳐 주는 시간은 사라짐(1.4초)보다 짧아야 박자가 남는다.
+        [Test]
+        public void CottonCloud_HoldsBlinkPlatformsBriefly()
+        {
+            Assert.AreEqual(30, (int)RelicId.CottonCloud);
+            Assert.AreEqual("솜구름", RelicBook.Name(RelicId.CottonCloud));
+            Assert.AreEqual("공용", RelicBook.Owner(RelicId.CottonCloud));
+            Assert.AreEqual("깜빡 발판이 사라진 뒤에도 0.5초 더 밟힌다", RelicBook.Description(RelicId.CottonCloud));
+            Assert.Contains(RelicId.CottonCloud, RelicBook.All);
+            Assert.AreEqual(31, RelicBook.All.Length);
+            Assert.Greater(RelicBook.CottonCloudGrace, 0f);
+            Assert.Less(RelicBook.CottonCloudGrace, 1.4f);
         }
 
         [Test]

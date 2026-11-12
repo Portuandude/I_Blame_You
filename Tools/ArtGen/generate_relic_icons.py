@@ -434,6 +434,19 @@ def treasure_map(d):
     shine(d, 6.5, 7.0, 0.9)
 
 
+
+def cotton_cloud(d):
+    # 솜구름: 몽글몽글한 하얀 구름 세 덩이 + 아래 하늘색 깜빡 발판 조각 (사라진 발판을 잠깐 받쳐 준다)
+    white = hexrgba("fbf7ff")
+    shade = hexrgba("dcd6f5")
+    plank = hexrgba("8cd9ff")
+    outlined_poly(d, [(4, 17), (20, 17), (20, 20), (4, 20)], plank, 1.0)          # 발판 조각
+    outlined_ellipse(d, 3, 9, 11, 16, white, 1.1)                                 # 왼쪽 덩이
+    outlined_ellipse(d, 13, 9, 21, 16, white, 1.1)                                # 오른쪽 덩이
+    outlined_ellipse(d, 7, 5, 17, 14, white, 1.1)                                 # 가운데 큰 덩이
+    d.ellipse(E(5, 13, 19, 15.5), fill=shade)                                     # 아래쪽 그늘
+    shine(d, 10.0, 7.5, 1.0)
+
 ICONS = {
     "ManaCrystal": mana_crystal,
     "IronCloak": iron_cloak,
@@ -465,6 +478,7 @@ ICONS = {
     "RegularStamp": regular_stamp,
     "PiggyBank": piggy_bank,
     "TreasureMap": treasure_map,
+    "CottonCloud": cotton_cloud,
 }
 
 

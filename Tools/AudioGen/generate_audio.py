@@ -546,6 +546,21 @@ def elite_warn():
     return normalize(fade_edges(out))
 
 
+def enrage():
+    """광폭화: 낮은 톱니 으르렁(빠른 트레몰로)이 한 옥타브 위로 끌려 올라가고 끝에 쿵, 약 0.8초. 무섭지만 짧게."""
+    n = int(0.8 * SR)
+    t = np.arange(n) / SR
+    f = note_hz("E2") * (1 + np.clip(t / 0.6, 0, 1))  # 0.6초 동안 한 옥타브 위로
+    growl = osc("saw", f, n) * (0.55 + 0.45 * np.sin(2 * np.pi * 22 * t))
+    growl = lowpass(growl, 1200) * env_adsr(n, 0.02, 0.1, 0.8, 0.2) * 0.55
+    rasp = bandpass(noise(n), 300, 1500) * env_adsr(n, 0.02, 0.1, 0.5, 0.2) * 0.15
+    out = growl + rasp
+    m = int(0.3 * SR)
+    tb = np.arange(m) / SR
+    mix_at(out, osc("sine", 110 * np.exp(-tb * 12) + 40, m) * env_exp(m, 0.12) * 0.8, int(0.5 * SR))
+    return normalize(fade_edges(out))
+
+
 def village_found():
     """마을 첫 발견: 오르골 세 음 G5-C6-E6 + 마지막 음 길게, 약 1.4초 (music_box는 배경음악 쪽에 있다)."""
     n = int(1.4 * SR)
@@ -922,6 +937,61 @@ def boss_theme():
     return normalize(music, 0.72)
 
 
+def midboss_theme():
+    """중간보스(쌍둥이 슬라임 기사) 테마: 140 BPM, E단조, 8마디 루프. 보스 곡보다 가볍고 짧게, 불 기사(밝은 사각파)와
+    물 기사(둥근 삼각파)가 한 마디씩 멜로디를 주고받는다. Em-C-D-B 진행 ×2 (B 화음으로 루프 처음 Em에 돌아온다)."""
+    bpm = 140
+    beat = 60 / bpm
+    progression = [("E", ["E4", "G4", "B4"]), ("C", ["C4", "E4", "G4"]), ("D", ["D4", "F#4", "A4"]), ("B", ["B3", "D#4", "F#4"])] * 2
+    bass_root = {"E": "E2", "C": "C2", "D": "D2", "B": "B1"}
+    n = int(round(len(progression) * 4 * beat * SR))
+    music = np.zeros(n)
+
+    for bar, (root, chord) in enumerate(progression):
+        bar_start = bar * 4 * beat
+        mix_at(music, lowpass(pad_chord(chord, 4 * beat), 900) * 0.13, int(bar_start * SR))
+        # 베이스: 8분음표 통통 (옥타브 왕복)
+        for k in range(8):
+            name = bass_root[root]
+            if k % 2 == 1:
+                name = name[:-1] + str(int(name[-1]) + 1)
+            b = tone("saw", name, beat / 2 * 0.8, 0.004, 0.05, 0.5, 0.03)
+            mix_at(music, lowpass(b, 1000) * 0.2, int((bar_start + k * beat / 2) * SR))
+        # 드럼: 킥 1·2.5·3박, 스네어 2·4박, 하이햇 8분 (갑옷 걷는 느낌)
+        for b_ in (0, 1.5, 2):
+            mix_at(music, kick() * 0.55, int((bar_start + b_ * beat) * SR))
+        for b_ in (1, 3):
+            mix_at(music, snare() * 0.3, int((bar_start + b_ * beat) * SR))
+        if bar == len(progression) - 1:  # 루프 끝 필
+            for k in range(4):
+                mix_at(music, snare() * (0.12 + 0.05 * k), int((bar_start + (3 + k / 4) * beat) * SR))
+        for k in range(8):
+            mix_at(music, hat(k % 4 == 2) * (0.07 if k % 2 else 0.045), int((bar_start + k * beat / 2) * SR))
+
+    # 주고받는 멜로디: 짝수 마디 = 불 기사(사각파, 위), 홀수 마디 = 물 기사(삼각파, 아래)
+    fire = [[("B5", 0.5), ("E6", 0.5), ("D6", 0.5), ("B5", 0.5), ("A5", 1), ("G5", 1)],
+            [("F#5", 0.5), ("A5", 0.5), ("D6", 1), ("C6", 0.5), ("A5", 0.5), ("F#5", 1)],
+            [("G5", 0.5), ("B5", 0.5), ("E6", 1), ("F#6", 0.5), ("E6", 0.5), ("B5", 1)],
+            [("A5", 0.5), ("F#5", 0.5), ("D6", 1), ("C6", 0.5), ("B5", 0.5), ("A5", 1)]]
+    water = [[("E5", 1), ("G5", 0.5), ("E5", 0.5), ("C5", 1.5), (None, 0.5)],
+             [("D#5", 1), ("F#5", 0.5), ("A5", 0.5), ("B5", 1.5), (None, 0.5)],
+             [("E5", 1), ("C5", 0.5), ("E5", 0.5), ("G5", 1.5), (None, 0.5)],
+             [("F#5", 1), ("A5", 0.5), ("F#5", 0.5), ("D#5", 1.5), (None, 0.5)]]
+    for bar in range(len(progression)):
+        phrase = fire[bar // 2 % 4] if bar % 2 == 0 else water[bar // 2 % 4]
+        pos = bar * 4 * beat
+        for name, beats in phrase:
+            if name:
+                if bar % 2 == 0:
+                    m = tone("square", name, beats * beat * 0.85, 0.004, 0.06, 0.55, 0.04, duty=0.25)
+                    mix_at(music, lowpass(m, 4200) * 0.1, int(pos * SR))
+                else:
+                    m = tone("tri", name, beats * beat * 0.92, 0.02, 0.1, 0.7, 0.08, vib=0.01)
+                    mix_at(music, m * 0.22, int(pos * SR))
+            pos += beats * beat
+    return normalize(music, 0.7)
+
+
 def main():
     sfx = {
         "Cast_Fire": cast_fire, "Cast_Water": cast_water, "Cast_Wind": cast_wind, "Cast_Earth": cast_earth,
@@ -932,7 +1002,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin,
-        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn,
+        "Land": land, "SquishHit": squish_hit, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -950,7 +1020,7 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
-    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Dungeon2": dungeon2_theme, "Boss": boss_theme, "Village": village_theme}
+    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Dungeon2": dungeon2_theme, "Boss": boss_theme, "MidBoss": midboss_theme, "Village": village_theme}
     if only:
         music = {k: v for k, v in music.items() if k in only}  # 곡 이름도 지정할 수 있다 (예: Boss)
     for name, fn in music.items():
