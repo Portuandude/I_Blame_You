@@ -33,10 +33,10 @@ namespace IBlameYou.Systems
         private bool bossFight; // 보스·중간보스가 나오는 구역: 문이 닫히는 동안 보스 곡 (Resources/Audio/Music/Boss)
 
         private const string BossMusic = "Boss";
-        public const float LateMusicProgress = 0.5f; // 진행도가 이만큼 넘으면(중간보스 뒤) 후반 던전 곡 Dungeon2
+        public const float LateMusicDepth = 0.5f; // 방 깊이(시작 방 거리 / 보스 거리)가 이만큼 넘으면(대개 중간보스 뒤) 후반 던전 곡 Dungeon2
 
-        // 진행도에 맞는 스테이지 곡: 전반 Dungeon, 후반(50% 이후) 더 빠르고 화려한 Dungeon2 (Tools/AudioGen).
-        public static string StageMusicFor(float progress) => progress >= LateMusicProgress ? "Dungeon2" : "Dungeon";
+        // 깊이에 맞는 스테이지 곡: 전반 Dungeon, 후반(보스까지 거리의 절반 이후) 더 빠르고 화려한 Dungeon2 (Tools/AudioGen).
+        public static string StageMusicFor(float depth) => depth >= LateMusicDepth ? "Dungeon2" : "Dungeon";
 
         public bool IsCleared => cleared;
         public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
@@ -134,8 +134,8 @@ namespace IBlameYou.Systems
             gates.Clear();
             UnlockCamera();
             LeaveBossMusic();
-            // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 50%를 넘긴 구역을 돌파하면 바꾼다
-            if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Progress) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Progress));
+            // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 깊이 절반을 넘긴 구역을 돌파하면 바꾼다
+            if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Depth) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Depth));
             StageEvents.PostNotice("구역 돌파!");
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
@@ -183,7 +183,7 @@ namespace IBlameYou.Systems
         {
             if (!bossFight) return;
             bossFight = false;
-            if (GameAudio.CurrentMusic == BossMusic) GameAudio.PlayMusic(StageMusicFor(StageEvents.Progress));
+            if (GameAudio.CurrentMusic == BossMusic) GameAudio.PlayMusic(StageMusicFor(StageEvents.Depth));
         }
 
         private void OnDestroy()

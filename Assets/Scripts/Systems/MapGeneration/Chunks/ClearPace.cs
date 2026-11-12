@@ -26,16 +26,21 @@ namespace IBlameYou.Systems
             return $"{pace} · 방 {mainRooms + Math.Max(0, sideRooms)}개 (주 경로 {mainRooms} · 곁방 {Math.Max(0, sideRooms)})";
         }
 
-        // 게임오버 결과 창의 "쓰러진 곳" 한 줄. 예: "쓰러진 곳: 주 경로 7/19번째 방 (곁방) · 진행도 33% · 버틴 시간 5분 12초".
-        // pathStep: 주 경로 몇 번째 방인지(1부터, 곁방이면 붙은 방 기준). mainRooms가 0이면(외길 청크 스테이지) 방 부분을 뺀다.
-        public static string DescribeDefeat(int pathStep, int mainRooms, bool sideRoom, float progress, float seconds)
+        // 게임오버 결과 창의 "쓰러진 곳" 한 줄 (2026-11-12 진행도 % 삭제 → 시작 방에서의 방 거리).
+        // 예: "쓰러진 곳: 시작 방에서 3칸 (곁방) · 가장 멀리 4칸 · 버틴 시간 5분 12초".
+        // distance: 쓰러진 방이 시작 방에서 문 몇 개 거리인지 (방 격자가 아니면 -1 → 방 부분을 뺀다).
+        // farthest: 이번 판에 가 본 가장 먼 방 거리. distance보다 클 때만 적는다.
+        public static string DescribeDefeat(int distance, int farthest, bool sideRoom, float seconds)
         {
-            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
-            string where = mainRooms > 0 && pathStep > 0
-                ? $"주 경로 {Math.Min(pathStep, mainRooms)}/{mainRooms}번째 방{(sideRoom ? " (곁방)" : "")} · 진행도 {percent}%"
-                : $"진행도 {percent}%";
-            string time = seconds > 0f ? $" · 버틴 시간 {Format((int)Math.Floor(seconds))}" : "";
-            return $"쓰러진 곳: {where}{time}";
+            var parts = new System.Collections.Generic.List<string>();
+            if (distance >= 0)
+            {
+                parts.Add(distance == 0 ? $"시작 방{(sideRoom ? " (곁방)" : "")}" : $"시작 방에서 {distance}칸{(sideRoom ? " (곁방)" : "")}");
+                if (farthest > distance) parts.Add($"가장 멀리 {farthest}칸");
+            }
+            if (seconds > 0f) parts.Add($"버틴 시간 {Format((int)Math.Floor(seconds))}");
+            if (parts.Count == 0) return "";
+            return distance >= 0 ? $"쓰러진 곳: {string.Join(" · ", parts)}" : string.Join(" · ", parts);
         }
 
         // 최근 클리어 기록 (15분 조정 판단용). 저장 문자열은 "걸린초,목표초,방수;..." (정수만이라 문화권 영향 없음), 새 기록이 맨 앞.
@@ -94,82 +99,63 @@ namespace IBlameYou.Systems
             return result;
         }
 
-        // 최근 쓰러진 곳 기록 (어려운 구간 찾기용). 저장 문자열은 "진행도%,주경로순번,주경로방수;..." (정수만), 새 기록이 맨 앞, RecentMax개.
-        // 진행도는 0~100으로 자른다. 순번·방 수가 없으면(외길 청크 스테이지) 0.
-        public static string AddRecentDefeat(string list, float progress, int pathStep, int mainRooms)
+        // 최근 쓰러진 곳 기록 (어려운 구간 찾기용). 저장 문자열은 "가장먼방거리;..." (정수만), 새 기록이 맨 앞, RecentMax개.
+        // 거리는 0~MaxDefeatDistance로 자른다. 예전 진행도(%) 기록과 섞이지 않게 SaveData가 새 저장 키를 쓴다.
+        public const int MaxDefeatDistance = 99;
+
+        public static string AddRecentDefeat(string list, int farthest)
         {
-            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
-            int main = Math.Max(0, mainRooms);
-            int step = main > 0 ? Math.Max(0, Math.Min(pathStep, main)) : 0;
-            var entries = new System.Collections.Generic.List<string> { $"{percent},{step},{main}" };
-            foreach (var e in ParseDefeats(list))
+            var entries = new System.Collections.Generic.List<string> { Math.Max(0, Math.Min(MaxDefeatDistance, farthest)).ToString() };
+            foreach (var d in ParseDefeats(list))
             {
                 if (entries.Count >= RecentMax) break;
-                entries.Add($"{e.percent},{e.step},{e.main}");
+                entries.Add(d.ToString());
             }
             return string.Join(";", entries);
         }
 
-        // 시작 화면 한 줄. 예: "최근 쓰러진 곳 3판 평균 진행도 42% (주 경로 평균 8번째 방)". 기록이 없으면 빈 문자열.
-        // 순번이 0인 기록(외길 모드 등)은 방 평균에서 뺀다.
+        // 시작 화면 한 줄. 예: "최근 쓰러진 곳 3판 평균 시작 방에서 4칸까지". 기록이 없으면 빈 문자열.
         public static string RecentDefeatSummary(string list)
         {
-            var entries = ParseDefeats(list);
-            if (entries.Count == 0) return "";
-            long percent = 0, step = 0;
-            int stepCount = 0;
-            foreach (var e in entries)
-            {
-                percent += e.percent;
-                if (e.step > 0) { step += e.step; stepCount++; }
-            }
-            int avgPercent = (int)Math.Round(percent / (double)entries.Count, MidpointRounding.AwayFromZero);
-            string tail = stepCount > 0
-                ? $" (주 경로 평균 {(int)Math.Round(step / (double)stepCount, MidpointRounding.AwayFromZero)}번째 방)"
-                : "";
-            return $"최근 쓰러진 곳 {entries.Count}판 평균 진행도 {avgPercent}%{tail}";
+            int average = RecentDefeatAverage(list);
+            if (average < 0) return "";
+            return $"최근 쓰러진 곳 {ParseDefeats(list).Count}판 평균 시작 방에서 {average}칸까지";
         }
 
-        // 최근 쓰러진 곳 평균 진행도(0~100, 반올림). 기록이 없으면 -1.
+        // 최근 쓰러진 판들이 간 가장 먼 방 거리의 평균 (반올림). 기록이 없으면 -1.
         public static int RecentDefeatAverage(string list)
         {
             var entries = ParseDefeats(list);
             if (entries.Count == 0) return -1;
-            long percent = 0;
-            foreach (var e in entries) percent += e.percent;
-            return (int)Math.Round(percent / (double)entries.Count, MidpointRounding.AwayFromZero);
+            long sum = 0;
+            foreach (var d in entries) sum += d;
+            return (int)Math.Round(sum / (double)entries.Count, MidpointRounding.AwayFromZero);
         }
 
-        // 게임오버 창 "이번 판 vs 평소" 한 줄. usualPercent는 이번 판을 기록하기 전의 평균(RecentDefeatAverage), -1이면 빈 문자열.
-        // 예: "평소보다 12%p 더 갔다 (최근 평균 30%)" / "평소보다 5%p 덜 갔다 (최근 평균 40%)" / "평소만큼 갔다 (최근 평균 33%)".
-        public static string CompareDefeat(float progress, int usualPercent)
+        // 게임오버 창 "이번 판 vs 평소" 한 줄. usual은 이번 판을 기록하기 전의 평균(RecentDefeatAverage), -1이면 빈 문자열.
+        // 예: "평소보다 2칸 더 갔다 (최근 평균 3칸)" / "평소보다 1칸 덜 갔다 (최근 평균 4칸)" / "평소만큼 갔다 (최근 평균 3칸)".
+        public static string CompareDefeat(int farthest, int usual)
         {
-            if (usualPercent < 0) return "";
-            int diff = DefeatGap(progress, usualPercent);
-            string usual = $"(최근 평균 {Math.Min(100, usualPercent)}%)";
-            if (diff > 0) return $"평소보다 {diff}%p 더 갔다 {usual}";
-            if (diff < 0) return $"평소보다 {-diff}%p 덜 갔다 {usual}";
-            return $"평소만큼 갔다 {usual}";
+            if (usual < 0) return "";
+            int diff = DefeatGap(farthest, usual);
+            string average = $"(최근 평균 {Math.Min(MaxDefeatDistance, usual)}칸)";
+            if (diff > 0) return $"평소보다 {diff}칸 더 갔다 {average}";
+            if (diff < 0) return $"평소보다 {-diff}칸 덜 갔다 {average}";
+            return $"평소만큼 갔다 {average}";
         }
 
-        // 이번 진행도(DescribeDefeat와 같은 반올림) − 평소 평균. 양수면 더 갔다 (초록), 음수면 덜 갔다 (주황).
-        public static int DefeatGap(float progress, int usualPercent)
-        {
-            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, progress)) * 100f, MidpointRounding.AwayFromZero);
-            return percent - Math.Max(0, Math.Min(100, usualPercent));
-        }
+        // 이번 판 가장 먼 방 거리 − 평소 평균. 양수면 더 갔다 (초록), 음수면 덜 갔다 (주황).
+        public static int DefeatGap(int farthest, int usual) =>
+            Math.Max(0, Math.Min(MaxDefeatDistance, farthest)) - Math.Max(0, Math.Min(MaxDefeatDistance, usual));
 
-        private static System.Collections.Generic.List<(int percent, int step, int main)> ParseDefeats(string list)
+        private static System.Collections.Generic.List<int> ParseDefeats(string list)
         {
-            var result = new System.Collections.Generic.List<(int percent, int step, int main)>();
+            var result = new System.Collections.Generic.List<int>();
             if (string.IsNullOrEmpty(list)) return result;
             foreach (var entry in list.Split(';'))
             {
-                var f = entry.Split(',');
-                if (f.Length != 3) continue;
-                if (!int.TryParse(f[0], out int p) || !int.TryParse(f[1], out int s) || !int.TryParse(f[2], out int m)) continue;
-                if (p < 0 || p > 100 || s < 0 || m < 0 || s > m) continue;
-                result.Add((p, s, m));
+                if (!int.TryParse(entry, out int d) || d < 0 || d > MaxDefeatDistance) continue;
+                result.Add(d);
                 if (result.Count >= RecentMax) break;
             }
             return result;

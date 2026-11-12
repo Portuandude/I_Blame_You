@@ -57,7 +57,7 @@ namespace IBlameYou.Systems
             return geometry;
         }
 
-        // 협동 봉인문 (A 방어막 속성 → B 마법 속성): 진행도 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
+        // 협동 봉인문 (A 방어막 속성 → B 마법 속성): 깊이 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
         // - 좌우 곁방: 늘 오른쪽 문 하나뿐이고(부모의 왼쪽에 붙음) 바닥이 평평한 휴식 지형. 문(31열)과 상자(가운데 16열) 사이 24열.
         // - 세로 곁방: 바닥 왼쪽 8열 (지그재그 10~21, 양 갈래 3~7·9~12 발판 사이, 옆 선반은 4~7로 당김). 상자는 그 왼쪽 ShaftPairChestX열.
         //   위·아래 문(14~16열)과 도착 칸(11열)은 봉인문 오른쪽이다.
@@ -207,7 +207,7 @@ namespace IBlameYou.Systems
 
         // ------------------------------------------------------------------ 세로 방 (탑·굴)
 
-        // 위 문이 있는 방만 발판이 있다. 시작 쪽(진행도 15% 전)은 익숙한 지그재그만.
+        // 위 문이 있는 방만 발판이 있다. 시작 쪽(깊이 0.15 전)은 익숙한 지그재그만.
         public static ShaftStyle PickShaftStyle(int seed, RoomData room)
         {
             if ((room.Doors & DoorDir.Up) == 0 || room.Difficulty < 0.15f) return ShaftStyle.Zigzag;

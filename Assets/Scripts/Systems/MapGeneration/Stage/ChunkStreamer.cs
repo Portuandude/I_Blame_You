@@ -197,11 +197,11 @@ namespace IBlameYou.Systems
                 }
 
                 CheckDoors();
-                StageEvents.Progress = RoomProgress(currentRoom);
+                StageEvents.Depth = RoomDepth(currentRoom);
             }
             else
             {
-                StageEvents.Progress = Mathf.Clamp01(player.position.x / stage.WidthTiles);
+                StageEvents.Depth = Mathf.Clamp01(player.position.x / stage.WidthTiles); // 외길 모드: 가로 위치 비율 (화면에는 안 보임)
             }
 
             if (Time.time >= nextSweep)
@@ -705,19 +705,21 @@ namespace IBlameYou.Systems
             }
 
             var entered = rooms.Rooms[index];
-            var pathRoom = !entered.MainPath && entered.ParentIndex >= 0 ? rooms.Rooms[entered.ParentIndex] : entered;
-            StageEvents.PathStep = pathRoom.PathIndex + 1; // 게임오버 창 "쓰러진 곳" (주 경로 몇 번째 방)
+            StageEvents.RoomDistance = entered.Distance; // 게임오버 창 "쓰러진 곳: 시작 방에서 N칸"
+            StageEvents.FarthestDistance = Math.Max(StageEvents.FarthestDistance, entered.Distance);
             StageEvents.InSideRoom = !entered.MainPath;
-            StageEvents.Progress = RoomProgress(index); // 배경 색조가 첫 프레임부터 이 방 진행도를 쓰게 (Update보다 먼저 올 수 있음)
+            StageEvents.Depth = RoomDepth(index); // 배경 색조가 첫 프레임부터 이 방 깊이를 쓰게 (Update보다 먼저 올 수 있음)
             RoomEntered?.Invoke(index);
         }
 
-        // 진행도 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
-        private float RoomProgress(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
+        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        private float RoomDepth(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()
         {
-            StageEvents.Progress = 0f;
+            StageEvents.Depth = 0f;
+            StageEvents.RoomDistance = -1;
+            StageEvents.FarthestDistance = -1;
             FallRecovery.FloorY = 0f;
         }
     }

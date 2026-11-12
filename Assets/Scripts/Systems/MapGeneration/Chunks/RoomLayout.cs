@@ -45,7 +45,7 @@ namespace IBlameYou.Systems
         public DoorDir ExitDoor;     // 주 경로에서 나가는 문 (보스 방과 곁방은 None)
         public bool MainPath;        // 시작 → 보스 경로 위의 방
         public int PathIndex = -1;   // 주 경로 순번 (곁방은 -1)
-        public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (진행도·"쓰러진 곳" 기준)
+        public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (깊이·"쓰러진 곳" 기준)
         public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
         public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
         // 넓은 방 (2026-11-12 "큰 방"): 주 구간(Chunk) 앞, 들어오는 문 쪽에 이어 붙이는 이동 구간들. 비어 있으면 한 화면 방.
@@ -94,7 +94,7 @@ namespace IBlameYou.Systems
         public const int MinRooms = 9;
         public const int MaxRooms = 12;
         public const int MinBossDistance = 4;        // 시작 → 보스 문 수 (중간보스 앞뒤에 방이 하나씩은 있게)
-        public const float MidBossProgress = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
+        public const float MidBossDepth = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
         public const int MinRewardRooms = 2;         // 막다른 보상 곁방 (보물 상자 / 회복 샘)
         public const int MaxRewardRooms = 3;
         public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
@@ -360,7 +360,7 @@ namespace IBlameYou.Systems
             for (int i = 2; i <= path.Count - 3; i++)
             {
                 if (path[i].IsVertical) continue;
-                double gap = Math.Abs(i / (double)(path.Count - 1) - MidBossProgress);
+                double gap = Math.Abs(i / (double)(path.Count - 1) - MidBossDepth);
                 if (gap < bestGap - 1e-9)
                 {
                     bestGap = gap;
@@ -411,7 +411,7 @@ namespace IBlameYou.Systems
                 last = r.Chunk;
             }
 
-            // 이중 스위치 발판: 판마다 하나. 진행도 50%에 가장 가까운 좌우 이동·퍼즐 방
+            // 이중 스위치 발판: 판마다 하나. 깊이(시작 방 거리 / 보스 거리) 0.5에 가장 가까운 좌우 이동·퍼즐 방
             RoomData bridge = null;
             // 주 경로 우선, 시작 방 바로 옆(거리 1)은 전투 방 후보로 남기려고 뒤로 미룬다
             foreach (var r in rest)
@@ -423,7 +423,7 @@ namespace IBlameYou.Systems
             bridge.Kind = RoomKind.Puzzle;
             bridge.Chunk = ChunkKind.SwitchBridge;
 
-            // 전투: 진행도 15% 이후 좌우 이동·퍼즐 방을 예상 시간이 목표에 닿을 때까지 전투 방으로 (멀수록 먼저 → 정예는 30% 이후 먼 곳에 최대 2개).
+            // 전투: 깊이 0.15 이후 좌우 이동·퍼즐 방을 예상 시간이 목표에 닿을 때까지 전투 방으로 (멀수록 먼저 → 정예는 30% 이후 먼 곳에 최대 2개).
             // 주 경로에서는 문 잠기는 방이 연달아 오지 않게 한다.
             var candidates = new List<RoomData>();
             foreach (var r in rest)
@@ -447,7 +447,7 @@ namespace IBlameYou.Systems
         }
 
         private static double BridgeScore(RoomData r) =>
-            Math.Abs(r.Difficulty - StagePlanner.SwitchBridgeProgress) + (r.Distance <= 1 ? 1.0 : 0.0) + (r.MainPath ? 0.0 : 0.6); // 주 경로 우선. 다만 4×3 격자의 주 경로는 대개 세로 방·중간보스·휴식·보스로 차서 곁가지에 놓인다
+            Math.Abs(r.Difficulty - StagePlanner.SwitchBridgeDepth) + (r.Distance <= 1 ? 1.0 : 0.0) + (r.MainPath ? 0.0 : 0.6); // 주 경로 우선. 다만 4×3 격자의 주 경로는 대개 세로 방·중간보스·휴식·보스로 차서 곁가지에 놓인다
 
         private static bool Locks(RoomLayoutData layout, List<RoomData> path, int index) =>
             index >= 0 && index < path.Count && path[index].LocksDoors;
