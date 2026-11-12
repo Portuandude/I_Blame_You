@@ -51,6 +51,8 @@ namespace IBlameYou.Player
 
         private static readonly Vector3 AcornGlintOffset = new Vector3(0f, 1.5f, 0f); // 도토리 주머니 시작 높이 (머리 위, 훈장 메달과 같게)
 
+        private static readonly Vector3 StarCandyGlintAsideOffset = new Vector3(-0.55f, 1.4f, 0f); // 도토리와 같이 튈 때 별사탕 자리 (왼쪽으로 비켜서)
+
         private static readonly Vector3 RingOffset = new Vector3(0f, 0.7f, 0f); // 마나 고리 가운데 (몸통 높이, 플레이어 로컬)
 
         // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
@@ -86,7 +88,12 @@ namespace IBlameYou.Player
             candyStack = candyFrame == Time.frameCount ? candyStack + 1 : 0;
             candyFrame = Time.frameCount;
             var color = new Color(0.43f, 0.83f, 1f);
-            if (candyStack == 0) VfxPlayer.ManaRing(transform, RingOffset, color);
+            if (candyStack == 0)
+            {
+                VfxPlayer.ManaRing(transform, RingOffset, color);
+                // 머리 위로 별사탕이 톡. 도토리 주머니도 같이 튀면 별사탕은 왼쪽, 도토리는 가운데 (겹치지 않게)
+                VfxPlayer.StarCandyGlint(transform, Has(RelicId.AcornPouch) ? StarCandyGlintAsideOffset : AcornGlintOffset);
+            }
             float gained = mana.Current - before;
             if (gained > 0.5f)
                 DamageNumbers.ShowText(transform.position + Vector3.up * (1.2f + 0.3f * candyStack), $"마나 +{gained:0}", color, 0.8f);
