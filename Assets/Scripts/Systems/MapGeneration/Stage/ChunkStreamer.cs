@@ -279,6 +279,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.Crumble:
                         CrumblingPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width);
                         break;
+                    case FeatureKind.BlinkPlatform:
+                        BlinkPlatform.Create(root, new Vector2(ox + f.X, oy + f.Y + 1f), f.Width, f.Direction);
+                        break;
                     case FeatureKind.BlinkWard:
                         // 낭떠러지 열 전체 (낙사선 아래부터 천장 위까지): 순간이동·대시로 건너뛰지 못하게
                         BlinkWard.Create(root, new Vector2(ox + f.X, oy + f.Y - 6f), f.Width, ChunkData.Height + 8f);
