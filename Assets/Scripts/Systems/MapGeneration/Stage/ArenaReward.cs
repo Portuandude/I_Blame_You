@@ -10,6 +10,7 @@ namespace IBlameYou.Systems
         public const float ManaRatio = 0.5f; // 최대 마나의 50%
         private const float FloatHeight = 0.9f;
         private static readonly Vector3 HoneyGlintOffset = new Vector3(0f, 1.5f, 0f); // 꿀단지 시작 높이 (머리 위, 훈장·도토리와 같게)
+        private static readonly Vector3 HorseshoeGlintOffset = new Vector3(-0.55f, 1.4f, 0f); // 말굽 자석 (꿀단지와 안 겹치게 왼쪽)
         private const float BobAmplitude = 0.15f;
         private const float BobSpeed = 3f;
         // 꿀단지를 가졌으면 구슬 뒤에 금빛 테두리가 숨 쉬듯 빛나고 가끔 반짝인다 ("더 많이 찬다")
@@ -118,7 +119,7 @@ namespace IBlameYou.Systems
                     // 말굽 자석 덕분에 기본 거리 밖에서 잡혔으면 머리 위로 말굽 자석이 톡
                     Vector2 orb = transform.position + Vector3.up * FloatHeight;
                     if (((Vector2)found.position - orb).magnitude > IBlameYou.Player.RelicBook.MagnetRadius)
-                        VfxPlayer.HorseshoeGlint(found, HoneyGlintOffset);
+                        VfxPlayer.HorseshoeGlint(found, HorseshoeGlintOffset); // 곧 주우면 꿀단지가 가운데에 뜨므로 왼쪽으로 비켜서
                 }
                 magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
