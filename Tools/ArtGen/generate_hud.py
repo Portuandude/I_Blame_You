@@ -15,6 +15,7 @@ IMGUI(SkillHUD.Bars.cs)가 9분할(GUIStyle.border)로 늘려 그리는 둥근 �
   Assets/Resources/UI/HUD/MapHelmet.png 16x16  미니맵 중간보스 방 투구
   Assets/Resources/UI/HUD/MapElite.png  16x16  미니맵 정예 방 보라 별
   Assets/Resources/UI/HUD/MapLock.png   16x16  미니맵 안 연 협동 봉인문 자물쇠 (방 칸 오른쪽 아래에 작게)
+  Assets/Resources/UI/HUD/MapHouse.png 16x16  미니맵 NPC 마을 방 집 (빨간 지붕 + 크림 벽 + 노란 창)
   Assets/Resources/UI/HUD/MapCheck.png  16x16  미니맵 돌파한 전투·정예 방 초록 체크 (방 칸 오른쪽 아래에 작게)
   Assets/Resources/UI/HUD/Panel.png     32x32  HUD 패널 (진한 보라 반투명 + 크림 테두리, 둥근 모서리). 9분할 사방 10픽셀
   Assets/Resources/UI/HUD/Button.png         32x32  둥근 버튼 보통 (dusk→lilac 젤리 + 크림 테두리 + 아래 두께). 9분할 사방 10픽셀
@@ -320,6 +321,20 @@ def map_check():
     return small(img, n, n)
 
 
+def map_house():
+    n = 16
+    img = big(n, n)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([2.6 * SS, 6.5 * SS, 13.4 * SS, 15 * SS], radius=1.2 * SS, fill=OUTLINE)       # 벽 외곽선
+    d.rounded_rectangle([3.8 * SS, 7.5 * SS, 12.2 * SS, 13.8 * SS], radius=0.8 * SS, fill=CREAM)        # 크림 벽
+    d.polygon([(0.6 * SS, 8.2 * SS), (8 * SS, 0.8 * SS), (15.4 * SS, 8.2 * SS)], fill=OUTLINE)          # 지붕 외곽선
+    d.polygon([(2.6 * SS, 7.2 * SS), (8 * SS, 2.4 * SS), (13.4 * SS, 7.2 * SS)], fill=hexrgba("ff5a6e"))  # 빨간 지붕
+    d.polygon([(5.4 * SS, 4.8 * SS), (8 * SS, 2.4 * SS), (9 * SS, 3.3 * SS)], fill=COLORS["berry"])      # 지붕 빛
+    d.rounded_rectangle([7 * SS, 10 * SS, 10.4 * SS, 13.8 * SS], radius=0.6 * SS, fill=COLORS["soil"])   # 문
+    d.rectangle([4.6 * SS, 9 * SS, 6.4 * SS, 10.8 * SS], fill=COLORS["gold"])                          # 노란 창
+    return small(img, n, n)
+
+
 def generate():
     os.makedirs(OUT, exist_ok=True)
     result = {
@@ -342,6 +357,7 @@ def generate():
         "MapElite": map_elite(),
         "MapLock": map_lock(),
         "MapCheck": map_check(),
+        "MapHouse": map_house(),
     }
     for name, img in result.items():
         img.save(os.path.join(OUT, f"{name}.png"))
