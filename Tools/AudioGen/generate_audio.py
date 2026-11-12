@@ -788,6 +788,39 @@ def menu_theme():
     return normalize(music, 0.6)
 
 
+def music_box(name, seconds):
+    """오르골 한 음: 사인 + 높은 배음(빨리 사라짐), 길게 울리며 사라진다."""
+    m = int(seconds * SR)
+    f = note_hz(name)
+    ding = osc("sine", f, m) + 0.35 * osc("sine", f * 4.0, m) * env_exp(m, 0.05) + 0.15 * osc("sine", f * 2.0, m)
+    return ding * env_exp(m, 0.6)
+
+
+def village_theme():
+    """NPC 마을 테마: 90 BPM, C장조, 오르골풍 16마디 루프. C-Am-F-G ×2, F-G-Em-Am, F-G-C-G (G로 루프 처음 C에 돌아온다)."""
+    bpm = 90
+    beat = 60 / bpm
+    progression = [["C4", "E4", "G4"], ["A3", "C4", "E4"], ["F3", "A3", "C4"], ["G3", "B3", "D4"]] * 2 + \
+                  [["F3", "A3", "C4"], ["G3", "B3", "D4"], ["E3", "G3", "B3"], ["A3", "C4", "E4"]] + \
+                  [["F3", "A3", "C4"], ["G3", "B3", "D4"], ["C4", "E4", "G4"], ["G3", "B3", "D4"]]
+    n = int(round(len(progression) * 4 * beat * SR))
+    music = np.zeros(n)
+    for bar, chord in enumerate(progression):
+        bar_start = bar * 4 * beat
+        mix_at(music, pad_chord(chord, 4 * beat) * 0.1, int(bar_start * SR))
+        low = chord[0][:-1] + str(int(chord[0][-1]) - 1)
+        for k in (0, 2):  # 베이스: 1·3박에 부드러운 사인
+            mix_at(music, tone("sine", low, 1.6 * beat, 0.02, 0.4, 0.4, 0.3) * 0.22, int((bar_start + k * beat) * SR))
+        up = [c[:-1] + str(int(c[-1]) + 1) for c in chord]
+        # 오르골 선율: 8분음표 6개 + 마지막 두 박은 한 음 길게 (마디마다 모양을 살짝 바꿔 단조롭지 않게)
+        shapes = [[up[0], up[1], up[2], up[1], up[0], up[1]], [up[2], up[1], up[0], up[1], up[2], up[1]]]
+        pattern = shapes[bar % 2]
+        for k, name in enumerate(pattern):
+            mix_at(music, music_box(name, 1.4 * beat) * 0.13, int((bar_start + k * beat / 2) * SR))
+        mix_at(music, music_box(up[0] if bar % 4 != 3 else up[2], 3 * beat) * 0.15, int((bar_start + 3 * beat) * SR))
+    return normalize(lowpass(music, 6000), 0.55)
+
+
 def boss_theme():
     """보스(중간보스·슬라임 킹) 테마: 152 BPM, D단조, 16마디 루프. 16분음표 베이스 질주 + 매 박 킥 + 반음 올라가는 긴장 멜로디.
     Dm-Bb-C-A 진행 ×3, 끝 4마디는 Dm-Bb-Gm-A (A 화음으로 루프 처음 Dm에 돌아온다)."""
@@ -881,7 +914,7 @@ def main():
         else:
             sound = loudness(sound)
         save_wav(fade_edges(sound), "SFX", f"{name}.wav")
-    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Dungeon2": dungeon2_theme, "Boss": boss_theme}
+    music = {"Menu": menu_theme, "Dungeon": dungeon_theme, "Dungeon2": dungeon2_theme, "Boss": boss_theme, "Village": village_theme}
     if only:
         music = {k: v for k, v in music.items() if k in only}  # 곡 이름도 지정할 수 있다 (예: Boss)
     for name, fn in music.items():
