@@ -310,6 +310,7 @@ namespace IBlameYou.UI
 
             DrawLowHealthWarning(); // 화면 가장자리 효과라 다른 UI보다 먼저(아래에) 그린다
             DrawOrbGuides(); // 화면 밖 보상 구슬 쪽 가장자리 하트 (SkillHUD.OrbGuide.cs)
+            DrawEnemyGuides(); // 전투 구역에서 화면 밖 적 쪽 가장자리 붉은 화살표 (SkillHUD.EnemyGuide.cs)
             DrawStatusPanel();
             DrawGoldPill(); // 골드 (SkillHUD.Gold.cs)
             DrawStageTag();
