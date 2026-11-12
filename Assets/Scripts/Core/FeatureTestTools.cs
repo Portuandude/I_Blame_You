@@ -184,9 +184,9 @@ namespace IBlameYou.Core
             float height = Mathf.Min(520f, Screen.height - 40f);
             var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             GUI.Box(rect, GUIContent.none, box);
-            GUI.Box(rect, GUIContent.none, box);
+            GUI.Box(rect, GUIContent.none, box); // 두 겹으로 덜 비치게
             GUI.Label(new Rect(rect.x + 12f, rect.y + 8f, rect.width - 24f, 40f),
-                "<b>유물 장착·해제</b> — 누르면 장착, 장착한 것(★)을 누르면 해제 (해제하면 시험 맵을 다시 만든다). F9/Esc 닫기", line);
+                "<b>유물 장착·해제</b> — 누르면 장착, ★을 누르면 해제 (해제하면 시험 맵을 다시 만들어 체력·레벨도 처음으로). F9/Esc 닫기", line);
 
             const int columns = 2;
             float cellWidth = (rect.width - 36f) / columns;
