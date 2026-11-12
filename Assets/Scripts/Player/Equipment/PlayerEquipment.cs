@@ -80,7 +80,7 @@ namespace IBlameYou.Player
                         if (combat != null) combat.Stats.defense += v;
                         break;
                     case EquipStat.MaxHealth:
-                        if (health != null) health.AddMax(v);
+                        if (health != null) health.AddMax(v, false); // 끼고 빼기로 회복되지 않게 현재 체력은 그대로 (최대치로만 자름)
                         break;
                     case EquipStat.PhysicalDamage:
                         if (combat != null) combat.Stats.physicalDamage += v;
@@ -89,13 +89,13 @@ namespace IBlameYou.Player
                         if (combat != null) combat.Stats.critChance += v; // 빼기가 정확하도록 자르지 않는다 (확률 1 넘으면 늘 치명타)
                         break;
                     case EquipStat.MaxMana:
-                        if (mana != null) mana.AddMax(v);
+                        if (mana != null) mana.AddMax(v, false);
                         break;
                     case EquipStat.MoveSpeed:
                         if (combat != null) combat.MoveSpeedMultiplier += v;
                         break;
                     case EquipStat.MaxStamina:
-                        if (stamina != null) stamina.AddMax(v);
+                        if (stamina != null) stamina.AddMax(v, false);
                         break;
                     default:
                         if (combat == null || element < 0) break;
