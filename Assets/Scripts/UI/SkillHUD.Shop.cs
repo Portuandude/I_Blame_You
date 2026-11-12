@@ -19,7 +19,7 @@ namespace IBlameYou.UI
         {
             get
             {
-                long key = ((long)StageEvents.StageSeed << 8) ^ (uint)StageEvents.VillageRoom;
+                long key = ((long)StageEvents.StageSeed << 32) | (uint)StageEvents.VillageRoom;
                 if (!shops.TryGetValue(key, out var shop))
                 {
                     shop = new EquipmentShop(StageEvents.StageSeed, StageEvents.VillageRoom);
