@@ -23,6 +23,20 @@ namespace IBlameYou.UI
         private int goldSpendAmount;
         private GUIStyle goldSpendText;
 
+        // 최고 골드 기록: 판이 끝날 때(클리어·쓰러짐) 이번 판 전 최고를 기억하고, 끝난 뒤에도 보스 골드처럼 늘면 다시 기록한다.
+        private int bestGoldBefore = -1;   // 이번 판 전 최고 (-1 = 아직 판이 안 끝남)
+        private int goldRecorded = -1;     // 마지막으로 기록한 모은 골드
+
+        private void RecordBestGold()
+        {
+            if (bestGoldBefore < 0) bestGoldBefore = SaveData.BestGold(GameSession.DevMode);
+            if (RunStats.GoldEarned <= goldRecorded) return;
+            goldRecorded = RunStats.GoldEarned;
+            SaveData.RecordGold(goldRecorded);
+        }
+
+        private bool NewBestGold => !GameSession.FeatureTest && bestGoldBefore >= 0 && RunStats.GoldEarned > bestGoldBefore;
+
         private void OnGoldArrived(int value) => goldPopStart = Time.unscaledTime;
 
         private void OnGoldSpent(int amount)
@@ -87,12 +101,16 @@ namespace IBlameYou.UI
             if (coinIcon != null) GUI.DrawTexture(new Rect(row.x, row.y + 2f, 24f, 24f), coinIcon, ScaleMode.ScaleToFit, true);
             OutlinedLabel.Draw(new Rect(row.x + 28f, row.y, row.width - 28f, row.height), $"골드 {RunStats.Gold}", goldText,
                 OutlinedLabel.Gold, OutlinedLabel.Outline, 0f, 1.5f);
-            // 마을에서 골드를 썼으면 아래에 작게 "모음 N · 씀 M" (안 썼으면 남은 골드 = 모은 골드라 생략)
-            if (RunStats.GoldSpent > 0)
+            RecordBestGold(); // 판이 끝난 뒤 들어온 골드(보스)까지 기록
+            // 마을에서 골드를 썼으면 아래에 작게 "모음 N · 씀 M" (안 썼으면 남은 골드 = 모은 골드라 생략), 최고 기록이면 금색 "최고 골드!"
+            bool best = NewBestGold;
+            string line = RunStats.GoldSpent > 0 ? $"모음 {RunStats.GoldEarned} · 씀 {RunStats.GoldSpent}" : "";
+            if (best) line = line.Length > 0 ? line + " · 최고 골드!" : "최고 골드!";
+            if (line.Length > 0)
             {
                 var style = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, wordWrap = false, clipping = TextClipping.Overflow };
-                style.normal.textColor = OutlinedLabel.Cream;
-                GUI.Label(new Rect(row.x - 40f, row.yMax, row.width + 40f, 20f), $"모음 {RunStats.GoldEarned} · 씀 {RunStats.GoldSpent}", style);
+                style.normal.textColor = best ? OutlinedLabel.Gold : OutlinedLabel.Cream;
+                GUI.Label(new Rect(row.x - 80f, row.yMax, row.width + 80f, 20f), line, style);
             }
         }
 

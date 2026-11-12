@@ -184,6 +184,7 @@ namespace IBlameYou.UI
             SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms + StageEvents.SideRooms); // 시작 화면 최근 5판 평균
             SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
             if (progression != null) SaveData.RecordLevel(progression.Level);
+            RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs)
             control.Locked = true;
         }
 
@@ -240,6 +241,7 @@ namespace IBlameYou.UI
                     SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
                     SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
                 }
+                if (!stageCleared) RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs), 클리어 뒤 쓰러짐은 이미 기록
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
