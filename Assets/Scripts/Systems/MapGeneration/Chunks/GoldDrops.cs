@@ -9,7 +9,7 @@ namespace IBlameYou.Systems
         Normal,   // 일반 몹 (슬라임·고블린·궁수, 분열·소환된 작은 몹 포함)
         Elite,    // 정예 (어미 슬라임·고블린 전사)
         MidBoss,  // 중간보스 (쌍둥이 슬라임 기사: 둘이 합쳐 이 범위가 되도록 기사 하나당 절반씩)
-        Boss      // 최종보스 (슬라임 왕)
+        Boss      // 최종보스 (슬라임 킹: 2페이즈에 둘로 나뉘어 따로 죽으므로 한 마리당 절반씩)
     }
 
     public struct GoldDrop
@@ -30,6 +30,7 @@ namespace IBlameYou.Systems
     {
         public GoldDrop Normal, Elite, MidBoss, Boss;
         public int MidBossParts = 2; // 중간보스가 몇 마리로 나뉘어 나오는지 (쌍둥이 기사 = 2)
+        public int BossParts = 2;    // 최종보스가 몇 마리로 나뉘어 죽는지 (슬라임 킹 분열 = 2)
 
         // 스테이지 1: 일반 50% 1~4, 정예 100% 10~20, 중간보스 100% 50~100, 최종보스 100% 100~200
         public static readonly GoldDropTable Stage1 = new GoldDropTable
@@ -55,16 +56,17 @@ namespace IBlameYou.Systems
         }
 
         // 이 적이 떨어뜨릴 골드 (0이면 안 떨어뜨림). chanceRoll·amountRoll은 0 이상 1 미만 난수.
-        // 중간보스는 한 마리당 범위를 MidBossParts로 나눈다 (쌍둥이 둘의 합이 원래 범위 안).
+        // 중간보스·최종보스는 한 마리당 범위를 MidBossParts·BossParts로 나눈다 (둘의 합이 원래 범위 안).
         public int Roll(EnemyRank rank, double chanceRoll, double amountRoll)
         {
             var drop = For(rank);
             if (chanceRoll >= drop.Chance) return 0;
             int min = drop.Min, max = drop.Max;
-            if (rank == EnemyRank.MidBoss && MidBossParts > 1)
+            int parts = rank == EnemyRank.MidBoss ? MidBossParts : rank == EnemyRank.Boss ? BossParts : 1;
+            if (parts > 1)
             {
-                min = (min + MidBossParts - 1) / MidBossParts;
-                max /= MidBossParts;
+                min = (min + parts - 1) / parts;
+                max /= parts;
             }
             if (max < min) max = min;
             int span = max - min + 1;
