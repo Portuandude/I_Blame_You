@@ -222,7 +222,7 @@ namespace IBlameYou.Puzzles
         private System.Collections.IEnumerator FlashBarrier()
         {
             barrier.color = new Color(1f, 1f, 1f, barrier.color.a);
-            yield return new WaitForSeconds(DeflectFlash);
+            yield return new WaitForSecondsRealtime(DeflectFlash);
             if (opened || barrier == null) yield break;
             var color = ElementInfo.Color(sequence[step]); // 그사이 한 단계 풀렸으면 다음 속성 색
             barrier.color = new Color(color.r, color.g, color.b, barrier.color.a);
