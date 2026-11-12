@@ -128,6 +128,10 @@ namespace IBlameYou.Systems
         // 말굽 자석(먼 보상 구슬이 끌려오기 시작): 머리 위로 작은 말굽 자석이 톡 떠올랐다 사라진다 (훈장 메달과 같은 연출).
         public static void HorseshoeGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "HorseshoeMagnet");
 
+        // 식당에서 산 음식 아이콘이 머리 위로 톡 떠오른다 (foodId = FoodId 이름, Resources/UI/HUD/Food).
+        public static void FoodGlint(Transform follow, Vector3 offset, string foodId) =>
+            MedalGlintFx.CreateFromPath(follow, offset, "UI/HUD/Food/" + foodId);
+
         // 적 원거리 공격 예고: 화살 끝에서 작게 한 번 반짝인다 (유물 상자 반짝임 그림을 작게, 빠르게).
         public static void AimGlint(Vector3 position)
         {
