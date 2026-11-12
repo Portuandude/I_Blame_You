@@ -22,8 +22,10 @@
 
 - DONE (claude/project-thread-sxxwfk): 섬(Pits) 동전 — 난이도 30%+면 가장 깊이 들어간(마지막) 단단한 섬 가운데에 동전 무더기. 낭떠러지를 건넌 보상
 - DONE (claude/project-thread-sxxwfk): 절벽 오르기(Climb) 동전 — 난이도 30%+면 절벽 위 평지 끝(지키는 적 뒤)에 동전 무더기
-- TODO: 종유석이 적을 맞혔을 때 연출 — 별 튀김·"쾅" 흔들림을 플레이어 피격과 구분되게 짧게
-- TODO: 미니맵에 동전 표시 — 가 본 방 중 아직 안 주운 동전 무더기가 남은 방 칸 구석에 작은 금색 점
+- DONE (claude/project-thread-sxxwfk): 종유석이 적을 맞혔을 때 연출 — 별 튀김·"쾅" 흔들림을 플레이어 피격과 구분되게 짧게
+- DONE (claude/project-thread-sxxwfk): 미니맵에 동전 표시 — 가 본 방 중 아직 안 주운 동전 무더기가 남은 방 칸 구석에 작은 금색 점
+- DONE (claude/project-thread-sxxwfk): 가시밭(SpikeField) 동전 — 난이도 30%+면 마지막 가시 위 발판 가운데에 동전 무더기
+- TODO: 결과 창에 동전 무더기 주운 수 — 골드 줄 아래 "동전 무더기 N/M" (M = 이번 판에 가 본 방의 무더기 수)
 
 ## 다음 (2026-11-12 22:50 자동 실행이 추가 — 레벨 재설계 2차: 세로 방 다양화)
 
