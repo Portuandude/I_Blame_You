@@ -12,7 +12,7 @@ namespace IBlameYou.UI
     // - 좌상단: 체력·마나 바 (SkillHUD.Bars.cs), A와 B가 쓴/날린 마나, 경험치, 모드
     // - 우상단: 스킬 알림 피드 (실패는 빨간색, 마나 부족이면 최근에 마나를 많이 쓴 쪽을 탓함)
     // - 중앙: A의 방어막 미니게임(W/A/S/D 순서), B의 영창 입력창
-    // - 좌상단 아래: 스테이지 진행도, 화면 위쪽 가운데: 스테이지 안내 문구
+    // - 좌상단 아래: 스테이지 이름 꼬리표·골드, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내 (사망 연출: SkillHUD.Death.cs)
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
     // - 화면 가장자리: 체력 30% 이하 경고등 (SkillHUD.LowHealth.cs), Esc: 일시정지 메뉴 (SkillHUD.Pause.cs)
@@ -227,11 +227,11 @@ namespace IBlameYou.UI
                 CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
-                defeatUsualPercent = stageCleared ? -1 : SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다"), 클리어 뒤 쓰러짐은 비교 안 함
+                defeatUsualRooms = stageCleared ? -1 : SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다"), 클리어 뒤 쓰러짐은 비교 안 함
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
                 if (!stageCleared)
                 {
-                    SaveData.RecordRecentDefeat(StageEvents.Progress, StageEvents.PathStep, StageEvents.MainRooms);
+                    SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
                     SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
                 }
                 RunStats.Ended = true;
@@ -302,7 +302,7 @@ namespace IBlameYou.UI
             DrawLowHealthWarning(); // 화면 가장자리 효과라 다른 UI보다 먼저(아래에) 그린다
             DrawStatusPanel();
             DrawGoldPill(); // 골드 (SkillHUD.Gold.cs)
-            DrawStageBar();
+            DrawStageTag();
             DrawLevelBar();
             DrawRelicList();
             DrawBossBar();
@@ -526,15 +526,14 @@ namespace IBlameYou.UI
             GUI.matrix = previousMatrix;
         }
 
-        private void DrawStageBar()
+        // 스테이지 이름 꼬리표. 진행도 막대(%)는 2026-11-12 사람 결정으로 없앴다 (방을 돌아다니며 탐험 → Trash/Assets/Scripts/UI/SkillHUD.DrawStageBar_20261112.cs.txt).
+        private static readonly Rect StageTagRect = new Rect(12f, 168f, 130f, 30f);
+
+        private void DrawStageTag()
         {
-            var rect = new Rect(12f, 168f, 360f, 30f);
-            GUI.Box(rect, GUIContent.none, panel);
-            // 진행도 캡슐 바 (gold) + 끝에 깃발 (SkillHUD.Bars.cs)
-            var bar = new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow - 10f, BarHeight);
-            DrawCapsuleBar(bar, Mathf.Clamp01(StageEvents.Progress), 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
-            DrawIcon(flagIcon, new Rect(bar.xMax - 6f, rect.y + 2f, 22f, 22f), 1f);
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"{StageEvents.StageName} {StageEvents.Progress * 100f:0}%", small);
+            GUI.Box(StageTagRect, GUIContent.none, panel);
+            DrawIcon(flagIcon, new Rect(StageTagRect.x + 6f, StageTagRect.y + 4f, 22f, 22f), 1f);
+            GUI.Label(new Rect(StageTagRect.x + 32f, StageTagRect.y + 4f, StageTagRect.width - 36f, 24f), StageEvents.StageName, small);
         }
 
         private void DrawStageClear()
