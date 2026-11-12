@@ -25,6 +25,8 @@ DIRECTION ① "플레이 감각 다듬기" 중 이동 조작감(코요테·버�
 - DONE (claude/project-thread-2w3nym): 연속 처치 알림 — 0.6초 안에 적을 3마리 이상 쓰러뜨리면 마지막 적 위에 "N연속!" 글자 + 짧은 효과음
 - DONE (claude/project-thread-2w3nym): 치명타 효과음 `Crit` (Tools/AudioGen) — 치명타가 들어가면 높고 짧은 "팅" (여러 번 겹치지 않게 쿨다운)
 - DONE (claude/project-thread-2w3nym): 정예 처치 연출 — 어미 슬라임·고블린 대전사를 쓰러뜨리면 작은 화면 흔들림 + 큰 별 펑
+- DONE (claude/project-thread-2w3nym): 플레이어 피격 히트스톱 — 플레이어가 맞으면(쓰러지지 않았을 때) 0.04초 멈춤. 함정 피해도 포함
+- DONE (claude/project-thread-2w3nym): 경직 중 걷기 그림 멈춤 — 넉백으로 밀리는 동안 Animator Speed를 0으로 (리뷰 LOW)
 
 ## 다음 (2026-11-12 23:40 자동 실행이 추가 — 위험한 길 보상 넓히기·종유석 마무리)
 
