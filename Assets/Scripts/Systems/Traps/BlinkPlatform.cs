@@ -26,7 +26,8 @@ namespace IBlameYou.Systems
 
         private static bool CottonCloudOwned()
         {
-            if (Time.unscaledTime - cottonCheckedAt < 0.5f) return cottonOwned;
+            float since = Time.unscaledTime - cottonCheckedAt;
+            if (since >= 0f && since < 0.5f) return cottonOwned; // 시계가 되돌아갔으면(플레이 모드 재시작) 다시 확인
             cottonCheckedAt = Time.unscaledTime;
             cottonOwned = false;
             foreach (var relics in FindObjectsByType<IBlameYou.Player.PlayerRelics>(FindObjectsSortMode.None))
