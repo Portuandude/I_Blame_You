@@ -560,6 +560,7 @@ def enrage():
     mix_at(out, osc("sine", 110 * np.exp(-tb * 12) + 40, m) * env_exp(m, 0.12) * 0.8, int(0.5 * SR))
     return normalize(fade_edges(out))
 
+
 def village_found():
     """마을 첫 발견: 오르골 세 음 G5-C6-E6 + 마지막 음 길게, 약 1.4초 (music_box는 배경음악 쪽에 있다)."""
     n = int(1.4 * SR)
