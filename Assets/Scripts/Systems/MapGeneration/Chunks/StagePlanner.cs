@@ -20,6 +20,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.SpikeField: return 30f;
                 case ChunkKind.Climb: return 35f;
                 case ChunkKind.Cave: return 30f;
+                case ChunkKind.Pillars: return 35f;
                 case ChunkKind.CrumbleBridge: return 30f;
                 case ChunkKind.ElementGate: return 30f;
                 case ChunkKind.MovingBridge: return 30f;
@@ -104,6 +105,8 @@ namespace IBlameYou.Systems
 
         // 진행도가 높을수록 어려운 지형(낭떠러지, 무너지는 다리, 절벽)이 자주 나온다. 같은 종류가 연달아 나오지 않게 한다.
         // internal: EditMode 테스트가 반올림 대비 경로를 직접 확인한다 (AssemblyInfo.cs의 InternalsVisibleTo).
+        public const float PillarsMinProgress = 0.2f;
+
         internal static ChunkKind PickTravel(Random rng, float progress, ChunkKind last, bool allowGate)
         {
             var pool = new List<KeyValuePair<ChunkKind, float>>
@@ -114,6 +117,7 @@ namespace IBlameYou.Systems
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Pits, progress < 0.1f ? 0.5f : 1.5f + progress),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Cave, progress < 0.15f ? 0f : 1.5f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.Climb, progress < 0.2f ? 0f : 1.2f),
+                new KeyValuePair<ChunkKind, float>(ChunkKind.Pillars, progress < PillarsMinProgress ? 0f : 1f),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.CrumbleBridge, progress < 0.3f ? 0f : 0.8f + progress),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.MovingBridge, progress < 0.2f ? 0f : 0.6f + 0.4f * progress),
                 new KeyValuePair<ChunkKind, float>(ChunkKind.ElementGate,

@@ -41,6 +41,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.SpikeField: BuildSpikeField(chunk, heights, occupied, rng); break;
                 case ChunkKind.Climb: BuildClimb(chunk, heights, occupied, rng); break;
                 case ChunkKind.Cave: BuildCave(chunk, heights, occupied, rng); break;
+                case ChunkKind.Pillars: BuildPillars(chunk, heights, occupied, rng); break;
                 case ChunkKind.CrumbleBridge: BuildCrumbleBridge(chunk, heights, rng); break;
                 case ChunkKind.ElementGate: BuildElementGate(chunk, heights, rng); break;
                 case ChunkKind.MovingBridge: BuildMovingBridge(chunk, heights, rng); break;
@@ -241,6 +242,57 @@ namespace IBlameYou.Systems
             }
 
             if (chunk.Difficulty > 0.3f) PlaceEnemies(chunk, heights, occupied, rng, 1);
+        }
+
+        // 기둥 숲: 바닥 없는 낭떠러지 위로 폭 1~2칸 기둥이 높낮이를 바꿔 가며 솟는다 (섬(Pits)보다 좁고 들쭉날쭉).
+        // 간격 2칸이면 한 칸 오르거나 두 칸까지 내려가고, 3칸이면 같은 높이이거나 한 칸 내려간다 (점프 규칙: 오르며 건너면 2칸).
+        // 난이도 PillarCrumbleMinDifficulty 이상이면 기둥 머리 하나가 무너지는 발판: 무너지면 한 칸 낮은 기둥 몸통에 내려선다.
+        public const float PillarCrumbleMinDifficulty = 0.5f;
+        public const int PillarMinTop = MinGround + 2; // 기둥이 너무 낮으면 낭떠러지 같지 않다
+
+        private static void BuildPillars(ChunkData chunk, int[] heights, bool[] occupied, Random rng)
+        {
+            int current = chunk.EntryHeight;
+            int x = 0;
+            for (; x < 4; x++) heights[x] = current;
+
+            var pillars = new List<int[]>(); // 시작 열, 폭, 높이
+            while (W - 4 - x >= 5)
+            {
+                int gap = chunk.Difficulty >= 0.4f && rng.NextDouble() < 0.4 ? 3 : 2;
+                int delta = gap == 3 ? PickDelta(rng, -1, 0) : PickDelta(rng, -2, -1, 0, 1, 1);
+                int prev = current;
+                // 낮게 들어왔으면 PillarMinTop까지 한 칸씩만 오른다. 오르는 칸이면 간격은 2 (오르며 3칸은 못 건넌다)
+                current = Math.Max(Math.Min(PillarMinTop, prev + 1), Math.Min(MaxGround, prev + delta));
+                if (current > prev) gap = 2;
+                for (int i = 0; i < gap; i++) heights[x++] = 0;
+
+                int width = Math.Min(chunk.Difficulty >= 0.35f && rng.NextDouble() < 0.5 ? 1 : 2, W - 4 - x);
+                pillars.Add(new[] { x, width, current });
+                for (int i = 0; i < width; i++) heights[x++] = current;
+            }
+
+            // 마지막 기둥 뒤 낭떠러지 한 번 더 (2칸) 건너 출구 평지
+            if (x <= W - 6) { heights[x++] = 0; heights[x++] = 0; }
+            for (; x < W; x++) heights[x] = current;
+
+            // 무너지는 머리: 맨 처음·맨 끝이 아닌 폭 2 기둥 하나
+            if (chunk.Difficulty >= PillarCrumbleMinDifficulty && pillars.Count >= 3)
+            {
+                var candidates = new List<int[]>();
+                for (int i = 1; i < pillars.Count - 1; i++) if (pillars[i][1] == 2) candidates.Add(pillars[i]);
+                if (candidates.Count > 0)
+                {
+                    var p = candidates[rng.Next(candidates.Count)];
+                    for (int i = 0; i < p[1]; i++) heights[p[0] + i] = p[2] - 1;
+                    ApplyHeights(chunk, heights);
+                    chunk.AddFeature(FeatureKind.Crumble, p[0], p[2] - 1, p[1]);
+                    for (int i = 0; i < p[1]; i++) occupied[p[0] + i] = true;
+                    return;
+                }
+            }
+
+            ApplyHeights(chunk, heights);
         }
 
         // 평지에 가시 줄이 이어진다. 3칸짜리 가시 위에는 발판을 놓아 밟고 건널 수 있게 한다.
