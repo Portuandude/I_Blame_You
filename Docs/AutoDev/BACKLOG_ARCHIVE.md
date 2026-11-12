@@ -3,6 +3,19 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
+## 2026-11-12 14:21 실행 (claude/project-thread-zpaf21)
+
+- DONE (claude/project-thread-zpaf21): 마을 첫 발견 연출 — 판에서 마을 방에 처음 들어오면 "마을 발견!" 알림 + 짧은 징글(`Tools/AudioGen` VillageFound, 오르골 3음) + 미니맵 집 아이콘 반짝. 두 번째부터는 조용히
+- DONE (claude/project-thread-zpaf21): NPC 반응 — 식당에서 음식을 사면 식당 주인, 상점에서 사고팔거나 리롤하면 상인이 말풍선 한 줄("맛있게 드세요!", "좋은 선택!", 리롤 결과가 나빠지면 "앗… 운이 없네요") + 톡 뛰기. 창이 열려 있어도 보이게 창을 닫은 뒤 1.5초
+- DONE (claude/project-thread-zpaf21): 마을 창 소리 — 식당·상점 창을 열 때 문 종소리(`ShopBell`, 작게), 닫을 때 소리 없음. 장비 리롤 때 주사위 굴림 소리(`Reroll`)
+- DONE (claude/project-thread-zpaf21): 마을 분위기 입자 — 식당 굴뚝(지붕 오른쪽)에서 김이 천천히 올라가고, 가로등 둘레에 반딧불 2~3개가 맴돈다 (콜라이더 없음, 화면 안일 때만)
+- DONE (claude/project-thread-zpaf21): 결과 창 골드 줄 — 이번 판 모은 골드·쓴 골드(식당·상점)를 요약 줄에 "골드 모음 N · 씀 M"으로 (`RunStats`에 쓴 골드 합계)
+- DONE (claude/project-thread-zpaf21): 마을 방 꾸미기 — 마을 방은 Rest 청크라 샘 방과 같은 청록 색조(`ChunkBuilder` Rest 틴트)를 받는다. 따뜻한 마을 색조 + 가로등·꽃·울타리 장식(그림 `Tools/ArtGen/generate_village.py`), 건물 사이 작은 분수. 적·함정은 계속 없게
+- DONE (claude/project-thread-zpaf21): 마을 NPC — 식당 주인·상인 작은 캐릭터(모자 쓴 슬라임 등, 눈 없음 규칙 확인: 슬라임은 눈 없음) 건물 문 옆에 Idle 2~4프레임. 가까이 가면 말풍선 한 줄
+- DONE (claude/project-thread-zpaf21): 마을 배경 음악 — 마을 방에 있는 동안 잔잔한 마을 곡(`Tools/AudioGen`, 90 BPM 오르골풍), 나오면 원래 던전 곡(깊이에 맞게 `ArenaZone.StageMusicFor`)
+- DONE (claude/project-thread-zpaf21): 식당 음식 아이콘 — 음식 5종 16~24px 아이콘(`Tools/ArtGen`), 식당 창 줄 왼쪽에. 산 음식은 머리 위에 잠깐 아이콘
+- DONE (claude/project-thread-zpaf21): 결과 창 장비 줄 — 게임오버·클리어 창에 이번 판 마지막 장비 3개를 작은 아이콘으로 (Docs/EquipmentDesign.md 8절, 유물 아이콘 줄 옆)
+
 ## 2026-11-12 14:00 실행 (claude/project-thread-41del8)
 
 - DONE (claude/project-thread-41del8): **진행도 시스템 삭제** — 스테이지 진행도(%) 개념과 HUD 스테이지 진행 막대를 없앤다. 지금 진행도에 묶인 것(중간보스 55% 지점, 마법 스위치 50%/이중 스위치 80% 이후, 50% 이후 Dungeon2 곡, 난이도 상승, `ClearPace`·결과 창 비교 등)은 **시작 방에서의 방 거리/깊이** 같은 다른 기준으로 옮긴다. 플레이어는 방을 돌아다니며 탐험하는 방식. 지운 코드는 Trash로, 테스트 갱신. 착수 전에 진행도를 쓰는 곳 목록과 대체 기준을 PR 설명에 적는다
