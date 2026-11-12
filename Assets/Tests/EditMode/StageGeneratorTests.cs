@@ -389,6 +389,26 @@ namespace IBlameYou.Tests
             Assert.Greater(doubles, 0, "이중 스위치 변형이 한 번도 나오지 않음");
         }
 
+        // 이중 스위치 퍼즐: 판마다(외길·방 격자 모두) 정확히 하나, 진행도 SwitchBridgeProgress 뒤에. 그 청크에는 룬 두 개·스위치 발판 두 개·안개 두 개.
+        [Test]
+        public void EveryStageHasOneDoubleSwitchPuzzle()
+        {
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                var stage = StageGenerator.Generate(seed, TargetSeconds);
+                var bridges = stage.Chunks.FindAll(c => c.Kind == ChunkKind.SwitchBridge);
+                Assert.AreEqual(1, bridges.Count, $"seed {seed}: 외길 이중 스위치 수");
+                Assert.GreaterOrEqual(bridges[0].Difficulty, StagePlanner.SwitchBridgeProgress, $"seed {seed}");
+                Assert.AreEqual(2, bridges[0].Features.FindAll(f => f.Kind == FeatureKind.PlatformSwitch).Count, $"seed {seed}: 룬 둘");
+                Assert.AreEqual(2, bridges[0].Features.FindAll(f => f.Kind == FeatureKind.MovingPlatform && f.SwitchDriven).Count, $"seed {seed}: 스위치 발판 둘");
+                Assert.AreEqual(2, bridges[0].Features.FindAll(f => f.Kind == FeatureKind.BlinkWard).Count, $"seed {seed}: 안개 둘");
+
+                var rooms = RoomLayout.Generate(seed, TargetSeconds).Rooms.FindAll(r => r.Chunk == ChunkKind.SwitchBridge);
+                Assert.AreEqual(1, rooms.Count, $"seed {seed}: 방 격자 이중 스위치 수");
+                Assert.AreEqual(RoomKind.Puzzle, rooms[0].Kind, $"seed {seed}");
+            }
+        }
+
         private const float RunJumpReach = 7.3f; // 달리기 점프로 건너는 가로 칸 (PlayerMovement 수치 기준 어림)
 
         // x열에서 땅 위 첫 빈 칸 높이 (서 있는 칸).
