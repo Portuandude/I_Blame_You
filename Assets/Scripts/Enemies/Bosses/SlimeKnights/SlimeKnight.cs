@@ -11,6 +11,8 @@ namespace IBlameYou.Enemies
     public class SlimeKnight : MonoBehaviour
     {
         public const string DisplayName = "쌍둥이 슬라임 기사";
+        private const string MidBossMusicName = "MidBoss"; // ArenaZone의 중간보스 곡
+        private const float EnragedMusicPitch = 1.08f;
         private const float NoticeInterval = 3f;
         private static readonly Color EnrageColor = new Color(1f, 0.45f, 0.4f);
         private static readonly List<SlimeKnight> knights = new List<SlimeKnight>();
@@ -71,7 +73,11 @@ namespace IBlameYou.Enemies
                 enraged = true;
             }
 
-            if (enraged) StageEvents.PostNotice("짝을 잃은 기사가 광폭화했다!");
+            if (enraged)
+            {
+                StageEvents.PostNotice("짝을 잃은 기사가 광폭화했다!");
+                if (GameAudio.CurrentMusic == MidBossMusicName) GameAudio.SetMusicPitch(EnragedMusicPitch); // 남은 기사 싸움은 곡도 조금 빠르게 (구역을 돌파해 곡이 바뀌면 원래대로)
+            }
             if (!partnerAlive) BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
         }
 
