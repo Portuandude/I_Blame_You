@@ -233,9 +233,23 @@ namespace IBlameYou.Enemies
             // 어미 슬라임은 분열 연출(SplitOnDeath)이 따로 있어 펑을 띄우지 않는다
             if (PlaysDeathPop && GetComponent<SplitOnDeath>() == null)
                 VfxPlayer.DeathPop(transform.position + Vector3.up * 0.4f, Mathf.Abs(transform.localScale.y));
+            if (IBlameYou.Core.RunGold.RankOf(this) == EnemyRank.Elite) PlayEliteDefeatFx();
             OnDied();
             Killed?.Invoke(this, Stats != null ? Stats.Stats.experience : 0f);
             Destroy(gameObject, destroyDelayAfterDeath);
+        }
+
+        // 정예 처치 연출 (전투 손맛, 2026-11-12): 어미 슬라임·고블린 대전사를 쓰러뜨리면 작은 화면 흔들림 + 몸 가운데에 큰 별 펑.
+        // 어미 슬라임은 분열 연출(SplitOnDeath)이 따로 있어 흔들림만. 등급은 골드 표와 같은 기준(RunGold.RankOf — 기사·킹은 제외).
+        private const float EliteShakeDuration = 0.18f;
+        private const float EliteShakeMagnitude = 0.1f;
+        private const float ElitePopScale = 1.8f;
+
+        private void PlayEliteDefeatFx()
+        {
+            IBlameYou.Core.CameraFollow.ShakeMain(EliteShakeDuration, EliteShakeMagnitude);
+            if (GetComponent<SplitOnDeath>() == null)
+                VfxPlayer.DeathPop(transform.position + Vector3.up * 0.6f, Mathf.Abs(transform.localScale.y) * ElitePopScale);
         }
 
         protected virtual void OnDestroy()
