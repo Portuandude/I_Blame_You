@@ -58,10 +58,10 @@ namespace IBlameYou.Systems
         }
 
         // 최대 마나를 늘린다 (늘어난 만큼 현재 마나도 채운다).
-        public void AddMax(float amount)
+        public void AddMax(float amount, bool fillCurrent = true)
         {
             maxMana += amount;
-            SetCurrent(current + Mathf.Max(amount, 0f));
+            SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
         // 회복 구슬 등에서 마나를 채운다 (사용/낭비 기록에는 넣지 않는다).
