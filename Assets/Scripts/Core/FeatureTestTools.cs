@@ -179,9 +179,9 @@ namespace IBlameYou.Core
                 $"F10 다음 구역: {FeatureTestStage.Names[(area + 1) % FeatureTestStage.Order.Length]}\n" +
                 $"F5 미니게임 전환: {mode}\n" +
                 "F11 결과 창 (누구 탓? 도장)\n" +
-                "F12 장비 끼기·빼기\n" +
+                "F12 장비 끼기·빼기 · 골드 +100 · 식당·상점 창\n" +
                 "F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복";
-            var rect = new Rect(Screen.width - 330f, 64f, 316f, 188f);
+            var rect = new Rect(Screen.width - 330f, 64f, 316f, 204f);
             GUI.Box(rect, GUIContent.none, box);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f), text, line);
         }
@@ -237,9 +237,11 @@ namespace IBlameYou.Core
 
             var slots = (EquipSlot[])Enum.GetValues(typeof(EquipSlot));
             float colWidth = (rect.width - 24f - 8f * (slots.Length - 1)) / slots.Length;
+            int maxRows = 0;
             for (int c = 0; c < slots.Length; c++)
             {
                 var defs = EquipmentBook.OfSlot(slots[c]);
+                maxRows = Mathf.Max(maxRows, defs.Count);
                 var current = equipment.Get(slots[c]);
                 for (int i = 0; i < defs.Count; i++)
                 {
@@ -259,8 +261,29 @@ namespace IBlameYou.Core
                 }
             }
 
+            // 마을 시험 (2026-11-12): 시험 맵에는 마을 방이 없어서 골드를 채우고 식당·상점 창을 바로 연다.
+            float by = rect.y + 52f + maxRows * 40f + 8f;
+            float bw = (rect.width - 24f - 16f) / 3f;
+            if (GUI.Button(new Rect(rect.x + 12f, by, bw, 30f), $"골드 +{TestGold} (지금 {RunStats.Gold})", cell))
+                RunStats.AddGold(TestGold);
+            if (GUI.Button(new Rect(rect.x + 12f + bw + 8f, by, bw, 30f), "식당 창 열기", cell))
+            {
+                StageEvents.VillageVisit++; // 열 때마다 새 방문: 음식을 종류별로 다시 살 수 있다
+                OpenVillageWindow(VillageService.Restaurant);
+            }
+            if (GUI.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
+                OpenVillageWindow(VillageService.Shop);
+
             if (!string.IsNullOrEmpty(GUI.tooltip))
                 GUI.Label(new Rect(rect.x + 12f, rect.yMax - 30f, rect.width - 24f, 24f), GUI.tooltip, line);
+        }
+
+        private const int TestGold = 100;
+
+        private void OpenVillageWindow(VillageService service)
+        {
+            equipWindowOpen = false; // 마을 창은 게임을 멈추고 위에 뜬다. 겹치지 않게 이 창은 닫는다
+            if (!StageEvents.RaiseVillageInteract(service)) StageEvents.PostNotice("마을 창을 열 수 없다 (HUD 없음)");
         }
     }
 }
