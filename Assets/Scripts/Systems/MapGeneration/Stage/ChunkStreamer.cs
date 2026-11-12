@@ -360,7 +360,7 @@ namespace IBlameYou.Systems
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
-            RoomDoorMarkers.Create(root, origin, room, geometries[index]);
+            RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms);
             // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
