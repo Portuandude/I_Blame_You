@@ -48,8 +48,6 @@ namespace IBlameYou.Tests
             Assert.AreEqual(4, Table.Roll(EnemyRank.Normal, 0.0, 0.9999));
             Assert.AreEqual(10, Table.Roll(EnemyRank.Elite, 0.9999, 0.0), "정예는 늘 떨어진다");
             Assert.AreEqual(20, Table.Roll(EnemyRank.Elite, 0.0, 0.9999));
-            Assert.AreEqual(100, Table.Roll(EnemyRank.Boss, 0.9999, 0.0));
-            Assert.AreEqual(200, Table.Roll(EnemyRank.Boss, 0.0, 0.9999));
         }
 
         [Test]
@@ -61,6 +59,13 @@ namespace IBlameYou.Tests
             Assert.AreEqual(50, hi);
             Assert.That(lo * 2, Is.GreaterThanOrEqualTo(50));
             Assert.That(hi * 2, Is.LessThanOrEqualTo(100));
+        }
+
+        [Test]
+        public void SplitKingSumStaysInRange()
+        {
+            Assert.AreEqual(50, Table.Roll(EnemyRank.Boss, 0.9999, 0.0), "슬라임 킹은 늘 떨어뜨리고 한 마리당 절반");
+            Assert.AreEqual(100, Table.Roll(EnemyRank.Boss, 0.0, 0.9999));
         }
 
         [Test]
