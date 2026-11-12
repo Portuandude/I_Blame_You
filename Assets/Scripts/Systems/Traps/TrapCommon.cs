@@ -25,7 +25,7 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 함정은 플레이어만 다치게 한다 (적은 함정을 피해 다니지 않으므로).
+        // 함정은 플레이어만 다치게 한다 (적은 함정을 피해 다니지 않으므로). 예외: 떨어지는 종유석은 적도 맞힌다 (Stalactite.StrikeEnemy).
         public static PlayerMovement PlayerFrom(Collider2D other)
         {
             return other != null ? other.GetComponentInParent<PlayerMovement>() : null;
