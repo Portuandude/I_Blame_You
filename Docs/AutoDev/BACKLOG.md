@@ -20,11 +20,6 @@
 
 ## 다음 (2026-11-12 03:40 자동 실행이 추가)
 
-- DONE (claude/project-thread-yzlt3y): 기능 테스트 모드 마을 시험 — 시험 맵에는 마을 방이 없어 식당·상점을 시험할 수 없다. F12 장비 창 아래에 "골드 +100", "식당 창 열기"(열 때마다 새 방문), "장비 상점 창 열기" 버튼 (`Core/FeatureTestTools`)
-- DONE (claude/project-thread-yzlt3y): 유물 복주머니 — 몬스터 골드 +50% (`RelicId.LuckyPouch`=26, 공용, `RunGold.OnEnemyKilled`에서 굴린 양에 곱하고 반올림, 0이면 그대로 0). 아이콘(`Tools/ArtGen/generate_relic_icons.py`)·설명·테스트·문서 (유물 27종)
-- DONE (claude/project-thread-yzlt3y): 유물 단골 도장 — 마을 식당·장비 상점에서 사는 값 -20% (`RelicId.RegularStamp`=27, 공용, 리롤·팔기 값은 그대로). 순수 데이터 쪽에 할인 계산 함수를 두고 테스트. 창 가격 표시도 할인값으로 (유물 28종)
-- DONE (claude/project-thread-yzlt3y): 복주머니 연출 — 복주머니로 더 받은 골드가 있을 때 동전과 함께 머리 위로 작은 복주머니가 톡 (`MedalGlintFx` 재사용, 한 처치에 한 번)
-- DONE (claude/project-thread-yzlt3y): 단골 도장 다듬기 — 장비 상점 값에도 "도장" 표시(리뷰 LOW), 할인받아 사면 머리 위로 작은 도장이 톡 (마을 창이 멈춰도 보이게 실제 시간)
 
 
 ## 우선순위 (2026-11-09 사람 지시): 비주얼 먼저
