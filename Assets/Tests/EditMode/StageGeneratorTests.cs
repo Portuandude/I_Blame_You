@@ -360,7 +360,7 @@ namespace IBlameYou.Tests
                         int farCliff = platform.X + platform.Width + platform.Direction; // 발판 건너편 첫 칸
 
                         // 2026-11-12 플레이테스트: 순간이동·대시로 건너면 안 된다. 낭떠러지 전체를 마력 안개(순간이동·대시 금지)가 덮고,
-                        // 폭은 달리기 점프(약 7.3칸)보다 넓다. 스위치 발판은 건너편 끝에 쉬므로 출발 쪽 발판 위에서 뛰어 줄일 수도 없다.
+                        // 폭은 달리기 점프(약 7.3칸)보다 넓다. 멈춘 스위치 발판은 밟을 수 없는 잠든 발판이라 그 위에서 뛰어 줄일 수도 없다 (MovingPlatform).
                         int gap = farCliff - platform.X;
                         Assert.Greater(gap, RunJumpReach, $"seed {seed}: {k}번 스위치 낭떠러지 폭 {gap}");
                         Assert.AreEqual(platform.X, wards[k].X, $"seed {seed}: {k}번 안개 시작");
