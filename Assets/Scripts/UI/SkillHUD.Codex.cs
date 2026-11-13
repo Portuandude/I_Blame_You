@@ -20,7 +20,7 @@ namespace IBlameYou.UI
         {
             if (codexLocked)
             {
-                if (!codexWindow.IsOpen || Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.Escape)) CloseCodex();
+                if (!codexWindow.IsOpen || Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.Escape)) CloseCodex(true);
                 return true;
             }
 
@@ -28,16 +28,17 @@ namespace IBlameYou.UI
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return false;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return false;
 
-            codexWindow.Show(GameSession.DevMode);
+            codexWindow.Show(GameSession.DevMode, relics != null ? relics.Owned : null); // 이번 판에 가진 유물에 "보유" 점
             codexLocked = true;
             control.Locked = true;
             Time.timeScale = 0f;
             return true;
         }
 
-        private void CloseCodex()
+        // playSound: 사람이 C·Esc로 닫을 때만 "통" (닫기 버튼은 창이 스스로 낸다, 쓰러짐·클리어로 닫힐 땐 조용히)
+        private void CloseCodex(bool playSound = false)
         {
-            codexWindow.Close();
+            codexWindow.Close(playSound);
             if (!codexLocked) return;
             codexLocked = false;
             Time.timeScale = 1f;
