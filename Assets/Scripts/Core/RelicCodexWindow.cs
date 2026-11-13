@@ -15,6 +15,9 @@ namespace IBlameYou.Core
         private bool codexDevMode;      // 보여 주는 모드 (열 때 정하고, 창 안에서 Tab으로 바꾼다)
         private readonly Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons = new Dictionary<IBlameYou.Player.RelicId, Texture2D>();
 
+        private IReadOnlyList<IBlameYou.Player.RelicId> runOwned; // 게임 중이면 이번 판에 가진 유물 (시작 화면은 null)
+        private bool runDevMode;        // 이번 판의 모드: 보유 점은 이 모드 화면에서만 (Tab으로 다른 모드를 보면 숨긴다)
+        private static readonly Color OwnedMint = new Color(0.45f, 1f, 0.8f);
         private int poppedCursor = -1;  // 아이콘 톡을 마지막으로 시작한 칸 (칸이 바뀌면 새로 톡)
         private float cursorPoppedAt = -10f;
         private const float IconPopTime = 0.2f;
@@ -27,8 +30,11 @@ namespace IBlameYou.Core
         public bool IsOpen { get; private set; }
 
         // dev: 처음 보여 줄 모드 (시작 화면은 메뉴 토글 값, 게임 중에는 지금 판의 모드). 고른 칸 없이 연다.
-        public void Show(bool dev)
+        // owned: 게임 중이면 이번 판에 가진 유물 — 그 칸 오른쪽 위에 민트색 "보유" 점을 찍는다. 시작 화면은 null.
+        public void Show(bool dev, IReadOnlyList<IBlameYou.Player.RelicId> owned = null)
         {
+            runOwned = owned;
+            runDevMode = dev;
             if (!IsOpen) GameAudio.PlaySfx("BookOpen", 0.6f); // 책 펼치는 "파라락" (특성 창과 같은 소리)
             IsOpen = true;
             codexCursor = -1;
@@ -147,6 +153,7 @@ namespace IBlameYou.Core
                     GUI.color = previous;
                 }
                 if (known) DrawOwnerBadge(IBlameYou.Player.RelicBook.Owner(id), new Vector2(cellRect.center.x - iconSize / 2f, cellRect.y + 4f + iconSize));
+                if (OwnedNow(id)) DrawOwnedDot(new Vector2(cellRect.center.x + iconSize / 2f, cellRect.y + 4f));
                 GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
             }
@@ -165,6 +172,7 @@ namespace IBlameYou.Core
             string info = hovered < 0 ? "칸에 마우스를 올리거나 방향키로 고르면 설명 · Tab: 다른 모드"
                 : RelicCodex.Has(mask, (int)all[hovered])
                     ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
+                      + (OwnedNow(all[hovered]) ? " (이번 판 보유)" : "")
                     : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
             var infoStyle = new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter, wordWrap = true, clipping = TextClipping.Clip };
             GUI.color = hovered >= 0 && RelicCodex.Has(mask, (int)all[hovered]) ? OutlinedLabel.Cream : new Color(1f, 1f, 1f, 0.6f);
@@ -192,6 +200,26 @@ namespace IBlameYou.Core
             GUI.color = previous;
             ownerBadge.normal.textColor = owner == "A" ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.65f, 0.3f);
             GUI.Label(rect, owner, ownerBadge);
+        }
+
+        // 이번 판에 가진 유물인가 (게임 중, 그 판의 모드 화면일 때만).
+        private bool OwnedNow(IBlameYou.Player.RelicId id)
+        {
+            if (runOwned == null || codexDevMode != runDevMode) return false;
+            for (int i = 0; i < runOwned.Count; i++)
+                if (runOwned[i] == id) return true;
+            return false;
+        }
+
+        // "보유" 점: 아이콘 오른쪽 위에 진한 테두리 + 민트색 점 (corner = 아이콘 오른쪽 위).
+        private static void DrawOwnedDot(Vector2 corner)
+        {
+            var previous = GUI.color;
+            GUI.color = new Color(0.12f, 0.08f, 0.22f, 0.9f * previous.a);
+            GUI.DrawTexture(new Rect(corner.x - 7f, corner.y - 2f, 10f, 10f), Texture2D.whiteTexture);
+            GUI.color = new Color(OwnedMint.r, OwnedMint.g, OwnedMint.b, previous.a);
+            GUI.DrawTexture(new Rect(corner.x - 5f, corner.y, 6f, 6f), Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         // 고른 칸 둘레에 금색 테두리 (2px, 칸 안쪽으로 조금 들여서).
