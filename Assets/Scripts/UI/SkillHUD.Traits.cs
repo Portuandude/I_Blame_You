@@ -99,6 +99,38 @@ namespace IBlameYou.UI
             DrawTraitPointsPill(new Vector2(rect.x, rect.y + 31f)); // gold 알약 + 숨쉬기 + 팝 (SkillHUD.TraitPoints.cs)
         }
 
+        // 특성 창에서 찍은 순간: 소리 + 그 카드 막대 반짝 + 마일스톤이면 별 팝 (unscaledTime: 창이 열린 동안 게임이 멈춰 있다)
+        private const float TraitRaiseFlashTime = 0.35f;
+        private const float TraitStarPopTime = 0.5f;
+        private float[] traitRaisedAt;
+        private bool[] traitRaisedMilestone;
+
+        private void OnTraitRaisedInWindow(int column, int rank)
+        {
+            if (traitRaisedAt == null) { traitRaisedAt = new float[TraitTree.All.Length]; traitRaisedMilestone = new bool[TraitTree.All.Length]; }
+            bool milestone = System.Array.IndexOf(TraitTree.Milestones, rank) >= 0;
+            traitRaisedAt[column] = Time.unscaledTime;
+            traitRaisedMilestone[column] = milestone;
+            if (milestone) GameAudio.PlaySfx("TraitMilestone", 0.7f);
+            else GameAudio.PlaySfx("TraitUp", 0.6f);
+        }
+
+        // 1(막 찍음) → 0. 찍은 적 없으면 0.
+        private float TraitRaiseFlash(int column)
+        {
+            if (traitRaisedAt == null || traitRaisedAt[column] <= 0f) return 0f;
+            return 1f - Mathf.Clamp01((Time.unscaledTime - traitRaisedAt[column]) / TraitRaiseFlashTime);
+        }
+
+        // 마일스톤을 막 달성한 카드의 별: 1 → 1.9배 → 1배 (TraitStarPopTime). 그 밖에는 1배.
+        private float TraitStarPopScale(int column)
+        {
+            if (traitRaisedAt == null || !traitRaisedMilestone[column] || traitRaisedAt[column] <= 0f) return 1f;
+            float t = (Time.unscaledTime - traitRaisedAt[column]) / TraitStarPopTime;
+            if (t < 0f || t >= 1f) return 1f;
+            return 1f + 0.9f * Mathf.Sin(t * Mathf.PI) * (1f - t * 0.3f);
+        }
+
         private void DrawTraitWindow()
         {
             if (!traitWindowOpen || progression == null) return;
@@ -136,7 +168,10 @@ namespace IBlameYou.UI
 
                 // 랭크 막대: gold 캡슐 바 (SkillHUD.Bars.cs, 빛 테두리 여백 BarGlow만큼 안쪽으로)
                 var bar = new Rect(column.x + 10f + BarGlow, column.y + 58f, column.width - 20f - 2f * BarGlow, BarHeight);
-                DrawCapsuleBar(bar, (float)rank / TraitTree.MaxRank, 0f, new Color(1f, 0.82f, 0.3f), new Color(1f, 0.9f, 0.55f), null);
+                // 방금 찍은 카드는 막대가 하얗게 반짝였다가 gold로 돌아온다 (2026-11-13 특성 연출)
+                float raised = TraitRaiseFlash(i);
+                DrawCapsuleBar(bar, (float)rank / TraitTree.MaxRank, 0f, Color.Lerp(new Color(1f, 0.82f, 0.3f), Color.white, raised * 0.85f),
+                    Color.Lerp(new Color(1f, 0.9f, 0.55f), Color.white, raised), null);
 
                 GUI.Label(new Rect(column.x + 10f, column.y + 80f, column.width - 20f, 22f), TraitTree.PerPoint(trait), small);
 
@@ -145,7 +180,12 @@ namespace IBlameYou.UI
                 {
                     bool unlocked = rank >= milestone;
                     string color = unlocked ? "#ffd84d" : "#8a8a8a";
-                    DrawMilestoneStar(new Rect(column.x + 8f, y, 14f, 14f), unlocked);
+                    var starRect = new Rect(column.x + 8f, y, 14f, 14f);
+                    var starMatrix = GUI.matrix;
+                    if (unlocked && rank == milestone) // 막 닿은 단계의 별은 크게 톡 튀었다 돌아온다
+                        GUIUtility.ScaleAroundPivot(Vector2.one * TraitStarPopScale(i), new Vector2(starRect.x + 7f, starRect.y + 8f));
+                    DrawMilestoneStar(starRect, unlocked);
+                    GUI.matrix = starMatrix;
                     GUI.Label(new Rect(column.x + 24f, y, column.width - 32f, 44f),
                         $"<color={color}>{milestone}: {TraitTree.MilestoneText(trait, milestone)}</color>", small);
                     y += 44f;
@@ -153,7 +193,9 @@ namespace IBlameYou.UI
 
                 GUI.enabled = progression.CanRaise(trait);
                 if (CuteButton.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기", cardButton))
-                    progression.Raise(trait);
+                {
+                    if (progression.Raise(trait)) OnTraitRaisedInWindow(i, progression.Rank(trait));
+                }
                 GUI.enabled = true;
                 GUI.matrix = previousMatrix;
             }
