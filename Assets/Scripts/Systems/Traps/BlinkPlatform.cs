@@ -37,7 +37,21 @@ namespace IBlameYou.Systems
 
         private BoxCollider2D solid;
         private SpriteRenderer[] renderers;
+        private Transform visual;
         private float offset;
+        private int width;
+
+        // 연출용 (BlinkPlatformFx): 지난 프레임 상태와 비교해 바뀌는 순간에만 한 번씩 낸다.
+        // 처음 그릴 때·다시 켜질 때(방을 다시 들어옴)는 상태만 기억하고 연출은 내지 않는다.
+        private enum State { Visible, Cloud, Gone }
+        private const float PopTime = 0.15f;  // 나타날 때 살짝 커졌다 제자리로 돌아오는 시간
+        private const float PopScale = 0.12f;
+        private const float StandMemory = 0.15f; // 플레이어가 위에 서 있었다고 기억하는 시간
+        private bool primed;
+        private State lastState;
+        private float popAge = PopTime;
+        private float standingUntil = -10f;
+        private Vector3 standingFeet;
 
         // topLeft: 발판 윗면 왼쪽 끝 (월드), width: 칸 수, beat: 박자 순번 (0부터).
         public static BlinkPlatform Create(Transform parent, Vector2 topLeft, int width, int beat)
@@ -59,6 +73,8 @@ namespace IBlameYou.Systems
 
             var visual = new GameObject("Visual").transform;
             visual.SetParent(go.transform, false);
+            platform.visual = visual;
+            platform.width = width;
             var sprite = TrapCommon.Frame("Crumble");
             for (int i = 0; i < width; i++)
                 TrapCommon.AddSprite(visual, $"Tile_{i}", sprite, new Vector2(i - (width - 1) / 2f, -0.05f),
@@ -69,7 +85,23 @@ namespace IBlameYou.Systems
             return platform;
         }
 
-        private void Update() => Apply();
+        private void OnEnable() => primed = false;
+
+        private void Update()
+        {
+            Apply();
+            UpdatePop();
+        }
+
+        // 플레이어가 윗면에 서 있으면 발 위치를 기억해 둔다 (꺼질 때 발밑 "퐁"과 먼지).
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            if (TrapCommon.PlayerFrom(collision.collider) == null) return;
+            var feet = collision.collider.bounds;
+            if (feet.min.y < solid.bounds.max.y - 0.12f) return; // 아래에서 뚫고 오르는 중
+            standingUntil = Time.time + StandMemory;
+            standingFeet = new Vector3(feet.center.x, solid.bounds.max.y, 0f);
+        }
 
         // 지금 박자 위치 (0 ~ Cycle). Time.time 기준이라 방을 다시 들어와도 다른 발판과 박자가 맞는다.
         private float Phase => Mathf.Repeat(Time.time - offset, Cycle);
@@ -89,11 +121,55 @@ namespace IBlameYou.Systems
                 alpha = GoneAlpha;
 
             if (solid.enabled != solidNow) solid.enabled = solidNow;
+            PlayFx(!solidNow ? State.Gone : cloud ? State.Cloud : State.Visible);
             foreach (var r in renderers)
             {
                 var c = cloud ? CloudColor : Body;
                 r.color = new Color(c.r, c.g, c.b, alpha);
             }
         }
+
+        // 상태가 바뀌는 순간의 그림·소리 (판정에는 영향 없음).
+        private void PlayFx(State now)
+        {
+            if (!primed)
+            {
+                primed = true;
+                lastState = now;
+                return;
+            }
+            if (now == lastState) return;
+            var center = transform.position;
+            if (now == State.Visible)
+            {
+                if (lastState == State.Cloud) BlinkPlatformFx.CloudFade(center, width); // 솜구름 유예 중 바로 다시 나타난 경우
+                BlinkPlatformFx.Appear(center, width);
+                popAge = 0f;
+            }
+            else if (now == State.Cloud)
+            {
+                BlinkPlatformFx.Vanish(center, width); // 하늘빛 발판은 흩어지고 솜구름이 대신 받쳐 준다
+                BlinkPlatformFx.CloudRise(center, width);
+            }
+            else
+            {
+                if (lastState == State.Cloud) BlinkPlatformFx.CloudFade(center, width);
+                else BlinkPlatformFx.Vanish(center, width);
+                if (Time.time <= standingUntil) BlinkPlatformFx.Underfoot(standingFeet);
+                standingUntil = -10f;
+            }
+            lastState = now;
+        }
+
+        // 나타날 때 발판이 살짝 커졌다 제자리로.
+        private void UpdatePop()
+        {
+            if (popAge >= PopTime) return;
+            popAge += Time.deltaTime;
+            float t = Mathf.Clamp01(popAge / PopTime);
+            float k = 1f + PopScale * Mathf.Sin(t * Mathf.PI);
+            visual.localScale = t >= 1f ? Vector3.one : new Vector3(k, k, 1f);
+        }
+
     }
 }
