@@ -31,6 +31,14 @@ namespace IBlameYou.Systems
         private float silentUntil = -1f; // SilenceMusic: 이 실제 시각까지 모든 곡을 0으로
         private const float MusicPitchSpeed = 0.5f; // 초당 바뀌는 빠르기 (1 → 1.08이 0.16초)
 
+        // 일시정지 중 먹먹한 음악 (SetMusicMuffled): 음악 소리만 자식 오브젝트에 두고 저역 통과 필터를 건다 (효과음·메뉴 딸깍은 그대로).
+        // 차단 주파수를 실제 시간으로 로그 눈금 위에서 옮겨 0.25초쯤에 먹먹해지고 풀린다. 다 풀리면 필터를 끈다.
+        private const float OpenCutoff = 22000f;
+        private const float MuffledCutoff = 800f;
+        private const float CutoffLogSpeed = 13f; // ln(22000/800) ≈ 3.3을 약 0.25초에
+        private AudioLowPassFilter musicFilter;
+        private bool musicMuffled;
+
         private static GameAudio Instance
         {
             get
@@ -79,6 +87,13 @@ namespace IBlameYou.Systems
             instance.silentUntil = Mathf.Max(instance.silentUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
         }
 
+        // 배경음악을 물속처럼 먹먹하게 (일시정지 창이 열린 동안). 크기는 그대로라 볼륨 막대를 움직이면 그 크기로 들린다.
+        public static void SetMusicMuffled(bool muffled)
+        {
+            if (instance == null && !muffled) return; // 되돌릴 것이 없으면 오브젝트를 새로 만들지 않는다
+            Instance.musicMuffled = muffled;
+        }
+
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
         public static string CurrentMusic => instance != null ? instance.currentMusicName : null;
 
@@ -98,16 +113,21 @@ namespace IBlameYou.Systems
         {
             voices = new AudioSource[SfxVoices];
             for (int i = 0; i < SfxVoices; i++) voices[i] = CreateSource(false);
-            musicA = CreateSource(true);
-            musicB = CreateSource(true);
+            var musicObject = new GameObject("Music");
+            musicObject.transform.SetParent(transform, false);
+            musicA = CreateSource(true, musicObject);
+            musicB = CreateSource(true, musicObject);
+            musicFilter = musicObject.AddComponent<AudioLowPassFilter>(); // 같은 오브젝트의 음악 소리에만 걸린다
+            musicFilter.cutoffFrequency = OpenCutoff;
+            musicFilter.enabled = false;
 
             // 메뉴 화면에는 아직 카메라가 없어서 소리를 들을 귀가 없다. 없을 때만 여기에 하나 둔다.
             if (FindAnyObjectByType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
         }
 
-        private AudioSource CreateSource(bool loop)
+        private AudioSource CreateSource(bool loop, GameObject owner = null)
         {
-            var source = gameObject.AddComponent<AudioSource>();
+            var source = (owner != null ? owner : gameObject).AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.loop = loop;
             source.spatialBlend = 0f; // 2D 게임이라 거리 감쇠 없이 그대로 들린다
@@ -166,6 +186,18 @@ namespace IBlameYou.Systems
             Fade(musicA, step, silent);
             Fade(musicB, step, silent);
             if (currentMusic != null) currentMusic.pitch = Mathf.MoveTowards(currentMusic.pitch, musicPitch, Time.unscaledDeltaTime * MusicPitchSpeed);
+            UpdateMusicFilter();
+        }
+
+        private void UpdateMusicFilter()
+        {
+            if (musicFilter == null) return;
+            float target = musicMuffled ? MuffledCutoff : OpenCutoff;
+            if (!musicFilter.enabled && !musicMuffled) return; // 풀린 상태 그대로
+            musicFilter.enabled = true;
+            float log = Mathf.MoveTowards(Mathf.Log(musicFilter.cutoffFrequency), Mathf.Log(target), Time.unscaledDeltaTime * CutoffLogSpeed);
+            musicFilter.cutoffFrequency = Mathf.Exp(log);
+            if (!musicMuffled && musicFilter.cutoffFrequency >= OpenCutoff - 1f) musicFilter.enabled = false;
         }
 
         private void Fade(AudioSource source, float step, bool silent)

@@ -60,6 +60,19 @@ namespace IBlameYou.Systems
         public int CurrentRoom => currentRoom;
         public bool IsRoomMode => rooms != null;
         public bool HasVisited(int index) => visitedRooms.Contains(index);
+        public int VisitedCount => visitedRooms.Count; // 일시정지 창 "방 N/M 탐험"
+
+        // 이 스테이지에 마을 방이 있으면 가 봤는지, 없으면(기능 테스트 빈 방 등) null.
+        public bool? VillageFound
+        {
+            get
+            {
+                if (rooms == null) return null;
+                foreach (var room in rooms.Rooms)
+                    if (room.Kind == RoomKind.Village) return visitedRooms.Contains(room.Index);
+                return null;
+            }
+        }
         // 미니맵 자물쇠: 아직 안 연 협동 봉인문이 있는 곁방 (RoomShaper.HasPairGate)
         public bool HasClosedPairGate(int index) =>
             rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);

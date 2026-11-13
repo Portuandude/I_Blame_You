@@ -141,6 +141,7 @@ namespace IBlameYou.UI
             SkillMessages.Posted -= OnSkillMessage;
             StageEvents.Notice -= OnStageNotice;
             StageEvents.Cleared -= OnStageCleared;
+            if (paused) GameAudio.SetMusicMuffled(false); // 일시정지 창이 열린 채 씬이 정리돼도 먹먹함이 남지 않게
             EnemyController.Killed -= OnEnemyKilled;
             RunGold.Arrived -= OnGoldArrived;
             RunStats.GoldSpentNow -= OnGoldSpent;
