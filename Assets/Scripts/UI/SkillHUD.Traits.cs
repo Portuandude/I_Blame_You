@@ -59,6 +59,25 @@ namespace IBlameYou.UI
         private static readonly Color LevelGlowColor = new Color(0.85f, 0.75f, 1f);
         private float levelFlashStart = -10f;
 
+        // 경험치 막대가 따라 차오르는 값. 레벨이 바뀌면 0부터 다시 (처음 그릴 때·이어하기는 바로 그 값).
+        private const float XpFillMinSpeed = 0.6f;  // 막대 비율/초 (작은 차이도 끝까지 가게)
+        private const float XpFillCatchUp = 6f;     // 남은 차이 × 이 값 /초 (큰 차이는 빠르게)
+        private float xpShown;
+        private int xpShownLevel = -1;
+        private float xpShownTime;
+
+        private float UpdateXpShown(float ratio)
+        {
+            if (xpShownLevel < 0) { xpShown = ratio; xpShownLevel = progression.Level; xpShownTime = Time.unscaledTime; return xpShown; }
+            if (progression.Level != xpShownLevel) { xpShown = 0f; xpShownLevel = progression.Level; }
+            if (Event.current.type != EventType.Repaint) return xpShown; // OnGUI는 한 프레임에 여러 번 불린다
+            float dt = Mathf.Min(0.1f, Time.unscaledTime - xpShownTime);
+            xpShownTime = Time.unscaledTime;
+            if (ratio <= xpShown) xpShown = ratio;
+            else xpShown = Mathf.MoveTowards(xpShown, ratio, Mathf.Max(XpFillMinSpeed, (ratio - xpShown) * XpFillCatchUp) * dt);
+            return xpShown;
+        }
+
         private void DrawLevelBar()
         {
             if (progression == null) return;
@@ -66,12 +85,14 @@ namespace IBlameYou.UI
             var rect = new Rect(12f, 204f, 360f, 30f);
             GUI.Box(rect, GUIContent.none, panel);
             float ratio = Mathf.Clamp01(progression.Experience / progression.XpToNext);
-            // 경험치 캡슐 바 (lilac). 레벨업 순간 gold로 반짝 빛나며 하얗게 찼다가 돌아온다.
+            float shown = UpdateXpShown(ratio);
+            // 경험치 캡슐 바 (lilac). 얻은 만큼 하얀 끝이 먼저 가고 lilac이 따라 차오른다 (2026-11-13).
+            // 레벨업 순간 gold로 반짝 빛나며 하얗게 찼다가 돌아온다.
             float flash = 1f - Mathf.Clamp01((Time.unscaledTime - levelFlashStart) / LevelFlashTime);
             var fill = Color.Lerp(LevelFillColor, Color.white, flash * 0.8f);
             var glow = Color.Lerp(LevelGlowColor, new Color(1f, 0.85f, 0.3f), flash);
             DrawCapsuleBar(new Rect(rect.x + 150f, rect.y + 6f, rect.width - 160f - BarGlow, BarHeight),
-                Mathf.Max(ratio, flash), 0f, fill, glow, null);
+                Mathf.Max(shown, flash), ratio, fill, glow, null);
 
             string points = progression.Points > 0 ? $"  <color=#ffd84d>+{progression.Points}</color>" : "";
             GUI.Label(new Rect(rect.x + 10f, rect.y + 4f, 140f, 24f), $"레벨 {progression.Level}{points}", small);
