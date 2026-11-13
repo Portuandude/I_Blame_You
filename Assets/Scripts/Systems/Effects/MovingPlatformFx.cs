@@ -13,10 +13,11 @@ namespace IBlameYou.Systems
         private static float lastStopSfx = -10f;
 
         // center: 발판 가운데, width: 칸 수, thickness: 발판 두께, side: 닿은 쪽 (+1 오른쪽 끝, -1 왼쪽 끝).
-        public static void Arrive(Vector3 center, int width, float thickness, float side)
+        // sound: false면 소리 없이 먼지만 (곧 잠드는 스위치 발판은 SwitchPlatformFx.Sleep 종소리가 대신 난다).
+        public static void Arrive(Vector3 center, int width, float thickness, float side, bool sound = true)
         {
             if (!SlimeSplitFx.OnScreen(center)) return;
-            if (Time.time - lastStopSfx >= StopSfxGap || Time.time < lastStopSfx)
+            if (sound && (Time.time - lastStopSfx >= StopSfxGap || Time.time < lastStopSfx))
             {
                 lastStopSfx = Time.time;
                 GameAudio.PlaySfx("PlatformStop", 0.45f);

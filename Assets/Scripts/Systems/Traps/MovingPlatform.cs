@@ -229,7 +229,7 @@ namespace IBlameYou.Systems
             bool atFar = Progress(t) > 0.5f; // 끝점(오른쪽)에 있는지
             if (atEnd)
             {
-                MovingPlatformFx.Arrive(body.position, width, Thickness, atFar ? 1f : -1f);
+                MovingPlatformFx.Arrive(body.position, width, Thickness, atFar ? 1f : -1f, !(switchDriven && Time.time >= activeUntil));
                 Dip(ArriveDip);
             }
             else if (!(switchDriven && Time.time - holdUntil < 0.25f)) // 깨어난 스위치 발판은 SwitchPlatformFx.Depart가 이미 낸다
