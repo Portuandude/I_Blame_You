@@ -139,3 +139,12 @@ DIRECTION ① "방 종류 늘리기" 중 사람 선택이 필요 없는 지형 �
 
 아트 컨셉은 **귀엽지만 화려하게** (둥글고 통통한 실루엣, 큰 눈, 채도 높은 색, 빛나는 테두리·반짝임·잔상). 그림은 `Tools/ArtGen/generate_sprites.py`(절차 생성)와 `.claude/skills/pixelfx`로 만들고, 기존 파일 이름·프레임 수·피벗(발 위치)을 지켜 교체해 코드 변경을 최소화한다. 사람이 직접 그린 그림(마법사 Idle, 슬라임 원본)도 새 그림으로 **덮어써도 된다** (2026-11-09 사람 지시, 원본은 git 기록에 남는다).
 
+## 다음 (2026-11-13 10:05 자동 실행이 추가 — 고블린 대전사 광폭화 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 정예 고블린 대전사 광폭화가 켜지고·이어지고·풀리는 때가 잘 읽히게. 광폭화 조건·시간·수치 그대로 (그림·소리만, `KnightEnrageFx` 재사용).
+
+- DONE (claude/project-thread-ysmsrs): 켜지는 순간 0.06초 히트스톱 + 붉은 큰 고리
+- DONE (claude/project-thread-ysmsrs): 광폭화 중 머리 위 붉은 김
+- DONE (claude/project-thread-ysmsrs): 광폭화 추격처럼 옆으로 빠를 때 붉은 잔상
+- DONE (claude/project-thread-ysmsrs): 풀리기 3초 전부터 붉은 깜빡임이 빨라짐 (곧 풀린다는 예고)
+- DONE (claude/project-thread-ysmsrs): 시간이 다 돼 풀리면 회색 김 + "헉헉…" + `EnrageEnd`
