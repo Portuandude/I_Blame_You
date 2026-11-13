@@ -35,7 +35,7 @@ namespace IBlameYou.Core
         private float openedAt = -1f; // 패널이 처음 그려진 시각 (톡 커지는 연출)
         private const float PopTime = 0.3f;
         private float[] letterWidths;  // 제목 글자별 폭 (글자마다 물결치게 따로 그린다)
-        private int keyActivate = -1;
+        private int keyActivate = -1; // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
         private bool activateKeyHeld; // Enter·Space를 누른 채면 키 반복으로 "새로 시작" 확인이 저절로 넘어가지 않게, 뗄 때까지 무시
         private string[] letters;     // 제목 글자 (매 프레임 ToString 하지 않게)
         private int tipIndex = -1;    // 오늘의 팁 (처음 그릴 때 무작위)
@@ -45,7 +45,6 @@ namespace IBlameYou.Core
         private Texture2D glow;        // 반딧불 둥근 빛 (한 번 만든다)
         private Vector4[] fireflies;   // 반딧불마다 (가로 자리 0~1, 처음 높이 0~1, 오르는 속도, 깜빡임 위상)
         private const int FireflyCount = 26;
- // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
 
         public void Initialize(Action startCallback, Action continueCallback = null)
         {
@@ -102,6 +101,8 @@ namespace IBlameYou.Core
                 e.Use();
             }
             if (!display.IsOpen && !codex.IsOpen) HandleMenuKeys(e);
+            else if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
+                activateKeyHeld = false; // 창이 열린 동안 뗐어도 풀어 둔다 (닫은 뒤 첫 Enter가 무시되지 않게, 리뷰 LOW)
             bool wasEnabled = GUI.enabled;
             GUI.enabled = !codex.IsOpen && !display.IsOpen; // 도감·화면 설정 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
@@ -403,7 +404,7 @@ namespace IBlameYou.Core
             tipHeightWidth = innerWidth;
             tipMaxHeight = 0f;
             for (int i = 0; i < Tips.Length; i++)
-                tipMaxHeight = Mathf.Max(tipMaxHeight, recordSmall.CalcHeight(new GUIContent(TipLabel(i)), innerWidth));
+                tipMaxHeight = Mathf.Max(tipMaxHeight, recordSmall.CalcHeight(new GUIContent(TipLabel(i)), innerWidth - recordSmall.margin.horizontal));
             return tipMaxHeight;
         }
 
