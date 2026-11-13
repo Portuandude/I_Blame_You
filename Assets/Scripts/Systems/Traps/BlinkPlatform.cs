@@ -139,6 +139,12 @@ namespace IBlameYou.Systems
                 return;
             }
             if (now == lastState) return;
+            // 일시정지 중이거나 사라진 동안 솜구름 유물을 얻은 경우(Gone → Cloud)는 실제로 바뀐 게 없으니 상태만 기억한다.
+            if (Time.timeScale == 0f || (now == State.Cloud && lastState == State.Gone))
+            {
+                lastState = now;
+                return;
+            }
             var center = transform.position;
             if (now == State.Visible)
             {
