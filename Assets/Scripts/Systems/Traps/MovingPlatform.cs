@@ -40,6 +40,16 @@ namespace IBlameYou.Systems
         private bool everWoke;      // 한 번이라도 깨어났는지 (스테이지 시작 때 잠듦 연출이 나지 않게)
         private bool departPending; // 깨어난 뒤 아직 출발하지 않음
         private float wakeAt = -10f;
+        // 도착·출발 연출 (MovingPlatformFx, 그림·소리만): 지난 물리 프레임에 끝에 멈춰 있었는지와 비교한다.
+        private const float DipTime = 0.2f;     // 끝에 닿거나 누가 내려앉을 때 판자가 눌렸다 펴지는 시간
+        private const float ArriveDip = 0.06f;
+        private const float LandDip = 0.08f;
+        private const float DepartWarn = 0.3f;  // 멈춤 마지막 이 시간 동안 판자가 살짝 밝아진다
+        private bool endPrimed;
+        private bool wasAtEnd;
+        private float dipAt = -10f;
+        private float dipDepth;
+        private bool warnTinted;
 
         public bool SwitchDriven => switchDriven;
         public bool Idle => switchDriven && Time.time >= activeUntil && AtEnd(clock);
@@ -193,20 +203,69 @@ namespace IBlameYou.Systems
                 }
                 else if (wasIdle != Idle) ApplyPlankColor();
             }
+            UpdateEndFx();
             var target = Vector2.Lerp(start, end, Progress(CurrentTime()));
             var delta = target - body.position;
             CarryRiders(delta);
             body.MovePosition(target);
         }
 
-        // 깨어남 연출: 판자가 톡 튀었다 내려앉고, 출발 여유 동안 점점 빠르게 밝아졌다 어두워진다 (그림만).
+        private void OnEnable() => endPrimed = false;
+
+        // 끝에 닿는 순간·떠나는 순간 (그림·소리만). 처음 프레임·다시 켜진 뒤 첫 프레임은 상태만 기억한다.
+        private void UpdateEndFx()
+        {
+            float t = CurrentTime();
+            bool atEnd = AtEnd(t);
+            if (!endPrimed)
+            {
+                endPrimed = true;
+                wasAtEnd = atEnd;
+                return;
+            }
+            if (atEnd == wasAtEnd) return;
+            wasAtEnd = atEnd;
+            int width = planks != null ? planks.Length : 1;
+            bool atFar = Progress(t) > 0.5f; // 끝점(오른쪽)에 있는지
+            if (atEnd)
+            {
+                MovingPlatformFx.Arrive(body.position, width, Thickness, atFar ? 1f : -1f);
+                Dip(ArriveDip);
+            }
+            else if (!(switchDriven && Time.time - holdUntil < 0.25f)) // 깨어난 스위치 발판은 SwitchPlatformFx.Depart가 이미 낸다
+            {
+                MovingPlatformFx.Depart(body.position, width, Thickness, atFar ? 1f : -1f);
+            }
+        }
+
+        private void Dip(float depth)
+        {
+            dipAt = Time.time;
+            dipDepth = depth;
+        }
+
+        // 플레이어가 위로 내려앉는 순간 판자가 살짝 눌렸다 펴진다 (그림만).
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (TrapCommon.PlayerFrom(collision.collider) == null) return;
+            if (collision.collider.bounds.min.y < solid.bounds.max.y - 0.12f) return; // 옆이나 아래에서 부딪힘
+            if (Mathf.Abs(collision.relativeVelocity.y) < 1f) return; // 거의 떨어지지 않고 미끄러져 올라옴
+            Dip(LandDip);
+        }
+
+        // 판자 그림: 깨어남 톡 튀기·눌림·출발 직전 밝아짐 (스위치 발판은 출발 여유 동안 점점 빠르게 밝아졌다 어두워진다).
         private void LateUpdate()
         {
-            if (!switchDriven || planks == null || plankPositions == null) return;
+            if (planks == null || plankPositions == null) return;
             float since = Time.time - wakeAt;
-            float lift = since >= 0f && since < WakePopTime ? Mathf.Sin(since / WakePopTime * Mathf.PI) * WakePopHeight : 0f;
+            float lift = switchDriven && since >= 0f && since < WakePopTime ? Mathf.Sin(since / WakePopTime * Mathf.PI) * WakePopHeight : 0f;
+            float sinceDip = Time.time - dipAt;
+            if (sinceDip >= 0f && sinceDip < DipTime) lift -= Mathf.Sin(sinceDip / DipTime * Mathf.PI) * dipDepth;
             for (int i = 0; i < planks.Length; i++)
                 if (planks[i] != null) planks[i].transform.localPosition = plankPositions[i] + Vector3.up * lift;
+
+            UpdateDepartWarn();
+            if (!switchDriven) return;
 
             if (!departPending || Time.time >= holdUntil) return;
             float p = Mathf.Clamp01(1f - (holdUntil - Time.time) / SwitchStartDelay);
@@ -216,6 +275,29 @@ namespace IBlameYou.Systems
             c.a = plankColor.a;
             foreach (var plank in planks)
                 if (plank != null) plank.color = c;
+        }
+
+        // 멈춤 마지막 DepartWarn초 동안 판자가 살짝 밝아져 곧 떠난다는 걸 알린다. 잠든 스위치 발판·깨어난 직후 출발 여유는 제외.
+        private void UpdateDepartWarn()
+        {
+            float t = CurrentTime();
+            float remain = PauseEnd(t) - t;
+            bool moving = !switchDriven || (Time.time < activeUntil && !departPending);
+            bool warn = moving && AtEnd(t) && remain < DepartWarn;
+            if (warn)
+            {
+                float k = 1f - Mathf.Clamp01(remain / DepartWarn);
+                var c = Color.Lerp(plankColor, Color.white, 0.35f * k);
+                c.a = plankColor.a;
+                foreach (var plank in planks)
+                    if (plank != null) plank.color = c;
+                warnTinted = true;
+            }
+            else if (warnTinted)
+            {
+                warnTinted = false;
+                ApplyPlankColor();
+            }
         }
 
         // 발판 윗면 바로 위에 살아 있는 몸(플레이어·적)이 있는지. 잠든 발판으로 바꾸기 전에 본다.
