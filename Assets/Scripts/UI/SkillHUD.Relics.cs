@@ -73,6 +73,7 @@ namespace IBlameYou.UI
             relicCancelled = null; // 골랐으니 취소 콜백은 부르지 않는다
             CloseRelicWindow(true);
             callback?.Invoke(chosen);
+            if (OwnsRelic(chosen)) StartRelicFly(chosen, index); // 아이콘이 HUD 유물 칸으로 날아간다 (SkillHUD.RelicFly.cs)
             feed.Add(new FeedEntry { Time = Time.time, Text = $"유물: {RelicBook.Name(chosen)} · {RelicBook.Description(chosen)}", Color = new Color(1f, 0.85f, 0.4f) });
             if (feed.Count > MaxFeed) feed.RemoveAt(0);
         }
@@ -153,6 +154,14 @@ namespace IBlameYou.UI
                 : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
         }
 
+        private bool OwnsRelic(RelicId id)
+        {
+            if (relics == null) return false;
+            for (int i = 0; i < relics.Owned.Count; i++)
+                if (relics.Owned[i] == id) return true;
+            return false;
+        }
+
         // 유물 한 줄에 하나: "이름 — 효과".
         private static string RelicLine(RelicId id) => $"{RelicBook.Name(id)} — {RelicBook.Description(id)}";
 
@@ -224,7 +233,9 @@ namespace IBlameYou.UI
                 DrawCard(card, owner);
 
                 string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
-                DrawRelicIcon(id, new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f)); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
+                var iconRect = new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f);
+                if (i < relicCardIcons.Length) relicCardIcons[i] = iconRect; // 고르면 여기서 날아간다 (SkillHUD.RelicFly.cs)
+                DrawRelicIcon(id, iconRect); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW

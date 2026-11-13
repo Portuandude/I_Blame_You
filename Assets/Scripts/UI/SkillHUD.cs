@@ -330,6 +330,7 @@ namespace IBlameYou.UI
             DrawHelp();
             DrawTraitWindow();
             DrawRelicWindow();
+            DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)
             DrawEquipCard();
             DrawVillageWindow();
             DrawPauseMenu();

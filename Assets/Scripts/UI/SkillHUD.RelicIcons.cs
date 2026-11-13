@@ -198,7 +198,9 @@ namespace IBlameYou.UI
                 bool hasIcon = RelicIcon(id) != null;
                 if (hasIcon)
                 {
-                    DrawRelicIconWithCharges(id, new Rect(x, RelicListY + (height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize));
+                    var slot = new Rect(x, RelicListY + (height - RelicListIconSize) * 0.5f, RelicListIconSize, RelicListIconSize);
+                    RecordRelicSlot(id, slot); // 고른 유물이 날아올 칸 (SkillHUD.RelicFly.cs)
+                    if (!RelicSlotHidden(id)) DrawRelicIconWithCharges(id, slot);
                     x += RelicListIconSize + 3f;
                 }
                 if (iconsOnly && hasIcon) continue;
