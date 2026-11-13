@@ -785,7 +785,26 @@ namespace IBlameYou.Systems
                 StageEvents.PostNotice(entered.Kind == RoomKind.Treasure ? "보물 방 발견!" : "회복 샘 발견!");
                 GameAudio.PlaySfx("Pickup", 0.6f, 0f);
             }
+            // 보스 방 바로 옆 방 (보스를 아직 안 잡았을 때): 배경음악을 조금 줄이고, 처음 들어왔을 때 낮은 심장 "두-근" (Tools/AudioGen BossNear)
+            bool nearBoss = !bossCleared && NextToBoss(entered);
+            GameAudio.SetMusicDuck(nearBoss ? BossNearMusicDuck : 1f);
+            if (nearBoss && firstVisit) GameAudio.PlaySfx("BossNear", 0.9f, 0f);
             RoomEntered?.Invoke(index);
+        }
+
+        private const float BossNearMusicDuck = 0.55f;
+
+        // 문으로 이어진 이웃 방 중에 보스 방이 있는가 (보스 방 자신은 아니다)
+        private bool NextToBoss(RoomData room)
+        {
+            if (room.Kind == RoomKind.Boss) return false;
+            foreach (var dir in new[] { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down })
+            {
+                if ((room.Doors & dir) == 0) continue;
+                var next = rooms.Neighbor(room, dir);
+                if (next != null && next.Kind == RoomKind.Boss) return true;
+            }
+            return false;
         }
 
         // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
@@ -793,6 +812,7 @@ namespace IBlameYou.Systems
 
         private void OnDestroy()
         {
+            GameAudio.SetMusicDuck(1f); // 보스 방 앞에서 판이 끝나도 다음 화면 음악은 원래 크기로
             StageEvents.Depth = 0f;
             StageEvents.RoomDistance = -1;
             StageEvents.FarthestDistance = -1;
