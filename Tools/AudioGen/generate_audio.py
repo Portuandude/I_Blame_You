@@ -1018,6 +1018,35 @@ def tentacle_snap():
     return normalize(fade_edges(lowpass(out, 7000)))
 
 
+def king_fall():
+    """슬라임 킹 내려찍기가 떨어지기 시작할 때: 아래로 휘는 짧은 "휘이익" (내려가는 사인 + 바람 띠 잡음), 0.35초."""
+    n = int(0.35 * SR)
+    t = np.arange(n) / SR
+    env = np.minimum(1.0, t / 0.04) * np.exp(-np.maximum(0.0, t - 0.2) / 0.06)
+    whistle = osc("sine", 900.0 - 600.0 * (t / t[-1]), n) * env * 0.45
+    wind = bandpass(noise(n), 500.0, 2500.0) * env * 0.5
+    return normalize(fade_edges(lowpass(whistle + wind, 6000)))
+
+
+def king_slam():
+    """슬라임 킹 내려찍기 착지: 무겁고 젖은 "철퍼덕" (아주 낮은 사인 쿵 + 넓은 젤리 잡음 + 꼬리 출렁임), 0.6초."""
+    n = int(0.6 * SR)
+    t = np.arange(n) / SR
+    thud = osc("sine", 55.0 + 120.0 * np.exp(-t * 18), n) * np.exp(-t / 0.18)
+    splat = bandpass(noise(n), 120.0, 1500.0) * np.minimum(1.0, t / 0.004) * np.exp(-t / 0.07) * 0.8
+    wobble = osc("sine", 140.0 + 25.0 * np.sin(2 * np.pi * 7.0 * t), n) * np.exp(-np.maximum(0.0, t - 0.05) / 0.12) * 0.3 * (t > 0.05)
+    return normalize(fade_edges(lowpass(thud + splat + wobble, 4500)))
+
+
+def king_land():
+    """슬라임 킹 박치기 착지: 둔하고 짧은 "쿵" (낮은 사인 + 작은 질척 잡음), 0.3초."""
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    thud = osc("sine", 70.0 + 90.0 * np.exp(-t * 25), n) * np.exp(-t / 0.09)
+    goo = bandpass(noise(n), 200.0, 1000.0) * np.minimum(1.0, t / 0.003) * np.exp(-t / 0.04) * 0.5
+    return normalize(fade_edges(lowpass(thud + goo, 4000)))
+
+
 def brood_tick():
     """슬라임 무리 합체 임박(마지막 5초) 초마다: 젤리 같은 짧은 "똑" (아래로 휘는 사인 + 아주 작은 클릭), 0.14초."""
     n = int(0.14 * SR)
@@ -1551,7 +1580,7 @@ def main():
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "EnemyWindup": enemy_windup, "ShieldUp": shield_up, "ShieldBlock": shield_block, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
         "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "ChestCreak": chest_creak, "RelicSlot": relic_slot, "BookOpen": book_open, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "RunStart": run_start, "BossDefeat": boss_defeat, "PlayerDown": player_down,
-        "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage, "KnightLink": knight_link, "EnrageEnd": enrage_end, "SlimeSplit": slime_split, "BroodTick": brood_tick, "BroodMerge": brood_merge, "BroodGulp": brood_gulp, "BroodClear": brood_clear, "TentacleLash": tentacle_lash, "TentacleSlap": tentacle_slap, "TentacleGrab": tentacle_grab, "TentacleSnap": tentacle_snap,
+        "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage, "KnightLink": knight_link, "EnrageEnd": enrage_end, "SlimeSplit": slime_split, "BroodTick": brood_tick, "BroodMerge": brood_merge, "BroodGulp": brood_gulp, "BroodClear": brood_clear, "TentacleLash": tentacle_lash, "TentacleSlap": tentacle_slap, "TentacleGrab": tentacle_grab, "TentacleSnap": tentacle_snap, "KingFall": king_fall, "KingSlam": king_slam, "KingLand": king_land,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
@@ -1559,7 +1588,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08, "KingFall": 0.07}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
