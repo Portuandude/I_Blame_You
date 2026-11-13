@@ -8,6 +8,8 @@ namespace IBlameYou.UI
 {
     // 장비 비교 카드 (Docs/EquipmentDesign.md 8절): 바닥의 장비(EquipmentPickup)에 닿으면 열린다.
     // 왼쪽 지금 장비, 오른쪽 새 장비, 능력치 차이를 초록(+)/빨강(-)으로. 1 = 바꿔 끼기, 2 = 두고 가기 (클릭도 됨).
+    // 키보드: ←→·A/D로 두 버튼 중 하나를 고르고(첫 화살표는 "바꿔 끼기"를 보여 주기만) Enter·Space로 누른다 (유물 창과 같은 방식).
+    // 열 때 "또롱"(PauseOpen)과 함께 배경 어둠이 0.15초에 깔린다.
     // 유물 창과 같은 방식으로 게임을 멈추고 조작을 잠근다. 영창·미니게임·다른 창이 열려 있으면 열지 않는다.
     public partial class SkillHUD
     {
@@ -18,6 +20,10 @@ namespace IBlameYou.UI
         private int equipCardOpenedFrame;
         private float equipCardOpenedAt;
         private int equipCardUnlockFrame = -1;
+        private bool equipCardKeyboard;
+        private int equipCardChoice; // 0 = 바꿔 끼기, 1 = 두고 가기
+        private const float EquipCardKeysDelay = 0.4f; // A/D·Space는 이동·점프 키라 카드가 다 뜨기 전엔 안 받는다
+        private const float EquipCardFadeTime = 0.15f;
 
         private void InitializeEquipmentCard()
         {
@@ -38,8 +44,11 @@ namespace IBlameYou.UI
             equipCardDecided = decided;
             equipCardOpenedFrame = Time.frameCount;
             equipCardOpenedAt = Time.unscaledTime;
+            equipCardKeyboard = false;
+            equipCardChoice = 0;
             control.Locked = true;
             Time.timeScale = 0f;
+            GameAudio.PlaySfx("PauseOpen", 0.6f, 0.03f);
             return true;
         }
 
@@ -69,6 +78,22 @@ namespace IBlameYou.UI
             if (!equipCardOpen || Time.frameCount <= equipCardOpenedFrame) return;
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) CloseEquipCard(true, true);
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) CloseEquipCard(false, true);
+            else if (Time.unscaledTime - equipCardOpenedAt >= EquipCardKeysDelay)
+            {
+                bool left = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A);
+                bool right = Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D);
+                if (left || right)
+                {
+                    if (equipCardKeyboard) equipCardChoice = right ? 1 : 0;
+                    equipCardKeyboard = true;
+                    GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                }
+                else if (equipCardKeyboard && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space)))
+                {
+                    GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                    CloseEquipCard(equipCardChoice == 0, true);
+                }
+            }
         }
 
         private void DrawEquipCard()
@@ -84,14 +109,14 @@ namespace IBlameYou.UI
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(16f, (Screen.height - height) / 2f), width, height);
 
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - equipCardOpenedAt) / EquipCardFadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비", big);
-            GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f), "A와 B가 함께 쓰는 한 벌 · 1 바꿔 끼기 · 2 두고 가기",
+            GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f), equipCardKeyboard ? "A와 B가 함께 쓰는 한 벌 · ←→ 고르기 · Enter 누르기" : "A와 B가 함께 쓰는 한 벌 · 1 바꿔 끼기 · 2 두고 가기 · ←→ 고르기",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             var oldStats = equipCardOld != null ? equipCardOld.Stats() : new List<StatValue>();
@@ -103,8 +128,11 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(left.xMax, left.y + cardHeight / 2f - 16f, gap, 32f), "→", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
 
             float by = rect.yMax - 48f;
-            if (CuteButton.Button(new Rect(rect.center.x - 170f, by, 160f, 34f), "1. 바꿔 끼기", cardButton)) CloseEquipCard(true);
-            else if (CuteButton.Button(new Rect(rect.center.x + 10f, by, 160f, 34f), "2. 두고 가기", cardButton)) CloseEquipCard(false);
+            var takeRect = new Rect(rect.center.x - 170f, by, 160f, 34f);
+            var leaveRect = new Rect(rect.center.x + 10f, by, 160f, 34f);
+            if (equipCardKeyboard) CuteButton.DrawSelection(equipCardChoice == 0 ? takeRect : leaveRect);
+            if (CuteButton.Button(takeRect, "1. 바꿔 끼기", cardButton)) CloseEquipCard(true);
+            else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton)) CloseEquipCard(false);
         }
 
         // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에 빨강으로).
