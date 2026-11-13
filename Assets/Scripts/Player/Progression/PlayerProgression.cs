@@ -15,6 +15,10 @@ namespace IBlameYou.Player
         private const float PatienceDefensePerPoint = 2f;
         private const float MysticManaPerPoint = 5f;
         private const float VitalityHealthPerPoint = 5f;
+        private const float LevelBannerHeight = 2.4f;   // "버텼다!" 띠와 같은 높이
+        private const float LevelEdgeTime = 0.5f;
+        private static readonly Color LevelRingColor = new Color(1f, 0.85f, 0.3f, 0.9f); // palette.py gold
+        private static readonly Color LevelEdgeColor = new Color(1f, 0.85f, 0.3f, 1f);
 
         private readonly int[] ranks = new int[TraitTree.All.Length];
 
@@ -89,11 +93,14 @@ namespace IBlameYou.Player
                 LeveledUp?.Invoke(Level);
             }
 
-            // 한 번에 여러 레벨이 올라도 빛기둥은 하나만 (RestoreProgress는 여기를 지나지 않아 이어하기에는 안 뜬다)
+            // 한 번에 여러 레벨이 올라도 빛기둥·띠·고리·가장자리는 하나만 (RestoreProgress는 여기를 지나지 않아 이어하기에는 안 뜬다)
             if (Level > levelBefore)
             {
                 var movement = GetComponent<PlayerMovement>();
                 VfxPlayer.LevelUp(transform, movement != null ? movement.FeetLocalY : 0f);
+                VfxPlayer.RelicBanner(transform.position + Vector3.up * LevelBannerHeight, "레벨 업!"); // 머리 위 띠 (2026-11-13 레벨업 연출)
+                VfxPlayer.ManaRing(transform, Vector3.zero, LevelRingColor);                           // 몸 둘레 금빛 고리
+                ScreenFlash.EdgeWarn(LevelEdgeColor, LevelEdgeTime, onlyIfIdle: true);                 // 화면 가장자리 금빛 (경고 깜빡임 중이면 덮지 않는다)
             }
         }
 
