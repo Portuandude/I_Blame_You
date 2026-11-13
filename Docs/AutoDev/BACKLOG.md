@@ -20,11 +20,12 @@
 
 DIRECTION ① "플레이 감각 다듬기" 중 이동·전투·함정 다음 차례인 **소리**. 소리가 없던 동작에 효과음을 붙인다. 수치·밸런스는 안 바꾼다.
 
-- TODO: 순간이동 효과음 `Blink` (Tools/AudioGen) — 지금 순간이동은 소리가 없다. 위로 올라가는 반짝 "슝"
-- TODO: 실패 효과음 `Fizzle` — 마나 부족·순간이동 불가·영창 오타처럼 빨간(실패) 스킬 알림이 뜰 때 낮고 짧은 "푸슉" (SkillMessages 한 곳에서, 0.2초 쿨다운)
-- TODO: 발소리 `Step` — 땅에서 걷거나 달릴 때 작고 부드러운 발소리 (걷기 0.34초·달리기 0.24초 간격, 벽에 막혀 제자리면 안 남)
-- TODO: 메뉴 버튼 소리 `UiClick` — 시작 화면·일시정지·상점 등 IMGUI 버튼을 누르면 작은 "톡"
-- TODO: 보스 방 앞 분위기 — 보스 방 바로 옆 방에 들어오면(보스를 아직 안 잡았을 때) 배경음악이 조금 작아지고 낮은 "두근" `BossNear` 한 번
+- DONE (claude/project-thread-0xe6cj): 순간이동 효과음 `Blink` (Tools/AudioGen) — 지금 순간이동은 소리가 없다. 위로 올라가는 반짝 "슝"
+- DONE (claude/project-thread-0xe6cj): 실패 효과음 `Fizzle` — 마나 부족·순간이동 불가·영창 오타처럼 빨간(실패) 스킬 알림이 뜰 때 낮고 짧은 "푸슉" (SkillMessages 한 곳에서, 0.2초 쿨다운)
+- DONE (claude/project-thread-0xe6cj): 발소리 `Step` — 땅에서 걷거나 달릴 때 작고 부드러운 발소리 (걷기 0.34초·달리기 0.24초 간격, 벽에 막혀 제자리면 안 남)
+- DONE (claude/project-thread-0xe6cj): 메뉴 버튼 소리 `UiClick` — 시작 화면·일시정지·상점 등 IMGUI 버튼을 누르면 작은 "톡"
+- DONE (claude/project-thread-0xe6cj): 보스 방 앞 분위기 — 보스 방 바로 옆 방에 들어오면(보스를 아직 안 잡았을 때) 배경음악이 조금 작아지고 낮은 "두근" `BossNear` 한 번
+- DONE (claude/project-thread-0xe6cj): 체력 경고 심장 소리 `Heartbeat` — 체력 30% 이하 붉은 맥동이 가장 진해질 때마다 작은 "두-근" (낮을수록 빠르고 조금 크게, 일시정지 중엔 없음)
 
 ## 다음 (2026-11-12 23:40 자동 실행이 추가 — 위험한 길 보상 넓히기·종유석 마무리)
 
