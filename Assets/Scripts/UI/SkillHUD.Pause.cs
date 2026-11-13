@@ -108,7 +108,7 @@ namespace IBlameYou.UI
             for (int i = 0; i < PauseButtonCount; i++)
             {
                 var buttonRect = new Rect(x, rect.y + 140f + 54f * i, buttonWidth, 44f);
-                if (pauseKeyboard && i == pauseSelection && !displayWindow.IsOpen) DrawPauseSelection(buttonRect);
+                if (pauseKeyboard && i == pauseSelection && !displayWindow.IsOpen) CuteButton.DrawSelection(buttonRect);
                 if (CuteButton.Button(buttonRect, PauseButtonLabel(i), menuButton))
                 {
                     RunPauseButton(i);
@@ -185,21 +185,6 @@ namespace IBlameYou.UI
                 return true;
             }
             return false;
-        }
-
-        // 고른 버튼 둘레 금색 테두리 (천천히 숨 쉬듯 밝아졌다 어두워진다).
-        private static void DrawPauseSelection(Rect button)
-        {
-            if (Event.current.type != EventType.Repaint) return;
-            const float t = 3f;
-            var r = new Rect(button.x - t - 1f, button.y - t - 1f, button.width + (t + 1f) * 2f, button.height + (t + 1f) * 2f);
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 0.85f, 0.3f, 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * 5f));
-            GUI.DrawTexture(new Rect(r.x, r.y, r.width, t), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.x, r.yMax - t, r.width, t), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.x, r.y, t, r.height), Texture2D.whiteTexture);
-            GUI.DrawTexture(new Rect(r.xMax - t, r.y, t, r.height), Texture2D.whiteTexture);
-            GUI.color = previous;
         }
 
         // 열린 직후 톡 커지는 배율 (0.85 → 1.04 → 1). 끝났으면 1.

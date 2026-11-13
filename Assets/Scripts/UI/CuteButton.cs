@@ -24,6 +24,21 @@ namespace IBlameYou.UI
             return pressed;
         }
 
+        // 키보드로 고른 버튼 둘레 금색 테두리 (천천히 숨 쉬듯 밝아졌다 어두워진다). 일시정지 창·시작 화면이 같이 쓴다. Repaint 때만 그린다.
+        public static void DrawSelection(Rect button)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            const float t = 3f;
+            var r = new Rect(button.x - t - 1f, button.y - t - 1f, button.width + (t + 1f) * 2f, button.height + (t + 1f) * 2f);
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 0.85f, 0.3f, 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * 5f));
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.yMax - t, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.xMax - t, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
         // GUI.skin을 쓰므로 OnGUI 안에서만 부른다.
         public static GUIStyle Create(int fontSize)
         {

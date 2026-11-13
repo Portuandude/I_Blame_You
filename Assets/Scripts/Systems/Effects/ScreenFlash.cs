@@ -5,6 +5,7 @@ namespace IBlameYou.Systems
     // 마법이 적에게 맞는 순간 화면을 아주 살짝 하얗게 번쩍인다 (Docs/ArtStyle.md: 알파 0.08, 0.05초).
     // 여러 발이 한꺼번에 맞아도 눈이 아프지 않게 MinInterval 안의 번쩍임은 무시한다.
     // 방을 옮길 때는 RoomFade로 화면을 잠깐 어둡게 덮었다가 밝힌다 (Docs/LevelDesign.md 방 전환 연출).
+    // 시작 화면에서 출발할 때는 StartFade로 어둡게 덮고 0.5초 동안 밝힌다 (월드를 만드는 긴 프레임이 지난 다음 프레임부터 잰다).
     // EdgeWarn: 화면 가장자리만 색으로 두 번 깜빡인다 (정예 등장 경고 — 가운데 싸움은 가리지 않게).
     public class ScreenFlash : MonoBehaviour
     {
@@ -16,6 +17,8 @@ namespace IBlameYou.Systems
         private const float RoomFadeHold = 0.04f;  // 옮긴 직전 프레임이 비치지 않게 잠깐 어둡게 유지
         private const float RoomFadeTime = 0.15f;  // 어둡게 → 밝게
         private static readonly Color RoomFadeColor = new Color(0.08f, 0.06f, 0.16f); // 팔레트 night보다 조금 더 어둡게
+        private const float StartFadeHold = 0.12f; // 출발: 첫 화면이 잠깐 어둡게 머문 뒤
+        private const float StartFadeTime = 0.5f;  // 천천히 밝아진다
         private const int SortingOrder = 900; // 월드 그림 전부보다 앞 (IMGUI HUD는 그 위에 따로 그려진다)
 
         private static ScreenFlash instance;
@@ -34,6 +37,8 @@ namespace IBlameYou.Systems
         private Color color = Color.white;
         private float hold = Duration;
         private float fade = FadeTime;
+        private bool restartClock; // StartFade: 월드를 만드느라 길어진 프레임들을 빼고 시간을 잰다
+        private int restartUntilFrame; // 이 프레임까지는 시간을 계속 처음으로 되돌린다 (만든 프레임 + 새 오브젝트 Start가 도는 다음 프레임)
 
         public static void Pulse(float alpha = DefaultAlpha)
         {
@@ -50,6 +55,16 @@ namespace IBlameYou.Systems
         {
             var flash = Find();
             if (flash != null) flash.Begin(RoomFadeColor, RoomFadeAlpha, RoomFadeHold, RoomFadeTime);
+        }
+
+        // 시작 화면에서 런을 시작하는 순간 부른다: 완전히 어둡게 덮고, 다음 프레임부터 0.12초 머문 뒤 0.5초 동안 밝아진다.
+        public static void StartFade()
+        {
+            var flash = Find();
+            if (flash == null) return;
+            flash.Begin(RoomFadeColor, 1f, StartFadeHold, StartFadeTime);
+            flash.restartClock = true;
+            flash.restartUntilFrame = Time.frameCount + 2;
         }
 
         // 화면 가장자리를 color로 duration초 동안 두 번 깜빡인다 (가운데는 투명한 테두리 그림).
@@ -146,6 +161,7 @@ namespace IBlameYou.Systems
                 overlay.sortingOrder = SortingOrder;
             }
 
+            restartClock = false; // 다른 덮개가 덮어쓰면 그 덮개의 시간대로
             color = tint;
             peak = alpha;
             hold = holdTime;
@@ -159,6 +175,11 @@ namespace IBlameYou.Systems
         {
             if (edge != null && edge.enabled) UpdateEdge();
             if (overlay == null || !overlay.enabled) return;
+            if (restartClock)
+            {
+                startedAt = Time.unscaledTime; // 긴 프레임 동안은 완전히 어두운 채로
+                if (Time.frameCount >= restartUntilFrame) restartClock = false;
+            }
             UpdateOverlay();
         }
 

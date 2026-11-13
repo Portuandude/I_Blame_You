@@ -2,6 +2,16 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 04:44 자동 실행이 추가 — 시작 화면 다듬기)
+
+DIRECTION ① 플레이 감각 다듬기의 하나. 시작 화면(`Core/StartMenu.cs`)만 바꾸고 수치·시드 지형은 그대로.
+
+- DONE (claude/project-thread-ezmnsk): 시작 버튼을 누르면 밝은 "출발" 효과음 `RunStart` + 게임 화면이 어두운 덮개에서 0.5초 동안 밝아지며 시작 (`ScreenFlash.StartFade`)
+- DONE (claude/project-thread-ezmnsk): 키보드로 아래 큰 버튼 고르기 (↑↓·W/S, Enter·Space) + 고른 버튼 금색 테두리 (일시정지 창과 같은 방식)
+- DONE (claude/project-thread-ezmnsk): 패널이 열릴 때 톡 커짐 + 제목 글자가 하나씩 물결치며 통통
+- DONE (claude/project-thread-ezmnsk): 패널 뒤 배경에 천천히 떠오르는 반딧불 입자
+- DONE (claude/project-thread-ezmnsk): 오늘의 팁 한 줄 (메뉴 열 때 무작위, 누르면 다음 팁)
+
 ## 다음 (2026-11-13 04:41 자동 실행이 추가 — 보스 처치 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 지금 보스·중간보스 격파는 `BossDefeatFx`(슬로모션 0.35초·흰 번쩍임·큰 폭발·월드 띠 "격파!"·레벨업 소리 재사용)뿐이다. 수치·보상·시드 지형은 바꾸지 않는다.

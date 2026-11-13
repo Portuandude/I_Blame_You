@@ -625,6 +625,24 @@ def pause_close():
     return normalize(fade_edges(lowpass(out, 5000), 3))
 
 
+def run_start():
+    """시작 화면에서 출발: 밝은 "따-링!" (위로 뛰는 세 음 G4→C5→E5 사각파 + 마지막 G5 종, 끝에 반짝임), 약 0.6초."""
+    n = int(0.6 * SR)
+    out = np.zeros(n)
+    for at, name in ((0.0, "G4"), (0.06, "C5"), (0.12, "E5")):
+        m = int(0.12 * SR)
+        f = note_hz(name)
+        tone_ = 0.3 * osc("square", f, m, duty=0.4) + 0.6 * osc("sine", f, m)
+        mix_at(out, tone_ * env_adsr(m, a=0.004, d=0.05, s=0.4, r=0.04), int(at * SR))
+    at = int(0.18 * SR)
+    m = n - at
+    bell = osc("sine", note_hz("G5"), m) + 0.3 * osc("sine", note_hz("G5") * 2, m) + 0.15 * osc("sine", note_hz("G5") * 3, m)
+    mix_at(out, bell * env_exp(m, 0.16), at)
+    sparkle = 0.12 * highpass(noise(m), 6000) * env_exp(m, 0.05)
+    mix_at(out, sparkle, at)
+    return normalize(fade_edges(lowpass(out, 7000), 3))
+
+
 def chest_land():
     """유물 상자 착지: 묵직한 나무 "쿵" (낮은 사인 낙하 + 나무 판 울림) + 안에서 짤랑 (높은 종 두 개, 작게), 약 0.45초."""
     n = int(0.45 * SR)
@@ -1290,7 +1308,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "BossDefeat": boss_defeat,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "RunStart": run_start, "BossDefeat": boss_defeat,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
