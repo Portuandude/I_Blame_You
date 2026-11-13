@@ -98,6 +98,7 @@ namespace IBlameYou.UI
             runStartTime = Time.time;
             RunStats.Reset();
             RunGold.Reset();
+            VillageNpc.ResetGreetings(); // 새 판이면 마을 NPC가 다시 인사
             RunGold.Arrived += OnGoldArrived; // 동전이 닿으면 골드 숫자가 톡 튄다 (SkillHUD.Gold.cs)
             RunStats.GoldSpentNow += OnGoldSpent; // 골드를 쓰면 알약 아래 빨간 -N (SkillHUD.Gold.cs)
             EnemyController.Killed += OnEnemyKilled;

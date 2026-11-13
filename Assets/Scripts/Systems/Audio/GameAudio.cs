@@ -76,6 +76,10 @@ namespace IBlameYou.Systems
         public static void PlaySfx(string name, float volume = 1f, float pitchJitter = 0.06f) =>
             Instance.PlayOneShot(name, volume, pitchJitter, 0f);
 
+        // 기본 음높이를 바꿔 한 번 (마을 NPC 말소리처럼 같은 소리를 목소리마다 다르게).
+        public static void PlaySfxPitched(string name, float pitch, float volume = 1f, float pitchJitter = 0.03f) =>
+            Instance.PlayOneShot(name, volume, pitchJitter, 0f, pitch);
+
         // delay초 뒤에 울리는 효과음 (오디오 시계 기준이라 일시정지·timeScale과 상관없다). 앞 소리에 이어 붙일 때.
         public static void PlaySfxDelayed(string name, float delay, float volume = 1f, float pitchJitter = 0f) =>
             Instance.PlayOneShot(name, volume, pitchJitter, Mathf.Max(0f, delay));
@@ -108,7 +112,7 @@ namespace IBlameYou.Systems
             return clip;
         }
 
-        private void PlayOneShot(string name, float volume, float pitchJitter, float delay)
+        private void PlayOneShot(string name, float volume, float pitchJitter, float delay, float basePitch = 1f)
         {
             var clip = Load($"Audio/SFX/{name}");
             if (clip == null) return;
@@ -121,7 +125,7 @@ namespace IBlameYou.Systems
             source.Stop();
             source.clip = clip;
             source.volume = SfxVolume * volume;
-            source.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
+            source.pitch = basePitch + Random.Range(-pitchJitter, pitchJitter);
             if (delay > 0f) source.PlayDelayed(delay);
             else source.Play();
         }
