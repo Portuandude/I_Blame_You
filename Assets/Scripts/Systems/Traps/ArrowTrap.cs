@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace IBlameYou.Systems
@@ -25,6 +26,9 @@ namespace IBlameYou.Systems
         private Color baseColor;
         private Transform player;
         private bool warned;
+
+        // 지금 예고 중인(곧 쏘는) 발사대. 화면 밖이면 HUD가 가장자리에 "!"를 띄운다 (SkillHUD.EnemyGuide.cs DrawAimWarnings).
+        public static readonly HashSet<ArrowTrap> Warning = new HashSet<ArrowTrap>();
         private Transform dots;
 
         // position: 발사대 칸의 가운데 (월드). direction: -1 왼쪽, 1 오른쪽.
@@ -89,6 +93,8 @@ namespace IBlameYou.Systems
         {
             if (on == warned) return;
             warned = on;
+            if (on) Warning.Add(this);
+            else Warning.Remove(this);
             if (dots != null)
             {
                 Destroy(dots.gameObject);
@@ -123,6 +129,10 @@ namespace IBlameYou.Systems
                 r.sortingOrder = 2;
             }
         }
+
+        private void OnDisable() => SetWarning(false);
+
+        private void OnDestroy() => Warning.Remove(this);
 
         private bool CameraNear()
         {
