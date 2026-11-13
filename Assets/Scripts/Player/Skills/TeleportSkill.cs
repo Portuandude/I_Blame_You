@@ -172,6 +172,7 @@ namespace IBlameYou.Player
             if (movement != null) movement.ResetAirborne();
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, 0f));
             EffectLibrary.PlayOneShot(to, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.6f, 1f, 0.7f), 1.2f);
+            GameAudio.PlaySfx("Blink", 0.8f); // 위로 오르는 반짝 "슝" (Tools/AudioGen)
 
             if (direction.x != 0f) transform.localScale = new Vector3(Mathf.Sign(direction.x), 1f, 1f);
 

@@ -99,12 +99,12 @@ namespace IBlameYou.Core
             GameAudio.SfxVolume = sfxVolume;
             GUILayout.Space(8f);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
+            if (IBlameYou.UI.CuteButton.LayoutButton($"{SaveData.RelicCodexSummary(devMode, IBlameYou.Player.RelicBook.All.Length)} — 보기 (C)", recordSmall))
             {
                 codex.Show(devMode);
             }
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("화면 설정", recordSmall)) display.Show();
+            if (IBlameYou.UI.CuteButton.LayoutButton("화면 설정", recordSmall)) display.Show();
             GUILayout.EndHorizontal();
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
@@ -112,7 +112,7 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                if (GUILayout.Button($"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
+                if (IBlameYou.UI.CuteButton.LayoutButton($"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
                         button, GUILayout.Height(44f)))
                 {
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
@@ -129,7 +129,7 @@ namespace IBlameYou.Core
 
             string startLabel = saved == null ? "플레이 테스트 시작 (일반 판)"
                 : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "플레이 테스트 새로 시작";
-            bool startPressed = GUILayout.Button(startLabel, button, GUILayout.Height(48f));
+            bool startPressed = IBlameYou.UI.CuteButton.LayoutButton(startLabel, button, GUILayout.Height(48f));
             if (startPressed && saved != null && !confirmNewRun)
             {
                 confirmNewRun = true;
@@ -141,13 +141,13 @@ namespace IBlameYou.Core
 
             // 기능 테스트 모드: 적 없는 시험용 맵에서 몬스터·유물·협동 기능을 키로 불러 시험 (이어하던 런은 건드리지 않는다)
             GUILayout.Space(4f);
-            if (GUILayout.Button("기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", button, GUILayout.Height(40f)))
+            if (IBlameYou.UI.CuteButton.LayoutButton("기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", button, GUILayout.Height(40f)))
             {
                 StartRun(true);
             }
 
             GUI.enabled = false;
-            GUILayout.Button("온라인 (데디케이티드 서버) — 준비 중", button, GUILayout.Height(40f));
+            IBlameYou.UI.CuteButton.LayoutButton("온라인 (데디케이티드 서버) — 준비 중", button, GUILayout.Height(40f));
             GUI.enabled = true;
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
@@ -247,12 +247,12 @@ namespace IBlameYou.Core
             string shown = recordsExpanded ? full + "\n▲ 기록 접기 (H)" : full.Substring(0, firstBreak) + "\n▼ 기록 더 보기 (H)";
             if (!recordsExpanded)
             {
-                if (GUILayout.Button(shown, recordSmall)) recordsTogglePending = true;
+                if (IBlameYou.UI.CuteButton.LayoutButton(shown, recordSmall)) recordsTogglePending = true;
                 return;
             }
             // 펼쳐도 버튼을 밀어내지 않게 남는 높이 안에서 스크롤한다 (리뷰 MEDIUM)
             recordScroll = GUILayout.BeginScrollView(recordScroll, GUILayout.Height(Mathf.Max(40f, available)));
-            if (GUILayout.Button(shown, recordSmall)) recordsTogglePending = true;
+            if (IBlameYou.UI.CuteButton.LayoutButton(shown, recordSmall)) recordsTogglePending = true;
             GUILayout.EndScrollView();
         }
 

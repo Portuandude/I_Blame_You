@@ -209,7 +209,7 @@ namespace IBlameYou.Core
                 var id = all[i];
                 bool owned = relics.Has(id);
                 var r = new Rect((i % columns) * (cellWidth + 4f), (i / columns) * (cellHeight + 4f), cellWidth, cellHeight);
-                if (GUI.Button(r, new GUIContent((owned ? "★ " : "   ") + RelicBook.Name(id), RelicBook.Description(id)), cell))
+                if (IBlameYou.UI.CuteButton.Button(r, new GUIContent((owned ? "★ " : "   ") + RelicBook.Name(id), RelicBook.Description(id)), cell))
                 {
                     ToggleRelic(id);
                     break; // 해제하면 맵을 다시 만들므로 이번 프레임은 그만 그린다
@@ -232,7 +232,7 @@ namespace IBlameYou.Core
             GUI.Label(new Rect(rect.x + 12f, rect.y + 8f, rect.width - 160f, 40f),
                 "<b>장비 끼기·빼기</b> — 누르면 그 칸에 끼고, ★을 누르면 뺀다. 오른쪽 버튼으로 새로 낄 수식어. F12/Esc 닫기", line);
             string gradeName = EquipmentModifier.Name(equipGrade);
-            if (GUI.Button(new Rect(rect.xMax - 144f, rect.y + 10f, 132f, 30f), "수식어: " + (gradeName.Length == 0 ? "보통" : gradeName), cell))
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.xMax - 144f, rect.y + 10f, 132f, 30f), "수식어: " + (gradeName.Length == 0 ? "보통" : gradeName), cell))
                 equipGrade = equipGrade >= EquipmentModifier.MaxGrade ? EquipmentModifier.MinGrade : equipGrade + 1;
 
             var slots = (EquipSlot[])Enum.GetValues(typeof(EquipSlot));
@@ -251,7 +251,7 @@ namespace IBlameYou.Core
                     var tip = new List<string>();
                     foreach (var stat in shown.Stats()) tip.Add(EquipmentBook.Describe(stat));
                     var r = new Rect(rect.x + 12f + c * (colWidth + 8f), rect.y + 52f + i * 40f, colWidth, 36f);
-                    if (GUI.Button(r, new GUIContent((worn ? "★ " : "   ") + shown.Name, $"{shown.Name}: {string.Join(", ", tip)} (가격 {shown.Price})"), cell))
+                    if (IBlameYou.UI.CuteButton.Button(r, new GUIContent((worn ? "★ " : "   ") + shown.Name, $"{shown.Name}: {string.Join(", ", tip)} (가격 {shown.Price})"), cell))
                     {
                         if (worn) equipment.Unequip(slots[c]);
                         else equipment.Equip(shown);
@@ -264,14 +264,14 @@ namespace IBlameYou.Core
             // 마을 시험 (2026-11-12): 시험 맵에는 마을 방이 없어서 골드를 채우고 식당·상점 창을 바로 연다.
             float by = rect.y + 52f + maxRows * 40f + 8f;
             float bw = (rect.width - 24f - 16f) / 3f;
-            if (GUI.Button(new Rect(rect.x + 12f, by, bw, 30f), $"골드 +{TestGold} (지금 {RunStats.Gold})", cell))
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f, by, bw, 30f), $"골드 +{TestGold} (지금 {RunStats.Gold})", cell))
                 RunStats.AddGold(TestGold);
-            if (GUI.Button(new Rect(rect.x + 12f + bw + 8f, by, bw, 30f), "식당 창 열기", cell))
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + bw + 8f, by, bw, 30f), "식당 창 열기", cell))
             {
                 StageEvents.VillageVisit++; // 열 때마다 새 방문: 음식을 종류별로 다시 살 수 있다
                 OpenVillageWindow(VillageService.Restaurant);
             }
-            if (GUI.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
                 OpenVillageWindow(VillageService.Shop);
 
             if (!string.IsNullOrEmpty(GUI.tooltip))

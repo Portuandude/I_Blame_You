@@ -26,6 +26,7 @@ namespace IBlameYou.Systems
         private AudioSource currentMusic;
         private string currentMusicName;
         private float musicPitch = 1f; // 지금 곡의 목표 빠르기 (곡을 바꾸면 1로 돌아간다)
+        private float musicDuck = 1f; // SetMusicDuck
         private const float MusicPitchSpeed = 0.5f; // 초당 바뀌는 빠르기 (1 → 1.08이 0.16초)
 
         private static GameAudio Instance
@@ -59,6 +60,13 @@ namespace IBlameYou.Systems
         {
             if (instance == null) return;
             instance.musicPitch = Mathf.Clamp(pitch, 0.5f, 2f);
+        }
+
+        // 배경음악을 잠시 작게 (예: 보스 방 바로 앞 방에서 0.55 — 폭풍 전 고요). 1이면 원래 크기. 곡을 바꿔도 유지되므로 쓴 쪽이 1로 되돌린다.
+        public static void SetMusicDuck(float scale)
+        {
+            if (instance == null && scale >= 1f) return; // 아직 소리를 안 냈으면 되돌릴 것도 없다 (종료 중 오브젝트를 새로 만들지 않게)
+            Instance.musicDuck = Mathf.Clamp01(scale);
         }
 
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
@@ -148,7 +156,7 @@ namespace IBlameYou.Systems
         private void Fade(AudioSource source, float step)
         {
             if (!source.isPlaying) return;
-            float target = source == currentMusic ? MusicVolume : 0f;
+            float target = source == currentMusic ? MusicVolume * musicDuck : 0f;
             source.volume = Mathf.MoveTowards(source.volume, target, step);
             if (source != currentMusic && source.volume <= 0f) source.Stop();
         }

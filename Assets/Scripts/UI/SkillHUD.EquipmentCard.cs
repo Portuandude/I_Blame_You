@@ -103,8 +103,8 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(left.xMax, left.y + cardHeight / 2f - 16f, gap, 32f), "→", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
 
             float by = rect.yMax - 48f;
-            if (GUI.Button(new Rect(rect.center.x - 170f, by, 160f, 34f), "1. 바꿔 끼기", cardButton)) CloseEquipCard(true);
-            else if (GUI.Button(new Rect(rect.center.x + 10f, by, 160f, 34f), "2. 두고 가기", cardButton)) CloseEquipCard(false);
+            if (CuteButton.Button(new Rect(rect.center.x - 170f, by, 160f, 34f), "1. 바꿔 끼기", cardButton)) CloseEquipCard(true);
+            else if (CuteButton.Button(new Rect(rect.center.x + 10f, by, 160f, 34f), "2. 두고 가기", cardButton)) CloseEquipCard(false);
         }
 
         // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에 빨강으로).

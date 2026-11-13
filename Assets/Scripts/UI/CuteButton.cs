@@ -13,6 +13,17 @@ namespace IBlameYou.UI
         private static Texture2D active;
         private static bool loaded;
 
+        // GUI.Button / GUILayout.Button과 같지만, 눌리면 작은 "톡" 소리(Tools/AudioGen UiClick)를 낸다. 게임 화면의 버튼은 모두 이걸 쓴다.
+        public static bool Button(Rect rect, string text, GUIStyle style) => Clicked(GUI.Button(rect, text, style));
+        public static bool Button(Rect rect, GUIContent content, GUIStyle style) => Clicked(GUI.Button(rect, content, style));
+        public static bool LayoutButton(string text, GUIStyle style, params GUILayoutOption[] options) => Clicked(GUILayout.Button(text, style, options));
+
+        private static bool Clicked(bool pressed)
+        {
+            if (pressed) IBlameYou.Systems.GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
+            return pressed;
+        }
+
         // GUI.skin을 쓰므로 OnGUI 안에서만 부른다.
         public static GUIStyle Create(int fontSize)
         {
