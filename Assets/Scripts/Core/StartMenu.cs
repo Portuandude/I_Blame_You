@@ -36,6 +36,12 @@ namespace IBlameYou.Core
         private const float PopTime = 0.3f;
         private float[] letterWidths;  // 제목 글자별 폭 (글자마다 물결치게 따로 그린다)
         private int keyActivate = -1;
+        private bool activateKeyHeld; // Enter·Space를 누른 채면 키 반복으로 "새로 시작" 확인이 저절로 넘어가지 않게, 뗄 때까지 무시
+        private string[] letters;     // 제목 글자 (매 프레임 ToString 하지 않게)
+        private int tipIndex = -1;    // 오늘의 팁 (처음 그릴 때 무작위)
+        private bool tipAdvancePending;
+        private float tipMaxHeight = -1f; // 모든 팁 가운데 가장 높은 줄 (팁을 넘겨도 기록 줄 접힘이 바뀌지 않게)
+        private float tipHeightWidth;
         private Texture2D glow;        // 반딧불 둥근 빛 (한 번 만든다)
         private Vector4[] fireflies;   // 반딧불마다 (가로 자리 0~1, 처음 높이 0~1, 오르는 속도, 깜빡임 위상)
         private const int FireflyCount = 26;
@@ -122,6 +128,7 @@ namespace IBlameYou.Core
             GUILayout.FlexibleSpace();
             if (IBlameYou.UI.CuteButton.LayoutButton("화면 설정", recordSmall)) display.Show();
             GUILayout.EndHorizontal();
+            DrawTip(width - 48f);
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
 
@@ -177,6 +184,8 @@ namespace IBlameYou.Core
         // OnGUI는 Update 뒤에 돌고, 시작하면 만들어지는 플레이어는 다음 프레임부터 Update를 돌아 이 Enter·Space가 순간이동·점프로 새지 않는다.
         private void HandleMenuKeys(Event e)
         {
+            if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
+                activateKeyHeld = false;
             if (e.type != EventType.KeyDown) return;
             int step = 0;
             if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) step = -1;
@@ -193,6 +202,9 @@ namespace IBlameYou.Core
 
             if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space)
             {
+                e.Use();
+                if (activateKeyHeld) return; // 누른 채 키 반복
+                activateKeyHeld = true;
                 keyActivate = Mathf.Clamp(keySelection, 0, MenuButtonCount - 1);
                 keyboardUsed = true;
                 e.Use();
@@ -313,11 +325,13 @@ namespace IBlameYou.Core
             if (letterWidths == null)
             {
                 letterWidths = new float[TitleText.Length];
+                letters = new string[TitleText.Length];
+                for (int i = 0; i < TitleText.Length; i++) letters[i] = TitleText[i].ToString();
                 for (int i = 0; i < TitleText.Length; i++)
                 {
                     // 글자 폭만 (스타일 여백은 빼서 글자 사이가 벌어지지 않게). 공백은 CalcSize가 작게 잡으니 글자 크기의 0.3
                     letterWidths[i] = TitleText[i] == ' ' ? title.fontSize * 0.3f
-                        : Mathf.Max(1f, title.CalcSize(new GUIContent(TitleText[i].ToString())).x - title.padding.horizontal);
+                        : Mathf.Max(1f, title.CalcSize(new GUIContent(letters[i])).x - title.padding.horizontal);
                 }
             }
             float total = 0f;
@@ -332,7 +346,7 @@ namespace IBlameYou.Core
                     float hop = Mathf.Max(0f, Mathf.Sin(time * 3.2f - i * 0.45f)) * 5f - 2f;
                     float boxWidth = w + title.padding.horizontal + 8f; // 외곽선이 잘리지 않게 양옆 4픽셀 여유 (가운데 정렬이라 글자는 x+w/2에 선다)
                     var letter = new Rect(x + w / 2f - boxWidth / 2f, rect.y - hop, boxWidth, rect.height);
-                    OutlinedLabel.Draw(letter, TitleText[i].ToString(), title, OutlinedLabel.Cream, OutlinedLabel.Gold, 2.5f, 2f);
+                    OutlinedLabel.Draw(letter, letters[i], title, OutlinedLabel.Cream, OutlinedLabel.Gold, 2.5f, 2f);
                 }
                 x += w;
             }
@@ -367,6 +381,45 @@ namespace IBlameYou.Core
             GUILayout.EndHorizontal();
             return value;
         }
+
+        // 오늘의 팁: 메뉴를 열 때 무작위 한 줄, 누르면 다음 팁. 바꾸기는 Layout 때만 (한 이벤트 안에서 레이아웃이 어긋나지 않게).
+        private void DrawTip(float innerWidth)
+        {
+            if (tipIndex < 0) tipIndex = UnityEngine.Random.Range(0, Tips.Length);
+            if (Event.current.type == EventType.Layout && tipAdvancePending)
+            {
+                tipIndex = (tipIndex + 1) % Tips.Length;
+                tipAdvancePending = false;
+            }
+            if (IBlameYou.UI.CuteButton.LayoutButton(TipLabel(tipIndex), recordSmall, GUILayout.Height(TipMaxHeight(innerWidth))))
+                tipAdvancePending = true;
+        }
+
+        private static string TipLabel(int index) => $"오늘의 팁 · {Tips[index]} ▸";
+
+        private float TipMaxHeight(float innerWidth)
+        {
+            if (tipMaxHeight >= 0f && Mathf.Approximately(tipHeightWidth, innerWidth)) return tipMaxHeight;
+            tipHeightWidth = innerWidth;
+            tipMaxHeight = 0f;
+            for (int i = 0; i < Tips.Length; i++)
+                tipMaxHeight = Mathf.Max(tipMaxHeight, recordSmall.CalcHeight(new GUIContent(TipLabel(i)), innerWidth));
+            return tipMaxHeight;
+        }
+
+        private static readonly string[] Tips =
+        {
+            "B가 영창을 틀리면 마나만 날아간다. 누구 탓인지는 기록된다",
+            "순간이동은 W/A/S/D+Enter. 아래로 가면 발판을 뚫고 내려간다",
+            "안 가 본 방 문 앞에는 금빛 마름모가 반짝인다",
+            "마을은 스테이지마다 하나. 식당에서 배를 채우고 상점에서 장비를 산다",
+            "C를 누르면 게임 중에도 유물 도감을 볼 수 있다",
+            "위험한 길 끝에는 동전 무더기가 숨어 있곤 하다",
+            "정예가 나오면 화면 가장자리가 보라색으로 깜빡인다",
+            "골드는 그 판에서만 쓸 수 있다. 아끼지 말자",
+            "Esc 일시정지 창 왼쪽에서 전체 지도를 볼 수 있다",
+            "대쉬·달리기 점프로 넓은 틈도 건널 수 있다",
+        };
 
         private const string IntroText = "한 마법사를 두 사람이 나눠 조작한다. A는 이동·방어, B는 공격. 마나는 하나뿐이다.";
 
@@ -426,6 +479,7 @@ namespace IBlameYou.Core
             h += body.CalcHeight(new GUIContent(devMode ? DevModeHelp : NormalModeHelp), innerWidth) + 12f;
             h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
             h += 22f;                                 // 유물 도감 줄
+            h += TipMaxHeight(innerWidth) + 4f;       // 오늘의 팁 (가장 긴 팁 기준)
             if (saved != null) h += 44f + 4f;         // 이어하기 버튼
             h += 48f + 4f + 40f + 40f;                // 시작·기능 테스트·온라인 버튼
             return h + 12f * 4f;                      // 요소 사이 기본 여백
