@@ -788,11 +788,17 @@ namespace IBlameYou.Systems
             // 보스 방 바로 옆 방 (보스를 아직 안 잡았을 때): 배경음악을 조금 줄이고, 처음 들어왔을 때 낮은 심장 "두-근" (Tools/AudioGen BossNear)
             bool nearBoss = !bossCleared && NextToBoss(entered);
             GameAudio.SetMusicDuck(nearBoss ? BossNearMusicDuck : 1f);
-            if (nearBoss && firstVisit) GameAudio.PlaySfx("BossNear", 0.9f, 0f);
+            if (nearBoss && firstVisit)
+            {
+                GameAudio.PlaySfx("BossNear", 0.9f, 0f);
+                ScreenFlash.EdgeWarn(BossNearEdgeColor, 1.4f); // 심장 소리에 맞춰 화면 가장자리가 검붉게 두 번 천천히 (2026-11-13 보스 방 앞 분위기)
+                StageEvents.PostNotice("근처에서 강한 기운이 느껴진다...");
+            }
             RoomEntered?.Invoke(index);
         }
 
         private const float BossNearMusicDuck = 0.55f;
+        private static readonly Color BossNearEdgeColor = new Color(0.45f, 0.05f, 0.12f); // 검붉은 (정예 보라보다 어둡고 무겁게)
 
         // 문으로 이어진 이웃 방 중에 보스 방이 있는가 (보스 방 자신은 아니다)
         private bool NextToBoss(RoomData room)
