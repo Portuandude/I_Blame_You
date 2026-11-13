@@ -42,7 +42,7 @@ namespace IBlameYou.Core
 
         public bool IsOpen { get; private set; }
 
-        private bool Applying => appliedAt >= 0f;
+        public bool Applying => appliedAt >= 0f; // "적용됨!" 띠가 보이는 동안 (곧 저절로 닫힘)
 
         public void Show()
         {
