@@ -25,8 +25,7 @@ namespace IBlameYou.UI
         {
             string text = $"특성: {TraitTree.Name(trait)} {rank} ({TraitTree.Owner(trait)} 특성)";
             if (System.Array.IndexOf(TraitTree.Milestones, rank) >= 0) text += $" · {TraitTree.MilestoneText(trait, rank)}";
-            feed.Add(new FeedEntry { Time = Time.time, Text = text, Color = new Color(1f, 0.85f, 0.4f) });
-            if (feed.Count > MaxFeed) feed.RemoveAt(0);
+            AddFeed(text, new Color(1f, 0.85f, 0.4f));
         }
 
         private void UpdateTraitWindowInput()
