@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 보스·중간보스를 마지막으로 쓰러뜨린 순간의 연출: 짧은 슬로모션 + 화면 흰 번쩍임 + 큰 별·하트 폭발 + "이름 격파!" 띠
+    // 보스·중간보스를 마지막으로 쓰러뜨린 순간의 연출: 짧은 슬로모션 + 화면 흰 번쩍임 + 큰 별·하트 폭발 + 화면 가운데 "이름 격파!" 띠 (SkillHUD.Boss.cs가 LastName·LastTime을 읽어 그린다)
     // + 배경음악 1초 정적 (GameAudio.SilenceMusic, 그 뒤 스테이지 곡이 다시 차오른다).
     // 슬로모션은 실제 시간으로 재고, 끝날 때 timeScale이 아직 이 연출의 값일 때만 1로 되돌린다
     // (그사이 일시정지·특성 창·유물 창·플레이어 사망 연출이 timeScale을 바꿨으면 그쪽이 되돌리게 둔다).
@@ -14,10 +14,9 @@ namespace IBlameYou.Systems
         private const float FlashAlpha = 0.55f;
         private const float Lifetime = 1f;          // 실제 시간. 이 뒤에 오브젝트를 치운다
         private const float BurstScale = 2.4f;
-        private const float BannerHeight = 2.6f;
         private const float MusicSilence = 1f;      // 실제 시간(초). 보스 곡이 뚝 끊긴 정적 뒤 스테이지 곡이 다시 차오른다
 
-        // 마지막 격파 (실제 시간). 화면 HUD가 읽는다 — 보스 체력바 마무리 (SkillHUD.Boss.cs).
+        // 마지막 격파 (실제 시간). 화면 HUD가 읽는다 — 보스 체력바 마무리·가운데 격파 띠 (SkillHUD.Boss.cs).
         public static string LastName { get; private set; }
         public static float LastTime { get; private set; } = -100f;
 
@@ -43,7 +42,6 @@ namespace IBlameYou.Systems
             if (frames != null)
                 EffectLibrary.PlayOneShot(position, frames, 14f, Color.clear, 0f, false, BurstScale, sortingOrder: 8);
             VfxPlayer.DeathPop(position, 2f);
-            if (!string.IsNullOrEmpty(bossName)) VfxPlayer.RelicBanner(position + Vector3.up * BannerHeight, $"{bossName} 격파!");
             GameAudio.SilenceMusic(MusicSilence);
             GameAudio.PlaySfx("BossDefeat", 0.9f, 0f); // 격파 전용 "쾅" + 반짝 아르페지오 (Tools/AudioGen BossDefeat)
         }
