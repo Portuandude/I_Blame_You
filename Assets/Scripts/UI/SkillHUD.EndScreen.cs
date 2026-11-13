@@ -1,3 +1,4 @@
+using IBlameYou.Core;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -60,6 +61,209 @@ namespace IBlameYou.UI
             if (wobble) GUIUtility.RotateAroundPivot(Mathf.Sin(Time.unscaledTime * 2.4f) * 4f, rect.center);
             OutlinedLabel.Draw(rect, text, endTitle, OutlinedLabel.Cream, OutlinedLabel.Gold, 2f, 1.5f);
             GUI.matrix = previous;
+        }
+
+        // ── 결과 창 본문 (게임오버·클리어 공용) ──
+        // 줄 목록을 위에서 아래로 쌓는다: 있는 줄만 높이를 차지한다 (예전처럼 고정 좌표에 끼워 넣지 않아 줄을 더해도 겹치지 않는다).
+        // 줄마다 EndRowGap 간격으로 차례로 나타난다 (살짝 아래에서 떠오르며 밝아짐, RowReveal). 제목·패널은 팝 등장과 함께 바로 보인다.
+        private const float EndRowStart = 0.15f; // 창이 처음 그려지고 첫 줄이 나타나기 시작할 때까지
+        private const float EndRowGap = 0.09f;   // 줄 사이 간격
+        private const float EndRowFade = 0.22f;  // 한 줄이 다 나타나는 데 걸리는 시간
+        private const float EndRowLift = 8f;     // 나타나기 시작할 때 아래로 내려가 있는 픽셀
+        private const float EndButtonHeight = 32f;
+        private const float EndButtonWidth = 170f;
+        private int endButtonsRow = int.MaxValue; // 버튼 줄의 순번 (그려 봐야 안다, 그 전에는 키를 안 받는다)
+        private int endSelection;                 // 키보드로 고른 버튼: 0 다시 시작, 1 시작 화면
+        private bool restartRequested;            // 다시 시작은 한 번만 (같은 프레임에 R과 버튼이 겹쳐도)
+        private GUIStyle endButton;
+
+        // index번째 줄이 얼마나 나타났는지 0 ~ 1.
+        private float RowReveal(int index)
+        {
+            if (endScreenShownAt < 0f) return 0f;
+            return Mathf.Clamp01((Time.unscaledTime - endScreenShownAt - EndRowStart - index * EndRowGap) / EndRowFade);
+        }
+
+        // 줄을 그리기 전에: GUI.color 알파를 나타난 만큼 줄이고, 덜 나타난 만큼 아래로 내릴 픽셀을 돌려준다. 그린 뒤 previous를 되돌린다.
+        private float BeginRow(int index, out Color previous)
+        {
+            previous = GUI.color;
+            float k = RowReveal(index);
+            var color = previous;
+            color.a *= k;
+            GUI.color = color;
+            return (1f - Mathf.SmoothStep(0f, 1f, k)) * EndRowLift;
+        }
+
+        private void DrawEndPanel(bool clear, float width)
+        {
+            bool compare = !clear && HasDefeatCompare;
+            string explore = ExploreText(true);           // 방 N/M 탐험 · 동전 무더기 a/b · 마을 (SkillHUD.Pause.cs)
+            bool favorite = !string.IsNullOrEmpty(FavoriteLine());
+            const float top = 60f, line = 26f, summary = 28f, small22 = 22f, relics = 30f;
+            float height = top + line * 3f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f)
+                           + (favorite ? small22 : 0f) + relics + EndButtonHeight + 16f;
+            float y0 = Mathf.Max(8f, Mathf.Min(Screen.height * 0.35f, Screen.height - height - 12f));
+            var rect = new Rect((Screen.width - width) / 2f, y0, width, height);
+
+            var previousMatrix = BeginEndScreenPop(rect); // 팝 등장
+            GUI.Box(rect, GUIContent.none, panel);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), clear ? $"{StageEvents.StageName} 클리어!" : "쓰러졌다! 누구 탓이지?", !clear);
+
+            if (clear && newBestTime) DrawBestStamp(new Rect(rect.x + 14f, rect.y + 16f, 132f, 34f)); // 최고 기록! 도장
+
+            var center = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            float y = rect.y + top;
+            int row = 0;
+            Color previous;
+
+            // 골드(오른쪽 위)는 첫 줄과 같이 나타난다
+            float lift = BeginRow(row, out previous);
+            float count = UpdateEndCount();
+            DrawEndGold(rect, Mathf.RoundToInt(RunStats.Gold * count), EndGoldPop()); // 이번 판 골드, 올라가며 세기 (SkillHUD.Gold.cs)
+            string manaText = $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA) * count:0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB) * count:0}";
+            if (clear)
+            {
+                // 최고 기록이면 괄호 대신 제목 왼쪽 금색 도장 (DrawBestStamp)
+                string best = newBestTime ? "" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
+                manaText = $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · " + manaText;
+            }
+            GUI.Label(new Rect(rect.x, y + lift, rect.width, line), manaText, center);
+            GUI.color = previous;
+            y += line; row++;
+
+            lift = BeginRow(row, out previous);
+            DrawBlameVerdict(new Rect(rect.x, y + lift, rect.width, line)); // 누구 탓? 판정 (도장은 따로 늦게 찍힌다)
+            GUI.color = previous;
+            y += line; row++;
+
+            lift = BeginRow(row, out previous);
+            if (clear) DrawClearPace(new Rect(rect.x, y + lift, rect.width, line)); // 목표 시간 비교
+            else DrawDefeatPlace(new Rect(rect.x, y + lift, rect.width, line));   // 쓰러진 곳
+            GUI.color = previous;
+            y += line; row++;
+
+            if (compare)
+            {
+                lift = BeginRow(row, out previous);
+                DrawDefeatCompare(new Rect(rect.x, y + lift, rect.width, 24f)); // 평소보다 더/덜 갔다
+                GUI.color = previous;
+                y += 24f; row++;
+            }
+
+            lift = BeginRow(row, out previous);
+            GUI.Label(new Rect(rect.x, y + lift, rect.width, summary), RunStats.Summary(RunLevel, RelicCount), center);
+            GUI.color = previous;
+            y += summary; row++;
+
+            if (explore.Length > 0)
+            {
+                lift = BeginRow(row, out previous);
+                var exploreStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
+                exploreStyle.normal.textColor = OutlinedLabel.Cream;
+                GUI.Label(new Rect(rect.x, y + lift, rect.width, small22), explore, exploreStyle);
+                GUI.color = previous;
+                y += small22; row++;
+            }
+
+            if (favorite)
+            {
+                lift = BeginRow(row, out previous);
+                DrawFavoriteLine(rect.x, y + lift, rect.width); // B 최애 마법 · A 최애 방어막 · 새 유물
+                GUI.color = previous;
+                y += small22; row++;
+            }
+
+            lift = BeginRow(row, out previous);
+            DrawEndRelicsAndEquipment(new Rect(rect.x + 12f, y + 2f + lift, rect.width - 24f, 26f)); // 유물 아이콘 줄 + 장비 3칸
+            GUI.color = previous;
+            y += relics; row++;
+
+            endButtonsRow = row;
+            lift = BeginRow(row, out previous);
+            DrawEndButtons(new Rect(rect.x, y + 4f + lift, rect.width, EndButtonHeight), clear);
+            GUI.color = previous;
+
+            GUI.matrix = previousMatrix;
+        }
+
+        // 숫자 세기: 골드와 A/B가 날린 마나가 첫 줄이 나타날 때부터 EndCountTime 동안 0에서 올라간다 (끝으로 갈수록 느려짐).
+        // 다 센 순간 골드가 톡 커졌다 돌아오고 (EndGoldPopTime) 골드가 있으면 동전 소리. 그 뒤로는 실제 값을 그대로 보여 준다
+        // (클리어 뒤 날아오는 보스 골드도 들어오는 대로 오른다).
+        private const float EndCountTime = 0.7f;
+        private const float EndGoldPopTime = 0.25f;
+        private float endCountDoneAt = -1f;
+
+        // 지금 세기 비율 0 ~ 1. 다 센 첫 순간에 소리를 내고 시각을 적는다.
+        private float UpdateEndCount()
+        {
+            if (endScreenShownAt < 0f) return 0f;
+            float t = Mathf.Clamp01((Time.unscaledTime - endScreenShownAt - EndRowStart) / EndCountTime);
+            if (t >= 1f && endCountDoneAt < 0f)
+            {
+                endCountDoneAt = Time.unscaledTime;
+                if (RunStats.Gold > 0) GameAudio.PlaySfx("Coin", 0.8f, 0f);
+            }
+            return 1f - (1f - t) * (1f - t); // 빨리 오르다 천천히 멈춘다
+        }
+
+        // 다 센 순간 골드 줄 배율 1 → 1.25 → 1.
+        private float EndGoldPop()
+        {
+            if (endCountDoneAt < 0f) return 1f;
+            float k = (Time.unscaledTime - endCountDoneAt) / EndGoldPopTime;
+            if (k >= 1f) return 1f;
+            return 1f + 0.25f * Mathf.Sin(k * Mathf.PI);
+        }
+
+        // 버튼 줄이 다 나타났고 (게임오버면 페이드도 끝났고) 키·클릭을 받을 수 있는지.
+        private bool EndButtonsReady =>
+            endScreenShownAt >= 0f && RowReveal(endButtonsRow) >= 1f && (stageCleared || GameOverReady);
+
+        // 결과 창 버튼 2개: 다시 시작 (R) · 시작 화면 (M). 키보드로 고른 쪽은 금색 테두리 (일시정지 창·시작 화면과 같은 CuteButton.DrawSelection).
+        private void DrawEndButtons(Rect row, bool clear)
+        {
+            if (endButton == null) endButton = CuteButton.Create(16);
+            const float gap = 24f;
+            float x = row.center.x - EndButtonWidth - gap / 2f;
+            var left = new Rect(x, row.y, EndButtonWidth, row.height);
+            var right = new Rect(x + EndButtonWidth + gap, row.y, EndButtonWidth, row.height);
+
+            bool ready = EndButtonsReady;
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = ready;
+            if (CuteButton.Button(left, clear ? "새 맵으로 다시 (R)" : "다시 시작 (R)", endButton)) RequestRestart(false);
+            if (CuteButton.Button(right, "시작 화면 (M)", endButton)) RequestRestart(true);
+            GUI.enabled = wasEnabled;
+            if (ready) CuteButton.DrawSelection(endSelection == 0 ? left : right);
+        }
+
+        // Update에서 R·M 다음에 부른다: ←→·A/D로 고르고 Enter·Space로 누른다. 버튼 줄이 다 나타나기 전에는 받지 않는다
+        // (쓰러지거나 클리어하는 순간 누르고 있던 Space·Enter가 바로 다시 시작으로 새지 않게 — GetKeyDown이라 새로 누른 것만).
+        private void UpdateEndButtonsInput()
+        {
+            if (!EndButtonsReady || restartRequested) return;
+            int pick = -1;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) pick = 0;
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) pick = 1;
+            if (pick >= 0)
+            {
+                if (pick != endSelection) GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                endSelection = pick;
+                return;
+            }
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            {
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                RequestRestart(endSelection == 1);
+            }
+        }
+
+        private void RequestRestart(bool backToMenu)
+        {
+            if (restartRequested) return;
+            restartRequested = true;
+            restart?.Invoke(backToMenu);
         }
 
         // 클리어 색종이: 조각마다 고정된 무작위 값(인덱스 해시)으로 x·속도·흔들림·크기·색을 정하고 위에서 아래로 반복해서 떨어진다.
@@ -145,6 +349,45 @@ namespace IBlameYou.UI
             var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             style.normal.textColor = color;
             GUI.Label(rect, BlameVerdict.Describe(a, b), style);
+            GUI.matrix = previous;
+        }
+
+        // 클리어 최고 기록 도장: 탓 도장이 찍히고 조금 뒤 제목 왼쪽에 금색 "최고 기록!"이 비스듬히(-10도) 쾅.
+        // 탓 도장과 같은 움직임 (1.8배 → 1배, 착지 때 RelicNew 반짝 소리, 흰색에서 금색으로).
+        private const float BestStampDelay = BlameStampDelay + BlameStampDrop + 0.45f;
+        private bool bestStamped;
+        private GUIStyle bestStampStyle;
+
+        private void DrawBestStamp(Rect rect)
+        {
+            if (endScreenShownAt < 0f) return;
+            float t = Time.unscaledTime - endScreenShownAt - BestStampDelay;
+            if (t < 0f) return;
+            if (bestStampStyle == null)
+            {
+                bestStampStyle = new GUIStyle(big) { fontSize = 22, richText = false };
+                bestStampStyle.normal.textColor = Color.white;
+            }
+
+            var previous = GUI.matrix;
+            GUIUtility.RotateAroundPivot(-10f, rect.center);
+            var color = OutlinedLabel.Gold;
+            if (t < BlameStampDrop)
+            {
+                float k = t / BlameStampDrop;
+                GUIUtility.ScaleAroundPivot(Vector2.one * Mathf.Lerp(1.8f, 1f, k * k), rect.center);
+                color = Color.white;
+            }
+            else
+            {
+                if (!bestStamped)
+                {
+                    bestStamped = true;
+                    GameAudio.PlaySfx("RelicNew", 0.7f, 0f);
+                }
+                color = Color.Lerp(Color.white, OutlinedLabel.Gold, Mathf.Clamp01((t - BlameStampDrop) / 0.35f));
+            }
+            OutlinedLabel.Draw(rect, "최고 기록!", bestStampStyle, color, OutlinedLabel.Outline, 0f, 2f); // GUI.color 알파는 Draw가 곱한다
             GUI.matrix = previous;
         }
 

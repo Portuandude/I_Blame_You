@@ -2,6 +2,14 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 2026-11-13 08:40 자동 실행 — 결과 창 다듬기 (PR #69)
+
+- DONE (claude/project-thread-5xcr1g): 결과 창 줄 목록 배치 + "방 N/M 탐험 · 동전 무더기 a/b · 마을" 줄 (BLOCKED였던 동전 무더기 N/M 해결)
+- DONE (claude/project-thread-5xcr1g): 줄이 차례로 나타남
+- DONE (claude/project-thread-5xcr1g): 골드·날린 마나 올라가며 세기 + 골드 톡·Coin
+- DONE (claude/project-thread-5xcr1g): 다시 시작·시작 화면 버튼 (←→·A/D + Enter·Space)
+- DONE (claude/project-thread-5xcr1g): 클리어 최고 기록 도장
+
 ## 다음 (2026-11-13 04:44 자동 실행이 추가 — 시작 화면 다듬기)
 
 DIRECTION ① 플레이 감각 다듬기의 하나. 시작 화면(`Core/StartMenu.cs`)만 바꾸고 수치·시드 지형은 그대로.
