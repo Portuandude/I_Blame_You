@@ -2,6 +2,31 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 09:43 자동 실행이 추가 — 적 공격 예고 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기". 적이 언제·어디로 공격하는지 더 잘 읽히게 한다. 공격 시간·피해·사거리 수치는 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-ssqyj3, #77): 슬라임 착지 예고 — 웅크리는 동안 도약해 떨어질 땅에 옅은 붉은 타원(점점 진해짐), 공중에서도 남았다가 착지하면 사라짐
+- DONE (claude/project-thread-ssqyj3, #77): 고블린 궁수 조준선 — 시위를 당기는 동안 화살이 날아갈 쪽으로 옅은 노란 점선(플레이어를 따라감, 벽에 막히면 거기까지), 쏘면 사라짐
+- DONE (claude/project-thread-ssqyj3, #77): 고블린 휘두르기 예고 — 웅크리는 순간 무기 쪽(판정 자리)에 작은 흰 반짝임
+- DONE (claude/project-thread-ssqyj3, #77): 예고 소리 `EnemyWindup` — 화면 안의 적이 공격을 예고할 때 작은 "슉" (여러 마리가 동시에 하면 한 번만)
+- DONE (claude/project-thread-ssqyj3, #77): 정예 예고 — 정예(고블린 대전사·엄마 슬라임 등)가 공격을 예고하면 몸 둘레에 보라 고리가 퍼짐
+
+## 다음 (2026-11-13 09:23 자동 실행이 추가 — 쓰러짐 연출 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기". 사망 애니메이션이 없어 대체 연출(SkillHUD.Death)을 더 또렷하게 한다. 게임오버 창·기록·조작은 그대로.
+
+- DONE (claude/project-thread-jji0wc, #75): 쓰러짐 소리 — 새 효과음 `PlayerDown`(내려가는 "피웅" + 작은 쿵, Tools/AudioGen), 음악은 테이프처럼 느려지며 먹먹해짐 (게임오버 징글 때 꺼지는 건 그대로)
+- DONE (claude/project-thread-jji0wc, #75): 쓰러진 순간 하얀 번쩍임(0.15초) + 카메라 흔들림
+- DONE (claude/project-thread-jji0wc, #75): 화면 어둠을 쓰러진 캐릭터 중심의 동그란 조명으로 — 원이 점점 좁아지며 캐릭터만 보이다가 게임오버 창
+- DONE (claude/project-thread-jji0wc, #75): 몸에서 작은 영혼 별(하늘색 ★)이 좌우로 흔들리며 떠올라 사라짐
+- DONE (claude/project-thread-jji0wc, #75): 캐릭터가 살짝 튀어 올랐다가 옆으로 눕기 (그림만 돌림, 충돌체는 그대로)
+
+## 다음 (2026-11-13 09:23 자동 실행이 추가 — 작은 지도 다듬기)
+
+- DONE (claude/project-thread-jji0wc): 방을 옮기면 작은 지도가 새 방 쪽으로 0.25초 스르륵 미끄러짐 (가장자리 칸이 뚝 나타나지 않게 한 칸 넓게 그림)
+- DONE (claude/project-thread-jji0wc): 작은 지도 밖의 아는 보스 방·마을 쪽 테두리에 그 방 색 세모 길잡이 (천천히 깜빡임)
+
 ## 다음 (2026-11-13 09:16 자동 실행이 추가 — 큰 지도(` 키) 다듬기)
 
 - DONE (claude/project-thread-24x112) 펼침·접힘 연출: 작은 지도 쪽에서 톡 커지며 펼쳐지고 접을 땐 쏙 줄어듦 + BookOpen/PauseClose
