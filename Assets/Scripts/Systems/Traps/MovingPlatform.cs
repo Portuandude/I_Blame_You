@@ -32,6 +32,14 @@ namespace IBlameYou.Systems
         private float holdUntil;   // 이 시각까지는 출발을 미룬다
         private SpriteRenderer[] planks;
         private Color plankColor;
+        // 깨어남·잠듦 연출 (SwitchPlatformFx, 그림·소리만)
+        private const float WakePopTime = 0.3f;
+        private const float WakePopHeight = 0.12f;
+        private Vector3[] plankPositions;
+        private Color switchColor = Color.white;
+        private bool everWoke;      // 한 번이라도 깨어났는지 (스테이지 시작 때 잠듦 연출이 나지 않게)
+        private bool departPending; // 깨어난 뒤 아직 출발하지 않음
+        private float wakeAt = -10f;
 
         public bool SwitchDriven => switchDriven;
         public bool Idle => switchDriven && Time.time >= activeUntil && AtEnd(clock);
@@ -82,6 +90,8 @@ namespace IBlameYou.Systems
                 platform.planks[i] = plank;
             }
             platform.plankColor = platform.planks.Length > 0 ? platform.planks[0].color : Color.white;
+            platform.plankPositions = new Vector3[width];
+            for (int i = 0; i < width; i++) platform.plankPositions[i] = platform.planks[i].transform.localPosition;
             if (switchDriven) platform.ApplyPlankColor();
 
             return platform;
@@ -91,6 +101,7 @@ namespace IBlameYou.Systems
         public void SetSwitchColor(Color color)
         {
             plankColor = Color.Lerp(plankColor, color, 0.45f);
+            switchColor = color;
             ApplyPlankColor();
         }
 
@@ -108,6 +119,11 @@ namespace IBlameYou.Systems
             if (!switchDriven) return;
             if (Idle)
             {
+                // 잠든 발판이 깨어난다: 판자가 톡 튀고 반짝 조각 + "우웅-팅", 출발 여유 동안 판자가 밝아진다
+                everWoke = true;
+                departPending = true;
+                wakeAt = Time.time;
+                SwitchPlatformFx.Wake(body.position, planks != null ? planks.Length : 1, switchColor);
                 holdUntil = Time.time + SwitchStartDelay;
                 // 끝점에 멈춰 있던 시계를 그 멈춤 구간 끝으로 옮겨, 여유 시간이 지나면 바로 출발한다.
                 clock = PauseEnd(clock);
@@ -162,11 +178,18 @@ namespace IBlameYou.Systems
                 if (Time.time >= holdUntil && (Time.time < activeUntil || !AtEnd(clock))) clock += Time.fixedDeltaTime;
                 // 잠든 발판은 Activate로만 깨어난다 (꺼진 콜라이더의 bounds는 비어 있어 위를 볼 수 없다).
                 bool shouldGhost = Idle && (ghost || !HasRider());
+                if (departPending && Time.time >= holdUntil)
+                {
+                    departPending = false;
+                    SwitchPlatformFx.Depart(body.position, planks != null ? planks.Length : 1, Thickness);
+                    ApplyPlankColor(); // 출발 여유 동안의 밝아짐을 원래 색으로
+                }
                 if (shouldGhost != ghost)
                 {
                     ghost = shouldGhost;
                     solid.enabled = !ghost;
                     ApplyPlankColor();
+                    if (ghost && everWoke) SwitchPlatformFx.Sleep(body.position, planks != null ? planks.Length : 1, switchColor);
                 }
                 else if (wasIdle != Idle) ApplyPlankColor();
             }
@@ -174,6 +197,25 @@ namespace IBlameYou.Systems
             var delta = target - body.position;
             CarryRiders(delta);
             body.MovePosition(target);
+        }
+
+        // 깨어남 연출: 판자가 톡 튀었다 내려앉고, 출발 여유 동안 점점 빠르게 밝아졌다 어두워진다 (그림만).
+        private void LateUpdate()
+        {
+            if (!switchDriven || planks == null || plankPositions == null) return;
+            float since = Time.time - wakeAt;
+            float lift = since >= 0f && since < WakePopTime ? Mathf.Sin(since / WakePopTime * Mathf.PI) * WakePopHeight : 0f;
+            for (int i = 0; i < planks.Length; i++)
+                if (planks[i] != null) planks[i].transform.localPosition = plankPositions[i] + Vector3.up * lift;
+
+            if (!departPending || Time.time >= holdUntil) return;
+            float p = Mathf.Clamp01(1f - (holdUntil - Time.time) / SwitchStartDelay);
+            float cycles = 1.5f * p + 2.5f * p * p; // 갈수록 빨라진다
+            float k = 0.5f - 0.5f * Mathf.Cos(cycles * 2f * Mathf.PI);
+            var c = Color.Lerp(plankColor, Color.white, 0.45f * k);
+            c.a = plankColor.a;
+            foreach (var plank in planks)
+                if (plank != null) plank.color = c;
         }
 
         // 발판 윗면 바로 위에 살아 있는 몸(플레이어·적)이 있는지. 잠든 발판으로 바꾸기 전에 본다.
