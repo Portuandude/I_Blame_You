@@ -1,4 +1,5 @@
 using IBlameYou.Enemies;
+using IBlameYou.Systems;
 using UnityEngine;
 
 namespace IBlameYou.UI
@@ -21,6 +22,12 @@ namespace IBlameYou.UI
         private static readonly Color BossFillColor = new Color(0.78f, 0.45f, 1f);   // arcane 보라
         private static readonly Color BossGlowColor = new Color(1f, 0.85f, 0.3f);    // gold
         private BarTrail bossTrail;
+        // 격파 마무리: 마지막 몸이 쓰러지면 바가 바로 사라지지 않고 빈 바 위에 금색 "격파!" 도장이 찍힌 뒤 흐려진다 (실제 시간).
+        private const float DefeatBarTime = 1.4f;
+        private const float DefeatBarFade = 0.4f;
+        private const float DefeatStampDelay = 0.12f;
+        private const float DefeatStampDrop = 0.15f;
+        private GUIStyle defeatStamp;
         private float bossShakeStart = -10f;
         private float lastBossMax;
 
@@ -36,11 +43,15 @@ namespace IBlameYou.UI
 
             bossWasActive = active;
             DrawBossIntro();
+            float sinceDefeat = Time.unscaledTime - BossDefeatFx.LastTime;
+            if (sinceDefeat >= 0f && sinceDefeat < DefeatBarTime)
+            {
+                DrawBossDefeatBar(sinceDefeat);
+                return;
+            }
             if (!active) return;
 
-            float width = Mathf.Min(560f, Screen.width - 2f * 400f);
-            if (width < 280f) width = 280f;
-            var rect = new Rect((Screen.width - width) / 2f, 12f, width, 58f);
+            var rect = BossBarRect();
             GUI.Box(rect, GUIContent.none, panel);
 
             int alive = BossEvents.AliveCount;
@@ -74,6 +85,53 @@ namespace IBlameYou.UI
                     new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
         }
     
+        private static Rect BossBarRect()
+        {
+            float width = Mathf.Min(560f, Screen.width - 2f * 400f);
+            if (width < 280f) width = 280f;
+            return new Rect((Screen.width - width) / 2f, 12f, width, 58f);
+        }
+
+        // 격파 마무리 바: 빈 바(흰 잔상은 계속 줄어든다) + "이름 격파!" 제목 + 금색 "격파!" 도장 (1.6배 → 1배로 쾅, 기울어짐). 끝 DefeatBarFade초 동안 흐려진다.
+        private void DrawBossDefeatBar(float since)
+        {
+            float alpha = Mathf.Clamp01((DefeatBarTime - since) / DefeatBarFade);
+            bool fading = alpha < 1f;
+            if (Event.current.type == EventType.Repaint) bossTrail.Step(0f, Time.unscaledTime, Time.unscaledDeltaTime);
+
+            var rect = BossBarRect();
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.Box(rect, GUIContent.none, panel);
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
+                $"<b>{BossDefeatFx.LastName}</b>  0 / {Mathf.Max(0f, lastBossMax):0}", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            var icon = new Rect(rect.x + 10f, rect.y + 26f, BarIconSize, BarIconSize);
+            var bar = new Rect(icon.xMax + 4f, rect.y + 29f, rect.xMax - icon.xMax - 4f - 10f - BarGlow, BarHeight);
+            var glow = BossGlowColor;
+            glow.a *= alpha;
+            // 흐려지는 동안은 흰 잔상을 빼서(잔상은 알파를 따로 정한다) 바 전체가 함께 사라지게
+            DrawCapsuleBar(bar, 0f, fading ? 0f : bossTrail.Shown, BossFillColor, glow, null);
+            DrawIcon(crownIcon, icon, 1f);
+            GUI.color = previous;
+
+            float t = since - DefeatStampDelay;
+            if (t < 0f) return;
+            if (defeatStamp == null) defeatStamp = new GUIStyle(big) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
+            var stamp = new Rect(rect.center.x - 90f, rect.y + 14f, 180f, 44f);
+            var matrix = GUI.matrix;
+            float scale = t < DefeatStampDrop ? Mathf.Lerp(1.6f, 1f, (t / DefeatStampDrop) * (t / DefeatStampDrop)) : 1f;
+            GUIUtility.ScaleAroundPivot(Vector2.one * scale, stamp.center);
+            GUIUtility.RotateAroundPivot(-8f, stamp.center);
+            float stampAlpha = Mathf.Min(alpha, Mathf.Clamp01(t / DefeatStampDrop));
+            var gold = Color.Lerp(Color.white, BossGlowColor, Mathf.Clamp01((t - DefeatStampDrop) / 0.3f)); // 찍힌 순간 흰색에서 금색으로
+            GUI.color = new Color(0.17f, 0.1f, 0.24f, stampAlpha); // 진한 그림자
+            GUI.Label(new Rect(stamp.x + 2f, stamp.y + 2f, stamp.width, stamp.height), "격파!", defeatStamp);
+            GUI.color = new Color(gold.r, gold.g, gold.b, stampAlpha);
+            GUI.Label(stamp, "격파!", defeatStamp);
+            GUI.matrix = matrix;
+            GUI.color = previous;
+        }
+
         private void DrawBossIntro()
         {
             float since = Time.unscaledTime - bossIntroStart;
