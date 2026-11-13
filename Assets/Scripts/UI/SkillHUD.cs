@@ -312,6 +312,7 @@ namespace IBlameYou.UI
             DrawOrbGuides(); // 화면 밖 보상 구슬 쪽 가장자리 하트 (SkillHUD.OrbGuide.cs)
             DrawEnemyGuides(); // 전투 구역에서 화면 밖 적 쪽 가장자리 붉은 화살표 (SkillHUD.EnemyGuide.cs)
             DrawLastEnemyMark(); // 전투 구역 마지막 적 머리 위 ▼ (SkillHUD.LastEnemy.cs)
+            DrawAimWarnings(); // 화면 밖에서 시위를 당기는 궁수 쪽 가장자리 노란 "!" (SkillHUD.EnemyGuide.cs)
             DrawStatusPanel();
             DrawGoldPill(); // 골드 (SkillHUD.Gold.cs)
             DrawStageTag();

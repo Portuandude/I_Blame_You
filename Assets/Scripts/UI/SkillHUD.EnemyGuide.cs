@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IBlameYou.Enemies;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -14,6 +15,44 @@ namespace IBlameYou.UI
         private const float EnemyGuideBodyLift = 0.6f; // 발 위치에서 몸 가운데쯤으로
         private readonly List<(float distance, Vector3 position)> enemyGuideTargets = new List<(float, Vector3)>();
         private GUIStyle enemyGuideArrow;
+
+        // 화면 밖 궁수 경고: 시위를 당기는 궁수(GoblinArcherController.Aiming)가 카메라 밖(AimWarnRange 안)에 있으면
+        // 그 쪽 화면 가장자리에 노란 "!"가 빠르게 깜빡인다 (전투 구역 밖에서도). 곧 화살이 날아온다는 예고.
+        private const float AimWarnRange = 24f;
+        private const float AimWarnMargin = 30f;
+        private static readonly Color AimWarnColor = new Color(1f, 0.85f, 0.2f); // 적 발견 "!"와 같은 노랑
+        private GUIStyle aimWarnText;
+
+        private void DrawAimWarnings()
+        {
+            if (deathHandled || stageCleared || GoblinArcherController.Aiming.Count == 0) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            if (aimWarnText == null)
+                aimWarnText = new GUIStyle(label) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false };
+
+            Vector3 center = cam.transform.position;
+            var mid = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            var previousColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 14f)); // 빠른 깜빡임
+            foreach (var archer in GoblinArcherController.Aiming)
+            {
+                if (archer == null) continue;
+                var p = archer.AimPoint;
+                if (Vector2.Distance(p, center) > AimWarnRange) continue;
+                var vp = cam.WorldToViewportPoint(p);
+                if (vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f) continue; // 화면 안이면 화살 끝 반짝으로 충분
+                var screen = cam.WorldToScreenPoint(p);
+                var dir = new Vector2(screen.x, Screen.height - screen.y) - mid;
+                if (screen.z < 0f) dir = -dir;
+                if (dir.sqrMagnitude < 0.01f) continue;
+                float halfW = mid.x - AimWarnMargin, halfH = mid.y - AimWarnMargin;
+                float scale = Mathf.Min(halfW / Mathf.Max(0.001f, Mathf.Abs(dir.x)), halfH / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
+                var at = mid + dir * scale;
+                OutlinedLabel.Draw(new Rect(at.x - 16f, at.y - 18f, 32f, 36f), "!", aimWarnText, AimWarnColor, OutlinedLabel.Outline, 0f, 2f);
+            }
+            GUI.color = previousColor;
+        }
 
         private void DrawEnemyGuides()
         {
