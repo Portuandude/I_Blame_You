@@ -103,17 +103,35 @@ namespace IBlameYou.Systems
         public bool HasCoinsLeft(int index)
         {
             if (rooms == null || stage == null || index < 0 || index >= stage.Chunks.Count) return false;
-            if (coinPileCounts == null)
-            {
-                coinPileCounts = new int[stage.Chunks.Count];
-                for (int i = 0; i < coinPileCounts.Length; i++)
-                    foreach (var f in stage.Chunks[i].Features)
-                        if (f.Kind == FeatureKind.CoinPile) coinPileCounts[i]++;
-            }
+            EnsureCoinPileCounts();
             for (int k = 0; k < coinPileCounts[index]; k++)
                 if (!collectedCoins.Contains(CoinPileKey(index, k))) return true;
             return false;
         }
+
+        private void EnsureCoinPileCounts()
+        {
+            if (coinPileCounts != null) return;
+            coinPileCounts = new int[stage.Chunks.Count];
+            for (int i = 0; i < coinPileCounts.Length; i++)
+                foreach (var f in stage.Chunks[i].Features)
+                    if (f.Kind == FeatureKind.CoinPile) coinPileCounts[i]++;
+        }
+
+        // 결과 창 "동전 무더기 a/b": 이번 스테이지 전체 무더기 수와 주운 수. 스테이지가 없으면 0.
+        public int CoinPilesTotal
+        {
+            get
+            {
+                if (stage == null) return 0;
+                EnsureCoinPileCounts();
+                int total = 0;
+                foreach (int n in coinPileCounts) total += n;
+                return total;
+            }
+        }
+
+        public int CoinPilesCollected => Mathf.Min(collectedCoins.Count, CoinPilesTotal);
 
         public StageData Stage => stage;
 
