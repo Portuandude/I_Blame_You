@@ -17,6 +17,9 @@ namespace IBlameYou.UI
         private int relicOpenedFrame;
         private long relicCodexAtOpen; // 창을 연 때의 유물 도감 (처음 보는 유물 카드에 NEW)
         private int relicUnlockFrame = -1; // 고른 키가 같은 프레임에 스킬 입력으로 새지 않게, 이 프레임부터 조작 잠금을 푼다
+        private int relicSelection;        // 키보드로 고른 카드 (←→·A/D, Enter·Space)
+        private bool relicKeyboard;        // 화살표를 한 번이라도 눌렀으면 금색 테두리를 그린다
+        private int relicColumns = 1;      // 그린 카드 열 수 (2×2일 때 ↑↓가 한 줄씩)
 
         private PlayerRelics relics;
 
@@ -52,6 +55,9 @@ namespace IBlameYou.UI
             relicCancelled = onCancelled;
             relicOpenedFrame = Time.frameCount;
             relicCodexAtOpen = IBlameYou.Core.SaveData.RelicCodexMask(IBlameYou.Core.GameSession.DevMode);
+            relicSelection = 0;
+            relicKeyboard = false;
+            relicColumns = offer.Length;
             relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
             control.Locked = true;
             Time.timeScale = 0f;
@@ -100,6 +106,37 @@ namespace IBlameYou.UI
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) ChooseRelic(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
             else if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) ChooseRelic(3); // 네잎 클로버
+            else UpdateRelicKeys();
+        }
+
+        // ←→·A/D로 카드 옮기기 (2×2면 ↑↓·W/S로 줄 옮기기), Enter·Space로 고르기. 첫 화살표는 지금 칸(첫 카드)을 보여 주기만 한다.
+        // 고른 키는 같은 프레임 스킬·순간이동 입력으로 새지 않게 ChooseRelic → CloseRelicWindow(true)가 잠금을 다음 프레임에 푼다.
+        // A/D·Space·Enter는 이동·점프·순간이동 키이기도 해서, 카드가 다 나타나기 전(0.4초)엔 받지 않고 Enter·Space는 화살표로 칸을 보인 뒤에만 받는다
+        // (상자에 뛰어들며 점프를 연타하다 후보를 보지도 않고 고르지 않게).
+        private const float RelicKeysDelay = 0.4f;
+
+        private void UpdateRelicKeys()
+        {
+            if (Time.unscaledTime - relicWindowOpenedAt < RelicKeysDelay) return;
+            int count = relicOffer.Length;
+            int step = 0;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) step = -1;
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) step = 1;
+            else if (relicColumns < count && (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))) step = -relicColumns;
+            else if (relicColumns < count && (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))) step = relicColumns;
+            if (step != 0)
+            {
+                if (relicKeyboard) relicSelection = ((relicSelection + step) % count + count) % count;
+                relicKeyboard = true;
+                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                return;
+            }
+
+            if (relicKeyboard && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space)))
+            {
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                ChooseRelic(Mathf.Clamp(relicSelection, 0, count - 1));
+            }
         }
 
         // 유물 한 줄에 하나: "이름 — 효과".
@@ -141,6 +178,7 @@ namespace IBlameYou.UI
                 cardWidth = Mathf.Min(fullCardWidth, (available - gap) / columns);
             }
             int rows = (count + columns - 1) / columns;
+            relicColumns = columns;
             float width = columns * cardWidth + (columns - 1) * gap + 40f;
             float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f;
             float top = Mathf.Max(edge, Mathf.Min(Screen.height * 0.22f, (Screen.height - height) / 2f));
@@ -155,7 +193,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키 또는 클릭",
+                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter 또는 클릭",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             for (int i = 0; i < count; i++)
@@ -176,7 +214,9 @@ namespace IBlameYou.UI
                         new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
-                bool chosen = CuteButton.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);
+                var buttonRect = new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f);
+                if (relicKeyboard && i == relicSelection) CuteButton.DrawSelection(card); // 키보드로 고른 카드 둘레 금색 테두리
+                bool chosen = CuteButton.Button(buttonRect, "고르기", cardButton);
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {
