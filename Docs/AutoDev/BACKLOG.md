@@ -108,6 +108,14 @@ DIRECTION ① "플레이 감각 다듬기". 보스 슬라임 킹의 패턴이 �
 
 6개 모두 끝 → BACKLOG_ARCHIVE.
 
+## 다음 (2026-11-13 10:00 자동 실행이 추가 — 쌍둥이 기사 짝 잃음·광폭화 연출)
+
+- DONE (claude/project-thread-jamtdv): 짝이 쓰러지는 순간 0.1초 히트스톱 + 새 효과음 `KnightLink`
+- DONE (claude/project-thread-jamtdv): 쓰러진 기사 원소색 빛 알갱이가 남은 기사에게 날아가 붉은 큰 고리 (광폭화는 그대로 바로 켜짐)
+- DONE (claude/project-thread-jamtdv): 광폭화 중 머리 위 붉은 김 + 빠를 때 붉은 잔상
+- DONE (claude/project-thread-jamtdv): 보스 체력바 아래 "광폭화! N초" (쓴 기사만 지움)
+- DONE (claude/project-thread-jamtdv): 광폭화가 시간이 다 돼 풀리면 회색 김·"헉헉…"·새 효과음 `EnrageEnd`·곡 빠르기 1로
+
 ## 최우선 (2026-11-10 사람 결정 4건)
 
 - TODO (사람 필요: 15분 플레이테스트 뒤 판단): 숨 고르기 방 채우기 — 체크포인트가 빠진 휴식(Rest) 방이 빈 평지가 됐다. 회복 없이 볼거리만(반짝이는 버섯·나비 장식, 다음 방 미리보기 표지판 등) 두거나, 방 리듬 완충을 이동 방으로 바꿀지 플레이테스트 뒤 판단. 회복 구슬을 두면 회복 수지가 다시 커지므로 넣지 않는다
