@@ -74,8 +74,7 @@ namespace IBlameYou.UI
             CloseRelicWindow(true);
             callback?.Invoke(chosen);
             if (OwnsRelic(chosen)) StartRelicFly(chosen, index); // 아이콘이 HUD 유물 칸으로 날아간다 (SkillHUD.RelicFly.cs)
-            feed.Add(new FeedEntry { Time = Time.time, Text = $"유물: {RelicBook.Name(chosen)} · {RelicBook.Description(chosen)}", Color = new Color(1f, 0.85f, 0.4f) });
-            if (feed.Count > MaxFeed) feed.RemoveAt(0);
+            AddFeed($"유물: {RelicBook.Name(chosen)} · {RelicBook.Description(chosen)}", new Color(1f, 0.85f, 0.4f));
         }
 
         // 고르지 않고 닫히면(쓰러짐, 클리어) 상자에 알려서 다음에 다시 열 수 있게 한다.
