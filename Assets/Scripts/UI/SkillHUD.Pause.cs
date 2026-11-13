@@ -42,6 +42,7 @@ namespace IBlameYou.UI
             control.Locked = true;
             Time.timeScale = 0f;
             GameAudio.PlaySfx("PauseOpen", 0.7f, 0f);
+            GameAudio.SetMusicMuffled(true); // 창이 열린 동안 음악이 물속처럼 먹먹하게
         }
 
         // resumeSound: 게임으로 돌아갈 때(Esc·계속하기)만 "통". 다시 시작·시작 화면·클리어 등으로 닫힐 때는 조용히.
@@ -52,6 +53,7 @@ namespace IBlameYou.UI
             paused = false;
             displayWindow.Close();
             Time.timeScale = 1f;
+            GameAudio.SetMusicMuffled(false);
             SaveData.SaveVolume();
             if (!deathHandled && !stageCleared) control.Locked = false;
         }
