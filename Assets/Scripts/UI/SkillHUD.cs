@@ -158,6 +158,7 @@ namespace IBlameYou.UI
 
         private void OnStageNotice(string text)
         {
+            PushOldNotice(); // 아직 떠 있던 문구는 위로 밀려 올라가며 사라진다 (SkillHUD.Notice.cs)
             notice = text;
             noticeTime = Time.time;
         }
