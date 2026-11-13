@@ -605,6 +605,26 @@ def npc_talk():
     return normalize(fade_edges(lowpass(out, 3500), 3))
 
 
+def pause_open():
+    """일시정지 창 열기: 작은 종 "또롱" (위로 가는 두 음 G5→C6, 둥근 사인 + 살짝 반짝임), 0.22초. UiClick보다 부드럽게."""
+    n = int(0.22 * SR)
+    out = np.zeros(n)
+    for at, hz in ((0.0, 783.99), (0.07, 1046.5)):
+        m = n - int(at * SR)
+        tone = osc("sine", hz, m) + 0.25 * osc("sine", hz * 2, m)
+        mix_at(out, tone * env_exp(m, 0.06), int(at * SR))
+    return normalize(fade_edges(lowpass(out, 6000), 3))
+
+
+def pause_close():
+    """일시정지 창 닫기 (다시 시작): 낮고 둥근 "통" (C5에서 살짝 내려가는 사인 + 나무 딸깍), 0.14초."""
+    n = int(0.14 * SR)
+    t = np.arange(n) / SR
+    out = osc("sine", 523.25 * np.exp(-t * 2.5), n) * env_exp(n, 0.045)
+    out += 0.25 * highpass(noise(n), 2500) * env_exp(n, 0.003)
+    return normalize(fade_edges(lowpass(out, 5000), 3))
+
+
 def chest_land():
     """유물 상자 착지: 묵직한 나무 "쿵" (낮은 사인 낙하 + 나무 판 울림) + 안에서 짤랑 (높은 종 두 개, 작게), 약 0.45초."""
     n = int(0.45 * SR)
@@ -1248,7 +1268,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
