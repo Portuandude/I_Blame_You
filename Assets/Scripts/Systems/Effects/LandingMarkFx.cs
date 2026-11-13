@@ -16,16 +16,19 @@ namespace IBlameYou.Systems
         private static Sprite markSprite;
 
         private SpriteRenderer mark;
+        private Color color = MarkColor;
         private GameObject owner;
         private float strength;
         private bool visible;
 
-        public static LandingMarkFx Create(GameObject owner, float width)
+        // color: 없으면 붉은색 (슬라임 킹 소환 자리는 보라).
+        public static LandingMarkFx Create(GameObject owner, float width, Color? color = null)
         {
             var go = new GameObject("LandingMark");
             go.transform.localScale = new Vector3(width, width, 1f);
             var fx = go.AddComponent<LandingMarkFx>();
             fx.owner = owner;
+            if (color.HasValue) fx.color = color.Value;
             fx.mark = go.AddComponent<SpriteRenderer>();
             fx.mark.sprite = MarkSprite();
             fx.mark.sortingOrder = 2; // 땅 타일 위, 적·플레이어 아래 (화살 발사대 점선과 같은 층)
@@ -56,7 +59,7 @@ namespace IBlameYou.Systems
 
             float pulse = 0.85f + 0.15f * Mathf.Sin(Time.time * 22f); // 살짝 두근거림
             float alpha = visible ? Mathf.Lerp(MinAlpha, MaxAlpha, strength) * pulse : 0f;
-            mark.color = new Color(MarkColor.r, MarkColor.g, MarkColor.b, alpha);
+            mark.color = new Color(color.r, color.g, color.b, alpha);
         }
 
         // 가운데가 옅고 테두리가 진한 흰 타원 (색은 SpriteRenderer.color로 입힌다).

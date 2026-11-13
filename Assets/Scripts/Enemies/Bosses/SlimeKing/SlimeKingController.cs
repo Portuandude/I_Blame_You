@@ -25,6 +25,7 @@ namespace IBlameYou.Enemies
         private static readonly int IsAttackingParam = Animator.StringToHash("IsAttacking");
         private static readonly Color BaseTint = new Color(0.6f, 0.35f, 0.95f);
         private static readonly Color GlowTint = new Color(1f, 0.85f, 0.35f);
+        private static readonly Color TelegraphPurple = new Color(0.78f, 0.45f, 1f); // 촉수 점선·소환 자리 (킹 몸 보라)
 
         // 자원
         private const float ManaRegen = 4f;     // 초당
@@ -100,6 +101,12 @@ namespace IBlameYou.Enemies
 
         private readonly List<SlimeKingTentacle> tentacles = new List<SlimeKingTentacle>();
         private GameObject shadow;
+
+        // 패턴 예고 (그림만, 패턴 시간·피해·범위는 그대로). Interrupt·OnDestroy에서 ClearTelegraphs로 치운다.
+        private LandingMarkFx slamMark;      // 내려찍기 피해 폭
+        private LandingMarkFx headbuttMark;  // 박치기로 뛰어 내릴 자리
+        private AimLineFx tentacleLine;      // 첫 촉수가 나갈 쪽
+        private readonly List<LandingMarkFx> summonMarks = new List<LandingMarkFx>(); // 어미 슬라임이 나올 자리
         private bool grabbing;
         private PlayerControlState grabbedControl;
         private HealthSystem grabbedHealth;
@@ -292,12 +299,28 @@ namespace IBlameYou.Enemies
             lastSummon = Time.time;
             motion = Motion.Hold;
             Say("어미 슬라임 소환!", new Color(0.8f, 0.55f, 1f));
-            yield return Squash(0.6f, 0.8f);
+
+            // 나올 자리를 먼저 정해 웅크리는 동안 보라 타원으로 보여 준다 (나오면 그 자리 타원은 사라진다).
+            var spawnXs = new float[BroodSize];
+            ClearSummonMarks();
+            for (int i = 0; i < BroodSize; i++)
+            {
+                spawnXs[i] = ClampX(transform.position.x + (i - (BroodSize - 1) / 2f) * 4.5f + Random.Range(-0.5f, 0.5f));
+                var mark = LandingMarkFx.Create(gameObject, 1.6f, TelegraphPurple);
+                PlaceMark(mark, spawnXs[i], transform.position.y + 1.5f, 0f);
+                summonMarks.Add(mark);
+            }
+
+            yield return Squash(0.6f, 0.8f, k =>
+            {
+                for (int i = 0; i < summonMarks.Count; i++) PlaceMark(summonMarks[i], spawnXs[i], transform.position.y + 1.5f, k);
+            });
 
             var brood = SlimeBrood.Create(transform.parent, BroodDuration);
             for (int i = 0; i < BroodSize; i++)
             {
-                float x = ClampX(transform.position.x + (i - (BroodSize - 1) / 2f) * 4.5f + Random.Range(-0.5f, 0.5f));
+                float x = spawnXs[i];
+                if (i < summonMarks.Count && summonMarks[i] != null) summonMarks[i].Remove();
                 var position = new Vector3(x, transform.position.y + 1.5f, 0f);
                 EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.5f, 1f, 0.7f), 1.4f);
                 var mother = MotherSlimeSpawner.Spawn(position, EffectLibrary.Config);
@@ -309,6 +332,7 @@ namespace IBlameYou.Enemies
                 yield return new WaitForSeconds(0.25f);
             }
 
+            ClearSummonMarks();
             GameAudio.PlaySfx("Cast_Earth", 0.7f);
             StageEvents.PostNotice($"{BroodDuration:0}초 안에 슬라임을 모두 처치하라!");
             yield return new WaitForSeconds(0.4f);
@@ -338,6 +362,15 @@ namespace IBlameYou.Enemies
             Vector2 from = Rb.position;
             float top = from.y + rise;
 
+            // 피해 폭 예고: 발광처럼 자리가 정해져 있으면 떠오를 때부터, 따라다니는 내려찍기는 떠 있는 동안 그 아래.
+            RemoveSlamMark();
+            float markWidth = SlamWidth * size;
+            if (targetX.HasValue)
+            {
+                slamMark = LandingMarkFx.Create(gameObject, markWidth);
+                PlaceMark(slamMark, targetX.Value, top, 0f);
+            }
+
             for (float t = 0f; t < riseTime; t += Time.fixedDeltaTime)
             {
                 float k = t / riseTime;
@@ -346,6 +379,7 @@ namespace IBlameYou.Enemies
             }
 
             CreateShadow();
+            if (slamMark == null) slamMark = LandingMarkFx.Create(gameObject, markWidth);
             float x = from.x;
             for (float t = 0f; t < hover; t += Time.fixedDeltaTime)
             {
@@ -365,10 +399,12 @@ namespace IBlameYou.Enemies
 
                 Rb.MovePosition(new Vector2(x, top + Mathf.Sin(t * 12f) * 0.08f));
                 PlaceShadow(x, GroundBelow(x, top));
+                PlaceMark(slamMark, targetX ?? x, top, t / hover); // 떨어질 때가 다가올수록 진해진다
                 yield return new WaitForFixedUpdate();
             }
 
             float landing = GroundBelow(x, top);
+            PlaceMark(slamMark, x, top, 1f);
             float y = top;
             while (true)
             {
@@ -382,6 +418,7 @@ namespace IBlameYou.Enemies
             Rb.linearVelocity = Vector2.zero;
             Rb.gravityScale = baseGravity;
             DestroyShadow();
+            RemoveSlamMark();
             Impact(x, landing, multiplier, SlamWidth * size);
 
             yield return Squash(targetX.HasValue ? 0.15f : 0.35f, 0.7f);
@@ -412,7 +449,17 @@ namespace IBlameYou.Enemies
             stamina -= TentacleStamina;
             motion = Motion.Hold;
             Say("촉수!", new Color(0.8f, 0.55f, 1f));
-            yield return Squash(0.5f, 0.9f);
+
+            // 웅크리는 동안 첫 촉수가 나갈 쪽(플레이어)으로 보라 점선. 촉수가 나가면 사라진다.
+            RemoveTentacleLine();
+            tentacleLine = AimLineFx.Create(gameObject, TelegraphPurple);
+            yield return Squash(0.5f, 0.9f, k =>
+            {
+                var aimTarget = FindTarget();
+                if (aimTarget != null && tentacleLine != null)
+                    tentacleLine.Aim(TentacleOrigin, (Vector2)aimTarget.position + Vector2.up * 0.5f, TentacleRange, ground, k);
+            });
+            RemoveTentacleLine();
 
             var target = FindTarget();
             if (target == null) yield break;
@@ -505,13 +552,25 @@ namespace IBlameYou.Enemies
             var target = FindTarget();
             if (target != null) SetFacing(target.position.x >= transform.position.x ? 1f : -1f);
             if (Animator != null) Animator.SetBool(IsAttackingParam, true);
-            yield return new WaitForSeconds(HeadbuttWindup);
+
+            // 예고: "슉" 소리 + 뛰어 내릴 자리(플레이어 쪽, 실제 점프와 같은 계산)에 붉은 타원. 착지하면 사라진다.
+            EnemyTelegraph.Windup(this, BodyBounds);
+            RemoveHeadbuttMark();
+            headbuttMark = LandingMarkFx.Create(gameObject, BodyBounds.size.x * 1.1f);
+            for (float t = 0f; t < HeadbuttWindup; t += Time.deltaTime)
+            {
+                var aimTarget = FindTarget();
+                float aimDx = aimTarget != null ? aimTarget.position.x - transform.position.x : facing * 4f;
+                PlaceMark(headbuttMark, transform.position.x + HeadbuttVx(aimDx) * HeadbuttAir, BodyBounds.center.y + 1f, t / HeadbuttWindup);
+                yield return null;
+            }
 
             target = FindTarget();
             float dx = target != null ? target.position.x - transform.position.x : facing * 4f;
             float gravity = Mathf.Abs(Physics2D.gravity.y) * Rb.gravityScale;
-            float vx = Mathf.Clamp(dx / HeadbuttAir, -HeadbuttMaxSpeed, HeadbuttMaxSpeed);
+            float vx = HeadbuttVx(dx);
             if (Mathf.Abs(vx) > 0.01f) SetFacing(Mathf.Sign(vx));
+            PlaceMark(headbuttMark, transform.position.x + vx * HeadbuttAir, BodyBounds.center.y + 1f, 1f); // 실제로 뛴 속도로 자리를 굳힌다
 
             motion = Motion.Script;
             Rb.linearVelocity = new Vector2(vx, gravity * HeadbuttAir / 2f);
@@ -531,6 +590,7 @@ namespace IBlameYou.Enemies
                 yield return new WaitForFixedUpdate();
             }
 
+            RemoveHeadbuttMark();
             motion = Motion.Hold;
             Shake(0.12f, 0.15f);
             yield return new WaitForSeconds(HeadbuttRecover);
@@ -626,6 +686,7 @@ namespace IBlameYou.Enemies
             StopAllCoroutines();
             CleanupTentacles();
             DestroyShadow();
+            ClearTelegraphs();
             ReleaseGrab();
             Rb.gravityScale = baseGravity;
             motion = Motion.Hold;
@@ -663,6 +724,7 @@ namespace IBlameYou.Enemies
             ReleaseGrab();
             CleanupTentacles();
             DestroyShadow();
+            ClearTelegraphs();
             if (Health != null)
             {
                 Health.HealthChanged -= OnKingHealthChanged;
@@ -677,23 +739,66 @@ namespace IBlameYou.Enemies
         }
 
         // 웅크렸다 펴기 (패턴 예고).
-        private IEnumerator Squash(float duration, float depth)
+        // eachFrame: 매 프레임 진행도(0~1)를 받아 예고 그림을 옮긴다 (없어도 된다).
+        private IEnumerator Squash(float duration, float depth, System.Action<float> eachFrame = null)
         {
-            if (visual == null)
-            {
-                yield return new WaitForSeconds(duration);
-                yield break;
-            }
-
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
-                float k = Mathf.Sin(t / duration * Mathf.PI);
-                float y = Mathf.Lerp(1f, depth, k);
-                visual.localScale = new Vector3(visualBaseScale.x * (2f - y), visualBaseScale.y * y, visualBaseScale.z);
+                eachFrame?.Invoke(t / duration);
+                if (visual != null)
+                {
+                    float k = Mathf.Sin(t / duration * Mathf.PI);
+                    float y = Mathf.Lerp(1f, depth, k);
+                    visual.localScale = new Vector3(visualBaseScale.x * (2f - y), visualBaseScale.y * y, visualBaseScale.z);
+                }
                 yield return null;
             }
 
-            visual.localScale = visualBaseScale;
+            if (visual != null) visual.localScale = visualBaseScale;
+        }
+
+        // ---- 패턴 예고 그림 ----
+
+        private float HeadbuttVx(float dx) => Mathf.Clamp(dx / HeadbuttAir, -HeadbuttMaxSpeed, HeadbuttMaxSpeed);
+
+        // x 아래 땅(fromY에서 아래로)에 타원을 둔다. 아래가 비어 있으면 숨긴다.
+        private void PlaceMark(LandingMarkFx mark, float x, float fromY, float strength)
+        {
+            if (mark == null) return;
+            var hit = Physics2D.Raycast(new Vector2(x, fromY), Vector2.down, 40f, ground);
+            mark.Place(hit.collider != null ? hit.point : new Vector2(x, fromY), strength, hit.collider != null);
+        }
+
+        private void RemoveSlamMark()
+        {
+            if (slamMark != null) slamMark.Remove();
+            slamMark = null;
+        }
+
+        private void RemoveHeadbuttMark()
+        {
+            if (headbuttMark != null) headbuttMark.Remove();
+            headbuttMark = null;
+        }
+
+        private void RemoveTentacleLine()
+        {
+            if (tentacleLine != null) tentacleLine.Remove();
+            tentacleLine = null;
+        }
+
+        private void ClearSummonMarks()
+        {
+            foreach (var mark in summonMarks) if (mark != null) mark.Remove();
+            summonMarks.Clear();
+        }
+
+        private void ClearTelegraphs()
+        {
+            RemoveSlamMark();
+            RemoveHeadbuttMark();
+            RemoveTentacleLine();
+            ClearSummonMarks();
         }
 
         private void CreateShadow()

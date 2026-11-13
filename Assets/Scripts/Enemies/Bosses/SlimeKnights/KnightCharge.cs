@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IBlameYou.Core;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -20,6 +21,8 @@ namespace IBlameYou.Enemies
         private const float DashSpeed = 10f;
         private const float DamageMultiplier = 1.2f;
         private const float WallCheck = 0.4f;
+        private const float TrailGap = 0.08f;      // 돌진 중 발밑 먼지 간격 (그림만)
+        private const float BumpShake = 0.15f;     // 벽에 부딪혀 멈출 때 카메라 흔들림 세기
         private static readonly Color WarnColor = new Color(1f, 0.55f, 0.15f);
 
         private enum Phase { None, Windup, Dash, Recover }
@@ -38,6 +41,8 @@ namespace IBlameYou.Enemies
         private float phaseEnd;
         private float nextTime;
         private float direction = 1f;
+        private AimLineFx dashLine; // 예고: 돌진할 쪽 바닥 높이 주황 점선 (돌진 거리만큼, 벽에서 끊김)
+        private float nextTrail;
 
         private void Awake()
         {
@@ -79,15 +84,31 @@ namespace IBlameYou.Enemies
                 case Phase.Windup:
                     if (Time.time >= phaseEnd)
                     {
+                        RemoveDashLine();
                         phase = Phase.Dash;
                         phaseEnd = Time.time + DashTime;
+                        nextTrail = Time.time;
                         struck.Clear();
                         EffectLibrary.PlayCast(Element.Fire, transform.position + Vector3.up * 0.4f, direction < 0f, 0.7f);
+                        GameAudio.PlaySfx("Dash", 0.6f);
+                        EnemySquash.For(gameObject).Release(); // 웅크렸다가 쭉 늘어나며 출발
+                    }
+                    else
+                    {
+                        UpdateDashLine(1f - (phaseEnd - Time.time) / WindupTime);
                     }
                     break;
                 case Phase.Dash:
-                    if (Time.time >= phaseEnd || WallAhead())
+                    if (Time.time >= nextTrail)
                     {
+                        nextTrail = Time.time + TrailGap;
+                        var b = body.bounds;
+                        VfxPlayer.Dust(new Vector3(b.center.x - direction * b.extents.x * 0.5f, b.min.y, 0f), 0.3f);
+                    }
+                    bool wall = WallAhead();
+                    if (Time.time >= phaseEnd || wall)
+                    {
+                        if (wall) Bump();
                         phase = Phase.Recover;
                         phaseEnd = Time.time + RecoverTime;
                     }
@@ -121,10 +142,48 @@ namespace IBlameYou.Enemies
             transform.localScale = new Vector3(direction, 1f, 1f);
             if (knight == null) knight = GetComponent<SlimeKnight>();
             if (knight != null) knight.Flash(WarnColor, WindupTime);
+
+            // 예고 (그림·소리만): 웅크림 + "슉" + 돌진할 쪽 점선.
+            EnemySquash.For(gameObject).Windup(WindupTime);
+            if (slime != null) EnemyTelegraph.Windup(slime, body.bounds);
+            RemoveDashLine();
+            dashLine = AimLineFx.Create(gameObject, WarnColor);
+            UpdateDashLine(0f);
+        }
+
+        private void UpdateDashLine(float strength)
+        {
+            if (dashLine == null) return;
+            var bounds = body.bounds;
+            var from = new Vector2(bounds.center.x + direction * bounds.extents.x, bounds.min.y + 0.3f); // WallAhead와 같은 높이
+            float length = DashSpeed * stats.TotalMoveMultiplier * DashTime;
+            dashLine.Aim(from, from + new Vector2(direction * length, 0f), length, ground, strength);
+        }
+
+        private void RemoveDashLine()
+        {
+            if (dashLine != null) dashLine.Remove();
+            dashLine = null;
+        }
+
+        // 벽에 부딪혀 멈춤: 먼지 + 쿵 + 작은 흔들림 (화면 안일 때만 흔든다).
+        private void Bump()
+        {
+            var bounds = body.bounds;
+            VfxPlayer.Dust(new Vector3(bounds.center.x + direction * bounds.extents.x, bounds.min.y, 0f), 0.8f);
+            GameAudio.PlaySfx("Land", 0.7f);
+            var cam = Camera.main;
+            if (cam == null) return;
+            var vp = cam.WorldToViewportPoint(bounds.center);
+            if (vp.x < 0f || vp.x > 1f || vp.y < 0f || vp.y > 1f) return;
+            var follow = cam.GetComponent<CameraFollow>();
+            if (follow != null) follow.Shake(0.15f, BumpShake);
         }
 
         private void End()
         {
+            RemoveDashLine();
+            if (phase == Phase.Windup) EnemySquash.For(gameObject).Cancel(); // 예고 중에 끊기면 웅크림을 바로 푼다
             phase = Phase.None;
             slime.Suspended = false;
             nextTime = Time.time + Cooldown / Mathf.Max(0.1f, stats.AttackSpeedMultiplier);
@@ -174,6 +233,7 @@ namespace IBlameYou.Enemies
 
         private void OnDestroy()
         {
+            RemoveDashLine();
             if (slime != null) slime.Suspended = false;
         }
     }
