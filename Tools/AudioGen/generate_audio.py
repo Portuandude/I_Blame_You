@@ -658,6 +658,47 @@ def chest_land():
     return normalize(fade_edges(lowpass(out, 6000)))
 
 
+def chest_creak():
+    """유물 상자 창 열기: 나무 뚜껑 "끼-익" (위로 휘는 짧은 마찰음, 톱니파 + 띠 잡음) 뒤에 안에서 빛 "샤랑" (높은 사인 두 음), 약 0.4초."""
+    n = int(0.4 * SR)
+    t = np.arange(n) / SR
+    m = int(0.16 * SR)
+    tm = np.arange(m) / SR
+    creak = osc("saw", 260 + 320 * tm / 0.16, m) * env_adsr(m, a=0.02, d=0.05, s=0.6, r=0.05) * 0.35
+    creak = bandpass(creak + 0.4 * bandpass(noise(m), 600, 1800) * env_exp(m, 0.05), 300, 2500)
+    out = np.zeros(n)
+    mix_at(out, creak, 0)
+    for at, name in ((0.14, "E6"), (0.2, "B6")):
+        s0 = int(at * SR)
+        k = n - s0
+        mix_at(out, (osc("sine", note_hz(name), k) + 0.2 * osc("sine", note_hz(name) * 2, k)) * env_exp(k, 0.09) * 0.4, s0)
+    mix_at(out, 0.08 * highpass(noise(n - int(0.14 * SR)), 6000) * env_exp(n - int(0.14 * SR), 0.05), int(0.14 * SR))
+    return normalize(fade_edges(lowpass(out, 8000), 3))
+
+
+def relic_slot():
+    """고른 유물 아이콘이 HUD 칸에 도착: 작은 "칭" (C7 사인 + 배음, 아주 짧게), 0.18초."""
+    n = int(0.18 * SR)
+    f = note_hz("C7")
+    out = (osc("sine", f, n) + 0.3 * osc("sine", f * 1.5, n)) * env_exp(n, 0.05)
+    out += 0.1 * highpass(noise(n), 7000) * env_exp(n, 0.015)
+    return normalize(fade_edges(lowpass(out, 9000), 3))
+
+
+def book_open():
+    """특성 창 열기: 책 펼치는 "파라락" (짧은 종이 넘김 잡음 세 번, 점점 높게) + 끝에 작은 반짝 (E6), 약 0.35초."""
+    n = int(0.35 * SR)
+    out = np.zeros(n)
+    for k, (at, lo) in enumerate(((0.0, 1500), (0.05, 2200), (0.1, 3000))):
+        m = int(0.06 * SR)
+        flap = bandpass(noise(m), lo, lo * 2.5) * env_adsr(m, a=0.005, d=0.02, s=0.4, r=0.03) * (0.6 + 0.2 * k)
+        mix_at(out, flap, int(at * SR))
+    s0 = int(0.15 * SR)
+    k = n - s0
+    mix_at(out, (osc("sine", note_hz("E6"), k) + 0.25 * osc("sine", note_hz("E6") * 2, k)) * env_exp(k, 0.07) * 0.35, s0)
+    return normalize(fade_edges(lowpass(out, 8000), 3))
+
+
 def heartbeat():
     """체력 30% 이하 경고: 부드러운 심장 "두-근" (낮은 사인 쿵 두 개, 0.13초 간격), 0.36초. 맥동마다 나므로 작고 둥글게."""
     n = int(0.36 * SR)
@@ -1308,7 +1349,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "RunStart": run_start, "BossDefeat": boss_defeat,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "ChestCreak": chest_creak, "RelicSlot": relic_slot, "BookOpen": book_open, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "RunStart": run_start, "BossDefeat": boss_defeat,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
@@ -1317,7 +1358,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()

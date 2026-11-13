@@ -17,6 +17,9 @@ namespace IBlameYou.UI
         private int relicOpenedFrame;
         private long relicCodexAtOpen; // 창을 연 때의 유물 도감 (처음 보는 유물 카드에 NEW)
         private int relicUnlockFrame = -1; // 고른 키가 같은 프레임에 스킬 입력으로 새지 않게, 이 프레임부터 조작 잠금을 푼다
+        private int relicSelection;        // 키보드로 고른 카드 (←→·A/D, Enter·Space)
+        private bool relicKeyboard;        // 화살표를 한 번이라도 눌렀으면 금색 테두리를 그린다
+        private int relicColumns = 1;      // 그린 카드 열 수 (2×2일 때 ↑↓가 한 줄씩)
 
         private PlayerRelics relics;
 
@@ -52,7 +55,11 @@ namespace IBlameYou.UI
             relicCancelled = onCancelled;
             relicOpenedFrame = Time.frameCount;
             relicCodexAtOpen = IBlameYou.Core.SaveData.RelicCodexMask(IBlameYou.Core.GameSession.DevMode);
-            relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
+            relicSelection = 0;
+            relicKeyboard = false;
+            relicColumns = offer.Length;
+            relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs), 패널 팝·배경 페이드 (RelicPanelScale)
+            GameAudio.PlaySfx("ChestCreak", 0.6f); // 뚜껑 "끼-익" + 안에서 "샤랑" (Tools/AudioGen)
             control.Locked = true;
             Time.timeScale = 0f;
             return true;
@@ -66,6 +73,7 @@ namespace IBlameYou.UI
             relicCancelled = null; // 골랐으니 취소 콜백은 부르지 않는다
             CloseRelicWindow(true);
             callback?.Invoke(chosen);
+            if (OwnsRelic(chosen)) StartRelicFly(chosen, index); // 아이콘이 HUD 유물 칸으로 날아간다 (SkillHUD.RelicFly.cs)
             feed.Add(new FeedEntry { Time = Time.time, Text = $"유물: {RelicBook.Name(chosen)} · {RelicBook.Description(chosen)}", Color = new Color(1f, 0.85f, 0.4f) });
             if (feed.Count > MaxFeed) feed.RemoveAt(0);
         }
@@ -100,6 +108,58 @@ namespace IBlameYou.UI
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) ChooseRelic(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
             else if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) ChooseRelic(3); // 네잎 클로버
+            else UpdateRelicKeys();
+        }
+
+        // ←→·A/D로 카드 옮기기 (2×2면 ↑↓·W/S로 줄 옮기기), Enter·Space로 고르기. 첫 화살표는 지금 칸(첫 카드)을 보여 주기만 한다.
+        // 고른 키는 같은 프레임 스킬·순간이동 입력으로 새지 않게 ChooseRelic → CloseRelicWindow(true)가 잠금을 다음 프레임에 푼다.
+        // A/D·Space·Enter는 이동·점프·순간이동 키이기도 해서, 카드가 다 나타나기 전(0.4초)엔 받지 않고 Enter·Space는 화살표로 칸을 보인 뒤에만 받는다
+        // (상자에 뛰어들며 점프를 연타하다 후보를 보지도 않고 고르지 않게).
+        private const float RelicKeysDelay = 0.4f;
+
+        private void UpdateRelicKeys()
+        {
+            if (Time.unscaledTime - relicWindowOpenedAt < RelicKeysDelay) return;
+            int count = relicOffer.Length;
+            int step = 0;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) step = -1;
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) step = 1;
+            else if (relicColumns < count && (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))) step = -relicColumns;
+            else if (relicColumns < count && (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))) step = relicColumns;
+            if (step != 0)
+            {
+                if (relicKeyboard) relicSelection = ((relicSelection + step) % count + count) % count;
+                relicKeyboard = true;
+                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                return;
+            }
+
+            if (relicKeyboard && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space)))
+            {
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                ChooseRelic(Mathf.Clamp(relicSelection, 0, count - 1));
+            }
+        }
+
+        // 창 열림 연출: 배경 어둠이 RelicFadeTime 동안 깔리고, 패널이 RelicPopTime 동안 0.85 → 1.04 → 1 (일시정지 창 팝과 같은 곡선).
+        private const float RelicFadeTime = 0.15f;
+        private const float RelicPopTime = 0.18f;
+
+        private float RelicPanelScale()
+        {
+            float t = (Time.unscaledTime - relicWindowOpenedAt) / RelicPopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
+        private bool OwnsRelic(RelicId id)
+        {
+            if (relics == null) return false;
+            for (int i = 0; i < relics.Owned.Count; i++)
+                if (relics.Owned[i] == id) return true;
+            return false;
         }
 
         // 유물 한 줄에 하나: "이름 — 효과".
@@ -141,21 +201,26 @@ namespace IBlameYou.UI
                 cardWidth = Mathf.Min(fullCardWidth, (available - gap) / columns);
             }
             int rows = (count + columns - 1) / columns;
+            relicColumns = columns;
             float width = columns * cardWidth + (columns - 1) * gap + 40f;
-            float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f;
+            const float ownedRowHeight = 30f; // 아래 "가진 유물 N개" 아이콘 줄 (DrawRelicOwnedRow)
+            float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f + ownedRowHeight;
             float top = Mathf.Max(edge, Mathf.Min(Screen.height * 0.22f, (Screen.height - height) / 2f));
             var rect = new Rect((Screen.width - width) / 2f, top, width, height);
 
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - relicWindowOpenedAt) / RelicFadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
+            var windowMatrix = GUI.matrix; // 패널 팝: 카드 팝(BeginCardPop)은 이 위에 겹친다
+            float panelScale = RelicPanelScale();
+            if (panelScale != 1f) GUIUtility.ScaleAroundPivot(Vector2.one * panelScale, rect.center);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키 또는 클릭",
+                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter 또는 클릭",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             for (int i = 0; i < count; i++)
@@ -168,7 +233,9 @@ namespace IBlameYou.UI
                 DrawCard(card, owner);
 
                 string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
-                DrawRelicIcon(id, new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f)); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
+                var iconRect = new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f);
+                if (i < relicCardIcons.Length) relicCardIcons[i] = iconRect; // 고르면 여기서 날아간다 (SkillHUD.RelicFly.cs)
+                DrawRelicIcon(id, iconRect); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW
@@ -176,14 +243,54 @@ namespace IBlameYou.UI
                         new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
-                bool chosen = CuteButton.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);
+                var buttonRect = new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f);
+                if (relicKeyboard && i == relicSelection) CuteButton.DrawSelection(card); // 키보드로 고른 카드 둘레 금색 테두리
+                bool chosen = CuteButton.Button(buttonRect, "고르기", cardButton);
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {
+                    GUI.matrix = windowMatrix;
                     ChooseRelic(i);
-                    break;
+                    return;
                 }
             }
+
+            DrawRelicOwnedRow(new Rect(rect.x + 20f, rect.yMax - 20f - ownedRowHeight + 6f, rect.width - 40f, 22f));
+            GUI.matrix = windowMatrix;
+        }
+
+        // 창 아래 "가진 유물 N개" + 아이콘 줄: 지금 가진 유물을 보며 고르게. 줄에 다 안 들어가면 앞쪽만 그리고 "+k".
+        // 마우스를 올린 아이콘은 이름을 줄 오른쪽에 적는다.
+        private void DrawRelicOwnedRow(Rect row)
+        {
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = false, richText = true };
+            int owned = RelicCount;
+            var header = new GUIContent(owned == 0 ? "<color=#bbbbbb>가진 유물 없음</color>" : $"<color=#ffd84d>가진 유물 {owned}개</color>");
+            float headerWidth = style.CalcSize(header).x;
+            GUI.Label(new Rect(row.x, row.y, headerWidth + 2f, row.height), header, style);
+            if (owned == 0) return;
+
+            const float icon = 18f;
+            const float step = icon + 4f;
+            float x = row.x + headerWidth + 8f;
+            const float nameRoom = 120f; // 오른쪽에 마우스 올린 유물 이름 칸
+            float maxX = row.xMax - nameRoom;
+            int fit = Mathf.Max(0, Mathf.FloorToInt((maxX - x) / step));
+            int shown = owned <= fit ? owned : Mathf.Max(0, fit - 1); // 넘치면 마지막 칸은 "+k"
+            var mouse = Event.current.mousePosition;
+            int hovered = -1;
+            for (int i = 0; i < shown; i++)
+            {
+                var r = new Rect(x, row.y + (row.height - icon) * 0.5f, icon, icon);
+                if (RelicIcon(relics.Owned[i]) != null) DrawRelicIcon(relics.Owned[i], r);
+                else GUI.Label(new Rect(r.x - 2f, row.y, icon + 4f, row.height), "•", style);
+                if (r.Contains(mouse)) hovered = i;
+                x += step;
+            }
+            if (shown < owned) GUI.Label(new Rect(x, row.y, 40f, row.height), $"+{owned - shown}", style);
+            if (hovered >= 0)
+                GUI.Label(new Rect(row.xMax - nameRoom, row.y, nameRoom, row.height), RelicBook.Name(relics.Owned[hovered]),
+                    new GUIStyle(style) { alignment = TextAnchor.MiddleRight });
         }
     }
 }
