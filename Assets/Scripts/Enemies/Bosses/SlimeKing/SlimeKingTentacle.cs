@@ -22,6 +22,7 @@ namespace IBlameYou.Enemies
         private const float PullTime = 0.35f;
         private const float GrabDamageMultiplier = 1.2f;
         private const float GrabStun = 1f;
+        private const float TipScale = 0.45f;
 
         private SlimeKingController king;
         private LineRenderer line;
@@ -51,6 +52,7 @@ namespace IBlameYou.Enemies
             tentacle.groundMask = groundMask;
             tentacle.state = State.Extend;
             tentacle.BuildVisual();
+            SlimeTentacleFx.Lash(king.TentacleOrigin, tentacle.direction);
             return tentacle;
         }
 
@@ -73,7 +75,7 @@ namespace IBlameYou.Enemies
             renderer.sprite = SolidSpriteFactory.CreateCircle();
             renderer.color = new Color(0.75f, 0.5f, 1f);
             renderer.sortingOrder = 4;
-            tipGo.transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+            tipGo.transform.localScale = new Vector3(TipScale, TipScale, 1f);
             tip = tipGo.transform;
             UpdateVisual(Origin);
         }
@@ -102,7 +104,12 @@ namespace IBlameYou.Enemies
                     length += Speed * Time.deltaTime;
                     var tipPosition = origin + direction * length;
                     if (TryCatch(tipPosition)) break;
-                    if (length >= range || Physics2D.OverlapCircle(tipPosition, TipRadius * 0.5f, groundMask)) state = State.Retract;
+                    if (Physics2D.OverlapCircle(tipPosition, TipRadius * 0.5f, groundMask))
+                    {
+                        state = State.Retract;
+                        SlimeTentacleFx.Slap(tipPosition, direction);
+                    }
+                    else if (length >= range) state = State.Retract;
                     UpdateVisual(tipPosition);
                     break;
 
@@ -144,6 +151,7 @@ namespace IBlameYou.Enemies
                 }
 
                 DamageNumbers.ShowText(target.transform.position + Vector3.up * 1.4f, "촉수에 붙잡힘!", new Color(0.8f, 0.55f, 1f), 1f);
+                SlimeTentacleFx.Grab(target.transform, PlayerCenter());
                 StageEvents.PostNotice($"{BreakDistance:0}칸 넘게 멀어져서 촉수를 끊어라!");
                 king.OnTentacleAttached(this);
                 return true;
@@ -171,6 +179,7 @@ namespace IBlameYou.Enemies
             if (distance > BreakDistance)
             {
                 DamageNumbers.ShowText(target + Vector2.up * 1.4f, "촉수를 끊어냈다!", new Color(0.6f, 1f, 0.6f), 1f);
+                SlimeTentacleFx.Snap(target, player.transform, target);
                 Release();
                 length = distance;
                 direction = (target - origin).normalized;
@@ -178,9 +187,8 @@ namespace IBlameYou.Enemies
                 return;
             }
 
-            // 비주얼: 남은 시간에 따라 촉수가 점점 붉어진다.
-            float danger = Mathf.Clamp01(tetherTime / GrabTime);
-            line.endColor = Color.Lerp(new Color(0.75f, 0.5f, 1f), new Color(1f, 0.3f, 0.3f), danger);
+            // 비주얼: 남은 시간에 따라 촉수가 점점 붉어지고 끝 구슬이 빨리 두근거린다. 마지막 1초엔 선이 깜빡인다.
+            SlimeTentacleFx.TetherPulse(tip, TipScale, line, tetherTime, GrabTime);
 
             if (tetherTime >= GrabTime)
             {
@@ -215,6 +223,13 @@ namespace IBlameYou.Enemies
         private void Release()
         {
             EndSlow();
+            if (tip != null) tip.localScale = new Vector3(TipScale, TipScale, 1f);
+            if (line != null)
+            {
+                line.startColor = new Color(0.55f, 0.3f, 0.9f, 0.95f);
+                line.endColor = new Color(0.75f, 0.5f, 1f, 0.95f);
+            }
+
             if (state == State.Tethered && king != null) king.OnTentacleReleased(this);
             player = null;
         }
