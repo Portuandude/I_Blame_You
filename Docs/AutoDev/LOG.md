@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-13 10:14 UTC
+- 브랜치/PR: `claude/project-thread-8qiaw2` → #84 (develop 대상, 자동 머지 켬, #83 head 위에 쌓음). 시작할 때 #82·#83 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 촉수 연출" 5개 추가
+- 완료 (5개, 새 `Enemies/SlimeTentacleFx.cs`, 적대적 리뷰 APPROVE): ① 뻗기 "휙" `TentacleLash`(패턴당 1번) + 방울 ② 벽·바닥 "철퍽" `TentacleSlap` + 되튀는 방울 ③ 붙잡힘 0.05초 히트스톱 + 보라 고리 + "찰싹" `TentacleGrab` ④ 붙은 동안 끝 구슬 두근거림이 빨라지고 마지막 1초 붉은 깜빡임 ⑤ 끊어내면 방울 + 초록 고리 + "뽁" `TentacleSnap`
+- 실패/보류: 없음. 촉수 속도·사거리·둔화·그랩 시간 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 붙잡힘 히트스톱이 거슬리지 않는지, 깜빡임으로 그랩 직전이 읽히는지
+
 ## 2026-11-13 10:10 UTC
 - 브랜치/PR: `claude/project-thread-1vrlvp` → #83 (develop 대상, 자동 머지 켬, #82 head 위에 쌓음). 시작할 때 #81·#82 CI 대기. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 소환 무리 합체 연출" 5개 추가
 - 완료 (5개, 적대적 리뷰 HIGH 1개 고친 뒤 APPROVE): [`Enemies/SlimeBroodFx` + `SlimeBrood`] ① 합체 5초 전부터 초마다 초록 고리 + `BroodTick`(점점 높게) ② 3초 전부터 킹 쪽 초록 젤리 끈 ③ 합체 비행 `BroodMerge` + 방울 흔적 ④ 킹 꿀꺽 `BroodGulp` + 큰 초록 고리 ⑤ 시간 안에 전멸하면 금빛 고리 + `BroodClear`. 리뷰 HIGH: Finish 뒤 0.1초 동안 축하가 반복되고 킹 처치(Dismiss) 때도 나오던 문제 → `finished` 플래그
@@ -13,10 +19,3 @@
 - 완료 (5개, 새 `Enemies/SlimeSplitFx.cs`, 적대적 리뷰 APPROVE, 고칠 점 없음): ① 새 효과음 `SlimeSplit`("뿌직-쪼옥") ② 킹 분열 순간 0.1초 히트스톱 + 큰 보라 고리 ③ 보라 젤리 방울(킹 9·어미 6) ④ 젤리 끈(킹 두 몸 사이 0.6초에 끊김, 어미-새끼 끈 톡톡) ⑤ 새끼 슬라임 "뿅" 등장(`EnemySquash.Spawn`)
 - 실패/보류: 없음. 분열 시점·체력·새끼 수·자리·골드 그대로 (새끼 생성 실패 때 null 건너뛰기만 추가)
 - 다음 실행 메모: 플레이테스트 필요 — 어미 여럿이 한꺼번에 터질 때 방울·소리가 과하지 않은지, 킹 끈이 어색하지 않은지
-
-## 2026-11-13 10:04 UTC
-- 브랜치/PR: `claude/project-thread-ysmsrs` → #81 (develop 대상, 자동 머지 켬, #80 head 위에 쌓음). 시작할 때 #79·#80 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "고블린 대전사 광폭화 연출" 5개 추가
-- 완료 (5개, 새 `Elite/GoblinWarrior/EnrageFx.cs`, `KnightEnrageFx` 재사용): ① 켜질 때 0.06초 히트스톱 + 붉은 고리 ② 붉은 김 ③ 옆으로 빠를 때 붉은 잔상 ④ 풀리기 3초 전 깜빡임 빨라짐 ⑤ 풀리면 회색 김·"헉헉…"·`EnrageEnd`. 기사는 `EnrageAbility.OwnFx = false`로 제외
-- 실패/보류: 없음. 광폭화 조건·시간·수치 그대로
-- 다음 실행 메모: 플레이테스트 필요 — 히트스톱이 거슬리지 않는지, 잔상이 너무 잦지 않은지
-

@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 10:04 UTC
+- 브랜치/PR: `claude/project-thread-ysmsrs` → #81 (develop 대상, 자동 머지 켬, #80 head 위에 쌓음). 시작할 때 #79·#80 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "고블린 대전사 광폭화 연출" 5개 추가
+- 완료 (5개, 새 `Elite/GoblinWarrior/EnrageFx.cs`, `KnightEnrageFx` 재사용): ① 켜질 때 0.06초 히트스톱 + 붉은 고리 ② 붉은 김 ③ 옆으로 빠를 때 붉은 잔상 ④ 풀리기 3초 전 깜빡임 빨라짐 ⑤ 풀리면 회색 김·"헉헉…"·`EnrageEnd`. 기사는 `EnrageAbility.OwnFx = false`로 제외
+- 실패/보류: 없음. 광폭화 조건·시간·수치 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 히트스톱이 거슬리지 않는지, 잔상이 너무 잦지 않은지
+
 ## 2026-11-13 10:00 UTC
 - 브랜치/PR: `claude/project-thread-jamtdv` → #80 (develop 대상, 자동 머지 켬). 시작할 때 #78·#79 CI 진행 중이라 #79 head 위에 쌓음. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "쌍둥이 기사 짝 잃음·광폭화 연출" 5개 추가
 - 완료 (5개, 적대적 리뷰 APPROVE, 고칠 점 없음): [`SlimeKnight` + 새 `KnightEnrageFx`] ① 짝이 쓰러질 때 0.1초 히트스톱 + 새 효과음 `KnightLink` ② 쓰러진 기사 원소색 빛 알갱이가 남은 기사에게 날아가 붉은 큰 고리 ③ 광폭화 중 붉은 김·빠를 때 붉은 잔상 ④ 보스 체력바 아래 "광폭화! N초" ⑤ 풀리면 회색 김·"헉헉…"·새 효과음 `EnrageEnd`·곡 빠르기 1로. `EnrageAbility.Remaining` 읽기 전용 추가
