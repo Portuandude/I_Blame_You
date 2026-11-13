@@ -58,7 +58,8 @@ namespace IBlameYou.UI
             relicSelection = 0;
             relicKeyboard = false;
             relicColumns = offer.Length;
-            relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
+            relicWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs), 패널 팝·배경 페이드 (RelicPanelScale)
+            GameAudio.PlaySfx("ChestCreak", 0.6f); // 뚜껑 "끼-익" + 안에서 "샤랑" (Tools/AudioGen)
             control.Locked = true;
             Time.timeScale = 0f;
             return true;
@@ -139,6 +140,19 @@ namespace IBlameYou.UI
             }
         }
 
+        // 창 열림 연출: 배경 어둠이 RelicFadeTime 동안 깔리고, 패널이 RelicPopTime 동안 0.85 → 1.04 → 1 (일시정지 창 팝과 같은 곡선).
+        private const float RelicFadeTime = 0.15f;
+        private const float RelicPopTime = 0.18f;
+
+        private float RelicPanelScale()
+        {
+            float t = (Time.unscaledTime - relicWindowOpenedAt) / RelicPopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
         // 유물 한 줄에 하나: "이름 — 효과".
         private static string RelicLine(RelicId id) => $"{RelicBook.Name(id)} — {RelicBook.Description(id)}";
 
@@ -185,9 +199,12 @@ namespace IBlameYou.UI
             var rect = new Rect((Screen.width - width) / 2f, top, width, height);
 
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - relicWindowOpenedAt) / RelicFadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
+            var windowMatrix = GUI.matrix; // 패널 팝: 카드 팝(BeginCardPop)은 이 위에 겹친다
+            float panelScale = RelicPanelScale();
+            if (panelScale != 1f) GUIUtility.ScaleAroundPivot(Vector2.one * panelScale, rect.center);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
@@ -220,10 +237,13 @@ namespace IBlameYou.UI
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {
+                    GUI.matrix = windowMatrix;
                     ChooseRelic(i);
-                    break;
+                    return;
                 }
             }
+
+            GUI.matrix = windowMatrix;
         }
     }
 }
