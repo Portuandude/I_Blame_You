@@ -28,6 +28,7 @@ namespace IBlameYou.Systems
         private bool active;
         private bool cleared;
         private bool spawning;
+        private float lockedAt; // 문이 닫힌 시각 (돌파 시간 알림)
         private readonly List<GameObject> gates = new List<GameObject>();
         private Rect? previousCameraBounds;
         private string fightMusic = BossMusic; // 이번 보스 구역에서 튼 곡 (Boss 또는 MidBoss)
@@ -103,6 +104,7 @@ namespace IBlameYou.Systems
         {
             active = true;
             spawning = true;
+            lockedAt = Time.time;
             pendingSpawns = spawns.Count;
             Current = this;
             bossFight = spawns.Exists(IsBoss);
@@ -127,7 +129,10 @@ namespace IBlameYou.Systems
             {
                 bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
                 if (!dropsIn)
+                {
                     EffectLibrary.PlayOneShot(spawn.Position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.4f, 0.4f, 0.7f), 1.2f);
+                    GameAudio.PlaySfx("Summon", 0.6f); // 붉은 연기 속에서 "뿅"
+                }
                 pendingSpawns--;
                 RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
                 yield return new WaitForSeconds(SpawnInterval);
@@ -144,13 +149,20 @@ namespace IBlameYou.Systems
             active = false;
             cleared = true;
             if (Current == this) Current = null;
-            foreach (var gate in gates) if (gate != null) Destroy(gate);
+            foreach (var gate in gates)
+            {
+                if (gate == null) continue;
+                var fx = gate.GetComponent<ArenaGate>();
+                if (fx != null) fx.Open(); // 충돌은 바로 풀고 그림만 위로 걷힌다
+                else Destroy(gate);
+            }
             gates.Clear();
+            GameAudio.PlaySfx("GateOpen", 0.45f);
             UnlockCamera();
             LeaveBossMusic();
             // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 깊이 절반을 넘긴 구역을 돌파하면 바꾼다
             if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Depth) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Depth));
-            StageEvents.PostNotice("구역 돌파!");
+            StageEvents.PostNotice(ClearNotice(Time.time - lockedAt));
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
         }
@@ -167,6 +179,7 @@ namespace IBlameYou.Systems
             var visual = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(1f, 0.35f, 0.4f, 0.55f), 1f, 2);
             if (frames == null) visual.transform.localScale = new Vector3(0.8f, GateHeight, 1f);
             else visual.transform.localScale = new Vector3(1f, GateHeight / 3f, 1f); // 그림은 1 × 3유닛
+            ArenaGate.Attach(go, visual, area.yMin); // 위에서 쿵 떨어지고, 닫힌 동안 숨쉬고, 돌파하면 위로 걷힌다
             gates.Add(go);
         }
 
@@ -184,6 +197,9 @@ namespace IBlameYou.Systems
             if (follow == null || !previousCameraBounds.HasValue) return;
             follow.SetBounds(previousCameraBounds.Value);
         }
+
+        // "구역 돌파! (N초)": 문이 닫힌 순간부터 마지막 적이 쓰러질 때까지 (게임 시간, 일시정지·창은 빠진다). 1초 미만은 1초로.
+        public static string ClearNotice(float seconds) => $"구역 돌파! ({Mathf.Max(1, Mathf.RoundToInt(seconds))}초)";
 
         private static readonly Color EliteWarnColor = new Color(0.62f, 0.25f, 0.95f); // 정예 보라 (미니맵 정예 색과 같은 계열)
 
