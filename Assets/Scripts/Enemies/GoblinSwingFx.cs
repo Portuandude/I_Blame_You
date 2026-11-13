@@ -71,7 +71,7 @@ namespace IBlameYou.Enemies
             }
         }
 
-        // 맞힌 자리 (플레이어 몸 쪽). direction: 휘두른 방향 (-1/1).
+        // 맞힌 자리 (플레이어 몸 쪽). facing: 휘두른 방향 (-1/1).
         public static void Connected(Vector3 point, float facing, bool elite)
         {
             int count = elite ? 7 : 5;
