@@ -50,6 +50,7 @@ namespace IBlameYou.Enemies
 
         protected virtual void Awake()
         {
+            bornTime = Time.time;
             Rb = GetComponent<Rigidbody2D>();
             Rb.interpolation = RigidbodyInterpolation2D.Interpolate; // 카메라가 움직일 때 적도 번져 보이지 않게 (PlayerMovement 참고)
             Health = GetComponent<HealthSystem>();
@@ -167,6 +168,31 @@ namespace IBlameYou.Enemies
 
             Vector2 ahead = new Vector2(bounds.center.x + direction * (bounds.extents.x + 0.25f), bounds.min.y + 0.1f);
             return !Physics2D.Raycast(ahead, Vector2.down, LedgeDropLimit, ground);
+        }
+
+        // 발견 "!": 플레이어를 못 보다가 알아챈 순간 파생 클래스가 부른다. 머리 위 노란 "!" + 작은 소리 Notice.
+        // 같은 적은 NoticeCooldown 동안 다시 띄우지 않고(추적 경계에서 깜빡임 방지), 소리는 여러 마리가 한꺼번에 알아채도 한 번만.
+        private const float NoticeCooldown = 4f;
+        private const float NoticeSfxCooldown = 0.25f;
+        private const float NoticeHeight = 0.5f; // 몸 윗면에서 띄우는 높이
+        private static readonly Color NoticeColor = new Color(1f, 0.85f, 0.2f);
+        private static readonly Color EliteNoticeColor = new Color(0.78f, 0.45f, 1f);
+        private static float lastNoticeSfxTime = -1f;
+        private const float NoticeBornGrace = 0.4f; // 막 나타난 적(구역 소환·분열)은 이미 싸우는 중이라 "!" 없음
+        private float nextNoticeTime;
+        private float bornTime;
+
+        protected void ShowNotice()
+        {
+            if (IsDead || Time.time < nextNoticeTime || Time.time - bornTime < NoticeBornGrace) return;
+            nextNoticeTime = Time.time + NoticeCooldown;
+            var body = BodyBounds;
+            bool elite = IBlameYou.Core.RunGold.RankOf(this) == EnemyRank.Elite; // 정예는 더 크고 보라 "!!" (정예 경고와 같은 계열)
+            DamageNumbers.ShowText(new Vector3(body.center.x, body.max.y + NoticeHeight, 0f), elite ? "!!" : "!",
+                elite ? EliteNoticeColor : NoticeColor, elite ? 1.5f : 1.15f);
+            if (lastNoticeSfxTime >= 0f && Time.unscaledTime - lastNoticeSfxTime < NoticeSfxCooldown) return;
+            lastNoticeSfxTime = Time.unscaledTime;
+            GameAudio.PlaySfx("Notice", 0.5f);
         }
 
         // 생존 중 매 프레임 실행 (감지, 방향 전환 등 판단 로직).

@@ -40,6 +40,14 @@ namespace IBlameYou.Systems
         // 깊이에 맞는 스테이지 곡: 전반 Dungeon, 후반(보스까지 거리의 절반 이후) 더 빠르고 화려한 Dungeon2 (Tools/AudioGen).
         public static string StageMusicFor(float depth) => depth >= LateMusicDepth ? "Dungeon2" : "Dungeon";
 
+        // 지금 문이 닫혀 싸우는 구역 (HUD 남은 적 수·화면 밖 적 길잡이·마지막 적 표시). 없으면 null.
+        public static ArenaZone Current { get; private set; }
+        private int pendingSpawns; // 아직 안 나온 적 수 (차례로 나오는 중)
+        // 남은 적 = 살아 있는 적 + 아직 안 나온 적
+        public int Remaining => alive.Count + pendingSpawns;
+        public bool HasBoss => bossFight; // 보스 구역이면 위쪽 가운데는 보스 체력바 자리
+        public IEnumerable<HealthSystem> AliveEnemies => alive;
+
         public bool IsCleared => cleared;
         public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
         public Rect Area => area; // 구역 범위 (보스가 무작위 위치를 고를 때)
@@ -95,6 +103,8 @@ namespace IBlameYou.Systems
         {
             active = true;
             spawning = true;
+            pendingSpawns = spawns.Count;
+            Current = this;
             bossFight = spawns.Exists(IsBoss);
             if (bossFight) GameAudio.PlayMusic(fightMusic = spawns.Exists(IsKing) ? BossMusic : MidBossMusic);
             CreateGate(area.xMin + 0.5f);
@@ -118,6 +128,7 @@ namespace IBlameYou.Systems
                 bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
                 if (!dropsIn)
                     EffectLibrary.PlayOneShot(spawn.Position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.4f, 0.4f, 0.7f), 1.2f);
+                pendingSpawns--;
                 RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
                 yield return new WaitForSeconds(SpawnInterval);
             }
@@ -132,6 +143,7 @@ namespace IBlameYou.Systems
 
             active = false;
             cleared = true;
+            if (Current == this) Current = null;
             foreach (var gate in gates) if (gate != null) Destroy(gate);
             gates.Clear();
             UnlockCamera();
@@ -193,6 +205,7 @@ namespace IBlameYou.Systems
         private void OnDestroy()
         {
             if (active) UnlockCamera();
+            if (Current == this) Current = null;
             LeaveBossMusic(); // 싸우다 방을 떠나거나 구역이 치워지면
         }
     }

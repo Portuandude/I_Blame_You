@@ -3,6 +3,27 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
+
+## 2026-11-13 00:00 실행 (claude/project-thread-qrgqfk)
+
+- DONE (claude/project-thread-qrgqfk): 적 발견 "!" — 슬라임·고블린·궁수(정예 포함)가 플레이어를 처음 알아채는 순간 머리 위 노란 "!" + 작은 소리 `Notice` (같은 적은 4초 쿨다운, 소리는 0.25초 전체 쿨다운)
+- DONE (claude/project-thread-qrgqfk): 전투 구역 남은 적 수 — 문이 닫혀 싸우는 동안 화면 위쪽에 "남은 적 N" (줄어들 때 살짝 튐)
+- DONE (claude/project-thread-qrgqfk): 화면 밖 적 길잡이 — 문이 닫힌 전투 구역에서 카메라 밖 적이 있으면 화면 가장자리에 붉은 화살표 (보상 구슬 길잡이와 같은 방식)
+- DONE (claude/project-thread-qrgqfk): 마지막 적 표시 — 전투 구역에 적이 하나 남으면 그 적 머리 위에 붉은 ▼가 통통 튄다
+- DONE (claude/project-thread-qrgqfk): 화면 밖 궁수 경고 — 카메라 밖(24칸 안) 궁수가 시위를 당기는 동안 그쪽 화면 가장자리에 노란 "!"가 빠르게 깜빡인다
+- DONE (claude/project-thread-qrgqfk): 정예 발견 "!!" — 어미 슬라임·고블린 대전사는 더 크고 보라색 "!!"
+- DONE (claude/project-thread-qrgqfk): 남은 적 알약이 하나 남으면 금색 "마지막 하나!"
+
+## 2026-11-12 23:48 실행 (claude/project-thread-2w3nym)
+
+- DONE (claude/project-thread-2w3nym): 히트스톱 — 플레이어 공격으로 적을 쓰러뜨리면 0.05초, 치명타면 0.03초, 정예를 쓰러뜨리면 0.09초 시간이 거의 멈춘다 (실제 시간, timeScale이 1일 때만, 끝날 때 아직 이 값이면 1로). 광역 다수 처치에 쌓이지 않게 0.12초 쿨다운
+- DONE (claude/project-thread-2w3nym): 적 넉백 — 플레이어 공격에 맞은 일반 적이 경직 동안 공격자 반대쪽으로 짧게 밀려난다 (처음 속도 4, 경직 동안 줄어듦, 약 0.4칸). 보스·중간보스·정예는 밀리지 않는다
+- DONE (claude/project-thread-2w3nym): 연속 처치 알림 — 0.6초 안에 적을 3마리 이상 쓰러뜨리면 마지막 적 위에 "N연속!" 글자 + 짧은 효과음
+- DONE (claude/project-thread-2w3nym): 치명타 효과음 `Crit` (Tools/AudioGen) — 치명타가 들어가면 높고 짧은 "팅" (여러 번 겹치지 않게 쿨다운)
+- DONE (claude/project-thread-2w3nym): 정예 처치 연출 — 어미 슬라임·고블린 대전사를 쓰러뜨리면 작은 화면 흔들림 + 큰 별 펑
+- DONE (claude/project-thread-2w3nym): 플레이어 피격 히트스톱 — 플레이어가 맞으면(쓰러지지 않았을 때) 0.04초 멈춤. 함정 피해도 포함
+- DONE (claude/project-thread-2w3nym): 경직 중 걷기 그림 멈춤 — 넉백으로 밀리는 동안 Animator Speed를 0으로 (리뷰 LOW)
+
 ## 2026-11-12 23:40 실행 (claude/project-thread-sxxwfk)
 
 - DONE (claude/project-thread-sxxwfk): 섬(Pits) 동전 — 난이도 30%+면 가장 깊이 들어간(마지막) 단단한 섬 가운데에 동전 무더기. 낭떠러지를 건넌 보상
