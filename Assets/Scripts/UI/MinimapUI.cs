@@ -194,6 +194,26 @@ namespace IBlameYou.UI
             }
         }
 
+        // 일시정지 창 왼쪽에 그리는 전체 지도 (SkillHUD.Pause.cs가 자기 OnGUI 안에서 부른다 — 이 컴포넌트의 OnGUI는 일시정지 중 쉰다).
+        // 큰 지도와 같은 규칙(가 본 방·지금 방 깜빡임·나침반 흐린 칸·체크·자물쇠·동전 점)으로, rect 안에 맞춰 칸 크기를 정한다.
+        public void DrawPauseMap(Rect rect)
+        {
+            if (streamer == null || !streamer.IsRoomMode) return;
+            var layout = streamer.Rooms;
+            var current = layout.Rooms[streamer.CurrentRoom];
+            EnsureStyle();
+            Background(rect, new Color(0.05f, 0.04f, 0.1f, 0.85f));
+            GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 24f), "지도", legend);
+
+            const float top = 42f, side = 16f, bottom = 16f;
+            int cols = layout.MaxX - layout.MinX + 1;
+            int rows = layout.MaxY - layout.MinY + 1;
+            float cell = Mathf.Min((rect.width - side * 2f) / cols, (rect.height - top - bottom) / rows, 40f);
+            float width = cols * cell, height = rows * cell;
+            var area = new Rect(rect.center.x - width / 2f, rect.y + top + (rect.height - top - bottom - height) / 2f, width, height);
+            DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
+        }
+
         // left: 화면 왼쪽 끝 칸의 격자 x, top: 화면 맨 위 칸의 격자 y. 영역 밖 칸은 그리지 않는다.
         private void DrawRooms(RoomLayoutData layout, RoomData current, Rect area, float cell, int left, int top)
         {

@@ -14,6 +14,8 @@ namespace IBlameYou.UI
         private bool paused;
         private float pauseOpenedAt;
         private const float PausePopTime = 0.18f;
+        private MinimapUI pauseMap; // 같은 오브젝트의 미니맵 (방 격자 스테이지에만 있다). 처음 쓸 때 찾는다
+        private const float PauseSideWidth = 320f;
         private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
 
         public bool Paused => paused;
@@ -111,7 +113,8 @@ namespace IBlameYou.UI
                 "볼륨은 저장된다. 스테이지 1은 15~30분이라 런 진행은 저장되지 않는다 (시작 화면으로 나가면 새로 시작)",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
-            DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, 320f, height));
+            DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, PauseSideWidth, height));
+            DrawPauseMap(new Rect(rect.x - 12f - PauseSideWidth, rect.y, PauseSideWidth, height));
             GUI.matrix = previousMatrix; // 화면 설정 창은 크기 그대로
             displayWindow.Draw(panel, small, menuButton);
         }
@@ -124,6 +127,14 @@ namespace IBlameYou.UI
             return t < 0.6f
                 ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
                 : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
+        // 일시정지 메뉴 왼쪽: 전체 지도 (MinimapUI.DrawPauseMap). 화면이 좁거나 방 격자 스테이지가 아니면 생략.
+        private void DrawPauseMap(Rect rect)
+        {
+            if (rect.x < 4f) return;
+            if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
+            if (pauseMap != null) pauseMap.DrawPauseMap(rect);
         }
 
         // 일시정지 메뉴 옆: 이번 런에서 A/B가 찍은 특성과 고른 유물 (서로 뭘 골랐는지 확인용).
