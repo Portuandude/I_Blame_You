@@ -803,6 +803,14 @@ namespace IBlameYou.Systems
                 ScreenFlash.EdgeWarn(BossNearEdgeColor, 1.4f); // 심장 소리에 맞춰 화면 가장자리가 검붉게 두 번 천천히 (2026-11-13 보스 방 앞 분위기)
                 StageEvents.PostNotice("근처에서 강한 기운이 느껴진다...");
             }
+            // 판에서 마지막 남은 방을 처음 밟은 순간 (2026-11-13 방 입장 연출): 알림 + 맑은 반짝 소리 두 번. 보상은 없다.
+            // 이어하기로 불러온 기록이 이미 다 가 본 상태면 firstVisit이 아니라서 다시 울리지 않는다.
+            if (firstVisit && rooms.Rooms.Count > 1 && visitedRooms.Count >= rooms.Rooms.Count) // 방 하나짜리(빈 시험 방)는 시작하자마자 울리지 않게
+            {
+                StageEvents.PostNotice("모든 방을 찾았다!");
+                GameAudio.PlaySfx("StarShard", 0.7f, 0f);
+                GameAudio.PlaySfxDelayed("StarShard", 0.14f, 0.6f);
+            }
             RoomEntered?.Invoke(index);
         }
 
