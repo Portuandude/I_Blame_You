@@ -2,6 +2,14 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 2026-11-13 08:53 자동 실행 — 유물 상자 창 다듬기 (PR #70)
+
+- DONE (claude/project-thread-140hhw): 유물 상자 창 키보드 고르기 (←→·A/D, Enter·Space, 금색 테두리)
+- DONE (claude/project-thread-140hhw): 창 열림 연출 (배경 페이드, 패널 팝, ChestCreak)
+- DONE (claude/project-thread-140hhw): 창 아래 가진 유물 아이콘 줄
+- DONE (claude/project-thread-140hhw): 고른 유물 아이콘이 HUD 유물 칸으로 날아감
+- DONE (claude/project-thread-140hhw): 도착 칸 반짝임 + RelicSlot
+
 ## 2026-11-13 08:40 자동 실행 — 결과 창 다듬기 (PR #69)
 
 - DONE (claude/project-thread-5xcr1g): 결과 창 줄 목록 배치 + "방 N/M 탐험 · 동전 무더기 a/b · 마을" 줄 (BLOCKED였던 동전 무더기 N/M 해결)
