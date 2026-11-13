@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 10:10 UTC
+- 브랜치/PR: `claude/project-thread-1vrlvp` → #83 (develop 대상, 자동 머지 켬, #82 head 위에 쌓음). 시작할 때 #81·#82 CI 대기. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 소환 무리 합체 연출" 5개 추가
+- 완료 (5개, 적대적 리뷰 HIGH 1개 고친 뒤 APPROVE): [`Enemies/SlimeBroodFx` + `SlimeBrood`] ① 합체 5초 전부터 초마다 초록 고리 + `BroodTick`(점점 높게) ② 3초 전부터 킹 쪽 초록 젤리 끈 ③ 합체 비행 `BroodMerge` + 방울 흔적 ④ 킹 꿀꺽 `BroodGulp` + 큰 초록 고리 ⑤ 시간 안에 전멸하면 금빛 고리 + `BroodClear`. 리뷰 HIGH: Finish 뒤 0.1초 동안 축하가 반복되고 킹 처치(Dismiss) 때도 나오던 문제 → `finished` 플래그
+- 실패/보류: 없음. 제한 시간·회복량 그대로. BACKLOG의 끝난 묶음은 보관 파일로 옮기고 빈 묶음 제목을 정리
+- 다음 실행 메모: 플레이테스트 필요 — 합체 예고 소리·끈이 과하지 않은지, 금빛 축하가 한 번만 나오는지
+
 ## 2026-11-13 10:07 UTC
 - 브랜치/PR: `claude/project-thread-ltl4hi` → #82 (develop 대상, 자동 머지 켬, #81 head 위에 쌓음). 시작할 때 #80·#81 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 분열 연출" 5개 추가
 - 완료 (5개, 새 `Enemies/SlimeSplitFx.cs`, 적대적 리뷰 APPROVE, 고칠 점 없음): ① 새 효과음 `SlimeSplit`("뿌직-쪼옥") ② 킹 분열 순간 0.1초 히트스톱 + 큰 보라 고리 ③ 보라 젤리 방울(킹 9·어미 6) ④ 젤리 끈(킹 두 몸 사이 0.6초에 끊김, 어미-새끼 끈 톡톡) ⑤ 새끼 슬라임 "뿅" 등장(`EnemySquash.Spawn`)

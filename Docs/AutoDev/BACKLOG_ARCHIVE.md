@@ -2,6 +2,26 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 10:40 자동 실행이 추가 — 슬라임 도약·착지 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 도약 덮치기가 뛰고 떨어지는 순간이 말랑하게 느껴지게. 도약 시간·속도·피해 그대로 (그림·소리만, `Enemies/SlimeLandFx`).
+
+- DONE (claude/project-thread-c3791f): 도약 — 뛰어오르는 순간 발밑 작은 먼지 + 새 효과음 `SlimeHop`("뾱")
+- DONE (claude/project-thread-c3791f): 실제 착지 감지 — 떨어지던 몸이 멈춘 순간 한 번 (꼭대기·천장은 아님)
+- DONE (claude/project-thread-c3791f): 착지 — 납작하게 눌림 + 먼지 + 작은 방울 + 새 효과음 `SlimePlop`("퐁")
+- DONE (claude/project-thread-c3791f): 정예·기사 착지 — 낮은 음 + 작은 충격파 + 보라 방울 6개 + 약한 화면 흔들림
+- DONE (claude/project-thread-c3791f): 소리 겹침 — 화면 안일 때만, 여러 마리라도 0.08초에 한 번
+
+## 다음 (2026-11-13 10:25 자동 실행이 추가 — 고블린 궁수 화살 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 궁수 화살이 날아가고·스치고·박히고·맞는 순간이 손에 느껴지게. 속도·사거리·피해·간격 그대로 (그림·소리만, `Enemies/GoblinArrowFx`).
+
+- DONE (claude/project-thread-c3791f): 시위 놓기 — 화면 안이면 새 효과음 `BowTwang`("팅")
+- DONE (claude/project-thread-c3791f): 화살 꼬리 — 날아가는 화살 뒤 옅은 흰 꼬리 (0.12초)
+- DONE (claude/project-thread-c3791f): 스침 — 노린 플레이어 곁 1.3칸 안을 맞히지 않고 지나가면 새 효과음 `ArrowWhiz`("슈웅") 한 번
+- DONE (claude/project-thread-c3791f): 벽에 박힘 — 닿은 자리에 같은 그림으로 박혀 0.35초 부르르, 1.5초 뒤 옅어짐 + 새 효과음 `ArrowThunk`("턱") + 작은 먼지
+- DONE (claude/project-thread-c3791f): 맞음 — 플레이어에게 맞으면 나무 조각 4개가 튐
+
 ## 다음 (2026-11-13 10:25 자동 실행이 추가 — 슬라임 킹 착지 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 내려찍기·박치기·발광 착지가 묵직하게 느껴지게. 피해 폭·시간·수치 그대로 (그림·소리만, `Enemies/SlimeKingLandFx`).
