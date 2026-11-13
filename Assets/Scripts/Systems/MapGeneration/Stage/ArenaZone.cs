@@ -134,7 +134,10 @@ namespace IBlameYou.Systems
                     GameAudio.PlaySfx("Summon", 0.6f); // 붉은 연기 속에서 "뿅"
                 }
                 pendingSpawns--;
-                RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
+                var spawned = spawnEnemy(spawn.Kind, spawn.Position, transform);
+                RegisterEnemy(spawned);
+                // 연기 속에서 길쭉하게 "뿅" 솟았다가 제 모양으로 (그림만, 판정·발 위치 그대로)
+                if (!dropsIn && spawned != null) IBlameYou.Enemies.EnemySquash.For(spawned.gameObject).Spawn();
                 yield return new WaitForSeconds(SpawnInterval);
             }
 
