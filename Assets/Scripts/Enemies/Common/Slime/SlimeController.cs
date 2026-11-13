@@ -129,6 +129,7 @@ namespace IBlameYou.Enemies
             if (Suspended)
             {
                 RemoveLandMark(); // 기사 기술이 몸을 맡는 동안엔 예고를 지운다
+                leapAirborne = false; // 몸을 맡긴 동안의 착지는 슬라임 도약 착지가 아니다 (리뷰 LOW)
                 return;
             }
             var target = FindTarget();
