@@ -8,6 +8,7 @@ namespace IBlameYou.UI
 {
     // 마을 창 (Docs/EquipmentDesign.md 9~10절): 마을 건물(Stage/VillageBuilding) 앞에서 W를 톡 / ↑를 누르면 열린다.
     // 식당: 음식 5가지를 골드로 산다 (한 방문에 종류별 한 번, Data/VillageFood.cs). 1~5 또는 클릭으로 사고, Esc·W·↑·닫기로 닫는다.
+    // 키보드: ↓·S로 고르기 시작(첫 줄 금색 테두리) → ↑↓·W/S로 옮기고 Enter·Space로 산다. 고르는 중엔 W·↑가 위로 옮기기라 Esc로 닫는다.
     // 장비 상점은 SkillHUD.Shop.cs. 유물 창·장비 카드와 같은 방식으로 게임을 멈추고 조작을 잠근다.
     public partial class SkillHUD
     {
@@ -18,6 +19,13 @@ namespace IBlameYou.UI
         private int villageUnlockFrame = -1;
         private string villageMessage; // 창 아래 한 줄 (샀다 / 골드 부족 등)
         private readonly RestaurantVisit restaurantVisit = new RestaurantVisit();
+
+        // 키보드 고르기 (식당·장비 상점 공용). villageCol은 장비 상점의 지금 장비 줄에서 팔기(0)/바꾸기(1).
+        // S·Space·Enter는 이동·점프 키이기도 해서 창이 다 뜨기 전(0.4초)엔 받지 않고, Enter·Space는 ↓로 줄을 보인 뒤에만 받는다.
+        private const float VillageKeysDelay = 0.4f;
+        private bool villageKeyboard;
+        private int villageRow;
+        private int villageCol;
 
         private static readonly KeyCode[] VillageNumberKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5 };
         private static readonly KeyCode[] VillageNumpadKeys = { KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4, KeyCode.Keypad5 };
@@ -46,6 +54,9 @@ namespace IBlameYou.UI
             villageOpenedFrame = Time.frameCount;
             villageOpenedAt = Time.unscaledTime;
             villageMessage = null;
+            villageKeyboard = false;
+            villageRow = 0;
+            villageCol = 0;
             if (service == VillageService.Restaurant) restaurantVisit.BeginVisit(StageEvents.VillageVisit);
             control.Locked = true;
             Time.timeScale = 0f;
@@ -74,7 +85,7 @@ namespace IBlameYou.UI
 
             if (!villageOpen) return villageUnlockFrame >= 0;
             if (Time.frameCount <= villageOpenedFrame) return true;
-            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+            if (Input.GetKeyDown(KeyCode.Escape) || (!villageKeyboard && (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))))
             {
                 CloseVillage(true);
                 return true;
@@ -88,9 +99,46 @@ namespace IBlameYou.UI
 
             for (int i = 0; i < VillageFood.Count && i < VillageNumberKeys.Length; i++)
                 if (Input.GetKeyDown(VillageNumberKeys[i]) || Input.GetKeyDown(VillageNumpadKeys[i]))
+                {
                     BuyFood(VillageFood.All[i]);
+                    return true;
+                }
+
+            if (!VillageKeysReady || UpdateVillageRowKeys(VillageFood.Count)) return true;
+            if (VillageConfirmKey)
+            {
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                BuyFood(VillageFood.All[Mathf.Clamp(villageRow, 0, VillageFood.Count - 1)]);
+            }
             return true;
         }
+
+        private bool VillageKeysReady => Time.unscaledTime - villageOpenedAt >= VillageKeysDelay;
+
+        private bool VillageConfirmKey => villageKeyboard &&
+            (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space));
+
+        // ↑↓·W/S로 줄 옮기기 (끝에서 반대쪽 끝으로). 첫 ↓·S는 첫 줄을 보여 주기만 한다. 키를 썼으면 true.
+        private bool UpdateVillageRowKeys(int rows)
+        {
+            if (rows <= 0) return false;
+            bool down = Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S);
+            bool up = villageKeyboard && (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W));
+            if (!down && !up) return false;
+            if (!villageKeyboard)
+            {
+                villageKeyboard = true;
+                villageRow = 0;
+            }
+            else villageRow = ((villageRow + (down ? 1 : -1)) % rows + rows) % rows;
+            GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+            return true;
+        }
+
+        // 창 위 안내 글의 조작 부분
+        private string VillageKeysHint(string numbers) => villageKeyboard
+            ? "↑↓ 고르기 · Enter 사기 · Esc 닫기"
+            : $"{numbers} 사기 · ↓ 고르기 · Esc/W 닫기";
 
         private bool HealthFull => health.Current >= health.Max - 0.01f;
         private bool ManaFull => mana.Current >= mana.Max - 0.01f;
@@ -206,7 +254,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "식당", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
-                $"골드 <color=#ffd84d>{SpendableGold}</color> · 한 번 들를 때 종류별 한 그릇 · 1~5 사기 · Esc/W 닫기",
+                $"골드 <color=#ffd84d>{SpendableGold}</color> · 한 번 들를 때 종류별 한 그릇 · {VillageKeysHint("1~5")}",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
 
             bool healthFull = HealthFull, manaFull = ManaFull;
@@ -218,6 +266,7 @@ namespace IBlameYou.UI
                 var check = restaurantVisit.Check(food.Id, SpendableGold, healthFull, manaFull, rate);
                 var row = new Rect(rect.x + 20f, y, rect.width - 40f, rowHeight - 6f);
                 GUI.Box(row, GUIContent.none, panel);
+                if (villageKeyboard && i == villageRow) CuteButton.DrawSelection(row);
                 string name = check == FoodBuyCheck.Ok ? $"<b>{food.Name}</b>" : $"<color=#8a8a8a><b>{food.Name}</b></color>";
                 string desc = check == FoodBuyCheck.AlreadyBought ? "<color=#8a8a8a>다 먹었어요</color>" : food.Describe();
                 var icon = FoodIcon(food.Id);
