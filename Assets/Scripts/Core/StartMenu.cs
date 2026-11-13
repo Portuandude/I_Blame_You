@@ -97,7 +97,7 @@ namespace IBlameYou.Core
             if (!display.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
             {
                 if (e.keyCode == KeyCode.C && !codex.IsOpen) codex.Show(devMode); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
-                else codex.Close();
+                else codex.Close(true); // 사람이 닫으면 "통"
                 e.Use();
             }
             if (!display.IsOpen && !codex.IsOpen) HandleMenuKeys(e);

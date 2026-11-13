@@ -15,20 +15,49 @@ namespace IBlameYou.Core
         private bool codexDevMode;      // 보여 주는 모드 (열 때 정하고, 창 안에서 Tab으로 바꾼다)
         private readonly Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons = new Dictionary<IBlameYou.Player.RelicId, Texture2D>();
 
+        private float openedAt = -10f;  // 연 시각 (unscaledTime: 게임 중에는 시간이 멈춰 있다). 배경 페이드·패널 팝
+
+        // 창 열림 연출: 배경 어둠이 FadeTime 동안 깔리고 패널이 PopTime 동안 0.85 → 1.04 → 1 (유물·특성 창과 같은 곡선)
+        private const float FadeTime = 0.15f;
+        private const float PopTime = 0.18f;
+
         public bool IsOpen { get; private set; }
 
         // dev: 처음 보여 줄 모드 (시작 화면은 메뉴 토글 값, 게임 중에는 지금 판의 모드). 고른 칸 없이 연다.
         public void Show(bool dev)
         {
+            if (!IsOpen) GameAudio.PlaySfx("BookOpen", 0.6f); // 책 펼치는 "파라락" (특성 창과 같은 소리)
             IsOpen = true;
             codexCursor = -1;
             codexDevMode = dev;
+            openedAt = Time.unscaledTime;
         }
 
-        public void Close() => IsOpen = false;
+        // playSound: 사람이 닫을 때(C·Esc·닫기 버튼)만 "통". 쓰러짐·클리어로 닫힐 때는 조용히.
+        public void Close(bool playSound = false)
+        {
+            if (IsOpen && playSound) GameAudio.PlaySfx("PauseClose", 0.6f);
+            IsOpen = false;
+        }
+
+        private float PanelScale()
+        {
+            float t = (Time.unscaledTime - openedAt) / PopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
 
         // 유물 도감 창: 모든 유물을 격자로. 한 번이라도 고른 유물은 아이콘·이름, 아직이면 흐린 아이콘 + "???". C/Esc/닫기로 닫는다.
         public void Draw(GUIStyle panel, GUIStyle body, GUIStyle recordSmall, GUIStyle button)
+        {
+            var matrix = GUI.matrix; // 패널 팝 동안 키운 행렬을 어느 길로 나가든 되돌린다
+            try { DrawWindow(panel, body, recordSmall, button); }
+            finally { GUI.matrix = matrix; }
+        }
+
+        private void DrawWindow(GUIStyle panel, GUIStyle body, GUIStyle recordSmall, GUIStyle button)
         {
             var all = IBlameYou.Player.RelicBook.All;
             long mask = SaveData.RelicCodexMask(codexDevMode);
@@ -43,9 +72,11 @@ namespace IBlameYou.Core
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
 
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - openedAt) / FadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
+            float panelScale = PanelScale();
+            if (panelScale != 1f) GUIUtility.ScaleAroundPivot(Vector2.one * panelScale, rect.center);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
 
@@ -119,7 +150,7 @@ namespace IBlameYou.Core
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x - 150f, rect.yMax - 48f, 160f, 36f), codexDevMode ? "Tab: 일반 보기" : "Tab: 개발자 보기",
                     new GUIStyle(button) { fontSize = 16 })) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
                 codexDevMode = !codexDevMode;
-            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) IsOpen = false;
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) Close(true);
         }
 
         // 모은 유물 아이콘 왼쪽 아래에 주인 배지: A는 하늘색, B는 주황 글자 (공용은 표시 없음). corner = 아이콘 왼쪽 아래.
