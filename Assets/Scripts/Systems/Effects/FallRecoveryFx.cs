@@ -15,6 +15,7 @@ namespace IBlameYou.Systems
         private const float BlinkRate = 12f; // 초당 깜빡임 수
 
         private SpriteRenderer visual;
+        private HealthSystem health;
         private float blinkUntil;
 
         public static void Falling()
@@ -61,12 +62,14 @@ namespace IBlameYou.Systems
         {
             var child = transform.Find("Visual");
             visual = child != null ? child.GetComponent<SpriteRenderer>() : null;
+            health = GetComponent<HealthSystem>();
         }
 
         private void LateUpdate()
         {
             if (visual == null) return;
-            bool blinking = Time.time < blinkUntil;
+            // 창이 열려 시간이 멈췄거나(Time.timeScale 0) 쓰러졌으면 보이게 둔다 (꺼진 채 멈추지 않게)
+            bool blinking = Time.time < blinkUntil && Time.timeScale > 0f && (health == null || !health.IsDead);
             visual.forceRenderingOff = blinking && Mathf.Repeat(Time.time * BlinkRate, 1f) < 0.35f;
         }
 
