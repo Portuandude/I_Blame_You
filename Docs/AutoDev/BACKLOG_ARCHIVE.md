@@ -2,6 +2,76 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 15:40 자동 실행이 추가 — 움직이는 발판 도착·출발 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 움직이는 발판이 끝에 닿아 멈추고 다시 떠나는 박자가 눈과 귀로 읽혀 올라탈 때를 잡기 쉽게. 속도·멈춤 시간·판정 그대로 (그림·소리만, `Systems/Effects/MovingPlatformFx`). 스위치 발판의 깨어남·잠듦 연출은 그대로 둔다.
+
+- DONE (claude/project-thread-ahr3bv): 끝 도착 — 양 끝에 닿아 멈추는 순간 판자가 살짝 눌렸다 펴짐 + 진행하던 쪽 끝 아래 작은 먼지 (화면 안만)
+- DONE (claude/project-thread-ahr3bv): 출발 예고 — 멈춤 마지막 0.3초 동안 판자가 살짝 밝아져 곧 떠난다는 걸 알림
+- DONE (claude/project-thread-ahr3bv): 출발 — 멈춤이 끝나 떠나는 순간 뒤쪽 끝 아래 작은 먼지 (일반 발판도, 화면 안만)
+- DONE (claude/project-thread-ahr3bv): 소리 — 카메라 가까이에서 끝에 닿을 때 작은 "탁"(새 효과음 `PlatformStop`, 0.2초 간격 제한)
+- DONE (claude/project-thread-ahr3bv): 올라탐 — 플레이어가 움직이는 발판에 내려앉는 순간 판자가 살짝 눌렸다 펴짐
+
+## 다음 (2026-11-13 10:50 자동 실행이 추가 — 깜빡 발판 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 깜빡 발판이 사라지고 다시 나타나는 박자가 눈과 귀로 읽히게. 박자·보임/경고/사라짐 시간·솜구름 유예 그대로 (그림·소리만, `Systems/Effects/BlinkPlatformFx`).
+
+- DONE (claude/project-thread-ahr3bv): 사라짐 — 발판이 꺼지는 순간 칸마다 하늘빛 조각이 흩어짐 (화면 안만)
+- DONE (claude/project-thread-ahr3bv): 나타남 — 다시 생기는 순간 발판이 살짝 커졌다 제자리 + 칸마다 작은 반짝 (화면 안만)
+- DONE (claude/project-thread-ahr3bv): 박자 소리 — 카메라 가까이에서 나타날 때 작은 "띵"(새 효과음 `BlinkAppear`, 0.25초 간격 제한)으로 박자를 귀로도 알림
+- DONE (claude/project-thread-ahr3bv): 발밑이 사라짐 — 플레이어가 서 있는데 꺼지면 "퐁"(새 효과음 `BlinkVanish`) + 발밑 작은 먼지
+- DONE (claude/project-thread-ahr3bv): 솜구름 — 솜구름이 받쳐 주기 시작할 때 하얀 솜 조각이 몽글 피어오름, 구름이 걷힐 때 옅게 퍼짐
+
+## 다음 (2026-11-13 10:40 자동 실행이 추가 — 스위치 발판 깨어남·잠듦 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 룬을 맞혀 잠든 발판을 깨우고, 시간이 끝나 다시 잠드는 순간이 눈과 귀로 이어지게. 가동 시간·출발 여유·판정 그대로 (그림·소리만, `Systems/Effects/SwitchPlatformFx`).
+
+- DONE (claude/project-thread-m0jhnb): 마력 줄기 — 맞는 속성으로 룬을 맞히면 문양에서 이어진 발판까지 속성 색 빛 방울이 차례로 날아가 닿는 자리에서 반짝
+- DONE (claude/project-thread-m0jhnb): 깨어남 — 잠든 발판이 깨어나면 판자가 톡 튀었다 내려앉고 칸마다 속성 색 반짝 조각 + 새 효과음 `PlatformWake`("우웅-팅")
+- DONE (claude/project-thread-m0jhnb): 출발 예고·출발 — 출발 여유 1.2초 동안 판자가 점점 빠르게 밝아졌다 어두워지고, 출발하는 순간 양 끝 아래 작은 먼지
+- DONE (claude/project-thread-m0jhnb): 잠듦 — 가동이 끝나 발판이 다시 흐려질 때 속성 색 조각이 아래로 흩날리고 새 효과음 `PlatformSleep`(내려가는 작은 종소리, 화면 안만). 스테이지 시작 때는 나지 않음
+- DONE (claude/project-thread-m0jhnb): 틀린 속성 — 룬이 틀린 마법을 튕겨낼 때 봉인문과 같은 "팅"(GateDeflect) + 흰 불꽃 조각 (기존 흰 번쩍임 그대로)
+
+## 다음 (2026-11-13 10:55 자동 실행이 추가 — 봉인문 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 봉인문을 맞히고·튕기고·여는 순간이 보람 있게. 푸는 순서·판정·기록 그대로 (그림·소리만, `Puzzles/ElementGateFx`).
+
+- DONE (claude/project-thread-bynbiy): 문양 맞힘 — 그 자리에서 속성 색 고리 + 문양이 부풀었다 꺼짐
+- DONE (claude/project-thread-bynbiy): 튕겨냄 — 새 효과음 `GateDeflect`("팅") + 흰 불꽃 조각 (기존 흰 번쩍임 그대로)
+- DONE (claude/project-thread-bynbiy): 열림 벽 조각 — 마력 벽이 높이를 따라 속성 색 조각으로 깨져 흩어짐
+- DONE (claude/project-thread-bynbiy): 열림 소리 — 새 효과음 `GateShatter`("차르르")가 기존 `GateOpen`과 겹쳐 남
+- DONE (claude/project-thread-bynbiy): 열림 빛 기둥 — 문 자리에 빛 기둥이 섰다 넓어지며 옅어짐 + 약한 화면 흔들림
+
+## 다음 (2026-11-13 10:45 자동 실행이 추가 — 낭떠러지 추락·복귀 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 낭떠러지에 떨어졌다 돌아오는 순간이 갑자기 순간이동한 것처럼 느껴지지 않게. 잃는 체력·복귀 자리·무적 1초 그대로 (그림·소리만, `Systems/Effects/FallRecoveryFx`).
+
+- DONE (claude/project-thread-bynbiy): 추락 — 바닥 아래로 떨어지기 시작하면 새 효과음 `PitFall`("휘이이잉") 한 번
+- DONE (claude/project-thread-bynbiy): 복귀 화면 — 순간 어두워졌다 밝아짐 (방 전환과 같은 `ScreenFlash.RoomFade`)
+- DONE (claude/project-thread-bynbiy): 복귀 자리 — aqua 빛 고리 + 반짝 조각 + 발밑 먼지 + 새 효과음 `PitReturn`("뿅")
+- DONE (claude/project-thread-bynbiy): 무적 깜빡임 — 복귀 뒤 무적 1초 동안 몸 그림이 깜빡임
+- DONE (claude/project-thread-bynbiy): 모래시계 — 피해 없이 돌아오면 금빛 고리 + 머리 위에서 흘러내리는 금빛 모래 + 조금 높은 음
+
+## 다음 (2026-11-13 10:35 자동 실행이 추가 — 가시·불기둥 함정 맞음 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 함정 예고(함정 읽기)는 끝났으니 맞는 순간이 손에 느껴지게. 피해·튕김·쿨다운·불 시간 그대로 (그림·소리만, `Systems/Effects/TrapHitFx`).
+
+- DONE (claude/project-thread-bynbiy): 가시 밟음 — 밟은 자리에서 흰·붉은 쇳조각 + 새 효과음 `SpikeStab`("찡")
+- DONE (claude/project-thread-bynbiy): 가시 튕김 — 튕겨 오르는 발밑 작은 먼지
+- DONE (claude/project-thread-bynbiy): 불기둥 닿음 — 몸에서 주황·노랑 불똥 + 새 효과음 `FlameSizzle`("치익", 피해 틱마다)
+- DONE (claude/project-thread-bynbiy): 불 솟음 — 분출구에서 불똥이 위로 터짐 (화면 안만)
+- DONE (claude/project-thread-bynbiy): 불 꺼짐 — 분출구에서 남은 불씨 몇 개
+
+## 다음 (2026-11-13 10:30 자동 실행이 추가 — 고블린 근접 휘두르기·함정 화살 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 고블린이 휘두르는 순간과 맞았는지·빗나갔는지가 손에 느껴지게. 판정 크기·시간·피해 그대로 (그림·소리만, `Enemies/GoblinSwingFx`).
+
+- DONE (claude/project-thread-bynbiy): 휘두르기 소리 — 새 효과음 `GoblinSwing`("붕", 화면 안·0.08초 간격), 대전사는 낮은 음
+- DONE (claude/project-thread-bynbiy): 휘두르기 궤적 — 위에서 앞으로 그어지는 흰 초승달(조각 6개가 차례로 나타났다 옅어짐), 대전사는 크고 따뜻한 색
+- DONE (claude/project-thread-bynbiy): 맞힘 — 맞힌 자리에 노란 불꽃 조각, 대전사는 약한 화면 흔들림
+- DONE (claude/project-thread-bynbiy): 헛스윙 — 무기 끝 아래 땅에 작은 먼지, 대전사는 흙 조각도
+- DONE (claude/project-thread-bynbiy): 함정 화살 — 화살 발사대 화살도 궁수 화살 연출(꼬리·스침 "슈웅"·벽에 박힘 "턱"·나무 조각) + 발사 "탁"(BowTwang을 높고 작게)
+
 ## 다음 (2026-11-13 10:40 자동 실행이 추가 — 슬라임 도약·착지 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 슬라임 도약 덮치기가 뛰고 떨어지는 순간이 말랑하게 느껴지게. 도약 시간·속도·피해 그대로 (그림·소리만, `Enemies/SlimeLandFx`).

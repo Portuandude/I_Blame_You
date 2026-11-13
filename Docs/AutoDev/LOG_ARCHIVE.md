@@ -2,6 +2,13 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 10:14 UTC
+- 브랜치/PR: `claude/project-thread-8qiaw2` → #84 (develop 대상, 자동 머지 켬, #83 head 위에 쌓음). 시작할 때 #82·#83 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 촉수 연출" 5개 추가
+- 완료 (10개, 적대적 리뷰 모두 APPROVE). 촉수 5개 (새 `Enemies/SlimeTentacleFx.cs`): ① 뻗기 "휙" `TentacleLash`(패턴당 1번) + 방울 ② 벽·바닥 "철퍽" `TentacleSlap` + 되튀는 방울 ③ 붙잡힘 0.05초 히트스톱 + 보라 고리 + "찰싹" `TentacleGrab` ④ 붙은 동안 끝 구슬 두근거림이 빨라지고 마지막 1초 붉은 깜빡임 ⑤ 끊어내면 방울 + 초록 고리 + "뽁" `TentacleSnap`
+- 착지 5개 (새 `Enemies/SlimeKingLandFx.cs`): ① 내려찍기 낙하 "휘이익" `KingFall` ② 착지 충격파 + 방울 + "철퍼덕" `KingSlam` (`Hit_Earth` 0.6으로) ③ 2초 젤리 얼룩 ④ 박치기 착지 먼지 + "쿵" `KingLand` ⑤ 발광 연속 내려찍기 음 높아짐 + 금빛 고리
+- 실패/보류: 다음 실행 걸기(fire_trigger)가 인증 오류로 3번 실패해 같은 세션에서 착지 연출을 이어 했다. 촉수·착지 수치·시간 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 붙잡힘 히트스톱이 거슬리지 않는지, 깜빡임으로 그랩 직전이 읽히는지, 발광 연속 내려찍기 충격파·얼룩이 과하지 않은지
+
 ## 2026-11-13 10:10 UTC
 - 브랜치/PR: `claude/project-thread-1vrlvp` → #83 (develop 대상, 자동 머지 켬, #82 head 위에 쌓음). 시작할 때 #81·#82 CI 대기. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 소환 무리 합체 연출" 5개 추가
 - 완료 (5개, 적대적 리뷰 HIGH 1개 고친 뒤 APPROVE): [`Enemies/SlimeBroodFx` + `SlimeBrood`] ① 합체 5초 전부터 초마다 초록 고리 + `BroodTick`(점점 높게) ② 3초 전부터 킹 쪽 초록 젤리 끈 ③ 합체 비행 `BroodMerge` + 방울 흔적 ④ 킹 꿀꺽 `BroodGulp` + 큰 초록 고리 ⑤ 시간 안에 전멸하면 금빛 고리 + `BroodClear`. 리뷰 HIGH: Finish 뒤 0.1초 동안 축하가 반복되고 킹 처치(Dismiss) 때도 나오던 문제 → `finished` 플래그
