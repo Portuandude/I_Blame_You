@@ -19,6 +19,7 @@ namespace IBlameYou.UI
         private const float PauseSideWidth = 320f;
         private const int PauseButtonCount = 4; // 계속하기 · 다시 시작 · 시작 화면 · 화면 설정
         private int pauseSelection;
+        private bool pauseUnlockPending; // Enter·Space로 닫은 프레임: 조작 잠금을 LateUpdate에서 푼다 (같은 키가 순간이동·점프로 새지 않게)
         private bool pauseKeyboard; // 이번에 열고 화살표를 눌렀으면 테두리를 보인다 (마우스만 쓰면 안 보인다)
         private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
 
@@ -55,7 +56,8 @@ namespace IBlameYou.UI
         }
 
         // resumeSound: 게임으로 돌아갈 때(Esc·계속하기)만 "통". 다시 시작·시작 화면·클리어 등으로 닫힐 때는 조용히.
-        private void ClosePauseMenu(bool resumeSound = false)
+        // holdLock: 키보드(Enter·Space)로 닫을 때. 그 키의 GetKeyDown이 이 프레임 내내 참이라, 잠금은 모든 Update가 끝난 뒤 LateUpdate에서 푼다.
+        private void ClosePauseMenu(bool resumeSound = false, bool holdLock = false)
         {
             if (!paused) return;
             if (resumeSound) GameAudio.PlaySfx("PauseClose", 0.7f, 0f);
@@ -64,7 +66,15 @@ namespace IBlameYou.UI
             Time.timeScale = 1f;
             GameAudio.SetMusicMuffled(false);
             SaveData.SaveVolume();
-            if (!deathHandled && !stageCleared) control.Locked = false;
+            if (holdLock) pauseUnlockPending = true;
+            else if (!deathHandled && !stageCleared) control.Locked = false;
+        }
+
+        private void LateUpdate()
+        {
+            if (!pauseUnlockPending) return;
+            pauseUnlockPending = false;
+            if (!paused && !deathHandled && !stageCleared && control != null) control.Locked = false;
         }
 
         private void DrawPauseMenu()
@@ -129,12 +139,13 @@ namespace IBlameYou.UI
         }
 
         // 버튼 하나를 누른 것과 같다 (마우스 클릭·키보드 Enter 공용).
-        private void RunPauseButton(int index)
+        // fromKeyboard: Enter·Space로 눌렀으면 조작 잠금을 이 프레임 끝에 푼다 (ClosePauseMenu holdLock).
+        private void RunPauseButton(int index, bool fromKeyboard = false)
         {
             switch (index)
             {
                 case 0:
-                    ClosePauseMenu(true);
+                    ClosePauseMenu(true, fromKeyboard);
                     break;
                 case 1:
                     ClosePauseMenu();
@@ -170,7 +181,7 @@ namespace IBlameYou.UI
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
             {
                 GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
-                RunPauseButton(pauseSelection);
+                RunPauseButton(pauseSelection, true);
                 return true;
             }
             return false;
