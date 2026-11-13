@@ -33,6 +33,7 @@ namespace IBlameYou.Enemies
         public static readonly HashSet<GoblinArcherController> Aiming = new HashSet<GoblinArcherController>();
         public Vector3 AimPoint => ArrowOrigin();
         private bool spotted; // 플레이어를 알아챈 상태 (발견 "!"를 한 번만)
+        private AimLineFx aimLine; // 시위를 당기는 동안 화살이 날아갈 쪽 점선
         private const float LoseRangeMultiplier = 1.25f;
 
         public void ConfigureObstacleLayer(LayerMask layer)
@@ -88,6 +89,10 @@ namespace IBlameYou.Enemies
                 phaseTimeRemaining = DrawTime;
                 EnemySquash.For(gameObject).Windup(DrawTime); // 시위를 당기며 웅크림
                 VfxPlayer.AimGlint(ArrowOrigin()); // 화살 끝 반짝 (곧 쏜다는 예고)
+                EnemyTelegraph.Windup(this, BodyBounds);
+                RemoveAimLine();
+                aimLine = AimLineFx.Create(gameObject);
+                UpdateAimLine(target);
                 if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             }
         }
@@ -104,6 +109,7 @@ namespace IBlameYou.Enemies
             if (drawing) EnemySquash.For(gameObject).Cancel();
             drawing = recovering = false;
             Aiming.Remove(this);
+            RemoveAimLine();
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }
 
@@ -122,12 +128,14 @@ namespace IBlameYou.Enemies
             }
 
             phaseTimeRemaining -= Time.deltaTime;
+            if (drawing) UpdateAimLine(target);
             if (phaseTimeRemaining > 0f) return;
 
             if (drawing)
             {
                 drawing = false;
                 Aiming.Remove(this);
+                RemoveAimLine();
                 Release(target);
                 EnemySquash.For(gameObject).Release(); // 쏘는 순간 늘어남
                 recovering = true;
@@ -137,6 +145,22 @@ namespace IBlameYou.Enemies
             {
                 EndShot();
             }
+        }
+
+        // Release와 같은 조준 (플레이어 위치를 향함). 시위를 당길수록 진해진다.
+        private void UpdateAimLine(Transform target)
+        {
+            if (aimLine == null) return;
+            Vector2 origin = ArrowOrigin();
+            Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
+            float progress = 1f - Mathf.Clamp01(phaseTimeRemaining / DrawTime);
+            aimLine.Aim(origin, aimAt, shootRange * 1.6f, obstacleLayer, progress);
+        }
+
+        private void RemoveAimLine()
+        {
+            if (aimLine != null) aimLine.Remove();
+            aimLine = null;
         }
 
         private Vector2 ArrowOrigin() => (Vector2)transform.position + new Vector2(facing * 0.4f, arrowHeight);
@@ -160,6 +184,7 @@ namespace IBlameYou.Enemies
             if (drawing) EnemySquash.For(gameObject).Cancel(); // 당기다 끊기면 바로 펴기
             drawing = recovering = false;
             Aiming.Remove(this);
+            RemoveAimLine();
             nextShotTime = Time.time + Stats.AttackInterval;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }
