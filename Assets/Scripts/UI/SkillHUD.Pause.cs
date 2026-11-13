@@ -8,9 +8,12 @@ namespace IBlameYou.UI
     // 열려 있는 동안 Time.timeScale = 0이고 조작이 잠긴다 (마우스 클릭이 평타로 나가지 않음).
     // Esc가 이미 다른 뜻으로 쓰이는 때(B의 영창 취소, Tab 특성 창 닫기, A의 방어막 미니게임 중)와
     // 쓰러짐/클리어 화면, 다른 이유로 조작이 잠긴 때(출구 진입, 보스에게 붙잡힘)에는 열지 않는다.
+    // 열 때 창이 PausePopTime(실제 시간) 동안 0.85 → 1.04 → 1로 톡 커지고 "또롱"(PauseOpen), 게임으로 돌아갈 때 "통"(PauseClose).
     public partial class SkillHUD
     {
         private bool paused;
+        private float pauseOpenedAt;
+        private const float PausePopTime = 0.18f;
         private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
 
         public bool Paused => paused;
@@ -27,7 +30,7 @@ namespace IBlameYou.UI
 
             if (paused)
             {
-                ClosePauseMenu();
+                ClosePauseMenu(true);
                 return;
             }
 
@@ -35,13 +38,17 @@ namespace IBlameYou.UI
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return;
 
             paused = true;
+            pauseOpenedAt = Time.unscaledTime;
             control.Locked = true;
             Time.timeScale = 0f;
+            GameAudio.PlaySfx("PauseOpen", 0.7f, 0f);
         }
 
-        private void ClosePauseMenu()
+        // resumeSound: 게임으로 돌아갈 때(Esc·계속하기)만 "통". 다시 시작·시작 화면·클리어 등으로 닫힐 때는 조용히.
+        private void ClosePauseMenu(bool resumeSound = false)
         {
             if (!paused) return;
+            if (resumeSound) GameAudio.PlaySfx("PauseClose", 0.7f, 0f);
             paused = false;
             displayWindow.Close();
             Time.timeScale = 1f;
@@ -61,6 +68,9 @@ namespace IBlameYou.UI
             const float width = 360f;
             const float height = 404f;
             var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
+            var previousMatrix = GUI.matrix;
+            float pop = PausePopScale();
+            if (pop != 1f) GUIUtility.ScaleAroundPivot(Vector2.one * pop, rect.center); // 옆 요약·지도까지 같이 톡
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
@@ -76,7 +86,7 @@ namespace IBlameYou.UI
 
             if (CuteButton.Button(new Rect(x, rect.y + 140f, buttonWidth, 44f), "계속하기 (Esc)", menuButton))
             {
-                ClosePauseMenu();
+                ClosePauseMenu(true);
             }
             else if (CuteButton.Button(new Rect(x, rect.y + 194f, buttonWidth, 44f), "다시 시작 (새 맵)", menuButton))
             {
@@ -100,7 +110,18 @@ namespace IBlameYou.UI
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, 320f, height));
+            GUI.matrix = previousMatrix; // 화면 설정 창은 크기 그대로
             displayWindow.Draw(panel, small, menuButton);
+        }
+
+        // 열린 직후 톡 커지는 배율 (0.85 → 1.04 → 1). 끝났으면 1.
+        private float PausePopScale()
+        {
+            float t = (Time.unscaledTime - pauseOpenedAt) / PausePopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
         }
 
         // 일시정지 메뉴 옆: 이번 런에서 A/B가 찍은 특성과 고른 유물 (서로 뭘 골랐는지 확인용).
