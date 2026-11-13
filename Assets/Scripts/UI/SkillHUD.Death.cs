@@ -8,6 +8,7 @@ namespace IBlameYou.UI
     // 1) 쓰러진 순간 슬로모션 (시간 0.25배, 실제 시간 1.2초 뒤 정상 속도로 복귀)
     // 2) 캐릭터가 회색으로 바래며 반투명해짐
     // 3) 쓰러진 캐릭터 둘레만 동그랗게 남기고 화면이 서서히 어두워지며(원이 좁아짐) 그 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
+    // 5) 몸에서 크림색 영혼 별이 좌우로 흔들리며 떠올라 사라진다 (어둠 위, 게임오버 창 뒤)
     // 0) 쓰러진 순간 화면이 하얗게 번쩍(0.15초)하고 카메라가 짧게 흔들린다
     // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 게임오버 징글 때 꺼진다 (SkillHUD.EndScreen.cs)
     // 연출 시간은 모두 Time.unscaledTime 기준이라 슬로모션의 영향을 받지 않는다.
@@ -21,6 +22,11 @@ namespace IBlameYou.UI
         private const float DeathFadeAlpha = 0.72f;     // 조명 원 바깥 어둠 (원 안은 밝게 남는다)
         private const float DeathSpotEndRadius = 120f;  // 다 좁혀졌을 때 조명 원 반지름 (화면 픽셀)
         private const int DeathSpotTextureSize = 128;
+        private const float SoulStart = 0.35f;          // 쓰러지고 영혼 별이 나오기 시작할 때까지 (실제 시간)
+        private const float SoulDuration = 1.5f;
+        private const float SoulRise = 90f;             // 떠오르는 높이 (화면 픽셀)
+        private const float SoulSize = 22f;
+        private static readonly Color SoulColor = new Color(1f, 0.96f, 0.84f); // palette.py cream
         private const float GameOverDelay = 1.4f;       // 쓰러지고 게임오버 창이 뜨기 시작할 때까지
         private const float GameOverFadeIn = 0.4f;
 
@@ -96,6 +102,7 @@ namespace IBlameYou.UI
                 GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             }
             GUI.color = previous;
+            DrawDeathSoul();
         }
 
         // 쓰러진 캐릭터를 가운데 둔 조명 원 바깥을 어둡게 칠한다 (GUI.color에 어둠 색을 넣고 부른다).
@@ -103,15 +110,11 @@ namespace IBlameYou.UI
         private void DrawDeathSpotlight()
         {
             var full = new Rect(0f, 0f, Screen.width, Screen.height);
-            var cam = Camera.main;
-            if (cam == null || health == null)
+            if (!TryDeathScreenPoint(out var center))
             {
                 GUI.DrawTexture(full, Texture2D.whiteTexture);
                 return;
             }
-
-            var screen = cam.WorldToScreenPoint(health.transform.position + Vector3.up * 0.5f);
-            var center = new Vector2(screen.x, Screen.height - screen.y); // GUI는 y가 아래로
             float t = Mathf.Clamp01((DeathElapsed - DeathFadeDelay) / DeathFadeDuration);
             float startRadius = new Vector2(Screen.width, Screen.height).magnitude;
             float radius = Mathf.Lerp(startRadius, DeathSpotEndRadius, 1f - (1f - t) * (1f - t)); // 처음엔 빠르게, 끝에서 천천히
@@ -123,6 +126,50 @@ namespace IBlameYou.UI
             DrawDeathBlock(new Rect(0f, hole.yMax, Screen.width, Screen.height - hole.yMax));
             DrawDeathBlock(new Rect(0f, hole.yMin, hole.xMin, hole.height));
             DrawDeathBlock(new Rect(hole.xMax, hole.yMin, Screen.width - hole.xMax, hole.height));
+        }
+
+        // 쓰러진 캐릭터 몸 가운데의 GUI 좌표 (카메라가 없으면 false).
+        private bool TryDeathScreenPoint(out Vector2 point)
+        {
+            point = Vector2.zero;
+            var cam = Camera.main;
+            if (cam == null || health == null) return false;
+            var screen = cam.WorldToScreenPoint(health.transform.position + Vector3.up * 0.5f);
+            point = new Vector2(screen.x, Screen.height - screen.y); // GUI는 y가 아래로
+            return true;
+        }
+
+        // 영혼 별: 몸에서 떠올라 좌우로 흔들리며 커졌다가 흐려진다.
+        private void DrawDeathSoul()
+        {
+            float t = (DeathElapsed - SoulStart) / SoulDuration;
+            if (t <= 0f || t >= 1f || starIcon == null || !TryDeathScreenPoint(out var body)) return;
+
+            float alpha = Mathf.Min(Mathf.Clamp01(t / 0.12f), Mathf.Clamp01((1f - t) / 0.35f));
+            float rise = SoulRise * (1f - (1f - t) * (1f - t)); // 처음엔 빠르게, 위에서 느리게
+            float sway = Mathf.Sin(t * Mathf.PI * 3f) * 10f * (1f - t * 0.5f);
+            float size = SoulSize * Mathf.Lerp(0.6f, 1f, Mathf.Clamp01(t / 0.25f));
+            var center = new Vector2(body.x + sway, body.y - rise);
+
+            var previousColor = GUI.color;
+            var previousMatrix = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Mathf.Sin(t * Mathf.PI * 3f) * 12f, center); // 흔들리는 쪽으로 살짝 기울기
+            GUI.color = new Color(SoulColor.r, SoulColor.g, SoulColor.b, alpha * previousColor.a);
+            GUI.DrawTexture(new Rect(center.x - size / 2f, center.y - size / 2f, size, size), starIcon, ScaleMode.ScaleToFit, true);
+            // 뒤에 남는 작은 반짝이 두 개
+            for (int i = 1; i <= 2; i++)
+            {
+                float back = i * 0.06f;
+                if (t - back <= 0f) continue;
+                float tb = t - back;
+                float riseB = SoulRise * (1f - (1f - tb) * (1f - tb));
+                float swayB = Mathf.Sin(tb * Mathf.PI * 3f) * 10f * (1f - tb * 0.5f);
+                float sb = size * (0.45f - i * 0.12f);
+                GUI.color = new Color(SoulColor.r, SoulColor.g, SoulColor.b, alpha * (0.6f - i * 0.2f) * previousColor.a);
+                GUI.DrawTexture(new Rect(body.x + swayB - sb / 2f, body.y - riseB - sb / 2f + size * 0.3f, sb, sb), starIcon, ScaleMode.ScaleToFit, true);
+            }
+            GUI.matrix = previousMatrix;
+            GUI.color = previousColor;
         }
 
         private static void DrawDeathBlock(Rect rect)
