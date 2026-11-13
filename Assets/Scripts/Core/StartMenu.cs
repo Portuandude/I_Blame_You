@@ -30,6 +30,9 @@ namespace IBlameYou.Core
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
         private Texture2D sparkle; // 제목 둘레 반짝이 별 (HUD 마나 별 그림)
+        private int keySelection;   // 키보드로 고른 아래 큰 버튼 (0부터: 이어하기가 있으면 이어하기, 시작, 기능 테스트)
+        private bool keyboardUsed;  // 화살표를 눌렀으면 금색 테두리를 보인다 (마우스만 쓰면 안 보인다)
+        private int keyActivate = -1; // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
 
         public void Initialize(Action startCallback, Action continueCallback = null)
         {
@@ -80,6 +83,7 @@ namespace IBlameYou.Core
                 else codex.Close();
                 e.Use();
             }
+            if (!display.IsOpen && !codex.IsOpen) HandleMenuKeys(e);
             bool wasEnabled = GUI.enabled;
             GUI.enabled = !codex.IsOpen && !display.IsOpen; // 도감·화면 설정 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
@@ -112,8 +116,7 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                if (IBlameYou.UI.CuteButton.LayoutButton($"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})",
-                        button, GUILayout.Height(44f)))
+                if (MenuButton(0, $"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f))
                 {
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
                     SaveData.SaveSettings();
@@ -127,7 +130,7 @@ namespace IBlameYou.Core
 
             string startLabel = saved == null ? "플레이 테스트 시작 (일반 판)"
                 : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "플레이 테스트 새로 시작";
-            bool startPressed = IBlameYou.UI.CuteButton.LayoutButton(startLabel, button, GUILayout.Height(48f));
+            bool startPressed = MenuButton(StartSlot, startLabel, 48f);
             if (startPressed && saved != null && !confirmNewRun)
             {
                 confirmNewRun = true;
@@ -139,7 +142,7 @@ namespace IBlameYou.Core
 
             // 기능 테스트 모드: 적 없는 시험용 맵에서 몬스터·유물·협동 기능을 키로 불러 시험 (이어하던 런은 건드리지 않는다)
             GUILayout.Space(4f);
-            if (IBlameYou.UI.CuteButton.LayoutButton("기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", button, GUILayout.Height(40f)))
+            if (MenuButton(StartSlot + 1, "기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", 40f))
             {
                 StartRun(true);
             }
@@ -151,6 +154,54 @@ namespace IBlameYou.Core
             GUI.enabled = wasEnabled;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
             display.Draw(panel, body, button);
+        }
+
+        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트. 온라인은 준비 중이라 고를 수 없다.
+        private int StartSlot => saved != null ? 1 : 0;
+        private int MenuButtonCount => StartSlot + 2;
+
+        // 키보드로 아래 큰 버튼 고르기 (↑↓·W/S) · 누르기 (Enter·Space). 일시정지 창과 같은 방식.
+        // OnGUI는 Update 뒤에 돌고, 시작하면 만들어지는 플레이어는 다음 프레임부터 Update를 돌아 이 Enter·Space가 순간이동·점프로 새지 않는다.
+        private void HandleMenuKeys(Event e)
+        {
+            if (e.type != EventType.KeyDown) return;
+            int step = 0;
+            if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) step = -1;
+            else if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) step = 1;
+            if (step != 0)
+            {
+                // 첫 화살표는 지금 고른 칸(처음엔 맨 위 버튼)을 보여 주기만 한다
+                if (keyboardUsed) keySelection = (keySelection + step + MenuButtonCount) % MenuButtonCount;
+                keyboardUsed = true;
+                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                e.Use();
+                return;
+            }
+
+            if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space)
+            {
+                keyActivate = Mathf.Clamp(keySelection, 0, MenuButtonCount - 1);
+                keyboardUsed = true;
+                e.Use();
+            }
+        }
+
+        // 아래 큰 버튼 하나: 마우스로 눌렀거나 Enter·Space로 골라 눌렀으면 true. 고른 버튼에는 금색 테두리.
+        private bool MenuButton(int slot, string label, float height)
+        {
+            bool pressed = IBlameYou.UI.CuteButton.LayoutButton(label, button, GUILayout.Height(height));
+            if (keyboardUsed && slot == keySelection && GUI.enabled) IBlameYou.UI.CuteButton.DrawSelection(GUILayoutUtility.GetLastRect());
+            if (pressed) keySelection = slot; // 마우스로 누른 버튼도 고른 칸으로 (새로 시작 확인을 Enter로 이어 누를 수 있게)
+            if (keyActivate == slot)
+            {
+                keyActivate = -1;
+                if (GUI.enabled && !pressed)
+                {
+                    GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                    pressed = true;
+                }
+            }
+            return pressed;
         }
 
         private void StartRun(bool featureTest)
