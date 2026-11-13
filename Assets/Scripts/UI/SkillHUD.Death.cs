@@ -7,7 +7,7 @@ namespace IBlameYou.UI
     // 플레이어 사망 연출 (사망 애니메이션이 생기기 전까지의 대체 연출).
     // 1) 쓰러진 순간 슬로모션 (시간 0.25배, 실제 시간 1.2초 뒤 정상 속도로 복귀)
     // 2) 캐릭터가 회색으로 바래며 반투명해짐
-    // 3) 화면이 서서히 어두워진 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
+    // 3) 쓰러진 캐릭터 둘레만 동그랗게 남기고 화면이 서서히 어두워지며(원이 좁아짐) 그 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
     // 0) 쓰러진 순간 화면이 하얗게 번쩍(0.15초)하고 카메라가 짧게 흔들린다
     // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 게임오버 징글 때 꺼진다 (SkillHUD.EndScreen.cs)
     // 연출 시간은 모두 Time.unscaledTime 기준이라 슬로모션의 영향을 받지 않는다.
@@ -18,7 +18,9 @@ namespace IBlameYou.UI
         private const float DeathTintDuration = 1.0f;
         private const float DeathFadeDelay = 0.3f;
         private const float DeathFadeDuration = 1.2f;
-        private const float DeathFadeAlpha = 0.6f;
+        private const float DeathFadeAlpha = 0.72f;     // 조명 원 바깥 어둠 (원 안은 밝게 남는다)
+        private const float DeathSpotEndRadius = 120f;  // 다 좁혀졌을 때 조명 원 반지름 (화면 픽셀)
+        private const int DeathSpotTextureSize = 128;
         private const float GameOverDelay = 1.4f;       // 쓰러지고 게임오버 창이 뜨기 시작할 때까지
         private const float GameOverFadeIn = 0.4f;
 
@@ -34,6 +36,8 @@ namespace IBlameYou.UI
         private bool deathSlowMotion;
         private SpriteRenderer deathVisual;
         private Color deathVisualStart = Color.white;
+
+        private static Texture2D deathSpotTexture; // 가운데가 뚫린 둥근 어둠 (런타임에 한 번 만든다)
 
         private float DeathElapsed => Time.unscaledTime - deathStartTime;
 
@@ -81,7 +85,7 @@ namespace IBlameYou.UI
             if (alpha > 0f)
             {
                 GUI.color = new Color(0f, 0f, 0f, alpha);
-                GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+                DrawDeathSpotlight();
             }
 
             // 쓰러진 순간 하얀 번쩍임 (어둠보다 먼저 끝난다)
@@ -92,6 +96,71 @@ namespace IBlameYou.UI
                 GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             }
             GUI.color = previous;
+        }
+
+        // 쓰러진 캐릭터를 가운데 둔 조명 원 바깥을 어둡게 칠한다 (GUI.color에 어둠 색을 넣고 부른다).
+        // 원 반지름은 화면 대각선에서 DeathSpotEndRadius까지 어둠이 짙어지는 동안 함께 좁아진다.
+        private void DrawDeathSpotlight()
+        {
+            var full = new Rect(0f, 0f, Screen.width, Screen.height);
+            var cam = Camera.main;
+            if (cam == null || health == null)
+            {
+                GUI.DrawTexture(full, Texture2D.whiteTexture);
+                return;
+            }
+
+            var screen = cam.WorldToScreenPoint(health.transform.position + Vector3.up * 0.5f);
+            var center = new Vector2(screen.x, Screen.height - screen.y); // GUI는 y가 아래로
+            float t = Mathf.Clamp01((DeathElapsed - DeathFadeDelay) / DeathFadeDuration);
+            float startRadius = new Vector2(Screen.width, Screen.height).magnitude;
+            float radius = Mathf.Lerp(startRadius, DeathSpotEndRadius, 1f - (1f - t) * (1f - t)); // 처음엔 빠르게, 끝에서 천천히
+
+            var hole = new Rect(center.x - radius, center.y - radius, radius * 2f, radius * 2f);
+            GUI.DrawTexture(hole, DeathSpotTexture);
+            // 원 상자 바깥 네 조각 (위·아래는 화면 가로 전체, 왼쪽·오른쪽은 원 상자 높이만)
+            DrawDeathBlock(new Rect(0f, 0f, Screen.width, hole.yMin));
+            DrawDeathBlock(new Rect(0f, hole.yMax, Screen.width, Screen.height - hole.yMax));
+            DrawDeathBlock(new Rect(0f, hole.yMin, hole.xMin, hole.height));
+            DrawDeathBlock(new Rect(hole.xMax, hole.yMin, Screen.width - hole.xMax, hole.height));
+        }
+
+        private static void DrawDeathBlock(Rect rect)
+        {
+            // 원 상자가 화면 밖으로 넘친 쪽은 크기가 0 이하가 되어 그리지 않는다
+            if (rect.width <= 0f || rect.height <= 0f) return;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+        }
+
+        // 하얀색, 가운데는 투명하고 가장자리로 갈수록 불투명 (반지름 55%부터 부드럽게, 모서리는 완전히 불투명).
+        private static Texture2D DeathSpotTexture
+        {
+            get
+            {
+                if (deathSpotTexture != null) return deathSpotTexture;
+                int size = DeathSpotTextureSize;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                {
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave,
+                };
+                var pixels = new Color32[size * size];
+                float half = size / 2f;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float d = new Vector2(x + 0.5f - half, y + 0.5f - half).magnitude / half;
+                        byte a = (byte)Mathf.RoundToInt(255f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 1f, d)));
+                        pixels[y * size + x] = new Color32(255, 255, 255, a);
+                    }
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                deathSpotTexture = texture;
+                return texture;
+            }
         }
 
         // 게임오버 창의 불투명도 (0이면 아직 그리지 않는다).
