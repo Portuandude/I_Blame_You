@@ -15,6 +15,7 @@ namespace IBlameYou.UI
         private const float PulseFastHz = 2.4f;        // 0%에 가까울 때 맥동 속도
         private const float MinAlpha = 0.25f;
         private const float MaxAlpha = 0.75f;
+        private const float HeartbeatPhase = 0.25f;    // 맥동이 가장 진한 위상에서 Heartbeat
 
         private static Texture2D vignette;
         private float pulsePhase;
@@ -73,7 +74,13 @@ namespace IBlameYou.UI
 
             // 일시정지나 특성 창(timeScale 0) 중에도 깜빡임이 멈춰 보이지 않게 실제 시간으로 센다.
             if (Event.current.type == EventType.Repaint)
-                pulsePhase = (pulsePhase + Time.unscaledDeltaTime * Mathf.Lerp(PulseSlowHz, PulseFastHz, severity)) % 1f;
+            {
+                float next = pulsePhase + Time.unscaledDeltaTime * Mathf.Lerp(PulseSlowHz, PulseFastHz, severity);
+                // 붉은빛이 가장 진해지는 순간(사인 꼭대기 0.25)마다 작은 심장 소리 (Tools/AudioGen Heartbeat). 일시정지 중에는 소리 없음
+                bool peak = (pulsePhase < HeartbeatPhase && next >= HeartbeatPhase) || next >= 1f + HeartbeatPhase;
+                if (peak && Time.timeScale > 0f) IBlameYou.Systems.GameAudio.PlaySfx("Heartbeat", Mathf.Lerp(0.35f, 0.6f, severity), 0f);
+                pulsePhase = next % 1f;
+            }
 
             float pulse = 0.5f + 0.5f * Mathf.Sin(pulsePhase * 2f * Mathf.PI);
             float alpha = Mathf.Lerp(MinAlpha, MaxAlpha, severity) * Mathf.Lerp(0.45f, 1f, pulse);
