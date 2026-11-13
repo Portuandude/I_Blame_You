@@ -281,7 +281,56 @@ namespace IBlameYou.UI
                 DrawRooms(layout, current, new Rect(-SmallCell + slide.x, -SmallCell + slide.y, width + SmallCell * 2f, height + SmallCell * 2f), SmallCell,
                     current.X - SmallCols / 2 - 1, current.Y + SmallRows / 2 + 1);
                 GUI.EndGroup();
+                DrawOffMapMarks(layout, current, area);
             }
+        }
+
+        // 작은 지도 밖 길잡이 (2026-11-13 작은 지도 다듬기): 지도에 보이는(가 봤거나 나침반·보물 지도로 아는) 보스 방·마을이
+        // 작은 지도 범위 밖에 있으면 그쪽 테두리에 그 방 색 작은 세모가 붙어 천천히 깜빡인다. 같은 방향 여럿이어도 방마다 하나.
+        private const float OffMarkSize = 7f;
+
+        private void DrawOffMapMarks(RoomLayoutData layout, RoomData current, Rect area)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            int halfCols = SmallCols / 2, halfRows = SmallRows / 2;
+            float blink = 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * 4f);
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Kind != RoomKind.Boss && room.Kind != RoomKind.Village) continue;
+                if (!IsShown(room.Index, current)) continue;
+                int dx = room.X - current.X, dy = room.Y - current.Y;
+                if (Mathf.Abs(dx) <= halfCols && Mathf.Abs(dy) <= halfRows) continue; // 작은 지도 안에 보인다
+
+                // 지도 가운데에서 그 방 쪽으로 그은 선이 테두리와 만나는 곳 (GUI는 y가 아래로)
+                var dir = new Vector2(dx, -dy).normalized;
+                float sx = (area.width / 2f - OffMarkSize) / Mathf.Max(0.001f, Mathf.Abs(dir.x));
+                float sy = (area.height / 2f - OffMarkSize) / Mathf.Max(0.001f, Mathf.Abs(dir.y));
+                var at = area.center + dir * Mathf.Min(sx, sy);
+                var color = room.Kind == RoomKind.Boss ? BossColor : VillageColor;
+                DrawArrowMark(at, dir, new Color(color.r, color.g, color.b, blink));
+            }
+        }
+
+        // dir 쪽을 가리키는 작은 세모 (검은 테두리 + 색). 회전 행렬로 오른쪽(→) 세모를 돌린다.
+        private static void DrawArrowMark(Vector2 at, Vector2 dir, Color color)
+        {
+            var previous = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg, at);
+            float s = OffMarkSize;
+            // 세모를 가로줄로 쌓는다: 왼쪽(뒤) 넓고 오른쪽(앞) 끝이 뾰족
+            for (int i = 0; i < 2; i++)
+            {
+                float grow = i == 0 ? 1.5f : 0f;
+                var c = i == 0 ? Frame : color;
+                int steps = 6;
+                for (int k = 0; k < steps; k++)
+                {
+                    float x0 = at.x - s - grow + k * (2f * s + grow * 2f) / steps;
+                    float half = (s + grow) * (1f - (float)k / steps);
+                    Fill(new Rect(x0, at.y - half, (2f * s + grow * 2f) / steps + 0.5f, half * 2f), c);
+                }
+            }
+            GUI.matrix = previous;
         }
 
         // 작은 지도를 이전 방 가운데에서 지금 방 가운데로 옮겨 가는 픽셀 차이 (0이면 제자리).
