@@ -19,8 +19,8 @@ namespace IBlameYou.Systems
         private const float ReactionTime = 1.5f;           // 사고팔 때 반응 말풍선 시간 (창을 닫은 뒤)
         private const float HopTime = 0.3f;
         private const float HopHeight = 0.25f;
-        private const float FarewellTime = 1.2f;
-        private const float LeaveSlack = 0.5f;             // 말풍선 거리 밖으로 나갈 때는 이만큼 더 멀어져야 (경계 떨림 방지)           // 말풍선 거리 밖으로 나간 뒤 작별 말풍선 시간
+        private const float FarewellTime = 1.2f;           // 말풍선 거리 밖으로 나간 뒤 작별 말풍선 시간
+        private const float LeaveSlack = 0.5f;             // 말풍선 거리 밖으로 나갈 때는 이만큼 더 멀어져야 (경계 떨림 방지)
         private const float LowHealthRatio = 0.5f;         // 식당 주인 "창백해요" 대사 (체력 이 비율 이하)
         private const int RichGold = 300;                  // 상인 "주머니가 두둑" 대사 (골드 이 값 이상)
         private const float TalkVolume = 0.8f;
@@ -161,6 +161,9 @@ namespace IBlameYou.Systems
             if (font != null) renderer.sharedMaterial = font.material;
             renderer.sortingOrder = order;
         }
+
+        // 새 판이 시작될 때 인사 기록을 지운다 (SkillHUD가 RunGold.Reset과 함께 부른다 — 고정 시드로 다시 해도 다시 인사).
+        public static void ResetGreetings() => greetedSeed.Clear();
 
         private bool Greeted => greetedSeed.TryGetValue(service, out int seed) && seed == StageEvents.StageSeed;
 
