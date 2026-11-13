@@ -148,3 +148,13 @@ DIRECTION ① "플레이 감각 다듬기". 정예 고블린 대전사 광폭화
 - DONE (claude/project-thread-ysmsrs): 광폭화 추격처럼 옆으로 빠를 때 붉은 잔상
 - DONE (claude/project-thread-ysmsrs): 풀리기 3초 전부터 붉은 깜빡임이 빨라짐 (곧 풀린다는 예고)
 - DONE (claude/project-thread-ysmsrs): 시간이 다 돼 풀리면 회색 김 + "헉헉…" + `EnrageEnd`
+
+## 다음 (2026-11-13 10:07 자동 실행이 추가 — 슬라임 분열 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 2페이즈 분열과 어미 슬라임 분열이 "찢어지듯" 손맛 있게. 분열 시점·체력·새끼 수·자리 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-ltl4hi): 새 효과음 `SlimeSplit` — 질척한 "뿌직" 뒤 갈라져 튀는 "쪼옥-뽁" (킹·어미 공용, 화면 안일 때만, 0.1초 간격)
+- DONE (claude/project-thread-ltl4hi): 킹 분열 순간 — 0.1초 히트스톱 + 큰 보라 고리
+- DONE (claude/project-thread-ltl4hi): 젤리 방울 — 갈라진 자리에서 보라 젤리 방울이 위쪽 반원으로 튀어 떨어지며 옅어짐 (킹 9개 크게, 어미 6개)
+- DONE (claude/project-thread-ltl4hi): 젤리 끈 — 킹의 두 몸 사이 젤리 끈이 늘어나며 가늘어지다 무적 시간 절반(0.6초)에 "톡" 끊김 (작은 방울 둘 + `JellyDrip`), 어미 자리와 새끼 셋 사이 짧은 끈이 하나씩 톡톡 끊김
+- DONE (claude/project-thread-ltl4hi): 어미 새끼 등장 — 분열한 새끼 슬라임이 구역 소환처럼 길쭉하게 "뿅" 솟았다가 제 모양으로 (`EnemySquash.Spawn`)

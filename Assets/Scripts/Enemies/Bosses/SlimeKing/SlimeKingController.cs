@@ -620,6 +620,7 @@ namespace IBlameYou.Enemies
             SetFacing(facing);
 
             float away = -facing;
+            var splitCenter = BodyBounds.center; // 분열 연출 자리 (몸이 갈라지기 전 가운데)
             var twin = SlimeKingSpawner.Spawn(transform.position + new Vector3(away * 1.5f, 0.5f, 0f), EffectLibrary.Config,
                 entrance: false);
             if (twin != null)
@@ -640,7 +641,20 @@ namespace IBlameYou.Enemies
             DamageNumbers.ShowText(BodyBounds.center + Vector3.up * 1.5f, "분열!", new Color(0.8f, 0.5f, 1f), 1.5f);
             EffectLibrary.PlayHit(Element.Water, BodyBounds.center, 2.5f);
             Shake(0.3f, 0.3f);
+
+            // 분열 연출 (그림·소리만, 2026-11-13): 짧은 히트스톱 + "뿌직-쪼옥" + 보라 젤리 방울 + 큰 보라 고리,
+            // 갈라진 두 몸 사이 젤리 끈이 늘어나다 무적 시간 절반쯤에 끊긴다
+            HitStop.Play(SplitHitStop);
+            SlimeSplitFx.Burst(splitCenter, SlimeSplitFx.GooColor, 9, 1.4f, 1f);
+            VfxPlayer.ManaRing(transform, splitCenter - transform.position, SlimeSplitFx.GooColor, 3f);
+            if (twin != null)
+            {
+                var offset = splitCenter - transform.position;
+                SlimeSplitFx.JellyString(transform, offset, twin.transform, offset, SlimeSplitFx.GooColor, 0.5f, SplitInvulnerable * 0.5f);
+            }
         }
+
+        private const float SplitHitStop = 0.1f;
 
         private IEnumerator Invulnerability(float duration)
         {
