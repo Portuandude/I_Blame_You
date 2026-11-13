@@ -77,6 +77,7 @@ namespace IBlameYou.UI
             float rate = VillagePriceRate;
             if (!shop.CanBuy(index, current, gold, rate))
             {
+                VillageGoldShake();
                 villageMessage = "<color=#ff9a6b>골드가 모자라요</color>";
                 GameAudio.PlaySfx("Switch_Tick", 0.5f);
                 return;
@@ -87,6 +88,7 @@ namespace IBlameYou.UI
             shop.Buy(index, current, gold, out _, rate);
             if (EquipmentShop.NetCost(item, current, rate) < EquipmentShop.NetCost(item, current)) VfxPlayer.StampGlint(health.transform, StampGlintOffset); // 단골 도장 할인 쾅
             var old = equip.Equip(item); // 옛 장비는 값에서 이미 깎았다 (판매)
+            VillageFlash(EquipmentShop.StockSize + (int)item.Slot); // 새로 낀 장비 줄이 번쩍
             villageMessage = old != null
                 ? $"<color=#7dff8a>{item.Name} 장착 · {old.Name} 판매 (-{cost} G)</color>"
                 : $"<color=#7dff8a>{item.Name} 장착 (-{cost} G)</color>";
@@ -103,6 +105,7 @@ namespace IBlameYou.UI
             if (item == null) return;
             equip.Unequip(slot);
             RunStats.AddGold(item.SellPrice);
+            VillageFlash(EquipmentShop.StockSize + (int)slot);
             villageMessage = $"<color=#ffd84d>{item.Name} 판매 (+{item.SellPrice} G)</color>";
             GameAudio.PlaySfx("Coin", 0.8f);
             StageEvents.RaiseVillageNpcSay(VillageService.Shop, "고마워요, 잘 쓸게요!");
@@ -115,6 +118,7 @@ namespace IBlameYou.UI
             if (item == null) return;
             if (!EquipmentShop.CanReroll(item, SpendableGold))
             {
+                VillageGoldShake();
                 villageMessage = "<color=#ff9a6b>골드가 모자라요</color>";
                 GameAudio.PlaySfx("Switch_Tick", 0.5f);
                 return;
@@ -124,6 +128,7 @@ namespace IBlameYou.UI
             if (!RunStats.TrySpendGold(item.RerollCost, RunGold.InFlight)) return;
             int cost = shop.Reroll(item, int.MaxValue); // 골드는 위에서 뺐다
             equip.Refresh(slot);
+            VillageFlash(EquipmentShop.StockSize + (int)slot);
             string turn = item.Grade > before ? "좋아졌다!" : item.Grade < before ? "나빠졌다…" : "그대로";
             string color = item.Grade > before ? "#7dff8a" : item.Grade < before ? "#ff6b6b" : "#fff4dc";
             villageMessage = $"<color={color}>수식어 변경 (-{cost} G): {item.Name} — {turn}</color>";
@@ -150,8 +155,9 @@ namespace IBlameYou.UI
             var buttonRich = new GUIStyle(cardButton) { richText = true };
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비 상점", big);
+            DrawVillageGold(rect);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
-                $"골드 <color=#ffd84d>{SpendableGold}</color> · 같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " + VillageKeysHint("1~4", "누르기") : VillageKeysHint("1~4"))}",
+                $"같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " + VillageKeysHint("1~4", "누르기") : VillageKeysHint("1~4"))}",
                 new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
 
             int gold = SpendableGold;
@@ -161,6 +167,7 @@ namespace IBlameYou.UI
             {
                 var row = new Rect(rect.x + 20f, y, rect.width - 40f, rowHeight - 6f);
                 GUI.Box(row, GUIContent.none, panel);
+                DrawVillageRowFlash(row, i);
                 if (villageKeyboard && villageRow == i) CuteButton.DrawSelection(row);
                 if (i < shop.Stock.Count)
                 {
@@ -189,6 +196,7 @@ namespace IBlameYou.UI
                 var row = new Rect(rect.x + 20f, y, rect.width - 40f, rowHeight - 6f);
                 GUI.Box(row, GUIContent.none, panel);
                 var item = equip.Get(slot);
+                DrawVillageRowFlash(row, EquipmentShop.StockSize + (int)slot);
                 bool rowSelected = villageKeyboard && villageRow == EquipmentShop.StockSize + (int)slot;
                 var sellRect = new Rect(row.xMax - 250f, row.y + 6f, 110f, row.height - 12f);
                 var rerollRect = new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f);

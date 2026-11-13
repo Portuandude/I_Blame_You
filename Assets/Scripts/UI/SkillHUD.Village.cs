@@ -27,6 +27,14 @@ namespace IBlameYou.UI
         private int villageRow;
         private int villageCol;
 
+        // 사기 반응: 산 줄이 금색으로 번쩍(VillageFlashTime), 창 왼쪽 위 골드가 톡 튐. 골드가 모자라면 골드가 빨갛게 좌우로 흔들림.
+        private const float VillageFlashTime = 0.45f;
+        private const float VillageShakeTime = 0.4f;
+        private int villageFlashRow = -1;
+        private float villageFlashAt = -9f;
+        private float villageGoldPopAt = -9f;
+        private float villageGoldShakeAt = -9f;
+
         private static readonly KeyCode[] VillageNumberKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5 };
         private static readonly KeyCode[] VillageNumpadKeys = { KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4, KeyCode.Keypad5 };
 
@@ -57,6 +65,9 @@ namespace IBlameYou.UI
             villageKeyboard = false;
             villageRow = 0;
             villageCol = 0;
+            villageFlashRow = -1;
+            villageGoldShakeAt = -9f;
+            villageGoldPopAt = -9f;
             if (service == VillageService.Restaurant) restaurantVisit.BeginVisit(StageEvents.VillageVisit);
             control.Locked = true;
             Time.timeScale = 0f;
@@ -167,6 +178,7 @@ namespace IBlameYou.UI
             var check = restaurantVisit.Check(food.Id, SpendableGold, HealthFull, ManaFull, rate);
             if (check != FoodBuyCheck.Ok)
             {
+                if (check == FoodBuyCheck.NotEnoughGold) VillageGoldShake();
                 villageMessage = $"<color=#ff9a6b>{BuyCheckText(check)}</color>";
                 GameAudio.PlaySfx("Switch_Tick", 0.5f); // 안 됨: 짧은 똑딱
                 return;
@@ -177,6 +189,8 @@ namespace IBlameYou.UI
             restaurantVisit.TryBuy(food.Id, price, false, false, rate); // 위에서 이미 확인함: 기록만
             if (price < food.Price) VfxPlayer.StampGlint(health.transform, StampGlintOffset); // 단골 도장 할인 쾅
             ApplyFood(food);
+            for (int i = 0; i < VillageFood.Count; i++)
+                if (VillageFood.All[i].Id == food.Id) VillageFlash(i);
             villageMessage = $"<color=#7dff8a>{food.Name}: {food.Describe()}</color>";
             GameAudio.PlaySfx("Coin", 0.7f);
             GameAudio.PlaySfx("Pickup", 0.6f);
@@ -211,6 +225,46 @@ namespace IBlameYou.UI
             }
             StageEvents.PostNotice($"{food.Name} 냠!");
             VfxPlayer.FoodGlint(health.transform, FoodGlintOffset, food.Id.ToString()); // 산 음식이 머리 위로 톡
+        }
+
+        private void VillageFlash(int row)
+        {
+            villageFlashRow = row;
+            villageFlashAt = Time.unscaledTime;
+            villageGoldPopAt = Time.unscaledTime;
+        }
+
+        private void VillageGoldShake() => villageGoldShakeAt = Time.unscaledTime;
+
+        // 방금 산 줄 위에 금색이 번쩍했다가 흐려진다
+        private void DrawVillageRowFlash(Rect row, int index)
+        {
+            if (index != villageFlashRow || Event.current.type != EventType.Repaint) return;
+            float t = (Time.unscaledTime - villageFlashAt) / VillageFlashTime;
+            if (t < 0f || t >= 1f) return;
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 0.85f, 0.3f, 0.35f * (1f - t) * (1f - t));
+            GUI.DrawTexture(row, Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
+        // 창 왼쪽 위: 금화 + 쓸 수 있는 골드. 사면 톡 커지고, 모자라면 빨갛게 좌우로 흔들린다.
+        private void DrawVillageGold(Rect window)
+        {
+            EnsureGoldArt();
+            float shakeT = (Time.unscaledTime - villageGoldShakeAt) / VillageShakeTime;
+            bool shaking = shakeT >= 0f && shakeT < 1f;
+            float dx = shaking ? Mathf.Sin(shakeT * 40f) * 5f * (1f - shakeT) : 0f;
+            float popT = (Time.unscaledTime - villageGoldPopAt) / GoldPopTime;
+            float pop = popT >= 0f && popT < 1f ? 1f + 0.25f * Mathf.Sin(popT * Mathf.PI) : 1f;
+            var row = new Rect(window.x + 18f + dx, window.y + 14f, 130f, 28f);
+            var previousMatrix = GUI.matrix;
+            if (pop > 1f) GUIUtility.ScaleAroundPivot(Vector2.one * pop, new Vector2(row.x + 12f, row.center.y));
+            if (coinIcon != null) GUI.DrawTexture(new Rect(row.x, row.y + 2f, 24f, 24f), coinIcon, ScaleMode.ScaleToFit, true);
+            var color = shaking ? Color.Lerp(GoldSpendRed, OutlinedLabel.Gold, shakeT * shakeT) : OutlinedLabel.Gold;
+            OutlinedLabel.Draw(new Rect(row.x + 28f, row.y, row.width - 28f, row.height), SpendableGold.ToString(), goldText,
+                color, OutlinedLabel.Outline, 0f, 1.5f);
+            GUI.matrix = previousMatrix;
         }
 
         // 창 뒤 화면을 어둡게
@@ -253,8 +307,9 @@ namespace IBlameYou.UI
             DrawCard(rect, "공용");
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "식당", big);
+            DrawVillageGold(rect);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
-                $"골드 <color=#ffd84d>{SpendableGold}</color> · 한 번 들를 때 종류별 한 그릇 · {VillageKeysHint("1~5")}",
+                $"한 번 들를 때 종류별 한 그릇 · {VillageKeysHint("1~5")}",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
 
             bool healthFull = HealthFull, manaFull = ManaFull;
@@ -266,6 +321,7 @@ namespace IBlameYou.UI
                 var check = restaurantVisit.Check(food.Id, SpendableGold, healthFull, manaFull, rate);
                 var row = new Rect(rect.x + 20f, y, rect.width - 40f, rowHeight - 6f);
                 GUI.Box(row, GUIContent.none, panel);
+                DrawVillageRowFlash(row, i);
                 if (villageKeyboard && i == villageRow) CuteButton.DrawSelection(row);
                 string name = check == FoodBuyCheck.Ok ? $"<b>{food.Name}</b>" : $"<color=#8a8a8a><b>{food.Name}</b></color>";
                 string desc = check == FoodBuyCheck.AlreadyBought ? "<color=#8a8a8a>다 먹었어요</color>" : food.Describe();
