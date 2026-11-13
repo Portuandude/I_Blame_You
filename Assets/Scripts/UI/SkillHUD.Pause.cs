@@ -8,6 +8,7 @@ namespace IBlameYou.UI
     // 열려 있는 동안 Time.timeScale = 0이고 조작이 잠긴다 (마우스 클릭이 평타로 나가지 않음).
     // Esc가 이미 다른 뜻으로 쓰이는 때(B의 영창 취소, Tab 특성 창 닫기, A의 방어막 미니게임 중)와
     // 쓰러짐/클리어 화면, 다른 이유로 조작이 잠긴 때(출구 진입, 보스에게 붙잡힘)에는 열지 않는다.
+    // 키보드: ↑↓·W/S로 버튼을 고르고(고른 버튼에 금색 테두리) Enter·Space로 누른다. 화살표를 누르기 전에도 Enter는 "계속하기".
     // 열 때 창이 PausePopTime(실제 시간) 동안 0.85 → 1.04 → 1로 톡 커지고 "또롱"(PauseOpen), 게임으로 돌아갈 때 "통"(PauseClose).
     public partial class SkillHUD
     {
@@ -16,12 +17,16 @@ namespace IBlameYou.UI
         private const float PausePopTime = 0.18f;
         private MinimapUI pauseMap; // 같은 오브젝트의 미니맵 (방 격자 스테이지에만 있다). 처음 쓸 때 찾는다
         private const float PauseSideWidth = 320f;
+        private const int PauseButtonCount = 4; // 계속하기 · 다시 시작 · 시작 화면 · 화면 설정
+        private int pauseSelection;
+        private bool pauseKeyboard; // 이번에 열고 화살표를 눌렀으면 테두리를 보인다 (마우스만 쓰면 안 보인다)
         private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
 
         public bool Paused => paused;
 
         private void UpdatePauseInput()
         {
+            if (UpdatePauseKeys()) return;
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
             if (paused && displayWindow.IsOpen)
@@ -41,6 +46,8 @@ namespace IBlameYou.UI
 
             paused = true;
             pauseOpenedAt = Time.unscaledTime;
+            pauseSelection = 0;
+            pauseKeyboard = false;
             control.Locked = true;
             Time.timeScale = 0f;
             GameAudio.PlaySfx("PauseOpen", 0.7f, 0f);
@@ -88,24 +95,15 @@ namespace IBlameYou.UI
             GameAudio.MusicVolume = PauseVolumeSlider(new Rect(x, rect.y + 64f, buttonWidth, 28f), "배경음악", GameAudio.MusicVolume);
             GameAudio.SfxVolume = PauseVolumeSlider(new Rect(x, rect.y + 96f, buttonWidth, 28f), "효과음", GameAudio.SfxVolume);
 
-            if (CuteButton.Button(new Rect(x, rect.y + 140f, buttonWidth, 44f), "계속하기 (Esc)", menuButton))
+            for (int i = 0; i < PauseButtonCount; i++)
             {
-                ClosePauseMenu(true);
-            }
-            else if (CuteButton.Button(new Rect(x, rect.y + 194f, buttonWidth, 44f), "다시 시작 (새 맵)", menuButton))
-            {
-                ClosePauseMenu();
-                restart?.Invoke(false);
-            }
-            else if (CuteButton.Button(new Rect(x, rect.y + 248f, buttonWidth, 44f), "시작 화면", menuButton))
-            {
-                ClosePauseMenu();
-                RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
-                restart?.Invoke(true);
-            }
-            else if (CuteButton.Button(new Rect(x, rect.y + 302f, buttonWidth, 44f), "화면 설정", menuButton))
-            {
-                displayWindow.Show();
+                var buttonRect = new Rect(x, rect.y + 140f + 54f * i, buttonWidth, 44f);
+                if (pauseKeyboard && i == pauseSelection && !displayWindow.IsOpen) DrawPauseSelection(buttonRect);
+                if (CuteButton.Button(buttonRect, PauseButtonLabel(i), menuButton))
+                {
+                    RunPauseButton(i);
+                    break;
+                }
             }
             GUI.enabled = wasEnabled;
 
@@ -117,6 +115,80 @@ namespace IBlameYou.UI
             DrawPauseMap(new Rect(rect.x - 12f - PauseSideWidth, rect.y, PauseSideWidth, height));
             GUI.matrix = previousMatrix; // 화면 설정 창은 크기 그대로
             displayWindow.Draw(panel, small, menuButton);
+        }
+
+        private static string PauseButtonLabel(int index)
+        {
+            switch (index)
+            {
+                case 0: return "계속하기 (Esc)";
+                case 1: return "다시 시작 (새 맵)";
+                case 2: return "시작 화면";
+                default: return "화면 설정";
+            }
+        }
+
+        // 버튼 하나를 누른 것과 같다 (마우스 클릭·키보드 Enter 공용).
+        private void RunPauseButton(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    ClosePauseMenu(true);
+                    break;
+                case 1:
+                    ClosePauseMenu();
+                    restart?.Invoke(false);
+                    break;
+                case 2:
+                    ClosePauseMenu();
+                    RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
+                    restart?.Invoke(true);
+                    break;
+                default:
+                    displayWindow.Show();
+                    break;
+            }
+        }
+
+        // 키보드로 버튼 고르기·누르기. 처리했으면 true (그 프레임 Esc 확인은 건너뛴다). 화면 설정 창이 열려 있으면 그 창 몫.
+        private bool UpdatePauseKeys()
+        {
+            if (!paused || displayWindow.IsOpen) return false;
+            int step = 0;
+            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) step = -1;
+            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) step = 1;
+            if (step != 0)
+            {
+                // 첫 화살표는 지금 고른 칸(처음엔 계속하기)을 보여 주기만 한다
+                if (pauseKeyboard) pauseSelection = (pauseSelection + step + PauseButtonCount) % PauseButtonCount;
+                pauseKeyboard = true;
+                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                return true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            {
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
+                RunPauseButton(pauseSelection);
+                return true;
+            }
+            return false;
+        }
+
+        // 고른 버튼 둘레 금색 테두리 (천천히 숨 쉬듯 밝아졌다 어두워진다).
+        private static void DrawPauseSelection(Rect button)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            const float t = 3f;
+            var r = new Rect(button.x - t - 1f, button.y - t - 1f, button.width + (t + 1f) * 2f, button.height + (t + 1f) * 2f);
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 0.85f, 0.3f, 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * 5f));
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.yMax - t, r.width, t), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.xMax - t, r.y, t, r.height), Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         // 열린 직후 톡 커지는 배율 (0.85 → 1.04 → 1). 끝났으면 1.
