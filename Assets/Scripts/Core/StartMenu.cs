@@ -119,9 +119,7 @@ namespace IBlameYou.Core
                     SaveData.SaveSettings();
                     GameSession.Started = true;
                     GameSession.FeatureTest = false;
-                    var callback = onContinue;
-                    Destroy(this);
-                    callback?.Invoke();
+                    Launch(onContinue);
                 }
 
                 GUILayout.Space(4f);
@@ -161,9 +159,17 @@ namespace IBlameYou.Core
             SaveData.SaveSettings();
             GameSession.Started = true;
             GameSession.FeatureTest = featureTest;
-            var callback = onStart;
+            Launch(onStart);
+        }
+
+        // 출발: 밝은 "따-링!"(Tools/AudioGen RunStart) + 월드를 만든 뒤 어두운 덮개에서 0.5초 동안 밝아지며 시작 (ScreenFlash.StartFade).
+        // 덮개는 월드가 만든 카메라에 붙어야 하므로 callback 뒤에 부른다 (Destroy는 프레임 끝에 일어나 이 코드는 끝까지 돈다).
+        private void Launch(Action callback)
+        {
             Destroy(this);
             callback?.Invoke();
+            GameAudio.PlaySfx("RunStart", 0.8f);
+            ScreenFlash.StartFade();
         }
 
         // 제목: 진한 외곽선 + gold 테두리 + 크림 글자, 위아래로 둥실, 둘레에 반짝이 별 4개가 번갈아 깜빡임.
