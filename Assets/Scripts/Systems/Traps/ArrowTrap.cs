@@ -6,6 +6,7 @@ namespace IBlameYou.Systems
     // 벽에 박힌 화살 발사대. 플레이어가 사정거리 안(같은 높이 근처)에 있으면 일정 간격으로 직선 화살을 쏜다 (유도 없음).
     // 쏘기 직전 발사대가 붉게 깜빡여 예고한다. 예고가 시작되면 "끼릭" 소리(TrapWarn)가 나고,
     // 예고 동안 화살이 날아갈 줄을 따라 옅은 붉은 점선이 깜빡인다 (벽에 막히면 거기까지).
+    // 쏜 화살은 고블린 궁수 화살과 같은 연출을 쓴다 (꼬리·스침 소리·벽에 박힘·나무 조각, GoblinArrowFx).
     public class ArrowTrap : MonoBehaviour
     {
         private const float Interval = 2.6f;
@@ -150,9 +151,17 @@ namespace IBlameYou.Systems
         {
             var go = new GameObject("TrapArrow");
             go.transform.position = transform.position + new Vector3(direction * MuzzleOffset, 0.05f, 0f);
-            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
-            go.AddComponent<Projectile>().Launch(TrapCommon.Source, false, DamageKind.Physical, Element.Neutral, new Vector2(direction, 0f),
+            var look = EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
+            var arrow = go.AddComponent<Projectile>();
+            arrow.Launch(TrapCommon.Source, false, DamageKind.Physical, Element.Neutral, new Vector2(direction, 0f),
                 ArrowSpeed, 0.2f, Range * 1.3f, false, DamageMultiplier);
+
+            // 연출 (그림·소리만, 고블린 궁수 화살과 같은 GoblinArrowFx): 발사 "탁", 꼬리·스침 "슈웅", 벽에 박힘, 맞으면 나무 조각
+            if (CameraNear()) GameAudio.PlaySfxPitched("BowTwang", 1.35f, 0.4f); // 시위 대신 기계 발사대: 높고 짧게
+            IBlameYou.Enemies.GoblinArrowFx.Attach(go, player);
+            var flight = new Vector2(direction, 0f);
+            arrow.Impact = point => IBlameYou.Enemies.GoblinArrowFx.Stick(point, flight, look);
+            arrow.Hit = health => IBlameYou.Enemies.GoblinArrowFx.Splinter(go.transform.position, flight);
         }
     }
 }
