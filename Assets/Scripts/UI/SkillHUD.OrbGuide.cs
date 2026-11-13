@@ -41,16 +41,8 @@ namespace IBlameYou.UI
             float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 5f);
             for (int i = 0; i < orbGuideTargets.Count && i < MaxOrbGuides; i++)
             {
-                var screen = cam.WorldToScreenPoint(orbGuideTargets[i].position);
-                var gui = new Vector2(screen.x, Screen.height - screen.y); // GUI는 y가 아래로
-                var mid = new Vector2(Screen.width / 2f, Screen.height / 2f);
-                var dir = gui - mid;
-                if (screen.z < 0f) dir = -dir; // 카메라 뒤 (2D라 거의 없음)
-                if (dir.sqrMagnitude < 0.01f) continue;
-                // 화면 가운데에서 구슬 쪽으로 그은 선이 가장자리(여백 안쪽)와 만나는 점
-                float halfW = mid.x - OrbGuideMargin, halfH = mid.y - OrbGuideMargin;
-                float scale = Mathf.Min(halfW / Mathf.Max(0.001f, Mathf.Abs(dir.x)), halfH / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
-                var at = mid + dir * scale;
+                // 화면 가운데에서 구슬 쪽으로 그은 선이 가장자리(여백 안쪽)와 만나는 점 (SkillHUD.EnemyGuide.cs)
+                if (!TryEdgePoint(cam, orbGuideTargets[i].position, OrbGuideMargin, out var at, out var dir)) continue;
 
                 GUI.color = new Color(OrbGuideColor.r, OrbGuideColor.g, OrbGuideColor.b, pulse);
                 var heart = new Rect(at.x - OrbGuideSize / 2f, at.y - OrbGuideSize / 2f, OrbGuideSize, OrbGuideSize);
