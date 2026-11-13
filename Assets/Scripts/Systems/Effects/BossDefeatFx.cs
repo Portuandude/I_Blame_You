@@ -17,6 +17,10 @@ namespace IBlameYou.Systems
         private const float BannerHeight = 2.6f;
         private const float MusicSilence = 1f;      // 실제 시간(초). 보스 곡이 뚝 끊긴 정적 뒤 스테이지 곡이 다시 차오른다
 
+        // 마지막 격파 (실제 시간). 화면 HUD가 읽는다 — 보스 체력바 마무리 (SkillHUD.Boss.cs).
+        public static string LastName { get; private set; }
+        public static float LastTime { get; private set; } = -100f;
+
         private float startTime;
         private bool slowing;
 
@@ -26,6 +30,8 @@ namespace IBlameYou.Systems
             var go = new GameObject("BossDefeatFx");
             var fx = go.AddComponent<BossDefeatFx>();
             fx.startTime = Time.unscaledTime;
+            LastName = bossName;
+            LastTime = Time.unscaledTime;
 
             if (Mathf.Approximately(Time.timeScale, 1f))
             {
