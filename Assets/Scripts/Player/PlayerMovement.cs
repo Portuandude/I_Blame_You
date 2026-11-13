@@ -64,6 +64,11 @@ namespace IBlameYou.Player
         private const float LandSoundSpeed = 11f;   // 이보다 빨리 떨어져야 착지음 Land (보통 점프 착지는 소리 없음)
         private const float LandSoundCooldown = 0.25f;
         private float lastLandSoundTime = -1f;
+        private const float WalkStepInterval = 0.34f; // 발소리 Step 간격 (걷기)
+        private const float RunStepInterval = 0.24f;  // 달리기
+        private const float FirstStepDelay = 0.12f;   // 움직이기 시작해서 첫 발소리까지 (톡 건드린 정도로는 안 남)
+        private const float StepMinSpeed = 1f;        // 벽에 막혀 제자리걸음이면 소리 없음
+        private float stepTimer = FirstStepDelay;
         private bool isRunning;
         private bool jumpQueued;
         private float lastGroundedTime = float.NegativeInfinity;  // 마지막으로 땅에 서 있던 시각 (코요테 타임)
@@ -176,6 +181,7 @@ namespace IBlameYou.Player
             UpdateLandingDust();
 
             bool stunned = hitStun.IsStunned;
+            UpdateFootsteps(stunned);
 
             // 땅에 서 있던 마지막 시각. 점프 직후 잠깐은 발밑 확인이 아직 땅에 걸려 있어도 세지 않는다 (공중 두 번 점프 방지).
             if (isGrounded && !isDashing && Time.time >= jumpLockUntil) lastGroundedTime = Time.time; // 대시 중 땅은 세지 않음
@@ -233,6 +239,23 @@ namespace IBlameYou.Player
             }
             if (isGrounded) airMinVelocityY = 0f;
             wasGrounded = isGrounded;
+        }
+
+        // 발소리: 땅에서 걷거나 달리는 동안 일정 간격으로 작은 "톡" (Tools/AudioGen Step). 움직이는 발판에 가만히 실려 가거나 벽에 막혀 있으면 안 난다.
+        private void UpdateFootsteps(bool stunned)
+        {
+            bool walking = isGrounded && !isDashing && !stunned && rb.linearVelocity.y <= 0.1f &&
+                Mathf.Abs(RoleInput.MoveAxis(control)) > 0.01f && Mathf.Abs(rb.linearVelocity.x) > StepMinSpeed;
+            if (!walking)
+            {
+                stepTimer = FirstStepDelay;
+                return;
+            }
+
+            stepTimer -= Time.deltaTime;
+            if (stepTimer > 0f) return;
+            stepTimer = isRunning ? RunStepInterval : WalkStepInterval;
+            GameAudio.PlaySfx("Step", isRunning ? 0.6f : 0.45f, 0.1f);
         }
 
         private void UpdateAnimator()
