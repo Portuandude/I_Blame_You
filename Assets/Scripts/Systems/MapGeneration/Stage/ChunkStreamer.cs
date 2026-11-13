@@ -743,7 +743,15 @@ namespace IBlameYou.Systems
             if (movement != null) movement.ResetAirborne();
             var recovery = player.GetComponent<FallRecovery>();
             if (recovery != null) recovery.SetSafePoint(new Vector3(point.x, point.y + 0.1f, 0f));
+
+            // 어디로 나왔는지 바로 보이게 (2026-11-13 방 입장 연출): 몸 둘레에 문 색(aqua) 빛 고리가 퍼지고,
+            // 발밑이 땅이면 작은 먼지 (위/아래 구멍으로 나와 공중이면 먼지는 없다)
+            ManaRingFx.Create(player, Vector3.zero, ArrivalRingColor);
+            if (standY > 0 && chunk.IsSolid(column, standY - 1))
+                VfxPlayer.Dust(new Vector3(point.x, Origin(index).y + standY, 0f), 0.5f);
         }
+
+        private static readonly Color ArrivalRingColor = new Color(0.5f, 0.97f, 1f, 0.85f); // RoomDoorMarkers 문 빛과 같은 aqua
 
         // 방에 들어왔을 때: 가 본 방 기록, 카메라 영역, 낭떠러지 높이.
         private void EnterRoom(int index)
