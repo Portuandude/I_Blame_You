@@ -53,10 +53,13 @@ namespace IBlameYou.Systems
         }
 
         // 화면 가장자리를 color로 duration초 동안 두 번 깜빡인다 (가운데는 투명한 테두리 그림).
-        public static void EdgeWarn(Color color, float duration)
+        // onlyIfIdle: 다른 가장자리 깜빡임(정예·보스 경고)이 아직 보이는 중이면 덮어쓰지 않는다 (레벨업 금빛 같은 축하용).
+        public static void EdgeWarn(Color color, float duration, bool onlyIfIdle = false)
         {
             var flash = Find();
             if (flash == null) return;
+            if (onlyIfIdle && flash.edge != null && flash.edge.enabled
+                && Time.unscaledTime - flash.edgeStartedAt < flash.edgeDuration) return;
             flash.edgeColor = color;
             flash.edgeDuration = Mathf.Max(0.05f, duration);
             flash.edgeStartedAt = Time.unscaledTime;
