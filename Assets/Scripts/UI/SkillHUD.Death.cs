@@ -7,6 +7,7 @@ namespace IBlameYou.UI
     // 1) 쓰러진 순간 슬로모션 (시간 0.25배, 실제 시간 1.2초 뒤 정상 속도로 복귀)
     // 2) 캐릭터가 회색으로 바래며 반투명해짐
     // 3) 화면이 서서히 어두워진 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
+    // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 게임오버 징글 때 꺼진다 (SkillHUD.EndScreen.cs)
     // 연출 시간은 모두 Time.unscaledTime 기준이라 슬로모션의 영향을 받지 않는다.
     public partial class SkillHUD
     {
@@ -18,6 +19,8 @@ namespace IBlameYou.UI
         private const float DeathFadeAlpha = 0.6f;
         private const float GameOverDelay = 1.4f;       // 쓰러지고 게임오버 창이 뜨기 시작할 때까지
         private const float GameOverFadeIn = 0.4f;
+
+        private const float DeathMusicPitch = 0.6f;     // GameAudio가 초당 0.5씩 옮기므로 약 0.8초에 걸쳐 느려진다
 
         private static readonly Color DeadTint = new Color(0.5f, 0.5f, 0.5f, 0.7f);
 
@@ -39,7 +42,9 @@ namespace IBlameYou.UI
 
             deathVisual = health.GetComponentInChildren<SpriteRenderer>();
             if (deathVisual != null) deathVisualStart = deathVisual.color;
-            GameAudio.PlaySfx("Hit_Earth", 0.8f);
+            GameAudio.PlaySfx("PlayerDown", 0.85f, 0f);
+            GameAudio.SetMusicPitch(DeathMusicPitch); // 다음 곡을 틀면 1로 돌아간다
+            GameAudio.SetMusicMuffled(true);          // 씬이 정리될 때 OnDestroy가 되돌린다 (SkillHUD.cs)
         }
 
         private void UpdateDeathSequence()
