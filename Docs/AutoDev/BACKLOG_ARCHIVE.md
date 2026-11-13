@@ -4,6 +4,17 @@
 
 
 
+## 다음 (2026-11-13 00:02 자동 실행이 추가 — 함정 읽기 쉽게)
+
+DIRECTION ① "플레이 감각 다듬기" 중 함정 가독성. 함정의 박자·피해·배치(시드 지형)는 바꾸지 않고 예고만 더 잘 보이고 들리게 한다.
+
+- DONE (claude/project-thread-uybhli): 화살 발사대 예고 강화 — 예고(붉은 깜빡임)가 시작될 때 가까우면 "끼릭" 소리(`TrapWarn`), 예고 동안 화살이 날아갈 줄을 따라 옅은 붉은 점선 (벽에 막히면 거기까지)
+- DONE (claude/project-thread-uybhli): 불기둥 예고 강화 — 예고(연기) 동안 불이 솟을 자리에 반투명 주황 기둥 윤곽이 깜빡이고, 가까우면 "쉬익" 소리(`FlameHiss`)
+- DONE (claude/project-thread-uybhli): 화면 밖 화살 발사대 예고 — 사정거리 안에서 예고 중인 발사대가 화면 밖이면 그 쪽 가장자리에 노란 "!" (궁수 경고와 같은 모양). 가장자리 계산 식을 함수 하나로 묶는다 (OrbGuide·EnemyGuide·AimWarnings·새 것)
+- DONE (claude/project-thread-uybhli): 가시 반짝임 — 가시 줄 위에 가끔 하얀 반짝(별)이 지나가 바닥과 구분되게
+- DONE (claude/project-thread-uybhli): 보물 방·회복 샘을 처음 찾으면 "보물 방 발견!"/"회복 샘 발견!" 알림 + 작은 반짝 소리 (마을 발견과 같은 리듬)
+- DONE (claude/project-thread-uybhli): 불기둥이 꺼질 때 남는 잔불·연기 한 번 (끝났다는 신호, 피해 없음)
+
 ## 2026-11-13 00:00 실행 (claude/project-thread-qrgqfk)
 
 - DONE (claude/project-thread-qrgqfk): 적 발견 "!" — 슬라임·고블린·궁수(정예 포함)가 플레이어를 처음 알아채는 순간 머리 위 노란 "!" + 작은 소리 `Notice` (같은 적은 4초 쿨다운, 소리는 0.25초 전체 쿨다운)
