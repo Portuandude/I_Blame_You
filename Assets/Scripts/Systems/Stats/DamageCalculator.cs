@@ -85,8 +85,48 @@ namespace IBlameYou.Systems
                 DamageNumbers.Show(health.transform.position, damage, critical, kind, element);
                 if (affinity > 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "약점!", new Color(1f, 0.85f, 0.3f), 0.75f);
                 else if (affinity < 1f) DamageNumbers.ShowText(health.transform.position + new Vector3(0f, 1.9f, 0f), "저항", new Color(0.7f, 0.7f, 0.75f), 0.7f);
+                PlayHitFeel(attacker, health, critical);
             }
             return damage;
+        }
+
+        // 치명타 효과음 Crit (높고 짧은 "팅"): 적중음(Hit_)에 겹친다. 광역 마법이 여러 마리에 한꺼번에 치명타를 내도 한 번만 울리게 쿨다운.
+        private const float CritSfxCooldown = 0.08f;
+        private static float lastCritSfx = -1f;
+
+        private static void PlayCritSfx()
+        {
+            float now = Time.unscaledTime;
+            if (now >= lastCritSfx && now - lastCritSfx < CritSfxCooldown) return;
+            lastCritSfx = now;
+            GameAudio.PlaySfx("Crit", 0.75f, 0.05f);
+        }
+
+        // 전투 손맛 (2026-11-12): 플레이어 공격이 적에게 들어갔을 때만. 일반 적은 넉백. 쓰러뜨렸으면 히트스톱(정예는 더 길게), 아니면 치명타일 때 짧게.
+        // 보스를 마지막으로 쓰러뜨린 순간은 BossDefeatFx 슬로모션이 먼저 걸려 HitStop은 timeScale이 1이 아니라 저절로 빠진다.
+        private static void PlayHitFeel(CombatStats attacker, HealthSystem health, bool critical)
+        {
+            // 플레이어가 맞았을 때도 아주 짧게 멈춰 "맞았다"를 몸으로 느끼게 (함정 포함). 쓰러지는 일격은 사망 연출 슬로모션이 먼저 걸려 저절로 빠진다
+            if (!health.IsDead && health.GetComponent<IBlameYou.Player.PlayerCombat>() != null)
+            {
+                HitStop.Play(HitStop.HurtDuration);
+                return;
+            }
+            if (attacker == null || attacker.GetComponent<IBlameYou.Player.PlayerCombat>() == null) return;
+            var enemy = health.GetComponent<IBlameYou.Enemies.EnemyController>();
+            if (enemy == null) return;
+
+            // 넉백: 일반 적만, 공격자(플레이어 몸) 반대쪽으로. 바로 위·아래에서 맞으면 밀지 않는다
+            float dx = health.transform.position.x - attacker.transform.position.x;
+            var rank = IBlameYou.Core.RunGold.RankOf(enemy);
+            if (rank == EnemyRank.Normal && Mathf.Abs(dx) > 0.05f) enemy.Knockback(dx);
+
+            if (critical) PlayCritSfx();
+
+            if (health.IsDead)
+                HitStop.Play(rank == EnemyRank.Elite ? HitStop.EliteDuration : HitStop.KillDuration);
+            else if (critical)
+                HitStop.Play(HitStop.CritDuration);
         }
     }
 }
