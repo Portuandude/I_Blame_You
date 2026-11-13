@@ -729,6 +729,34 @@ def relic_new():
     return normalize(fade_edges(lowpass(out, 10000)))
 
 
+def trait_up():
+    """특성 한 점 찍기: 맑은 "띠링" (E6 → A6 두 음, 사인 + 살짝 세모파), 0.3초. LevelUp보다 짧고 작게."""
+    n = int(0.3 * SR)
+    out = np.zeros(n)
+    for k, f in enumerate([1318.5, 1760.0]):  # E6 A6
+        m = n - int(k * 0.06 * SR)
+        tone_ = (osc("sine", f, m) + 0.2 * osc("tri", f * 2, m)) * env_exp(m, 0.12) * (0.6 if k == 0 else 0.8)
+        mix_at(out, tone_, n - m)
+    return normalize(fade_edges(lowpass(out, 9000)))
+
+
+def trait_milestone():
+    """특성 5·10·20 단계 달성: 올라가는 아르페지오(C6 E6 G6) 뒤 C7 화음 + 높은 반짝임, 0.8초. TraitUp보다 크고 화려하게."""
+    n = int(0.8 * SR)
+    out = np.zeros(n)
+    for k, f in enumerate([1046.5, 1318.5, 1568.0]):  # C6 E6 G6
+        m = int(0.35 * SR)
+        tone_ = (osc("sine", f, m) + 0.3 * osc("square", f, m, duty=0.5) * 0.4) * env_exp(m, 0.15) * 0.5
+        mix_at(out, tone_, int(k * 0.06 * SR))
+    start = int(0.2 * SR)
+    m = n - start
+    for f, gain in [(2093.0, 0.5), (2637.0, 0.35), (3136.0, 0.3)]:  # C7 E7 G7 함께
+        tone_ = (osc("sine", f, m) + 0.2 * osc("tri", f * 2, m)) * env_exp(m, 0.25) * gain
+        mix_at(out, tone_, start)
+    out += bandpass(noise(n), 6000, 11000) * env_exp(n, 0.2) * 0.07
+    return normalize(fade_edges(lowpass(out, 11000)))
+
+
 def arena_lock():
     """전투 구역 잠김: 무거운 문이 쿵 내려앉는 소리 + 쇠 울림, 0.7초."""
     n = int(0.7 * SR)
@@ -1209,7 +1237,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
@@ -1218,7 +1246,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
