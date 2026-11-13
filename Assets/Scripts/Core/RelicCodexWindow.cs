@@ -15,6 +15,9 @@ namespace IBlameYou.Core
         private bool codexDevMode;      // 보여 주는 모드 (열 때 정하고, 창 안에서 Tab으로 바꾼다)
         private readonly Dictionary<IBlameYou.Player.RelicId, Texture2D> codexIcons = new Dictionary<IBlameYou.Player.RelicId, Texture2D>();
 
+        private int poppedCursor = -1;  // 아이콘 톡을 마지막으로 시작한 칸 (칸이 바뀌면 새로 톡)
+        private float cursorPoppedAt = -10f;
+        private const float IconPopTime = 0.2f;
         private float openedAt = -10f;  // 연 시각 (unscaledTime: 게임 중에는 시간이 멈춰 있다). 배경 페이드·패널 팝
 
         // 창 열림 연출: 배경 어둠이 FadeTime 동안 깔리고 패널이 PopTime 동안 0.85 → 1.04 → 1 (유물·특성 창과 같은 곡선)
@@ -29,6 +32,7 @@ namespace IBlameYou.Core
             if (!IsOpen) GameAudio.PlaySfx("BookOpen", 0.6f); // 책 펼치는 "파라락" (특성 창과 같은 소리)
             IsOpen = true;
             codexCursor = -1;
+            poppedCursor = -1;
             codexDevMode = dev;
             openedAt = Time.unscaledTime;
         }
@@ -38,6 +42,16 @@ namespace IBlameYou.Core
         {
             if (IsOpen && playSound) GameAudio.PlaySfx("PauseClose", 0.6f);
             IsOpen = false;
+        }
+
+        // 고른 칸 아이콘: 1 → 1.18 → 1배 (IconPopTime). 그 밖에는 1배.
+        private float IconPopScale()
+        {
+            float t = (Time.unscaledTime - cursorPoppedAt) / IconPopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.4f
+                ? Mathf.Lerp(1f, 1.18f, Mathf.SmoothStep(0f, 1f, t / 0.4f))
+                : Mathf.Lerp(1.18f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.4f) / 0.6f));
         }
 
         private float PanelScale()
@@ -104,7 +118,11 @@ namespace IBlameYou.Core
                 if (step != 0)
                 {
                     int next = codexCursor < 0 ? 0 : codexCursor + step;
-                    if (next >= 0 && next < all.Length) codexCursor = next; // 가장자리에서는 멈춘다
+                    if (next >= 0 && next < all.Length && next != codexCursor)
+                    {
+                        codexCursor = next; // 가장자리에서는 멈춘다
+                        GameAudio.PlaySfx("UiClick", 0.25f, 0.04f); // 칸을 옮길 때 작은 "톡" (가장자리에서 멈추면 소리 없음)
+                    }
                     e.Use();
                 }
             }
@@ -124,7 +142,8 @@ namespace IBlameYou.Core
                 if (icon != null)
                 {
                     GUI.color = known ? Color.white : new Color(0.15f, 0.12f, 0.25f, 0.6f); // 모르는 유물은 어두운 실루엣
-                    GUI.DrawTexture(new Rect(cellRect.center.x - iconSize / 2f, cellRect.y + 4f, iconSize, iconSize), icon, ScaleMode.ScaleToFit);
+                    float drawn = iconSize * (i == poppedCursor ? IconPopScale() : 1f); // 고른 칸 아이콘 톡 (발밑 기준으로 위로 커진다)
+                    GUI.DrawTexture(new Rect(cellRect.center.x - drawn / 2f, cellRect.y + 4f + iconSize - drawn, drawn, drawn), icon, ScaleMode.ScaleToFit);
                     GUI.color = previous;
                 }
                 if (known) DrawOwnerBadge(IBlameYou.Player.RelicBook.Owner(id), new Vector2(cellRect.center.x - iconSize / 2f, cellRect.y + 4f + iconSize));
@@ -133,6 +152,11 @@ namespace IBlameYou.Core
             }
 
             if (mouseMoved) codexCursor = mouseCell;
+            if (codexCursor != poppedCursor)
+            {
+                poppedCursor = codexCursor; // 키로든 마우스로든 칸이 바뀌면 그 아이콘이 톡 (다음 프레임부터 보인다)
+                cursorPoppedAt = Time.unscaledTime;
+            }
             int hovered = codexCursor;
             if (hovered >= 0)
                 DrawCellFrame(new Rect(rect.x + 20f + (hovered % columns) * cell, rect.y + 70f + (hovered / columns) * cellHeight, cell, cellHeight), previous);
