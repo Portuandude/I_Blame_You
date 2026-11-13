@@ -194,7 +194,8 @@ namespace IBlameYou.UI
             int rows = (count + columns - 1) / columns;
             relicColumns = columns;
             float width = columns * cardWidth + (columns - 1) * gap + 40f;
-            float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f;
+            const float ownedRowHeight = 30f; // 아래 "가진 유물 N개" 아이콘 줄 (DrawRelicOwnedRow)
+            float height = 80f + rows * cardHeight + (rows - 1) * gap + 20f + ownedRowHeight;
             float top = Mathf.Max(edge, Mathf.Min(Screen.height * 0.22f, (Screen.height - height) / 2f));
             var rect = new Rect((Screen.width - width) / 2f, top, width, height);
 
@@ -243,7 +244,42 @@ namespace IBlameYou.UI
                 }
             }
 
+            DrawRelicOwnedRow(new Rect(rect.x + 20f, rect.yMax - 20f - ownedRowHeight + 6f, rect.width - 40f, 22f));
             GUI.matrix = windowMatrix;
+        }
+
+        // 창 아래 "가진 유물 N개" + 아이콘 줄: 지금 가진 유물을 보며 고르게. 줄에 다 안 들어가면 앞쪽만 그리고 "+k".
+        // 마우스를 올린 아이콘은 이름을 줄 오른쪽에 적는다.
+        private void DrawRelicOwnedRow(Rect row)
+        {
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = false, richText = true };
+            int owned = RelicCount;
+            var header = new GUIContent(owned == 0 ? "<color=#bbbbbb>가진 유물 없음</color>" : $"<color=#ffd84d>가진 유물 {owned}개</color>");
+            float headerWidth = style.CalcSize(header).x;
+            GUI.Label(new Rect(row.x, row.y, headerWidth + 2f, row.height), header, style);
+            if (owned == 0) return;
+
+            const float icon = 18f;
+            const float step = icon + 4f;
+            float x = row.x + headerWidth + 8f;
+            const float nameRoom = 120f; // 오른쪽에 마우스 올린 유물 이름 칸
+            float maxX = row.xMax - nameRoom;
+            int fit = Mathf.Max(0, Mathf.FloorToInt((maxX - x) / step));
+            int shown = owned <= fit ? owned : Mathf.Max(0, fit - 1); // 넘치면 마지막 칸은 "+k"
+            var mouse = Event.current.mousePosition;
+            int hovered = -1;
+            for (int i = 0; i < shown; i++)
+            {
+                var r = new Rect(x, row.y + (row.height - icon) * 0.5f, icon, icon);
+                if (RelicIcon(relics.Owned[i]) != null) DrawRelicIcon(relics.Owned[i], r);
+                else GUI.Label(new Rect(r.x - 2f, row.y, icon + 4f, row.height), "•", style);
+                if (r.Contains(mouse)) hovered = i;
+                x += step;
+            }
+            if (shown < owned) GUI.Label(new Rect(x, row.y, 40f, row.height), $"+{owned - shown}", style);
+            if (hovered >= 0)
+                GUI.Label(new Rect(row.xMax - nameRoom, row.y, nameRoom, row.height), RelicBook.Name(relics.Owned[hovered]),
+                    new GUIStyle(style) { alignment = TextAnchor.MiddleRight });
         }
     }
 }
