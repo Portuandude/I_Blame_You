@@ -19,6 +19,23 @@ namespace IBlameYou.Enemies
         private const float BubbleHeight = 0.45f;
         private static readonly Color BubbleColor = new Color(0.55f, 0.9f, 1f, 0.7f);
         private static readonly Color WarnColor = new Color(0.5f, 0.95f, 1f);
+        // 연출 (시간·수치는 그대로, 그림·소리만)
+        private const float PopTime = 0.18f;      // 방패가 톡 부풀어 나오는 시간
+        private const float RippleTime = 0.2f;    // 막힌 공격에 출렁이는 시간
+        private const float BlockSfxGap = 0.12f;  // 연타에 막힘 소리가 겹치지 않게
+        private const float BlinkTime = 0.6f;     // 방패가 내려가기 직전 깜빡이는 시간
+        private const float ShrinkTime = 0.2f;    // 방패를 내릴 때 쏙 줄어드는 시간
+        private const float MoteRadius = 0.8f;    // 약점 알갱이가 도는 반지름
+        private const float MoteSize = 0.2f;
+        private const float MoteSpin = 2.6f;      // 초당 회전(라디안)
+
+        private Vector3 bubbleScale = Vector3.one;
+        private float raisedAt = -100f;
+        private float blockedAt = -100f;
+        private float blockSfxAt = -100f;
+        private float shrinkAt = -100f;
+        private bool shrinking;
+        private SpriteRenderer[] motes;
 
         private SlimeController slime;
         private SlimeKnight knight;
@@ -82,7 +99,17 @@ namespace IBlameYou.Enemies
                 return damage;
             }
 
+            Ripple();
             return damage * BlockRatio;
+        }
+
+        // 막힌 공격: 방패가 하얗게 출렁이고 둔한 "퉁" 소리
+        private void Ripple()
+        {
+            blockedAt = Time.time;
+            if (Time.time - blockSfxAt < BlockSfxGap) return;
+            blockSfxAt = Time.time;
+            GameAudio.PlaySfx("ShieldBlock", 0.6f);
         }
 
         private void Raise()
@@ -98,10 +125,108 @@ namespace IBlameYou.Enemies
             {
                 bubble = EffectLibrary.CreateVisual(transform, "KnightShield", EffectLibrary.ShieldFrames, 10f, true, BubbleColor, BubbleSize, 3);
                 bubble.transform.localPosition = new Vector3(0f, BubbleHeight, 0f);
+                bubbleScale = bubble.transform.localScale;
             }
 
             bubble.color = BubbleColor;
+            bubble.transform.localScale = Vector3.zero;
             bubble.gameObject.SetActive(true);
+            raisedAt = Time.time;
+            blockedAt = -100f;
+            shrinking = false;
+            ShowMotes(true);
+            GameAudio.PlaySfx("ShieldUp", 0.7f);
+        }
+
+        // 방패 그림: 톡 부풀기 → 막히면 출렁 → 끝나기 직전 깜빡 → 내리면 쏙 줄어듦
+        private void LateUpdate()
+        {
+            if (bubble == null) return;
+            if (shrinking)
+            {
+                float s = 1f - (Time.time - shrinkAt) / ShrinkTime;
+                if (s <= 0f)
+                {
+                    shrinking = false;
+                    bubble.gameObject.SetActive(false);
+                    ShowMotes(false);
+                    return;
+                }
+
+                bubble.transform.localScale = bubbleScale * s;
+                bubble.color = WithAlpha(BubbleColor, BubbleColor.a * s);
+                UpdateMotes(s);
+                return;
+            }
+
+            if (!raised) return;
+
+            float pop = Mathf.Clamp01((Time.time - raisedAt) / PopTime);
+            float scale = EaseOutBack(pop);
+            float ripple = 1f - Mathf.Clamp01((Time.time - blockedAt) / RippleTime);
+            scale *= 1f + 0.12f * ripple * Mathf.Sin(ripple * Mathf.PI);
+            bubble.transform.localScale = bubbleScale * scale;
+
+            var color = Color.Lerp(BubbleColor, new Color(1f, 1f, 1f, 0.9f), ripple * 0.6f);
+            float remain = lowerTime - Time.time;
+            if (remain < BlinkTime && Mathf.Repeat(Time.time * 8f, 1f) < 0.5f) color.a *= 0.35f;  // 곧 풀린다
+            bubble.color = color;
+            UpdateMotes(pop);
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c = 1.7f;
+            float u = t - 1f;
+            return 1f + (c + 1f) * u * u * u + c * u * u;
+        }
+
+        private static Color WithAlpha(Color c, float a)
+        {
+            c.a = a;
+            return c;
+        }
+
+        // 약점 힌트: 바람(초록)·땅(갈색) 알갱이 두 개가 방패 둘레를 돈다. 글자 대신 색으로 "이 속성으로 깨라"를 보여 준다
+        private void ShowMotes(bool show)
+        {
+            if (motes == null)
+            {
+                if (!show) return;
+                motes = new SpriteRenderer[2];
+                var elements = new[] { Element.Wind, Element.Earth };
+                for (int i = 0; i < motes.Length; i++)
+                {
+                    var go = new GameObject("WeakMote");
+                    go.transform.SetParent(transform, false);
+                    var r = go.AddComponent<SpriteRenderer>();
+                    r.sprite = SolidSpriteFactory.CreateCircle();
+                    r.color = ElementInfo.Color(elements[i]);
+                    r.sortingOrder = 4;
+                    motes[i] = r;
+                }
+            }
+
+            foreach (var mote in motes)
+                if (mote != null) mote.gameObject.SetActive(show);
+        }
+
+        private void UpdateMotes(float strength)
+        {
+            if (motes == null) return;
+            float angle = (Time.time - raisedAt) * MoteSpin;
+            for (int i = 0; i < motes.Length; i++)
+            {
+                var mote = motes[i];
+                if (mote == null) continue;
+                float a = angle + i * Mathf.PI;
+                // 납작한 타원 궤도: 앞(아래쪽)에 올 때 조금 크게
+                float depth = 0.85f + 0.15f * -Mathf.Sin(a);
+                mote.transform.localPosition = new Vector3(Mathf.Cos(a) * MoteRadius, BubbleHeight + Mathf.Sin(a) * MoteRadius * 0.45f, 0f);
+                float size = MoteSize * depth * strength * (1f + 0.15f * Mathf.Sin(Time.time * 9f + i));
+                mote.transform.localScale = new Vector3(size, size, 1f);
+                mote.sortingOrder = Mathf.Sin(a) < 0f ? 4 : 2;  // 앞쪽은 방패 위, 뒤쪽은 방패 뒤
+            }
         }
 
         private void Lower(bool broken)
@@ -109,7 +234,23 @@ namespace IBlameYou.Enemies
             raised = false;
             slime.Suspended = false;
             if (stun != null) stun.Immune = false;
-            if (bubble != null) bubble.gameObject.SetActive(false);
+            if (bubble != null)
+            {
+                if (broken || !bubble.gameObject.activeSelf)
+                {
+                    shrinking = false;
+                    bubble.gameObject.SetActive(false);
+                    ShowMotes(false);
+                }
+                else
+                {
+                    // 시간이 다 되어 내릴 때는 쏙 줄어들며 사라지고 작은 "뽁"
+                    shrinking = true;
+                    shrinkAt = Time.time;
+                    GameAudio.PlaySfxPitched("ShieldUp", 0.7f, 0.4f);
+                }
+            }
+
             nextTime = Time.time + Cooldown / Mathf.Max(0.1f, stats.AttackSpeedMultiplier);
             if (broken)
             {
