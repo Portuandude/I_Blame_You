@@ -37,7 +37,8 @@ namespace IBlameYou.Systems
         private Color color = Color.white;
         private float hold = Duration;
         private float fade = FadeTime;
-        private bool restartClock; // StartFade: 월드를 만드느라 길어진 프레임을 빼고 다음 LateUpdate부터 시간을 잰다
+        private bool restartClock; // StartFade: 월드를 만드느라 길어진 프레임들을 빼고 시간을 잰다
+        private int restartUntilFrame; // 이 프레임까지는 시간을 계속 처음으로 되돌린다 (만든 프레임 + 새 오브젝트 Start가 도는 다음 프레임)
 
         public static void Pulse(float alpha = DefaultAlpha)
         {
@@ -63,6 +64,7 @@ namespace IBlameYou.Systems
             if (flash == null) return;
             flash.Begin(RoomFadeColor, 1f, StartFadeHold, StartFadeTime);
             flash.restartClock = true;
+            flash.restartUntilFrame = Time.frameCount + 2;
         }
 
         // 화면 가장자리를 color로 duration초 동안 두 번 깜빡인다 (가운데는 투명한 테두리 그림).
@@ -175,8 +177,8 @@ namespace IBlameYou.Systems
             if (overlay == null || !overlay.enabled) return;
             if (restartClock)
             {
-                restartClock = false;
-                startedAt = Time.unscaledTime;
+                startedAt = Time.unscaledTime; // 긴 프레임 동안은 완전히 어두운 채로
+                if (Time.frameCount >= restartUntilFrame) restartClock = false;
             }
             UpdateOverlay();
         }
