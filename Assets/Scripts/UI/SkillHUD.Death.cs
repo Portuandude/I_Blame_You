@@ -9,9 +9,9 @@ namespace IBlameYou.UI
     // 2) 캐릭터가 회색으로 바래며 반투명해짐
     // 3) 쓰러진 캐릭터 둘레만 동그랗게 남기고 화면이 서서히 어두워지며(원이 좁아짐) 그 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
     // 6) 캐릭터 그림(Visual)이 살짝 튀어 올랐다가 뒤로 넘어가 옆으로 눕는다. 그림만 돌리고 충돌체는 그대로 (PlayerSquash는 끈다)
-    // 5) 몸에서 크림색 영혼 별이 좌우로 흔들리며 떠올라 사라진다 (어둠 위, 게임오버 창 뒤)
+    // 5) 몸에서 하늘색 영혼 별(마나 별 그림 UI/HUD/Star)이 좌우로 흔들리며 떠올라 사라진다 (어둠 위, 게임오버 창 뒤)
     // 0) 쓰러진 순간 화면이 하얗게 번쩍(0.15초)하고 카메라가 짧게 흔들린다
-    // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 게임오버 징글 때 꺼진다 (SkillHUD.EndScreen.cs)
+    // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 곡은 게임오버 창이 뜰 때 꺼지고(SkillHUD.EndScreen.cs), 먹먹함은 HUD가 정리될 때 풀린다 (SkillHUD.OnDestroy)
     // 연출 시간은 모두 Time.unscaledTime 기준이라 슬로모션의 영향을 받지 않는다.
     public partial class SkillHUD
     {
@@ -32,7 +32,7 @@ namespace IBlameYou.UI
         private const float FallTurnStart = 0.08f;
         private const float FallTurnTime = 0.42f;
         private const float FallAngle = 90f;            // 양수 = 뒤로 (HitStun 젖히기와 같은 쪽, 루트 좌우 반전이 방향도 뒤집는다)
-        private static readonly Color SoulColor = new Color(1f, 0.96f, 0.84f); // palette.py cream
+        private static readonly Color SoulColor = Color.white; // 그림 색(하늘색) 그대로
         private const float GameOverDelay = 1.4f;       // 쓰러지고 게임오버 창이 뜨기 시작할 때까지
         private const float GameOverFadeIn = 0.4f;
 
