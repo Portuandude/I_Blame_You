@@ -862,6 +862,28 @@ def reroll():
     return out
 
 
+def boss_defeat():
+    """보스·중간보스 격파: 묵직한 "쾅" (낮은 사인 낙하 + 터지는 잡음) 뒤 G-C-E-G-C 반짝 아르페지오가 위로 올라가고 종소리로 끝, 약 1.4초."""
+    n = int(1.4 * SR)
+    out = np.zeros(n)
+    t = np.arange(n) / SR
+    boom = osc("sine", 110 * np.exp(-t * 9) + 38, n) * env_exp(n, 0.28)
+    burst = lowpass(noise(n), 2200) * env_exp(n, 0.12) * 0.55
+    out += boom + burst
+    step = 0.075
+    for k, name in enumerate(["G4", "C5", "E5", "G5", "C6"]):
+        m = int(0.55 * SR)
+        f = note_hz(name)
+        note = (osc("square", f, m, duty=0.25) * 0.18 + osc("sine", f * 2, m) * 0.22) * env_adsr(m, 0.004, 0.08, 0.35, 0.35)
+        mix_at(out, note, int((0.12 + k * step) * SR))
+    bell_at = int((0.12 + 5 * step) * SR)
+    for f, w in ((note_hz("C7"), 0.16), (note_hz("G6"), 0.12)):
+        m = n - bell_at
+        mix_at(out, osc("sine", f, m) * env_exp(m, 0.45) * w, bell_at)
+    tail = bandpass(noise(n), 6000, 10000) * env_exp(n, 0.6) * 0.03
+    return normalize(fade_edges(lowpass(out + tail, 7000)))
+
+
 def jingle_clear():
     """클리어 팡파르: 빠른 상승 C-E-G-C 셋잇단 + 길게 끄는 C장조 화음(나팔 같은 사각파 + 종), 반짝이 꼬리, 약 2.8초."""
     n = int(2.8 * SR)
@@ -1268,7 +1290,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "BossDefeat": boss_defeat,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
