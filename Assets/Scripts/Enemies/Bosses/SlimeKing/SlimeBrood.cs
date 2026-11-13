@@ -17,6 +17,11 @@ namespace IBlameYou.Enemies
         private readonly List<HealthSystem> members = new List<HealthSystem>();
         private float endTime;
         private bool merging;
+        private bool finished; // Finish 뒤 Destroy(0.1초)까지 Update가 다시 처치 축하·알림을 내지 않게
+        private int lastWarnSecond = -1;
+        private Vector3 lastSeen;
+        private bool seen; // 한 번이라도 슬라임이 있었을 때만 처치 축하를 한다
+        private SlimeBroodFx fx;
 
         public static SlimeBrood Active { get; private set; }
 
@@ -27,6 +32,7 @@ namespace IBlameYou.Enemies
             go.transform.position = parent != null ? parent.position : Vector3.zero;
             var brood = go.AddComponent<SlimeBrood>();
             brood.endTime = Time.time + duration;
+            brood.fx = go.AddComponent<SlimeBroodFx>();
             Active = brood;
             return brood;
         }
@@ -40,25 +46,47 @@ namespace IBlameYou.Enemies
 
         private void Update()
         {
-            if (merging) return;
+            if (merging || finished) return;
 
             members.RemoveAll(m => m == null || m.IsDead);
             if (members.Count == 0)
             {
                 StageEvents.PostNotice("슬라임을 모두 처치했다!");
+                if (seen) SlimeBroodFx.Cleared(lastSeen);
                 Finish();
                 return;
             }
 
+            lastSeen = members[members.Count - 1].transform.position + Vector3.up * 0.4f;
+            seen = true;
             float left = endTime - Time.time;
             BossEvents.Notice = $"슬라임 {members.Count}마리 · 합체까지 {Mathf.CeilToInt(Mathf.Max(left, 0f))}초";
-            if (left <= 0f) StartCoroutine(Merge());
+            if (left <= 0f)
+            {
+                StartCoroutine(Merge());
+                return;
+            }
+
+            // 합체 예고 (그림·소리만): 5초 전부터 초마다 고리+"똑", 3초 전부터 킹 쪽 젤리 끈
+            int second = Mathf.CeilToInt(left);
+            if (left <= SlimeBroodFx.WarnTime && second != lastWarnSecond)
+            {
+                lastWarnSecond = second;
+                SlimeBroodFx.Warn(members, second);
+            }
+
+            if (left <= SlimeBroodFx.LineTime)
+            {
+                var king = SlimeKingController.Nearest(transform.position);
+                fx.UpdateLines(members, king != null ? king.transform : null, 1f - left / SlimeBroodFx.LineTime);
+            }
         }
 
         // 제한 시간이 지났다: 살아남은 슬라임이 가장 가까운 킹에게 빨려 들어가 체력을 채워 준다.
         private IEnumerator Merge()
         {
             merging = true;
+            fx.ClearLines();
             var king = SlimeKingController.Nearest(transform.position);
             if (king == null)
             {
@@ -78,6 +106,8 @@ namespace IBlameYou.Enemies
                 heal += member.GetComponent<SplitOnDeath>() != null ? MotherHealRatio : SlimeHealRatio;
             }
 
+            SlimeBroodFx.MergeStart(members);
+
             for (float t = 0f; t < MergeTime; t += Time.deltaTime)
             {
                 if (king == null) break;
@@ -90,6 +120,8 @@ namespace IBlameYou.Enemies
                     members[i].transform.position = position;
                     members[i].transform.localScale = Vector3.one * Mathf.Lerp(1f, 0.3f, k);
                 }
+
+                fx.Trail(members);
 
                 yield return null;
             }
@@ -126,6 +158,8 @@ namespace IBlameYou.Enemies
 
         private void Finish()
         {
+            finished = true;
+            if (fx != null) fx.ClearLines(); // 끈은 자식이 아니라 아래 부모 옮기기와 상관없지만, 남지 않게 바로 지운다
             // 쓰러지는 중인 슬라임은 무리와 함께 지우지 않고 사망 연출을 마저 하게 둔다.
             for (int i = transform.childCount - 1; i >= 0; i--) transform.GetChild(i).SetParent(transform.parent, true);
             BossEvents.Notice = null;

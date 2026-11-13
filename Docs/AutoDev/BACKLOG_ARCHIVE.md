@@ -2,6 +2,71 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 10:10 자동 실행이 추가 — 슬라임 킹 소환 무리 합체 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 킹이 소환한 무리가 언제·어디로 합체하는지 읽히고, 다 잡았을 때 보람이 있게. 제한 시간·회복량 그대로 (그림·소리만, `Enemies/SlimeBroodFx`).
+
+- DONE (claude/project-thread-1vrlvp): 합체 임박 — 5초 전부터 초마다 남은 슬라임마다 초록 고리 + 새 효과음 `BroodTick`("똑", 남은 초가 줄수록 음이 높아짐)
+- DONE (claude/project-thread-1vrlvp): 합체 방향 예고 — 3초 전부터 슬라임마다 가장 가까운 킹 쪽으로 초록 젤리 끈, 점점 굵고 진해지며 두근거림
+- DONE (claude/project-thread-1vrlvp): 합체 비행 — 새 효과음 `BroodMerge`("슈우욱") + 날아가는 슬라임 뒤로 초록 젤리 방울
+- DONE (claude/project-thread-1vrlvp): 킹 꿀꺽 — 새 효과음 `BroodGulp` + 킹 둘레 큰 초록 고리 + 위로 튀는 방울 (기존 "합체! +N" 숫자는 그대로)
+- DONE (claude/project-thread-1vrlvp): 전멸 축하 — 시간 안에 모두 잡으면 마지막 자리에서 금빛 고리 + 새 효과음 `BroodClear` + 금빛 방울
+
+## 다음 (2026-11-13 09:55 자동 실행이 추가 — 물 기사 방패 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기". 중간보스 물 기사의 방패가 언제 생기고·막히고·풀리는지 잘 읽히게. 방패 시간·감소율·약점 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-1mlnjy): 방패 들기 — 새 효과음 `ShieldUp`("뽀로롱") + 방패가 0에서 톡 부풀어 나옴(살짝 넘쳤다 돌아옴)
+- DONE (claude/project-thread-1mlnjy): 막힌 공격 — 방패에 막히면 하얗게 출렁 + 새 효과음 `ShieldBlock`("퉁", 연타에 겹치지 않게 0.12초 간격)
+- DONE (claude/project-thread-1mlnjy): 풀리기 직전 — 방패가 내려가기 0.6초 전부터 깜빡임(공격 틈 예고)
+- DONE (claude/project-thread-1mlnjy): 방패 내림 — 시간이 다 되면 쏙 줄어들며 사라지고 낮은 "뽁"(깨질 때는 지금처럼 바로 조각남)
+- DONE (claude/project-thread-1mlnjy): 약점 힌트 — 방패를 든 동안 바람(초록)·땅(갈색) 알갱이 두 개가 방패 둘레를 돈다(글자 대신 색으로 약점 안내)
+
+## 다음 (2026-11-13 09:55 자동 실행이 추가 — 불 기사 돌진 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기". 중간보스 불 기사의 돌진이 잘 읽히고 손맛이 나게. 돌진 시간·속도·피해 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-2nbd1f): 돌진 예고 — 웅크림 + "슉" + 돌진할 쪽 바닥 높이로 주황 점선(돌진 거리만큼, 벽에서 끊김, 직전 깜빡임)
+- DONE (claude/project-thread-2nbd1f): 돌진 출발 — `Dash` 소리 + 쭉 늘어나며 출발, 지나가는 발밑에 작은 먼지
+- DONE (claude/project-thread-2nbd1f): 벽 쿵 — 돌진하다 벽에 막히면 먼지 + `Land` 쿵 + 작은 흔들림(화면 안일 때만)
+
+## 다음 (2026-11-13 09:50 자동 실행이 추가 — 슬라임 킹 패턴 예고 다듬기)
+
+DIRECTION ① "플레이 감각 다듬기". 보스 슬라임 킹의 패턴이 언제·어디로 오는지 더 잘 읽히게 한다. 패턴 시간·피해·범위 수치는 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-2nbd1f): 내려찍기 범위 — 떠 있는 동안 그림자 아래 실제 피해 폭만큼 붉은 타원(점점 진해짐), 내려찍으면 사라짐
+- DONE (claude/project-thread-2nbd1f): 발광 연속 내려찍기 — 목표 자리가 정해져 있으므로 떠오르기 시작할 때부터 그 자리에 붉은 타원
+- DONE (claude/project-thread-2nbd1f): 박치기 예고 — 웅크리는 동안 예고 소리 `EnemyWindup` + 뛰어 내릴 자리(플레이어 쪽)에 붉은 타원, 착지하면 사라짐
+- DONE (claude/project-thread-2nbd1f): 촉수 예고 — 웅크리는 동안 첫 촉수가 나갈 쪽(플레이어)으로 보라 점선, 촉수가 나가면 사라짐
+- DONE (claude/project-thread-2nbd1f): 소환 예고 — 웅크리는 동안 어미 슬라임이 나올 자리마다 보라 타원, 나오면 사라짐
+
+## 다음 (2026-11-13 10:00 자동 실행이 추가 — 쌍둥이 기사 짝 잃음·광폭화 연출)
+
+- DONE (claude/project-thread-jamtdv): 짝이 쓰러지는 순간 0.1초 히트스톱 + 새 효과음 `KnightLink`
+- DONE (claude/project-thread-jamtdv): 쓰러진 기사 원소색 빛 알갱이가 남은 기사에게 날아가 붉은 큰 고리 (광폭화는 그대로 바로 켜짐)
+- DONE (claude/project-thread-jamtdv): 광폭화 중 머리 위 붉은 김 + 빠를 때 붉은 잔상
+- DONE (claude/project-thread-jamtdv): 보스 체력바 아래 "광폭화! N초" (쓴 기사만 지움)
+- DONE (claude/project-thread-jamtdv): 광폭화가 시간이 다 돼 풀리면 회색 김·"헉헉…"·새 효과음 `EnrageEnd`·곡 빠르기 1로
+
+## 다음 (2026-11-13 10:05 자동 실행이 추가 — 고블린 대전사 광폭화 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 정예 고블린 대전사 광폭화가 켜지고·이어지고·풀리는 때가 잘 읽히게. 광폭화 조건·시간·수치 그대로 (그림·소리만, `KnightEnrageFx` 재사용).
+
+- DONE (claude/project-thread-ysmsrs): 켜지는 순간 0.06초 히트스톱 + 붉은 큰 고리
+- DONE (claude/project-thread-ysmsrs): 광폭화 중 머리 위 붉은 김
+- DONE (claude/project-thread-ysmsrs): 광폭화 추격처럼 옆으로 빠를 때 붉은 잔상
+- DONE (claude/project-thread-ysmsrs): 풀리기 3초 전부터 붉은 깜빡임이 빨라짐 (곧 풀린다는 예고)
+- DONE (claude/project-thread-ysmsrs): 시간이 다 돼 풀리면 회색 김 + "헉헉…" + `EnrageEnd`
+
+## 다음 (2026-11-13 10:07 자동 실행이 추가 — 슬라임 분열 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 2페이즈 분열과 어미 슬라임 분열이 "찢어지듯" 손맛 있게. 분열 시점·체력·새끼 수·자리 그대로 (그림·소리만).
+
+- DONE (claude/project-thread-ltl4hi): 새 효과음 `SlimeSplit` — 질척한 "뿌직" 뒤 갈라져 튀는 "쪼옥-뽁" (킹·어미 공용, 화면 안일 때만, 0.1초 간격)
+- DONE (claude/project-thread-ltl4hi): 킹 분열 순간 — 0.1초 히트스톱 + 큰 보라 고리
+- DONE (claude/project-thread-ltl4hi): 젤리 방울 — 갈라진 자리에서 보라 젤리 방울이 위쪽 반원으로 튀어 떨어지며 옅어짐 (킹 9개 크게, 어미 6개)
+- DONE (claude/project-thread-ltl4hi): 젤리 끈 — 킹의 두 몸 사이 젤리 끈이 늘어나며 가늘어지다 무적 시간 절반(0.6초)에 "톡" 끊김 (작은 방울 둘 + `JellyDrip`), 어미 자리와 새끼 셋 사이 짧은 끈이 하나씩 톡톡 끊김
+- DONE (claude/project-thread-ltl4hi): 어미 새끼 등장 — 분열한 새끼 슬라임이 구역 소환처럼 길쭉하게 "뿅" 솟았다가 제 모양으로 (`EnemySquash.Spawn`)
 ## 다음 (2026-11-13 09:43 자동 실행이 추가 — 적 공격 예고 다듬기)
 
 DIRECTION ① "플레이 감각 다듬기". 적이 언제·어디로 공격하는지 더 잘 읽히게 한다. 공격 시간·피해·사거리 수치는 그대로 (그림·소리만).
