@@ -66,6 +66,13 @@ namespace IBlameYou.UI
         private int pulseRoom = -1;
         private float pulseStart;
 
+        // 작은 지도 미끄러짐 (2026-11-13 작은 지도 다듬기): 방을 옮기면 칸들이 뚝 바뀌지 않고 SlideTime 동안 새 방 쪽으로 스르륵 밀려 온다.
+        // 두 칸 넘게 떨어진 곳으로 옮겼으면(이어 하기 등) 미끄러지지 않고 바로 바뀐다.
+        private const float SlideTime = 0.25f;
+        private int slideFromRoom = -1;
+        private int lastRoom = -1;
+        private float slideStart = -10f;
+
         // 나침반 획득 연출: 나침반을 얻은 뒤 게임이 다시 흐르는 순간 큰 지도가 CompassShowTime 동안 저절로 펼쳐지고,
         // 안 가 본 방의 흐린 칸이 지금 방에서 가까운 순서로 하나씩 "톡" 나타난다 (발견 연출 RevealScale 재사용).
         private const float CompassShowTime = 1.5f;
@@ -83,6 +90,7 @@ namespace IBlameYou.UI
             playerObject = player;
             if (streamer == null || !streamer.IsRoomMode) return;
             foreach (var room in streamer.Rooms.Rooms) if (streamer.HasVisited(room.Index)) known.Add(room.Index);
+            lastRoom = streamer.CurrentRoom;
             streamer.RoomEntered += OnRoomEntered;
         }
 
@@ -93,6 +101,12 @@ namespace IBlameYou.UI
 
         private void OnRoomEntered(int index)
         {
+            if (lastRoom >= 0 && lastRoom != index)
+            {
+                slideFromRoom = lastRoom;
+                slideStart = Time.unscaledTime;
+            }
+            lastRoom = index;
             if (known.Add(index)) revealStart[index] = Time.unscaledTime;
             else
             {
@@ -262,10 +276,26 @@ namespace IBlameYou.UI
                 var area = new Rect(Screen.width - width - Margin, Screen.height - height - Margin, width, height);
                 Background(new Rect(area.x - 6f, area.y - 6f, width + 12f, height + 12f), new Color(0.05f, 0.04f, 0.1f, 0.6f));
                 GUI.BeginGroup(area);
-                DrawRooms(layout, current, new Rect(0f, 0f, width, height), SmallCell,
-                    current.X - SmallCols / 2, current.Y + SmallRows / 2);
+                // 한 칸씩 더 넓게 그리고 그룹이 잘라 낸다: 미끄러지는 동안 가장자리 칸이 뚝 나타나지 않게
+                var slide = SmallSlideOffset(layout, current);
+                DrawRooms(layout, current, new Rect(-SmallCell + slide.x, -SmallCell + slide.y, width + SmallCell * 2f, height + SmallCell * 2f), SmallCell,
+                    current.X - SmallCols / 2 - 1, current.Y + SmallRows / 2 + 1);
                 GUI.EndGroup();
             }
+        }
+
+        // 작은 지도를 이전 방 가운데에서 지금 방 가운데로 옮겨 가는 픽셀 차이 (0이면 제자리).
+        private Vector2 SmallSlideOffset(RoomLayoutData layout, RoomData current)
+        {
+            if (slideFromRoom < 0 || slideFromRoom >= layout.Rooms.Count) return Vector2.zero;
+            float t = (Time.unscaledTime - slideStart) / SlideTime;
+            if (t >= 1f || t < 0f) return Vector2.zero;
+            var from = layout.Rooms[slideFromRoom];
+            int dx = current.X - from.X, dy = current.Y - from.Y;
+            if (Mathf.Abs(dx) > 2 || Mathf.Abs(dy) > 2) return Vector2.zero;
+            float left = (1f - t) * (1f - t); // ease-out: 남은 거리
+            // 처음엔 이전 방이 가운데에 있다: x는 오른쪽으로 dx칸, y는 GUI가 아래로라 위로 dy칸 밀려 있던 셈
+            return new Vector2(dx * SmallCell, -dy * SmallCell) * left;
         }
 
         // 큰 지도 제목 줄 끝: "찾은 방 N/M" (다 찾았으면 금색). 일시정지 창 탐험 줄과 같은 셈.
