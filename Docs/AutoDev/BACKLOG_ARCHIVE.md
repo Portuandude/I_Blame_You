@@ -2,6 +2,16 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 09:12 자동 실행이 추가 — HUD 알림 줄 다듬기)
+
+DIRECTION ① "보기 좋게 다듬기". 오른쪽 위 알림 피드와 화면 가운데 안내 문구 (`UI/SkillHUD.Feed.cs`, `UI/SkillHUD.Notice.cs`).
+
+- DONE (claude/project-thread-uxupno): 피드 같은 줄 합치기 — 같은 글자 줄이 떠 있으면 새 줄 대신 끝에 금색 "×N" (수가 오를 때 톡), 사라지는 시간도 다시 셈
+- DONE (claude/project-thread-uxupno): 피드 줄이 사라지면 아래 줄이 뚝 올라가지 않고 부드럽게 미끄러져 올라감
+- DONE (claude/project-thread-uxupno): 실패(berry) 줄이 나오거나 ×N이 오를 때 좌우로 짧게 흔들림
+- DONE (claude/project-thread-uxupno): 가운데 안내 문구가 떠 있는 중에 새 문구가 오면, 이전 문구는 작아지며 위로 밀려 올라가 흐려짐 (뚝 바뀌지 않게)
+- DONE (claude/project-thread-uxupno): 가운데 안내 문구 뒤에 반투명 리본 띠 (가운데서 양옆으로 펼쳐짐, 위아래 금색 선)
+
 ## 다음 (2026-11-13 09:08 자동 실행이 추가 — 유물 도감 창 다듬기)
 
 DIRECTION ① UI 다듬기 이어서. 시작 화면과 게임 중(C키)이 같은 창(`Core/RelicCodexWindow`)을 쓰므로 양쪽에 같이 들어간다. 수치·저장 형식은 바꾸지 않는다.
