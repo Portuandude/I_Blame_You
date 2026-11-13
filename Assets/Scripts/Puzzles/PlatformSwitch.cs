@@ -124,7 +124,7 @@ namespace IBlameYou.Puzzles
             foreach (var platform in platforms)
                 if (platform != null)
                 {
-                    SwitchPlatformFx.Stream(sigilAt, platform.transform, streamColor); // 문양에서 발판으로 마력 줄기
+                    if (platform.SwitchDriven) SwitchPlatformFx.Stream(sigilAt, platform.transform, streamColor); // 문양에서 발판으로 마력 줄기
                     platform.Activate(ActiveTime);
                 }
 
