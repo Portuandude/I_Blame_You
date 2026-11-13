@@ -14,21 +14,11 @@
 
 ## 다음 (2026-11-13 09:16 자동 실행이 추가 — 큰 지도(` 키) 다듬기)
 
-- DONE (claude/project-thread-24x112) 펼침·접힘 연출: 작은 지도 쪽에서 톡 커지며 펼쳐지고 접을 땐 쏙 줄어듦 + BookOpen/PauseClose
-- DONE (claude/project-thread-24x112) 펼친 동안 뒤 게임 화면 살짝 어둡게
-- DONE (claude/project-thread-24x112) 지금 방 칸에서 하늘색 고리가 1.4초마다 퍼짐
-- DONE (claude/project-thread-24x112) 제목 줄 끝 "찾은 방 N/M" (다 찾으면 금색)
-- DONE (claude/project-thread-24x112) 큰 지도가 펼쳐져 있으면 Esc는 일시정지 대신 지도만 접음
+5개 모두 끝 → BACKLOG_ARCHIVE.
 
 ## 다음 (2026-11-13 09:16 자동 실행이 추가 — 화면 설정 창 다듬기)
 
-시작 화면과 일시정지 메뉴가 같이 쓰는 화면 설정 창(`Core/DisplaySettingsWindow`). 수치·저장 형식은 그대로.
-
-- DONE (claude/project-thread-24x112) 키보드 조작: ↑↓(W·S)로 줄(해상도·창 모드·적용·닫기) 고르기 (첫 화살표는 보여 주기만), ←→(A·D)로 값 바꾸기, Enter·Space로 누르기. 고른 줄에 금색 테두리. 창을 연 Enter가 그대로 새지 않게
-- DONE (claude/project-thread-24x112) 열림 연출: 배경 어둠이 서서히, 창이 살짝 작게 시작해 톡 커짐 + PauseOpen. 사람이 닫을 때만 PauseClose
-- DONE (claude/project-thread-24x112) 지금 값 줄: 제목 아래 "지금: 해상도 · 창 모드", 바꾼 줄 왼쪽에 금색 점
-- DONE (claude/project-thread-24x112) 끝 값 막힘: 해상도 맨 끝이면 ◀/▶ 흐리게, 더 누르면 값 글자가 좌우로 흔들리고 Fizzle
-- DONE (claude/project-thread-24x112) 적용 반짝: 적용하면 창에 "적용됨!" 금색 띠가 0.5초 보이고 닫힘 (바뀐 것이 없으면 바로 닫힘)
+5개 모두 끝 → BACKLOG_ARCHIVE.
 
 ## 다음 (2026-11-13 09:12 자동 실행이 추가 — HUD 알림 줄 다듬기)
 
