@@ -111,7 +111,8 @@ namespace IBlameYou.Systems
         }
 
         // 마나 고리: follow(플레이어) 둘레에 color 빛 고리가 퍼진다 (쌍둥이 반지·응원 리본). offset은 follow 기준 고리 가운데.
-        public static void ManaRing(Transform follow, Vector3 offset, Color color) => ManaRingFx.Create(follow, offset, color);
+        // size: 고리 크기 배수 (1 = 지름 약 1.2유닛, 큰 정예 몸 둘레엔 더 크게).
+        public static void ManaRing(Transform follow, Vector3 offset, Color color, float size = 1f) => ManaRingFx.Create(follow, offset, color, size);
 
         // 용사의 훈장 회복: follow(플레이어) 머리 위로 금 메달이 반짝 떠올랐다 사라진다. offset은 follow 기준 시작 위치(월드 방향).
         public static void MedalGlint(Transform follow, Vector3 offset) => MedalGlintFx.Create(follow, offset, "HeroMedal");
