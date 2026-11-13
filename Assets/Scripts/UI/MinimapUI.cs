@@ -230,7 +230,7 @@ namespace IBlameYou.UI
             {
                 bool animate = expanded || (closing && !CompassShowing);
                 float amount = animate ? ExpandAmount(closing) : 1f;
-                if (amount > 0f) Fill(new Rect(0f, 0f, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.3f * amount)); // 뒤 게임 화면을 살짝 어둡게
+                if (animate && amount > 0f) Fill(new Rect(0f, 0f, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.3f * amount)); // 뒤 게임 화면을 살짝 어둡게
                 var screenMatrix = GUI.matrix;
                 float scale = animate ? ExpandScale(closing) : 1f;
                 if (scale != 1f)
