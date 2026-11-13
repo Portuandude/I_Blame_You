@@ -171,15 +171,29 @@ namespace IBlameYou.Enemies
         {
             struck.Clear();
             Vector2 center = SwingCenter();
+            bool connected = false;
             foreach (var hit in Physics2D.OverlapBoxAll(center, hitboxSize, 0f))
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();
                 if (targetHealth == null || !struck.Add(targetHealth)) continue;
-                StrikePlayer(targetHealth);
+                if (!StrikePlayer(targetHealth)) continue;
+                connected = true;
+                // 맞힌 자리: 판정 상자 안에서 플레이어 몸에 가장 가까운 점
+                Vector2 contact = hit.bounds.ClosestPoint(center);
+                GoblinSwingFx.Connected(contact, facing, IsEliteRank());
             }
 
             EffectLibrary.PlayOneShot(center, EffectLibrary.SlashFrames, 24f, new Color(1f, 1f, 1f, 0.5f), 0.8f, facing < 0f);
+
+            // 연출 (그림·소리만): "붕" + 초승달 궤적, 헛스윙이면 무기 끝 아래 먼지 (GoblinSwingFx)
+            bool elite = IsEliteRank();
+            Vector2 pivot = (Vector2)transform.position + new Vector2(facing * 0.15f, hitboxHeight);
+            float reach = hitboxForward + hitboxSize.x * 0.35f;
+            GoblinSwingFx.Swing(pivot, facing, reach, elite);
+            if (!connected) GoblinSwingFx.Whiffed((Vector2)transform.position + new Vector2(facing * (hitboxForward + hitboxSize.x * 0.4f), 0f), facing, elite);
         }
+
+        private bool IsEliteRank() => IBlameYou.Core.RunGold.RankOf(this) == EnemyRank.Elite;
 
         private Vector2 SwingCenter() => (Vector2)transform.position + new Vector2(facing * hitboxForward, hitboxHeight);
 

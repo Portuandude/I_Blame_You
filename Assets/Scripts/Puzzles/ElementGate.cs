@@ -8,6 +8,7 @@ namespace IBlameYou.Puzzles
 {
     // 맵 퍼즐: 봉인문. 바닥부터 천장 위까지 길을 막는 마력 벽이고, 문 색(가운데 문양)과 같은 속성의 B 마법을 맞혀야 열린다.
     // 다른 속성이나 평타는 튕겨 나가며 벽이 하얗게 번쩍인다 (안내 문구는 없다: 2026-11-12 사람 지시, 문양 색·방어막 거품으로만 알린다). 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
+    // 맞힘·튕겨냄·열림 연출(고리·"팅"·벽 조각·빛 기둥)은 ElementGateFx (그림·소리만).
     // 마나는 계속 재생되므로 잘못 쏘거나 영창을 틀려도 기다리면 다시 시도할 수 있다 (갇히지 않는다).
     // 두 속성 봉인문: 문양이 위아래로 둘이고 아래 문양부터 순서대로 맞힌다. 하나를 맞히면 그 문양이 꺼지고 벽 색이 다음 속성으로 바뀐다.
     // 틀려도 진행은 초기화되지 않는다. 맞힌 개수는 ChunkStreamer가 기록해서 청크를 다시 만들어도 이어진다.
@@ -149,6 +150,7 @@ namespace IBlameYou.Puzzles
             var center = transform.position + Vector3.up * (SigilHeight + step * SigilSpacing);
             EffectLibrary.PlayHit(required, center, 2f);
             GameAudio.PlaySfx($"Hit_{required}", 0.9f);
+            if (step < sigils.Length) ElementGateFx.SigilHit(sigils[step], ElementInfo.Color(required)); // 연출: 고리 + 문양 부풂
 
             step++;
             if (step < sequence.Length)
@@ -167,6 +169,7 @@ namespace IBlameYou.Puzzles
 
             opened = true;
             GameAudio.PlaySfx("GateOpen", 0.85f, 0f);
+            ElementGateFx.Shatter(transform.position, height, ElementInfo.Color(required)); // 연출: 벽 조각·빛 기둥·차르르
             StageEvents.PostNotice("봉인이 풀렸다!");
             onOpened?.Invoke();
             Destroy(gameObject);
@@ -217,6 +220,7 @@ namespace IBlameYou.Puzzles
             if (barrier == null || Time.time < nextDeflectTime) return;
             nextDeflectTime = Time.time + DeflectCooldown;
             StartCoroutine(FlashBarrier());
+            ElementGateFx.Deflected(transform.position + Vector3.up * Mathf.Min(SigilHeight, height * 0.5f)); // 연출: "팅" + 흰 불꽃
         }
 
         private System.Collections.IEnumerator FlashBarrier()

@@ -3,6 +3,7 @@ using UnityEngine;
 namespace IBlameYou.Systems
 {
     // 바닥 가시. 밟으면 물리 피해를 받고 위로 튕겨 오른다 (대쉬 무적 중에는 그냥 지나간다).
+    // 밟으면 쇳조각이 튀고 "찡" 소리가 난다 (TrapHitFx.SpikeStab).
     // 가끔 가시 끝 하나에 하얀 반짝(마름모)이 번쩍여 바닥과 구분되게 한다 (그림만, 판정 없음).
     [RequireComponent(typeof(BoxCollider2D))]
     public class SpikeTrap : MonoBehaviour
@@ -95,6 +96,9 @@ namespace IBlameYou.Systems
             if (health == null || health.IsDead || health.IsInvulnerable) return;
 
             TrapCommon.Strike(player, DamageKind.Physical, Element.Neutral, DamageMultiplier);
+            // 연출 (그림·소리만): 밟은 자리 쇳조각·먼지 + "찡" (TrapHitFx)
+            float top = transform.position.y + 0.5f; // 가시 끝 높이
+            TrapHitFx.SpikeStab(new Vector3(player.transform.position.x, top, 0f));
             var rb = player.GetComponent<Rigidbody2D>();
             if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, BounceSpeed);
             nextHitTime = Time.time + Cooldown;

@@ -4,6 +4,7 @@ using UnityEngine;
 namespace IBlameYou.Systems
 {
     // 낭떠러지에 떨어지면 체력을 조금 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다.
+    // 떨어질 때 "휘이이잉", 돌아오면 빛 고리·"뿅"·무적 동안 깜빡임 (FallRecoveryFx, 그림·소리만).
     // 안전한 땅: 바닥에 서 있고, 무너지는 발판이 아니고, 가까이에 함정이 없는 곳.
     [RequireComponent(typeof(PlayerMovement))]
     public class FallRecovery : MonoBehaviour
@@ -15,6 +16,7 @@ namespace IBlameYou.Systems
         private const float RecordInterval = 0.2f;
         private const float HazardRadius = 1.6f;
         private const float InvulnerableTime = 1f;
+        private const float FallSoundY = -1.6f; // 바닥에서 이만큼 아래로 떨어지면 추락 소리 (KillY보다 얕게)
 
         private PlayerMovement movement;
         private Rigidbody2D rb;
@@ -24,6 +26,7 @@ namespace IBlameYou.Systems
         private float invulnerableUntil;
         private bool grantedInvulnerability;
         private int groundMask;
+        private bool fallSoundPlayed; // 이번 추락에서 "휘이이잉"을 냈는지 (복귀하거나 땅에 서면 다시)
 
         // 떨어졌을 때 잃는 체력 비율 (최대 체력 기준). 유물 깃털 부적이 낮춘다.
         public float DamageRatio { get; set; } = DefaultDamageRatio;
@@ -56,6 +59,14 @@ namespace IBlameYou.Systems
             {
                 Recover();
                 return;
+            }
+
+            // 연출: 바닥 아래로 떨어지기 시작하면 한 번 "휘이이잉" (아래 방 구멍은 바닥 -0.5에서 이미 넘어가므로 그보다 깊게 본다)
+            if (movement.IsGrounded) fallSoundPlayed = false;
+            else if (!fallSoundPlayed && transform.position.y < FloorY + FallSoundY && rb.linearVelocity.y < -3f)
+            {
+                fallSoundPlayed = true;
+                FallRecoveryFx.Falling();
             }
 
             if (Time.time >= nextRecord && movement.IsGrounded && Mathf.Abs(rb.linearVelocity.y) < 0.1f && IsSafeHere())
@@ -99,6 +110,10 @@ namespace IBlameYou.Systems
 
             var follow = Camera.main != null ? Camera.main.GetComponent<Core.CameraFollow>() : null;
             if (follow != null) follow.SnapToTarget();
+
+            // 연출 (그림·소리만): 화면 어둡게→밝게, 복귀 자리 빛 고리·반짝·먼지 + "뿅", 무적 동안 깜빡임 (FallRecoveryFx)
+            fallSoundPlayed = false;
+            FallRecoveryFx.Returned(transform, safePoint - Vector3.up * 0.1f, free, InvulnerableTime);
         }
     }
 }
