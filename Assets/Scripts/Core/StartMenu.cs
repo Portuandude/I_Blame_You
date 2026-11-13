@@ -35,7 +35,11 @@ namespace IBlameYou.Core
         private float openedAt = -1f; // 패널이 처음 그려진 시각 (톡 커지는 연출)
         private const float PopTime = 0.3f;
         private float[] letterWidths;  // 제목 글자별 폭 (글자마다 물결치게 따로 그린다)
-        private int keyActivate = -1; // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
+        private int keyActivate = -1;
+        private Texture2D glow;        // 반딧불 둥근 빛 (한 번 만든다)
+        private Vector4[] fireflies;   // 반딧불마다 (가로 자리 0~1, 처음 높이 0~1, 오르는 속도, 깜빡임 위상)
+        private const int FireflyCount = 26;
+ // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
 
         public void Initialize(Action startCallback, Action continueCallback = null)
         {
@@ -79,6 +83,7 @@ namespace IBlameYou.Core
             if (openedAt < 0f) openedAt = Time.unscaledTime;
             var screenMatrix = GUI.matrix;
             float pop = PopScale();
+            DrawFireflies(); // 패널 뒤 배경 (화면 좌표, 톡 배율 전에)
             if (pop != 1f) GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), area.center); // 도감·화면 설정 창은 원래 크기로 (아래에서 되돌린다)
             GUI.Box(area, GUIContent.none, panel);
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
@@ -242,6 +247,61 @@ namespace IBlameYou.Core
             return t < 0.6f
                 ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
                 : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
+        // 패널 뒤 배경: 아래에서 천천히 떠오르며 좌우로 흔들리고 깜빡이는 반딧불 (연두·금빛). Repaint 때만 그린다.
+        private void DrawFireflies()
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            if (fireflies == null)
+            {
+                var random = new System.Random(20261113); // 매번 같은 배치 (화면을 다시 열어도 튀지 않게)
+                fireflies = new Vector4[FireflyCount];
+                for (int i = 0; i < FireflyCount; i++)
+                    fireflies[i] = new Vector4((float)random.NextDouble(), (float)random.NextDouble(),
+                        0.025f + 0.035f * (float)random.NextDouble(), (float)random.NextDouble() * Mathf.PI * 2f);
+            }
+            if (glow == null) glow = MakeGlow();
+
+            float time = Time.unscaledTime;
+            float span = Screen.height + 40f; // 화면 아래 밖 20픽셀에서 위 밖 20픽셀까지
+            var previous = GUI.color;
+            for (int i = 0; i < fireflies.Length; i++)
+            {
+                var f = fireflies[i];
+                float rise = Mathf.Repeat(f.y + time * f.z, 1f);
+                float y = Screen.height + 20f - rise * span;
+                float x = f.x * Screen.width + Mathf.Sin(time * 0.7f + f.w) * 24f;
+                float twinkle = 0.35f + 0.65f * Mathf.Max(0f, Mathf.Sin(time * 2.1f + f.w * 3f));
+                float edge = Mathf.Min(1f, Mathf.Min(rise, 1f - rise) * 6f); // 위아래 끝에서 흐려지며 나타나고 사라진다
+                float size = 10f + 6f * ((i * 7) % 5) / 4f;
+                GUI.color = (i % 3 == 0 ? new Color(1f, 0.85f, 0.4f) : new Color(0.75f, 1f, 0.45f)) * new Color(1f, 1f, 1f, 0.8f * twinkle * edge);
+                GUI.DrawTexture(new Rect(x - size / 2f, y - size / 2f, size, size), glow, ScaleMode.StretchToFill, true);
+            }
+            GUI.color = previous;
+        }
+
+        // 가운데가 밝고 가장자리로 흐려지는 16×16 둥근 빛
+        private static Texture2D MakeGlow()
+        {
+            const int n = 16;
+            var texture = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var pixels = new Color[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = (x + 0.5f) / n * 2f - 1f, dy = (y + 0.5f) / n * 2f - 1f;
+                    float a = Mathf.Clamp01(1f - Mathf.Sqrt(dx * dx + dy * dy));
+                    pixels[y * n + x] = new Color(1f, 1f, 1f, a * a);
+                }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        private void OnDestroy()
+        {
+            if (glow != null) Destroy(glow); // 런을 시작하면 메뉴가 사라지므로 만든 텍스처도 치운다
         }
 
         private const string TitleText = "I Blame You!";
