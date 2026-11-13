@@ -134,8 +134,16 @@ namespace IBlameYou.UI
 
         private void DrawBossIntro()
         {
-            float since = Time.unscaledTime - bossIntroStart;
-            if (since < 0f || since > IntroTime || string.IsNullOrEmpty(bossIntroName)) return;
+            DrawBossBand(Time.unscaledTime - bossIntroStart, bossIntroName, "강적 등장!");
+            // 격파 띠: 등장 띠와 같은 모양으로 "이름 격파!" + "승리!" (BossDefeatFx가 머리 위 월드 띠 대신 이걸 쓴다)
+            if (!string.IsNullOrEmpty(BossDefeatFx.LastName))
+                DrawBossBand(Time.unscaledTime - BossDefeatFx.LastTime, $"{BossDefeatFx.LastName} 격파!", "승리!");
+        }
+
+        // 화면 가운데 띠 (팔레트 night 바탕 + gold 위아래 테두리 + gold 큰 글자 + 작은 아래 글). since가 0~IntroTime일 때만 그린다.
+        private void DrawBossBand(float since, string title, string sub)
+        {
+            if (since < 0f || since > IntroTime || string.IsNullOrEmpty(title)) return;
 
             if (introTitle == null)
             {
@@ -159,11 +167,11 @@ namespace IBlameYou.UI
 
             var titleRect = new Rect(band.x + slide, band.y + 10f, band.width, 52f);
             GUI.color = new Color(0.17f, 0.1f, 0.24f, alpha); // 외곽선 대신 진한 그림자
-            GUI.Label(new Rect(titleRect.x + 3f, titleRect.y + 3f, titleRect.width, titleRect.height), bossIntroName, introTitle);
+            GUI.Label(new Rect(titleRect.x + 3f, titleRect.y + 3f, titleRect.width, titleRect.height), title, introTitle);
             GUI.color = new Color(1f, 0.85f, 0.3f, alpha);
-            GUI.Label(titleRect, bossIntroName, introTitle);
+            GUI.Label(titleRect, title, introTitle);
             GUI.color = new Color(1f, 1f, 1f, 0.85f * alpha);
-            GUI.Label(new Rect(band.x - slide, band.y + 60f, band.width, 26f), "강적 등장!", introSub);
+            GUI.Label(new Rect(band.x - slide, band.y + 60f, band.width, 26f), sub, introSub);
             GUI.color = previous;
         }
     }
