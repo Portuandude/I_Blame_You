@@ -104,6 +104,7 @@ namespace IBlameYou.Core
             GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), $"유물 도감 ({(codexDevMode ? "개발자 모드" : "일반 모드")})", head);
             GUI.Label(new Rect(rect.x, rect.y + 42f, rect.width, 22f), SaveData.RelicCodexSummary(codexDevMode, all.Length),
                 new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
+            DrawProgressBar(new Rect(rect.center.x - 90f, rect.y + 63f, 180f, 4f), RelicCodex.Count(mask, all.Length), all.Length, previous);
 
             // 칸 고르기: 방향키/WASD로 옮기고, 마우스를 움직이면 마우스가 올라간 칸(칸 밖이면 없음)으로 바뀐다.
             var e = Event.current;
@@ -200,6 +201,30 @@ namespace IBlameYou.Core
             GUI.color = previous;
             ownerBadge.normal.textColor = owner == "A" ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.65f, 0.3f);
             GUI.Label(rect, owner, ownerBadge);
+        }
+
+        // 모은 수 진행 막대: 진한 바탕 + 금색 채움. 다 모았으면 밝은 띠가 1.6초마다 왼쪽에서 오른쪽으로 지나간다.
+        private static void DrawProgressBar(Rect bar, int count, int total, Color restore)
+        {
+            if (total <= 0) return;
+            float ratio = Mathf.Clamp01((float)count / total);
+            GUI.color = new Color(0.12f, 0.08f, 0.22f, 0.85f);
+            GUI.DrawTexture(new Rect(bar.x - 1f, bar.y - 1f, bar.width + 2f, bar.height + 2f), Texture2D.whiteTexture);
+            GUI.color = OutlinedLabel.Gold;
+            GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * ratio, bar.height), Texture2D.whiteTexture);
+            if (count >= total && total <= RelicCodex.MaxRelics)
+            {
+                const float band = 24f;
+                float x = Mathf.Repeat(Time.unscaledTime / 1.6f, 1f) * (bar.width + band) - band; // 막대 밖에서 들어와 밖으로 나간다
+                float left = Mathf.Max(bar.x, bar.x + x);
+                float right = Mathf.Min(bar.xMax, bar.x + x + band);
+                if (right > left)
+                {
+                    GUI.color = new Color(1f, 1f, 0.9f, 0.85f);
+                    GUI.DrawTexture(new Rect(left, bar.y, right - left, bar.height), Texture2D.whiteTexture);
+                }
+            }
+            GUI.color = restore;
         }
 
         // 이번 판에 가진 유물인가 (게임 중, 그 판의 모드 화면일 때만).
