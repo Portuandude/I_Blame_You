@@ -346,6 +346,7 @@ namespace IBlameYou.Enemies
             Health.Heal(amount);
             DamageNumbers.ShowText(BodyBounds.center + Vector3.up * BodyBounds.extents.y, $"합체! +{amount:0}", new Color(0.5f, 1f, 0.5f), 1.3f);
             EffectLibrary.PlayHit(Element.Water, BodyBounds.center, 2f);
+            SlimeBroodFx.Gulp(transform, BodyBounds.center, BodyBounds.size.y); // "꿀꺽" + 초록 고리 + 방울 (그림·소리만)
         }
 
         // ---- 패턴 2 / 6: 내려찍기 ----

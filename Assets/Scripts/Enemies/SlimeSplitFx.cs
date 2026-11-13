@@ -102,7 +102,10 @@ namespace IBlameYou.Enemies
             go.transform.localScale = Vector3.one * size;
         }
 
-        private static bool OnScreen(Vector3 world)
+        // 그림만 있는 젤리 방울 하나 (SlimeBroodFx 합체 연출도 쓴다).
+        public static void Drop(Vector3 position, Vector3 velocity, Color color, float size) => Goo(position, velocity, color, size);
+
+        public static bool OnScreen(Vector3 world)
         {
             var cam = Camera.main;
             if (cam == null) return false;
