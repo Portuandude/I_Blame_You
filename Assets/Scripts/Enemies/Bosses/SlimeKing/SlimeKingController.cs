@@ -96,6 +96,7 @@ namespace IBlameYou.Enemies
         private bool contact = true;
         private float facing = -1f;
         private float size = 1f;
+        private int glowSlamIndex = -1; // 발광 연속 내려찍기 회차 (착지 연출 음 높이), 아니면 -1
         private float lastSummon = -999f;
         private float lastGlow = -999f;
 
@@ -406,6 +407,7 @@ namespace IBlameYou.Enemies
 
             float landing = GroundBelow(x, top);
             PlaceMark(slamMark, x, top, 1f);
+            SlimeKingLandFx.Fall(new Vector3(x, top, 0f));
             float y = top;
             while (true)
             {
@@ -440,7 +442,8 @@ namespace IBlameYou.Enemies
 
             Shake(0.3f, 0.35f);
             EffectLibrary.PlayHit(Element.Earth, new Vector3(x, y + 0.3f, 0f), 2f * size);
-            GameAudio.PlaySfx("Hit_Earth", 0.9f);
+            GameAudio.PlaySfx("Hit_Earth", 0.6f); // 아래 KingSlam과 겹치므로 조금 작게
+            SlimeKingLandFx.Slam(new Vector3(x, y, 0f), width, size, glowSlamIndex);
         }
 
         // ---- 패턴 3: 촉수 ----
@@ -594,6 +597,11 @@ namespace IBlameYou.Enemies
             RemoveHeadbuttMark();
             motion = Motion.Hold;
             Shake(0.12f, 0.15f);
+            if (Grounded())
+            {
+                var landBounds = BodyBounds;
+                SlimeKingLandFx.Land(new Vector3(landBounds.center.x, landBounds.min.y, 0f), size);
+            }
             yield return new WaitForSeconds(HeadbuttRecover);
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
             contact = true;
@@ -689,7 +697,12 @@ namespace IBlameYou.Enemies
 
             SetTint(GlowTint);
             for (int i = 0; i < GlowSlams && !IsDead; i++)
+            {
+                glowSlamIndex = i;
                 yield return Slam(SlamRise * 0.75f, 0.25f, 0.35f, RandomArenaX(), GlowSlamMultiplier);
+            }
+
+            glowSlamIndex = -1;
             SetTint(BaseTint);
         }
 
@@ -699,6 +712,7 @@ namespace IBlameYou.Enemies
         private void Interrupt()
         {
             StopAllCoroutines();
+            glowSlamIndex = -1;
             CleanupTentacles();
             DestroyShadow();
             ClearTelegraphs();
