@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +10,7 @@ namespace IBlameYou.Systems
     // 잠김이 풀리는 순간(구역 돌파) 흰빛으로 한 번 번쩍였다가 aqua로 돌아온다.
     // 보스·중간보스 방으로 들어가는 문 (2026-11-12 플레이테스트 "보스 방 입구를 알아볼 수 있게"): 빛 커튼이 그 방 색(보스 빨강, 중간보스 주황)이고,
     // 문 양옆에 굵은 돌기둥 + 금빛 테두리, 문 위에 왕관(보스)·투구(중간보스) 그림이 둥실거리며, 바닥에 그 색 빛 웅덩이가 숨 쉰다.
+    // 아직 안 가 본 방으로 이어지는 문 (2026-11-13 방 입장 연출): 문 앞에 작은 금빛 마름모가 반짝이며 둥실거린다. 그 방을 가 보면 사라진다.
     public class RoomDoorMarkers : MonoBehaviour
     {
         private const int CurtainOrder = -5; // 배경(-25 이하)보다 앞, 지형(-10)보다 앞, 캐릭터(1)보다 뒤
@@ -29,13 +31,20 @@ namespace IBlameYou.Systems
         private static readonly Color Gold = new Color(1f, 0.84f, 0.3f);
         private const float UnlockFlashTime = 0.45f;
 
+        private static readonly Color NewPathGold = new Color(1f, 0.88f, 0.35f);
+        private const float NewPathSize = 0.26f;
+        private readonly List<(SpriteRenderer renderer, Vector3 home, int room)> newPaths = new List<(SpriteRenderer, Vector3, int)>();
+        private Func<int, bool> visited;
+
         private ArenaZone[] arenas;
         private bool wasLocked;
         private float flashUntil = -1f;
 
         // root: 방 지형 루트 (방을 치우면 함께 사라진다). origin: 방 왼쪽 아래 월드 좌표. geometry: 문 자리.
         // layout: 이웃 방 종류를 보려고 (보스·중간보스 입구 장식). null이면 장식 없음.
-        public static RoomDoorMarkers Create(Transform root, Vector2 origin, RoomData room, RoomGeometry geometry, RoomLayoutData layout = null)
+        // visited: 이웃 방을 가 봤는지 (안 가 본 방 문에 금빛 반짝임). null이면 반짝임 없음.
+        public static RoomDoorMarkers Create(Transform root, Vector2 origin, RoomData room, RoomGeometry geometry, RoomLayoutData layout = null,
+            Func<int, bool> visited = null)
         {
             var go = new GameObject("RoomDoorMarkers");
             go.transform.SetParent(root, false);
@@ -66,9 +75,41 @@ namespace IBlameYou.Systems
                 markers.Add(markers.frames, sprite, new Vector2(holeLeft + holeWidth + 0.3f, floor - 0.08f), new Vector2(0.6f, 0.16f), FrameOrder);
             }
 
+            if (layout != null && visited != null)
+            {
+                markers.visited = visited;
+                // 좌우 문: 문틀 위 한 칸 방 안쪽 · 위 문: 천장 구멍 바로 아래 · 아래 문: 바닥 구멍 바로 위 (모두 콜라이더 없음)
+                // 보스·중간보스 입구는 왕관/투구가 이미 있으니 더하지 않는다
+                if ((room.Doors & DoorDir.Left) != 0 && geometry.Arrivals.TryGetValue(DoorDir.Left, out var l) && BossKindBehind(layout, room, DoorDir.Left) == null)
+                    markers.AddNewPath(sprite, layout, room, DoorDir.Left, new Vector2(origin.x + 1.5f, origin.y + l.y + RoomShaper.DoorHeight + 0.5f));
+                if ((room.Doors & DoorDir.Right) != 0 && geometry.Arrivals.TryGetValue(DoorDir.Right, out var r) && BossKindBehind(layout, room, DoorDir.Right) == null)
+                    markers.AddNewPath(sprite, layout, room, DoorDir.Right, new Vector2(origin.x + r.x - 0.5f, origin.y + r.y + RoomShaper.DoorHeight + 0.5f));
+                if ((room.Doors & DoorDir.Up) != 0)
+                    markers.AddNewPath(sprite, layout, room, DoorDir.Up, new Vector2(holeLeft + holeWidth / 2f, origin.y + ChunkData.Height - 1.6f));
+                if ((room.Doors & DoorDir.Down) != 0)
+                    markers.AddNewPath(sprite, layout, room, DoorDir.Down, new Vector2(holeLeft + holeWidth / 2f, origin.y + RoomShaper.ShaftGround + 0.7f));
+            }
+
             markers.arenas = root.GetComponentsInChildren<ArenaZone>(true);
             markers.Apply();
             return markers;
+        }
+
+        // 안 가 본 방 표시 하나: 45도 돌린 작은 금빛 사각형 (마름모). 이웃 방이 없으면 만들지 않는다.
+        private void AddNewPath(Sprite sprite, RoomLayoutData layout, RoomData room, DoorDir dir, Vector2 center)
+        {
+            var next = layout.Neighbor(room, dir);
+            if (next == null) return;
+            var go = new GameObject("NewPathSparkle");
+            go.transform.SetParent(transform, false);
+            go.transform.position = new Vector3(center.x, center.y, 0f);
+            go.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            go.transform.localScale = new Vector3(NewPathSize, NewPathSize, 1f);
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = FrameOrder + 2;
+            renderer.color = NewPathGold;
+            newPaths.Add((renderer, go.transform.position, next.Index));
         }
 
         // 그 문 너머가 보스·중간보스 방이면 그 종류 (지금 방이 그 방이면 장식하지 않는다: 안에서는 이미 안다).
@@ -189,6 +230,22 @@ namespace IBlameYou.Systems
                 r.color = new Color(c.r, c.g, c.b, (locked ? curtainAlpha : 0.4f * bossPulse));
             }
             foreach (var (r, tint) in bossGlows) r.color = new Color(tint.r, tint.g, tint.b, 0.55f * bossPulse);
+            // 안 가 본 방 반짝임: 둥실 + 크기·밝기가 반짝반짝 (가 본 방이 되면 끈다)
+            for (int i = 0; i < newPaths.Count; i++)
+            {
+                var (r, home, target) = newPaths[i];
+                if (r == null) continue;
+                bool show = visited != null && !visited(target);
+                if (r.enabled != show) r.enabled = show;
+                if (!show) continue;
+                float phase = Time.time * 4f + i * 1.7f;
+                float twinkle = 0.5f + 0.5f * Mathf.Sin(phase);
+                r.transform.position = home + new Vector3(0f, 0.1f * Mathf.Sin(Time.time * 2f + i), 0f);
+                float size = NewPathSize * (0.8f + 0.35f * twinkle);
+                r.transform.localScale = new Vector3(size, size, 1f);
+                r.color = new Color(NewPathGold.r, NewPathGold.g, NewPathGold.b, 0.55f + 0.45f * twinkle);
+            }
+
             for (int i = 0; i < bossIcons.Count; i++)
             {
                 var (icon, home) = bossIcons[i];

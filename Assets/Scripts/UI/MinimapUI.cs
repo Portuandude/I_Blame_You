@@ -48,6 +48,12 @@ namespace IBlameYou.UI
         private readonly System.Collections.Generic.HashSet<int> known = new System.Collections.Generic.HashSet<int>();
         private readonly System.Collections.Generic.Dictionary<int, float> revealStart = new System.Collections.Generic.Dictionary<int, float>();
 
+        // 다시 들어간 방 (2026-11-13 방 입장 연출): 이미 아는 방이면 지금 방 칸이 PulseTime 동안 1 → 1.18 → 1로 톡 커졌다 돌아온다.
+        private const float PulseTime = 0.25f;
+        private const float PulseGrow = 0.18f;
+        private int pulseRoom = -1;
+        private float pulseStart;
+
         // 나침반 획득 연출: 나침반을 얻은 뒤 게임이 다시 흐르는 순간 큰 지도가 CompassShowTime 동안 저절로 펼쳐지고,
         // 안 가 본 방의 흐린 칸이 지금 방에서 가까운 순서로 하나씩 "톡" 나타난다 (발견 연출 RevealScale 재사용).
         private const float CompassShowTime = 1.5f;
@@ -76,6 +82,20 @@ namespace IBlameYou.UI
         private void OnRoomEntered(int index)
         {
             if (known.Add(index)) revealStart[index] = Time.unscaledTime;
+            else
+            {
+                pulseRoom = index;
+                pulseStart = Time.unscaledTime;
+            }
+        }
+
+        // 다시 들어간 방 칸 크기 배율 (연출 중이 아니면 1)
+        private float PulseScale(int index)
+        {
+            if (index != pulseRoom) return 1f;
+            float t = (Time.unscaledTime - pulseStart) / PulseTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return 1f + PulseGrow * Mathf.Sin(t * Mathf.PI);
         }
 
         // 발견 연출 크기 (0.2 → 1.2 → 1). 연출이 끝났거나 없으면 1.
@@ -213,7 +233,7 @@ namespace IBlameYou.UI
                     DrawFaintRoom(room, body);
                     continue;
                 }
-                float reveal = RevealScale(room.Index);
+                float reveal = RevealScale(room.Index) * PulseScale(room.Index);
                 if (reveal != 1f)
                 {
                     var center = body.center;

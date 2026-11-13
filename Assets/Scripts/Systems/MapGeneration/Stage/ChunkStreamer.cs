@@ -394,7 +394,7 @@ namespace IBlameYou.Systems
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
-            RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms);
+            RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms, HasVisited);
             // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
@@ -697,6 +697,7 @@ namespace IBlameYou.Systems
             PlaceAtArrival(next.Index, RoomLayout.Opposite(passed));
             EnterRoom(next.Index);
             ScreenFlash.RoomFade(); // 옮긴 순간을 어둡게 덮었다가 밝혀 순간이동처럼 튀어 보이지 않게
+            GameAudio.PlaySfx("RoomPass", 0.8f, 0.05f); // 어두워지는 순간 가벼운 "휙" (Tools/AudioGen RoomPass, 2026-11-13 방 입장 연출)
         }
 
         // 방을 옮기면 떠난 방의 적은 바로 치운다 (쓰러뜨린 것으로 치지 않아 그 방에 다시 들어가면 다시 나온다).
@@ -742,7 +743,15 @@ namespace IBlameYou.Systems
             if (movement != null) movement.ResetAirborne();
             var recovery = player.GetComponent<FallRecovery>();
             if (recovery != null) recovery.SetSafePoint(new Vector3(point.x, point.y + 0.1f, 0f));
+
+            // 어디로 나왔는지 바로 보이게 (2026-11-13 방 입장 연출): 몸 둘레에 문 색(aqua) 빛 고리가 퍼지고,
+            // 발밑이 땅이면 작은 먼지 (위/아래 구멍으로 나와 공중이면 먼지는 없다)
+            ManaRingFx.Create(player, Vector3.zero, ArrivalRingColor);
+            if (standY > 0 && chunk.IsSolid(column, standY - 1))
+                VfxPlayer.Dust(new Vector3(point.x, Origin(index).y + standY, 0f), 0.5f);
         }
+
+        private static readonly Color ArrivalRingColor = new Color(0.5f, 0.97f, 1f, 0.85f); // RoomDoorMarkers 문 빛과 같은 aqua
 
         // 방에 들어왔을 때: 가 본 방 기록, 카메라 영역, 낭떠러지 높이.
         private void EnterRoom(int index)
@@ -793,6 +802,14 @@ namespace IBlameYou.Systems
                 GameAudio.PlaySfx("BossNear", 0.9f, 0f);
                 ScreenFlash.EdgeWarn(BossNearEdgeColor, 1.4f); // 심장 소리에 맞춰 화면 가장자리가 검붉게 두 번 천천히 (2026-11-13 보스 방 앞 분위기)
                 StageEvents.PostNotice("근처에서 강한 기운이 느껴진다...");
+            }
+            // 판에서 마지막 남은 방을 처음 밟은 순간 (2026-11-13 방 입장 연출): 알림 + 맑은 반짝 소리 두 번. 보상은 없다.
+            // 이어하기로 불러온 기록이 이미 다 가 본 상태면 firstVisit이 아니라서 다시 울리지 않는다.
+            if (firstVisit && rooms.Rooms.Count > 1 && visitedRooms.Count >= rooms.Rooms.Count) // 방 하나짜리(빈 시험 방)는 시작하자마자 울리지 않게
+            {
+                StageEvents.PostNotice("모든 방을 찾았다!");
+                GameAudio.PlaySfx("StarShard", 0.7f, 0f);
+                GameAudio.PlaySfxDelayed("StarShard", 0.14f, 0.6f);
             }
             RoomEntered?.Invoke(index);
         }
