@@ -2,6 +2,26 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 10:25 자동 실행이 추가 — 슬라임 킹 착지 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 내려찍기·박치기·발광 착지가 묵직하게 느껴지게. 피해 폭·시간·수치 그대로 (그림·소리만, `Enemies/SlimeKingLandFx`).
+
+- DONE (claude/project-thread-8qiaw2): 낙하 — 내려찍기가 떨어지기 시작할 때 새 효과음 `KingFall`("휘이익")
+- DONE (claude/project-thread-8qiaw2): 내려찍기 착지 — 피해 폭만큼 충격파 그림 + 양옆으로 튀는 보라 방울 + 새 효과음 `KingSlam`("철퍼덕", 기존 `Hit_Earth`는 0.6으로 낮춤)
+- DONE (claude/project-thread-8qiaw2): 젤리 얼룩 — 착지 자리에 납작한 보라 얼룩이 남았다가 2초 동안 옅어짐
+- DONE (claude/project-thread-8qiaw2): 박치기 착지 — 땅에 닿았을 때 먼지 + 작은 방울 + 새 효과음 `KingLand`("쿵"). 예전엔 화면 흔들림뿐
+- DONE (claude/project-thread-8qiaw2): 발광 연속 내려찍기 — 회차마다 `KingSlam` 음이 높아지고 착지 자리에 금빛 고리
+
+## 다음 (2026-11-13 10:14 자동 실행이 추가 — 슬라임 킹 촉수 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 촉수가 나가고·부딪히고·붙고·끊기는 순간이 손에 느껴지게. 속도·사거리·둔화·그랩 시간 그대로 (그림·소리만, `Enemies/SlimeTentacleFx`).
+
+- DONE (claude/project-thread-8qiaw2): 뻗기 — 패턴마다 첫 가닥에 새 효과음 `TentacleLash`("휙") + 가닥마다 킹 몸에서 보라 방울 둘
+- DONE (claude/project-thread-8qiaw2): 벽·바닥 부딪힘 — 끝에서 되튀는 보라 방울 셋 + 새 효과음 `TentacleSlap`("철퍽", 0.12초 간격)
+- DONE (claude/project-thread-8qiaw2): 붙잡힘 — 0.05초 히트스톱 + 플레이어 둘레 보라 고리 + 새 효과음 `TentacleGrab`("찰싹")
+- DONE (claude/project-thread-8qiaw2): 붙은 동안 — 끝 구슬이 두근거리고 그랩이 가까울수록 빨라짐, 마지막 1초엔 선이 붉게 깜빡임
+- DONE (claude/project-thread-8qiaw2): 끊어냄 — 끊긴 자리에서 보라 방울 다섯 + 플레이어 둘레 초록 고리 + 새 효과음 `TentacleSnap`("뽁")
+
 ## 다음 (2026-11-13 10:10 자동 실행이 추가 — 슬라임 킹 소환 무리 합체 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 슬라임 킹이 소환한 무리가 언제·어디로 합체하는지 읽히고, 다 잡았을 때 보람이 있게. 제한 시간·회복량 그대로 (그림·소리만, `Enemies/SlimeBroodFx`).

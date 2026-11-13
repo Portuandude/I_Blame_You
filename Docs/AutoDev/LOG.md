@@ -2,6 +2,13 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-13 10:24 UTC
+- 브랜치/PR: `claude/project-thread-c3791f` → #85 (develop 대상, 자동 머지 켬, #84 head 위에 쌓음). 시작할 때 #84 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "고블린 궁수 화살 연출"·"슬라임 도약·착지 연출" 5개씩 추가
+- 완료 (10개, 적대적 리뷰 APPROVE). 화살 5개 (새 `Enemies/GoblinArrowFx.cs`): ① 놓을 때 "팅" `BowTwang` ② 흰 꼬리 ③ 곁을 스치면 "슈웅" `ArrowWhiz` 한 번 ④ 벽에 박혀 부르르·1.5초 뒤 사라짐 + "턱" `ArrowThunk` ⑤ 맞으면 나무 조각
+- 슬라임 5개 (새 `Enemies/SlimeLandFx.cs`, `SlimeController.UpdateLeapLanding`): ① 도약 먼지 + "뾱" `SlimeHop` ② 실제 착지 감지(떨어지던 속도가 멈춘 순간) ③ 눌림 + 방울 + "퐁" `SlimePlop` ④ 정예·기사는 충격파·보라 방울·약한 흔들림 ⑤ 소리 0.08초 간격
+- 실패/보류: 없음. 수치 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 스침 소리가 한 번만 나는지, 박힌 화살 방향, 슬라임 여럿이 동시에 뛸 때 소리가 과하지 않은지
+
 ## 2026-11-13 10:14 UTC
 - 브랜치/PR: `claude/project-thread-8qiaw2` → #84 (develop 대상, 자동 머지 켬, #83 head 위에 쌓음). 시작할 때 #82·#83 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 촉수 연출" 5개 추가
 - 완료 (10개, 적대적 리뷰 모두 APPROVE). 촉수 5개 (새 `Enemies/SlimeTentacleFx.cs`): ① 뻗기 "휙" `TentacleLash`(패턴당 1번) + 방울 ② 벽·바닥 "철퍽" `TentacleSlap` + 되튀는 방울 ③ 붙잡힘 0.05초 히트스톱 + 보라 고리 + "찰싹" `TentacleGrab` ④ 붙은 동안 끝 구슬 두근거림이 빨라지고 마지막 1초 붉은 깜빡임 ⑤ 끊어내면 방울 + 초록 고리 + "뽁" `TentacleSnap`
@@ -14,9 +21,3 @@
 - 완료 (5개, 적대적 리뷰 HIGH 1개 고친 뒤 APPROVE): [`Enemies/SlimeBroodFx` + `SlimeBrood`] ① 합체 5초 전부터 초마다 초록 고리 + `BroodTick`(점점 높게) ② 3초 전부터 킹 쪽 초록 젤리 끈 ③ 합체 비행 `BroodMerge` + 방울 흔적 ④ 킹 꿀꺽 `BroodGulp` + 큰 초록 고리 ⑤ 시간 안에 전멸하면 금빛 고리 + `BroodClear`. 리뷰 HIGH: Finish 뒤 0.1초 동안 축하가 반복되고 킹 처치(Dismiss) 때도 나오던 문제 → `finished` 플래그
 - 실패/보류: 없음. 제한 시간·회복량 그대로. BACKLOG의 끝난 묶음은 보관 파일로 옮기고 빈 묶음 제목을 정리
 - 다음 실행 메모: 플레이테스트 필요 — 합체 예고 소리·끈이 과하지 않은지, 금빛 축하가 한 번만 나오는지
-
-## 2026-11-13 10:07 UTC
-- 브랜치/PR: `claude/project-thread-ltl4hi` → #82 (develop 대상, 자동 머지 켬, #81 head 위에 쌓음). 시작할 때 #80·#81 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 분열 연출" 5개 추가
-- 완료 (5개, 새 `Enemies/SlimeSplitFx.cs`, 적대적 리뷰 APPROVE, 고칠 점 없음): ① 새 효과음 `SlimeSplit`("뿌직-쪼옥") ② 킹 분열 순간 0.1초 히트스톱 + 큰 보라 고리 ③ 보라 젤리 방울(킹 9·어미 6) ④ 젤리 끈(킹 두 몸 사이 0.6초에 끊김, 어미-새끼 끈 톡톡) ⑤ 새끼 슬라임 "뿅" 등장(`EnemySquash.Spawn`)
-- 실패/보류: 없음. 분열 시점·체력·새끼 수·자리·골드 그대로 (새끼 생성 실패 때 null 건너뛰기만 추가)
-- 다음 실행 메모: 플레이테스트 필요 — 어미 여럿이 한꺼번에 터질 때 방울·소리가 과하지 않은지, 킹 끈이 어색하지 않은지

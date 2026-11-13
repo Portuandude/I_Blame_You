@@ -12,6 +12,16 @@
 위 플레이테스트 항목 다음에 위에서부터 처리한다. 장비·마을은 크기가 커서 **설계 문서를 먼저** 올리고 나서 구현한다.
 사람 확정(2026-11-12): 중간보스 골드 50~100, 골드는 그 판 안에서만, 장비는 A/B 공용 한 벌, 장비는 유물 보상과 함께도 나오고 상점에서도 산다, **진행도 시스템 삭제**, 마을은 **스테이지당 1개**를 방을 돌아다니며 찾는다.
 
+## 다음 (2026-11-13 10:40 자동 실행이 추가 — 슬라임 도약·착지 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 슬라임 도약 덮치기가 뛰고 떨어지는 순간이 말랑하게 느껴지게. 도약 시간·속도·피해 그대로 (그림·소리만, `Enemies/SlimeLandFx`).
+
+- DONE (claude/project-thread-c3791f): 도약 — 뛰어오르는 순간 발밑 작은 먼지 + 새 효과음 `SlimeHop`("뾱")
+- DONE (claude/project-thread-c3791f): 실제 착지 감지 — 떨어지던 몸이 멈춘 순간 한 번 (꼭대기·천장은 아님)
+- DONE (claude/project-thread-c3791f): 착지 — 납작하게 눌림 + 먼지 + 작은 방울 + 새 효과음 `SlimePlop`("퐁")
+- DONE (claude/project-thread-c3791f): 정예·기사 착지 — 낮은 음 + 작은 충격파 + 보라 방울 6개 + 약한 화면 흔들림
+- DONE (claude/project-thread-c3791f): 소리 겹침 — 화면 안일 때만, 여러 마리라도 0.08초에 한 번
+
 ## 다음 (2026-11-13 10:25 자동 실행이 추가 — 고블린 궁수 화살 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 궁수 화살이 날아가고·스치고·박히고·맞는 순간이 손에 느껴지게. 속도·사거리·피해·간격 그대로 (그림·소리만, `Enemies/GoblinArrowFx`).
@@ -21,36 +31,6 @@ DIRECTION ① "플레이 감각 다듬기". 궁수 화살이 날아가고·스�
 - DONE (claude/project-thread-c3791f): 스침 — 노린 플레이어 곁 1.3칸 안을 맞히지 않고 지나가면 새 효과음 `ArrowWhiz`("슈웅") 한 번
 - DONE (claude/project-thread-c3791f): 벽에 박힘 — 닿은 자리에 같은 그림으로 박혀 0.35초 부르르, 1.5초 뒤 옅어짐 + 새 효과음 `ArrowThunk`("턱") + 작은 먼지
 - DONE (claude/project-thread-c3791f): 맞음 — 플레이어에게 맞으면 나무 조각 4개가 튐
-
-## 다음 (2026-11-13 10:25 자동 실행이 추가 — 슬라임 킹 착지 연출)
-
-DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 내려찍기·박치기·발광 착지가 묵직하게 느껴지게. 피해 폭·시간·수치 그대로 (그림·소리만, `Enemies/SlimeKingLandFx`).
-
-- DONE (claude/project-thread-8qiaw2): 낙하 — 내려찍기가 떨어지기 시작할 때 새 효과음 `KingFall`("휘이익")
-- DONE (claude/project-thread-8qiaw2): 내려찍기 착지 — 피해 폭만큼 충격파 그림 + 양옆으로 튀는 보라 방울 + 새 효과음 `KingSlam`("철퍼덕", 기존 `Hit_Earth`는 0.6으로 낮춤)
-- DONE (claude/project-thread-8qiaw2): 젤리 얼룩 — 착지 자리에 납작한 보라 얼룩이 남았다가 2초 동안 옅어짐
-- DONE (claude/project-thread-8qiaw2): 박치기 착지 — 땅에 닿았을 때 먼지 + 작은 방울 + 새 효과음 `KingLand`("쿵"). 예전엔 화면 흔들림뿐
-- DONE (claude/project-thread-8qiaw2): 발광 연속 내려찍기 — 회차마다 `KingSlam` 음이 높아지고 착지 자리에 금빛 고리
-
-## 다음 (2026-11-13 10:14 자동 실행이 추가 — 슬라임 킹 촉수 연출)
-
-DIRECTION ① "플레이 감각 다듬기". 슬라임 킹 촉수가 나가고·부딪히고·붙고·끊기는 순간이 손에 느껴지게. 속도·사거리·둔화·그랩 시간 그대로 (그림·소리만, `Enemies/SlimeTentacleFx`).
-
-- DONE (claude/project-thread-8qiaw2): 뻗기 — 패턴마다 첫 가닥에 새 효과음 `TentacleLash`("휙") + 가닥마다 킹 몸에서 보라 방울 둘
-- DONE (claude/project-thread-8qiaw2): 벽·바닥 부딪힘 — 끝에서 되튀는 보라 방울 셋 + 새 효과음 `TentacleSlap`("철퍽", 0.12초 간격)
-- DONE (claude/project-thread-8qiaw2): 붙잡힘 — 0.05초 히트스톱 + 플레이어 둘레 보라 고리 + 새 효과음 `TentacleGrab`("찰싹")
-- DONE (claude/project-thread-8qiaw2): 붙은 동안 — 끝 구슬이 두근거리고 그랩이 가까울수록 빨라짐, 마지막 1초엔 선이 붉게 깜빡임
-- DONE (claude/project-thread-8qiaw2): 끊어냄 — 끊긴 자리에서 보라 방울 다섯 + 플레이어 둘레 초록 고리 + 새 효과음 `TentacleSnap`("뽁")
-
-## 다음 (2026-11-13 10:10 자동 실행이 추가 — 슬라임 킹 소환 무리 합체 연출)
-
-DIRECTION ① "플레이 감각 다듬기". 슬라임 킹이 소환한 무리가 언제·어디로 합체하는지 읽히고, 다 잡았을 때 보람이 있게. 제한 시간·회복량 그대로 (그림·소리만, `Enemies/SlimeBroodFx`).
-
-- DONE (claude/project-thread-1vrlvp): 합체 임박 — 5초 전부터 초마다 남은 슬라임마다 초록 고리 + 새 효과음 `BroodTick`("똑", 남은 초가 줄수록 음이 높아짐)
-- DONE (claude/project-thread-1vrlvp): 합체 방향 예고 — 3초 전부터 슬라임마다 가장 가까운 킹 쪽으로 초록 젤리 끈, 점점 굵고 진해지며 두근거림
-- DONE (claude/project-thread-1vrlvp): 합체 비행 — 새 효과음 `BroodMerge`("슈우욱") + 날아가는 슬라임 뒤로 초록 젤리 방울
-- DONE (claude/project-thread-1vrlvp): 킹 꿀꺽 — 새 효과음 `BroodGulp` + 킹 둘레 큰 초록 고리 + 위로 튀는 방울 (기존 "합체! +N" 숫자는 그대로)
-- DONE (claude/project-thread-1vrlvp): 전멸 축하 — 시간 안에 모두 잡으면 마지막 자리에서 금빛 고리 + 새 효과음 `BroodClear` + 금빛 방울
 
 ## 최우선 (2026-11-10 사람 결정 4건)
 
