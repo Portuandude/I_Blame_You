@@ -37,6 +37,19 @@ namespace IBlameYou.Systems
         private Transform visual;
         private float dropElapsed = -1f; // 0 이상이면 떨어지거나 눌리는 중
 
+        // 들썩임 (보상 연출, 2026-11-13): 열지 않은 상자에 플레이어가 NearRadius 안으로 오면 HopInterval마다 살짝 뛰며 좌우로 기우뚱.
+        private const float NearRadius = 2.5f;
+        private const float NearCheckInterval = 0.2f;
+        private const float HopInterval = 1.1f;
+        private const float HopTime = 0.28f;
+        private const float HopHeight = 0.16f;
+        private const float HopTilt = 7f; // 도
+        private float nearCheckTimer;
+        private bool playerNear;
+        private float hopTimer = 0.35f; // 가까이 오고 조금 뒤 첫 들썩
+        private float hopElapsed = -1f; // 0 이상이면 뛰는 중
+        private float hopSide = 1f;
+
         // position: 상자가 놓일 바닥 위 가운데 (월드). dropped: 방금 나온 것이면 등장 이펙트를 보여준다.
         public static RelicChest Create(Transform parent, Vector2 position, int seed, int chunkIndex, bool dropped, Action onTaken)
         {
@@ -100,7 +113,57 @@ namespace IBlameYou.Systems
         private void Update()
         {
             UpdateDrop();
+            UpdateHop();
             if (touching != null) TryOpen(touching);
+        }
+
+        private void UpdateHop()
+        {
+            if (visual == null || taken || dropElapsed >= 0f) return;
+
+            nearCheckTimer -= Time.deltaTime;
+            if (nearCheckTimer <= 0f)
+            {
+                nearCheckTimer = NearCheckInterval;
+                playerNear = false;
+                foreach (var hit in Physics2D.OverlapCircleAll((Vector2)transform.position + Vector2.up * VisualHeight, NearRadius))
+                {
+                    var player = TrapCommon.PlayerFrom(hit);
+                    if (player == null) continue;
+                    var health = player.GetComponent<HealthSystem>();
+                    if (health != null && health.IsDead) continue;
+                    playerNear = true;
+                    break;
+                }
+            }
+
+            if (hopElapsed >= 0f)
+            {
+                hopElapsed += Time.deltaTime;
+                float k = Mathf.Clamp01(hopElapsed / HopTime);
+                float lift = Mathf.Sin(k * Mathf.PI); // 올라갔다 내려온다
+                visual.localPosition = new Vector3(0f, VisualHeight + HopHeight * lift, 0f);
+                visual.localRotation = Quaternion.Euler(0f, 0f, HopTilt * hopSide * lift);
+                if (k >= 1f)
+                {
+                    hopElapsed = -1f;
+                    visual.localPosition = new Vector3(0f, VisualHeight, 0f);
+                    visual.localRotation = Quaternion.identity;
+                }
+                return;
+            }
+
+            if (!playerNear || waiting)
+            {
+                hopTimer = 0.35f;
+                return;
+            }
+
+            hopTimer -= Time.deltaTime;
+            if (hopTimer > 0f) return;
+            hopTimer = HopInterval;
+            hopElapsed = 0f;
+            hopSide = -hopSide; // 번갈아 반대쪽으로 기우뚱
         }
 
         private void UpdateDrop()
