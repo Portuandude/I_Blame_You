@@ -17,6 +17,7 @@ namespace IBlameYou.Enemies
         private readonly List<HealthSystem> members = new List<HealthSystem>();
         private float endTime;
         private bool merging;
+        private bool finished; // Finish 뒤 Destroy(0.1초)까지 Update가 다시 처치 축하·알림을 내지 않게
         private int lastWarnSecond = -1;
         private Vector3 lastSeen;
         private bool seen; // 한 번이라도 슬라임이 있었을 때만 처치 축하를 한다
@@ -45,7 +46,7 @@ namespace IBlameYou.Enemies
 
         private void Update()
         {
-            if (merging) return;
+            if (merging || finished) return;
 
             members.RemoveAll(m => m == null || m.IsDead);
             if (members.Count == 0)
@@ -157,6 +158,7 @@ namespace IBlameYou.Enemies
 
         private void Finish()
         {
+            finished = true;
             if (fx != null) fx.ClearLines(); // 끈은 자식이 아니라 아래 부모 옮기기와 상관없지만, 남지 않게 바로 지운다
             // 쓰러지는 중인 슬라임은 무리와 함께 지우지 않고 사망 연출을 마저 하게 둔다.
             for (int i = transform.childCount - 1; i >= 0; i--) transform.GetChild(i).SetParent(transform.parent, true);
