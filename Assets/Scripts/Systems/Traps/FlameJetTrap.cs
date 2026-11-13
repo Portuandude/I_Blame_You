@@ -114,9 +114,11 @@ namespace IBlameYou.Systems
             preview.gameObject.SetActive(next == Phase.Warn);
             column.enabled = next == Phase.Burn;
             if (next == Phase.Warn && PlayerNear()) GameAudio.PlaySfx("FlameHiss", 0.6f);
+            if (burnEnded) TrapHitFx.FlameOut(transform.position + new Vector3(0f, 0.3f, 0f)); // 연출: 남은 불씨
             if (next == Phase.Burn)
             {
                 nextTick = 0f;
+                TrapHitFx.FlameBurst(transform.position + new Vector3(0f, 0.3f, 0f)); // 연출: 솟는 순간 불똥
                 if (PlayerNear()) GameAudio.PlaySfx("Cast_Fire", 0.6f);
             }
         }
@@ -138,6 +140,7 @@ namespace IBlameYou.Systems
 
             TrapCommon.Strike(player, DamageKind.Magic, Element.Fire, DamageMultiplier);
             StatusEffects.TryApply(player, StatusDebuff.Burn, TrapCommon.Source);
+            TrapHitFx.FlameTouch(other.bounds.center); // 연출: 몸에서 불똥 + "치익"
             nextTick = Time.time + TickInterval;
         }
     }
