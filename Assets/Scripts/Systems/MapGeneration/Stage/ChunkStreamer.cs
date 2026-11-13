@@ -779,6 +779,12 @@ namespace IBlameYou.Systems
                 StageEvents.PostNotice(interest > 0 ? $"마을 발견! 저금통 이자 +{interest}" : "마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
             }
+            else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))
+            {
+                // 막다른 곁방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
+                StageEvents.PostNotice(entered.Kind == RoomKind.Treasure ? "보물 방 발견!" : "회복 샘 발견!");
+                GameAudio.PlaySfx("Pickup", 0.6f, 0f);
+            }
             RoomEntered?.Invoke(index);
         }
 
