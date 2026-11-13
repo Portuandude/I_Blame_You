@@ -103,7 +103,8 @@ Assets/
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
       Common/GoblinArcher/    # GoblinArcherController(거리 유지 + 화살), GoblinArcherSpawner
       SlimeLandFx.cs          # 슬라임 도약 연출: 뛸 때 먼지 + "뾱" SlimeHop, 실제로 땅에 닿으면 눌림 + 방울 + "퐁" SlimePlop, 정예·기사는 충격파·흔들림 (그림·소리만)
-      GoblinArrowFx.cs        # 궁수 화살 연출: 놓을 때 "팅" BowTwang, 흰 꼬리, 곁을 스치면 "슈웅" ArrowWhiz, 벽에 박혀 떨다 1.5초 뒤 사라짐 + "턱" ArrowThunk, 맞으면 나무 조각 (그림·소리만)
+      GoblinSwingFx.cs        # 근접 고블린 휘두르기 연출: "붕" GoblinSwing + 흰 초승달 궤적, 맞히면 노란 불꽃, 헛스윙이면 무기 끝 아래 먼지, 대전사는 낮은 음·큰 궤적·흔들림 (그림·소리만)
+      GoblinArrowFx.cs        # 궁수 화살 연출(함정 화살 발사대도 같이 씀): 놓을 때 "팅" BowTwang, 흰 꼬리, 곁을 스치면 "슈웅" ArrowWhiz, 벽에 박혀 떨다 1.5초 뒤 사라짐 + "턱" ArrowThunk, 맞으면 나무 조각 (그림·소리만)
       Elite/MotherSlime/      # 어미 슬라임(사망 시 슬라임 3기로 분열)
       Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화) + EnrageFx(광폭화 연출: 켜질 때 히트스톱·붉은 고리, 붉은 김·잔상, 끝나기 3초 전 빠른 깜빡임, 풀리면 회색 김·"헉헉…"·EnrageEnd)
       Bosses/                 # BossEvents(보스 체력바 값)
@@ -119,7 +120,7 @@ Assets/
                               # ChunkGenerator(청크 14종 지형/함정/적 배치), StageValidator(점프 거리 기준 통과 가능·갇힘 검사), StageGenerator
         Stage/                # 씬 쪽: ChunkStreamer(플레이어 주변 청크만 만들고 치움, 처치 기록 유지), ChunkBuilder(타일 → 콜라이더/그림),
                               # ArenaZone(전투 구역 잠금), ArenaReward(구역 돌파 회복 구슬), RelicChest(정예 구역 유물 상자), StageRecords(저장용 청크 기록), StageExit, FallRecovery(낭떠러지 복귀), StageEvents(HUD 알림)
-      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), Stalactite(동굴 떨어지는 종유석, 떨어질 때 적도 2배 피해), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), BlinkPlatform(깜빡 발판: 보임 2초 → 깜빡 경고 0.6초 → 사라짐 1.4초, 발판마다 0.7초씩 늦게 — 무너지는 다리 방의 변형, 난이도 40% 이상 절반 확률, 후보 목록 `Docs/ContentIdeas.md`), MovingPlatform(움직이는 발판), TrapCommon
+      Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대, 화살 연출은 GoblinArrowFx 공유), Stalactite(동굴 떨어지는 종유석, 떨어질 때 적도 2배 피해), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), BlinkPlatform(깜빡 발판: 보임 2초 → 깜빡 경고 0.6초 → 사라짐 1.4초, 발판마다 0.7초씩 늦게 — 무너지는 다리 방의 변형, 난이도 40% 이상 절반 확률, 후보 목록 `Docs/ContentIdeas.md`), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI, 피드는 SkillHUD.Feed — 같은 줄 ×N 합치기)
                               # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출(번쩍임·흔들림·PlayerDown 소리·느려지는 음악·눕기·영혼 별·동그란 조명 어둠). 게임오버/클리어 창에 런 기록(Core/RunStats)
