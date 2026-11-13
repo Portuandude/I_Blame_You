@@ -18,40 +18,60 @@ namespace IBlameYou.UI
 
         // 화면 밖 궁수 경고: 시위를 당기는 궁수(GoblinArcherController.Aiming)가 카메라 밖(AimWarnRange 안)에 있으면
         // 그 쪽 화면 가장자리에 노란 "!"가 빠르게 깜빡인다 (전투 구역 밖에서도). 곧 화살이 날아온다는 예고.
+        // 예고 중인 화살 발사대(ArrowTrap.Warning)도 똑같이 표시한다.
         private const float AimWarnRange = 24f;
         private const float AimWarnMargin = 30f;
         private static readonly Color AimWarnColor = new Color(1f, 0.85f, 0.2f); // 적 발견 "!"와 같은 노랑
         private GUIStyle aimWarnText;
 
+        // 화면 가운데에서 world 쪽으로 그은 선이 가장자리(margin 픽셀 안쪽)와 만나는 GUI 좌표.
+        // 구슬·적·궁수·화살 발사대 길잡이가 같이 쓴다. 방향을 못 정하면(가운데와 겹침) false.
+        private static bool TryEdgePoint(Camera cam, Vector3 world, float margin, out Vector2 at, out Vector2 dir)
+        {
+            var mid = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            var screen = cam.WorldToScreenPoint(world);
+            dir = new Vector2(screen.x, Screen.height - screen.y) - mid; // GUI는 y가 아래로
+            if (screen.z < 0f) dir = -dir; // 카메라 뒤 (2D라 거의 없음)
+            at = mid;
+            if (dir.sqrMagnitude < 0.01f) return false;
+            float halfW = mid.x - margin, halfH = mid.y - margin;
+            float scale = Mathf.Min(halfW / Mathf.Max(0.001f, Mathf.Abs(dir.x)), halfH / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
+            at = mid + dir * scale;
+            return true;
+        }
+
         private void DrawAimWarnings()
         {
-            if (deathHandled || stageCleared || GoblinArcherController.Aiming.Count == 0) return;
+            if (deathHandled || stageCleared) return;
+            if (GoblinArcherController.Aiming.Count == 0 && ArrowTrap.Warning.Count == 0) return;
             var cam = Camera.main;
             if (cam == null) return;
             if (aimWarnText == null)
                 aimWarnText = new GUIStyle(label) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false };
 
-            Vector3 center = cam.transform.position;
-            var mid = new Vector2(Screen.width / 2f, Screen.height / 2f);
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 14f)); // 빠른 깜빡임
             foreach (var archer in GoblinArcherController.Aiming)
             {
                 if (archer == null) continue;
-                var p = archer.AimPoint;
-                if (Vector2.Distance(p, center) > AimWarnRange) continue;
-                var vp = cam.WorldToViewportPoint(p);
-                if (vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f) continue; // 화면 안이면 화살 끝 반짝으로 충분
-                var screen = cam.WorldToScreenPoint(p);
-                var dir = new Vector2(screen.x, Screen.height - screen.y) - mid;
-                if (screen.z < 0f) dir = -dir;
-                if (dir.sqrMagnitude < 0.01f) continue;
-                float halfW = mid.x - AimWarnMargin, halfH = mid.y - AimWarnMargin;
-                float scale = Mathf.Min(halfW / Mathf.Max(0.001f, Mathf.Abs(dir.x)), halfH / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
-                var at = mid + dir * scale;
-                OutlinedLabel.Draw(new Rect(at.x - 16f, at.y - 18f, 32f, 36f), "!", aimWarnText, AimWarnColor, OutlinedLabel.Outline, 0f, 2f);
+                DrawAimWarning(cam, archer.AimPoint);
+            }
+            // 화살 발사대도 같은 "!" — 사정거리 안에서 붉게 깜빡이는(곧 쏘는) 것만 ArrowTrap.Warning에 들어 있다
+            foreach (var trap in ArrowTrap.Warning)
+            {
+                if (trap == null) continue;
+                DrawAimWarning(cam, trap.transform.position);
             }
             GUI.color = previousColor;
+        }
+
+        private void DrawAimWarning(Camera cam, Vector3 p)
+        {
+            if (Vector2.Distance(p, cam.transform.position) > AimWarnRange) return;
+            var vp = cam.WorldToViewportPoint(p);
+            if (vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f) return; // 화면 안이면 그 자리의 예고로 충분
+            if (!TryEdgePoint(cam, p, AimWarnMargin, out var at, out _)) return;
+            OutlinedLabel.Draw(new Rect(at.x - 16f, at.y - 18f, 32f, 36f), "!", aimWarnText, AimWarnColor, OutlinedLabel.Outline, 0f, 2f);
         }
 
         private void DrawEnemyGuides()
@@ -80,17 +100,9 @@ namespace IBlameYou.UI
             var previousColor = GUI.color;
             var previousMatrix = GUI.matrix;
             float pulse = 0.7f + 0.3f * Mathf.Sin(Time.unscaledTime * 6f);
-            var mid = new Vector2(Screen.width / 2f, Screen.height / 2f);
             for (int i = 0; i < enemyGuideTargets.Count && i < MaxEnemyGuides; i++)
             {
-                var screen = cam.WorldToScreenPoint(enemyGuideTargets[i].position);
-                var dir = new Vector2(screen.x, Screen.height - screen.y) - mid; // GUI는 y가 아래로
-                if (screen.z < 0f) dir = -dir;
-                if (dir.sqrMagnitude < 0.01f) continue;
-                // 화면 가운데에서 적 쪽으로 그은 선이 가장자리(여백 안쪽)와 만나는 점
-                float halfW = mid.x - EnemyGuideMargin, halfH = mid.y - EnemyGuideMargin;
-                float scale = Mathf.Min(halfW / Mathf.Max(0.001f, Mathf.Abs(dir.x)), halfH / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
-                var at = mid + dir * scale;
+                if (!TryEdgePoint(cam, enemyGuideTargets[i].position, EnemyGuideMargin, out var at, out var dir)) continue;
 
                 float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
                 GUIUtility.RotateAroundPivot(angle, at);
