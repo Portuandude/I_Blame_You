@@ -16,15 +16,18 @@ namespace IBlameYou.Systems
         private static readonly Color DotColor = new Color(1f, 0.85f, 0.35f);
 
         private readonly List<SpriteRenderer> dots = new List<SpriteRenderer>();
+        private Color color = DotColor;
         private GameObject owner;
         private int shown;
         private float strength;
 
-        public static AimLineFx Create(GameObject owner)
+        // color: 없으면 노란색 (슬라임 킹 촉수는 보라).
+        public static AimLineFx Create(GameObject owner, Color? color = null)
         {
             var go = new GameObject("AimLine");
             var fx = go.AddComponent<AimLineFx>();
             fx.owner = owner;
+            if (color.HasValue) fx.color = color.Value;
             return fx;
         }
 
@@ -75,7 +78,7 @@ namespace IBlameYou.Systems
 
             float alpha = Mathf.Lerp(MinAlpha, MaxAlpha, strength);
             if (strength >= BlinkFrom && Mathf.Repeat(Time.time * 12f, 1f) < 0.5f) alpha *= 0.45f;
-            var c = new Color(DotColor.r, DotColor.g, DotColor.b, alpha);
+            var c = new Color(color.r, color.g, color.b, alpha);
             for (int i = 0; i < shown; i++) dots[i].color = c;
         }
 
