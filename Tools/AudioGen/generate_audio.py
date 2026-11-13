@@ -956,6 +956,22 @@ def enrage_end():
     return normalize(fade_edges(lowpass(body + breath, 5000)))
 
 
+def slime_split():
+    """슬라임 분열(슬라임 킹 2페이즈, 어미 슬라임 사망): 젤리가 찢어지는 질척한 "뿌직" (낮은 띠 잡음) 뒤에
+    둘로 갈라져 튀어 나가는 "쪼옥-뽁" (위로 훑는 사인 두 개, 두 번째가 조금 늦고 높게), 약 0.55초."""
+    n = int(0.55 * SR)
+    t = np.arange(n) / SR
+    out = np.zeros(n)
+    rip = bandpass(noise(n), 200.0, 1400.0) * np.minimum(1.0, t / 0.01) * np.exp(-t / 0.09) * 0.8
+    out += rip
+    for k, (base, gain) in enumerate(((260.0, 0.7), (380.0, 0.6))):
+        m = int(0.22 * SR)
+        tt = np.arange(m) / SR
+        bloop = osc("sine", base + 900.0 * (1 - np.exp(-tt * 18)), m) * np.minimum(1.0, tt / 0.005) * np.exp(-tt / 0.07) * gain
+        mix_at(out, bloop, int((0.09 + k * 0.11) * SR))
+    return normalize(fade_edges(lowpass(out, 6000)))
+
+
 def village_found():
     """마을 첫 발견: 오르골 세 음 G5-C6-E6 + 마지막 음 길게, 약 1.4초 (music_box는 배경음악 쪽에 있다)."""
     n = int(1.4 * SR)
@@ -1437,7 +1453,7 @@ def main():
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "EnemyWindup": enemy_windup, "ShieldUp": shield_up, "ShieldBlock": shield_block, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
         "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land, "ChestCreak": chest_creak, "RelicSlot": relic_slot, "BookOpen": book_open, "RoomPass": room_pass, "TraitUp": trait_up, "TraitMilestone": trait_milestone, "NpcTalk": npc_talk, "PauseOpen": pause_open, "PauseClose": pause_close, "RunStart": run_start, "BossDefeat": boss_defeat, "PlayerDown": player_down,
-        "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage, "KnightLink": knight_link, "EnrageEnd": enrage_end,
+        "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage, "KnightLink": knight_link, "EnrageEnd": enrage_end, "SlimeSplit": slime_split,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
     }
