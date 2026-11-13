@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using UnityEngine;
 
@@ -28,6 +29,9 @@ namespace IBlameYou.Enemies
         private bool recovering;
         private float phaseTimeRemaining;
         private float nextShotTime;
+        // 지금 시위를 당기는 궁수들 (HUD가 화면 밖 궁수 쪽 가장자리에 노란 "!" 경고를 띄운다, SkillHUD.EnemyGuide.cs)
+        public static readonly HashSet<GoblinArcherController> Aiming = new HashSet<GoblinArcherController>();
+        public Vector3 AimPoint => ArrowOrigin();
         private bool spotted; // 플레이어를 알아챈 상태 (발견 "!"를 한 번만)
         private const float LoseRangeMultiplier = 1.25f;
 
@@ -79,6 +83,7 @@ namespace IBlameYou.Enemies
             if (distance <= shootRange && Time.time >= nextShotTime && !IsStunned)
             {
                 drawing = true;
+                Aiming.Add(this);
                 moveDirection = 0f;
                 phaseTimeRemaining = DrawTime;
                 EnemySquash.For(gameObject).Windup(DrawTime); // 시위를 당기며 웅크림
@@ -98,7 +103,14 @@ namespace IBlameYou.Enemies
         {
             if (drawing) EnemySquash.For(gameObject).Cancel();
             drawing = recovering = false;
+            Aiming.Remove(this);
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            Aiming.Remove(this);
         }
 
         private void UpdateShot(Transform target)
@@ -115,6 +127,7 @@ namespace IBlameYou.Enemies
             if (drawing)
             {
                 drawing = false;
+                Aiming.Remove(this);
                 Release(target);
                 EnemySquash.For(gameObject).Release(); // 쏘는 순간 늘어남
                 recovering = true;
@@ -146,6 +159,7 @@ namespace IBlameYou.Enemies
         {
             if (drawing) EnemySquash.For(gameObject).Cancel(); // 당기다 끊기면 바로 펴기
             drawing = recovering = false;
+            Aiming.Remove(this);
             nextShotTime = Time.time + Stats.AttackInterval;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }
