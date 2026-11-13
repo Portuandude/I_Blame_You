@@ -67,7 +67,7 @@ namespace IBlameYou.UI
         private float pulseStart;
 
         // 작은 지도 미끄러짐 (2026-11-13 작은 지도 다듬기): 방을 옮기면 칸들이 뚝 바뀌지 않고 SlideTime 동안 새 방 쪽으로 스르륵 밀려 온다.
-        // 두 칸 넘게 떨어진 곳으로 옮겼으면(이어 하기 등) 미끄러지지 않고 바로 바뀐다.
+        // 한 칸 넘게 떨어진 곳으로 옮겼으면(이어 하기 등) 미끄러지지 않고 바로 바뀐다.
         private const float SlideTime = 0.25f;
         private int slideFromRoom = -1;
         private int lastRoom = -1;
@@ -327,7 +327,7 @@ namespace IBlameYou.UI
                 {
                     float x0 = at.x - s - grow + k * (2f * s + grow * 2f) / steps;
                     float half = (s + grow) * (1f - (float)k / steps);
-                    Fill(new Rect(x0, at.y - half, (2f * s + grow * 2f) / steps + 0.5f, half * 2f), c);
+                    Fill(new Rect(x0, at.y - half, (2f * s + grow * 2f) / steps, half * 2f), c);
                 }
             }
             GUI.matrix = previous;
@@ -341,7 +341,7 @@ namespace IBlameYou.UI
             if (t >= 1f || t < 0f) return Vector2.zero;
             var from = layout.Rooms[slideFromRoom];
             int dx = current.X - from.X, dy = current.Y - from.Y;
-            if (Mathf.Abs(dx) > 2 || Mathf.Abs(dy) > 2) return Vector2.zero;
+            if (Mathf.Abs(dx) > 1 || Mathf.Abs(dy) > 1) return Vector2.zero; // 한 칸 넓게만 그리므로 더 멀면 빈 줄이 보인다
             float left = (1f - t) * (1f - t); // ease-out: 남은 거리
             // 처음엔 이전 방이 가운데에 있다: x는 오른쪽으로 dx칸, y는 GUI가 아래로라 위로 dy칸 밀려 있던 셈
             return new Vector2(dx * SmallCell, -dy * SmallCell) * left;
