@@ -183,7 +183,7 @@ namespace IBlameYou.Enemies
         private void End()
         {
             RemoveDashLine();
-            if (phase == Phase.Windup) EnemySquash.For(gameObject).Release(); // 예고 중에 끊기면 웅크림을 푼다
+            if (phase == Phase.Windup) EnemySquash.For(gameObject).Cancel(); // 예고 중에 끊기면 웅크림을 바로 푼다
             phase = Phase.None;
             slime.Suspended = false;
             nextTime = Time.time + Cooldown / Mathf.Max(0.1f, stats.AttackSpeedMultiplier);
