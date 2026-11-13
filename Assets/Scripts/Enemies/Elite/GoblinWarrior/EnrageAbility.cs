@@ -34,6 +34,12 @@ namespace IBlameYou.Enemies
         // false면 몸 색을 건드리지 않는다 (색을 따로 관리하는 몹).
         public bool TintsBody { get; set; } = true;
 
+        // false면 처음 켜질 때 EnrageFx(김·잔상·헉헉 연출)를 붙이지 않는다 (연출을 따로 하는 몹: 쌍둥이 슬라임 기사).
+        public bool OwnFx { get; set; } = true;
+
+        // 풀리기 이만큼 전부터 붉은 깜빡임이 빨라진다 (곧 풀린다는 예고).
+        public const float EndingWarnSeconds = 3f;
+
         // 바로 광폭화한다 (마나와 상관없이, 한 번만).
         public void Trigger()
         {
@@ -71,7 +77,11 @@ namespace IBlameYou.Enemies
 
             remaining -= Time.deltaTime;
             health.Drain(healthDrainPerSecond * Time.deltaTime);
-            if (TintsBody && visual != null) visual.color = Color.Lerp(Color.white, new Color(1f, 0.4f, 0.4f), 0.5f + 0.5f * Mathf.Sin(Time.time * 10f));
+            if (TintsBody && visual != null)
+            {
+                float speed = remaining <= EndingWarnSeconds ? 22f : 10f;
+                visual.color = Color.Lerp(Color.white, new Color(1f, 0.4f, 0.4f), 0.5f + 0.5f * Mathf.Sin(Time.time * speed));
+            }
 
             if (remaining <= 0f) End();
         }
@@ -86,6 +96,13 @@ namespace IBlameYou.Enemies
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.8f, "광폭화!", new Color(1f, 0.3f, 0.2f), 1.3f);
             GameAudio.PlaySfx("Enrage", 0.9f); // 낮게 으르렁 올라가는 소리 (Tools/AudioGen)
             CameraFollow.ShakeMain(0.25f, 0.12f);
+
+            if (OwnFx)
+            {
+                var fx = GetComponent<EnrageFx>();
+                if (fx == null) fx = gameObject.AddComponent<EnrageFx>();
+                fx.OnBegin();
+            }
         }
 
         private void End()

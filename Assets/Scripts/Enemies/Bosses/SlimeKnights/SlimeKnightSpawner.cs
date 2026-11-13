@@ -59,6 +59,7 @@ namespace IBlameYou.Enemies
 
             var enrage = go.AddComponent<EnrageAbility>();
             enrage.AutoTrigger = false;
+            enrage.OwnFx = false;     // 광폭화 연출은 SlimeKnight가 따로 한다 (KnightEnrageFx)
             enrage.TintsBody = false; // 몸 색은 SlimeKnight가 ElementRecolor.Tint로 준다
             enrage.Configure(0.4f, 2f, 12f);
 

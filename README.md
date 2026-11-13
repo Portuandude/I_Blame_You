@@ -103,7 +103,7 @@ Assets/
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
       Common/GoblinArcher/    # GoblinArcherController(거리 유지 + 화살), GoblinArcherSpawner
       Elite/MotherSlime/      # 어미 슬라임(사망 시 슬라임 3기로 분열)
-      Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화)
+      Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화) + EnrageFx(광폭화 연출: 켜질 때 히트스톱·붉은 고리, 붉은 김·잔상, 끝나기 3초 전 빠른 깜빡임, 풀리면 회색 김·"헉헉…"·EnrageEnd)
       Bosses/                 # BossEvents(보스 체력바 값)
       Bosses/SlimeKing/       # 스테이지 1 보스: SlimeKingController(패턴 6개·페이즈 2개), SlimeKingSpawner, SlimeBrood(소환 무리·합체), SlimeKingTentacle, SlimeKingCrown
     Systems/
