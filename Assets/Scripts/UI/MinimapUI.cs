@@ -34,6 +34,7 @@ namespace IBlameYou.UI
         private static readonly Color VillageColor = new Color(1f, 0.63f, 0.48f);   // 살구색 (NPC 마을, #ffa07a)
 
         private ChunkStreamer streamer;
+        public ChunkStreamer Streamer => streamer; // 일시정지 창 탐험 줄 (SkillHUD.Pause.cs)
         private PlayerControlState control;
         private GameObject playerObject;
         private PlayerRelics relics; // 탐험가의 나침반 확인용 (늦게 붙을 수 있어 처음 쓸 때 찾는다)

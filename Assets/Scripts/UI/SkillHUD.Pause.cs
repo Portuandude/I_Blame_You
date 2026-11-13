@@ -148,6 +148,7 @@ namespace IBlameYou.UI
             text.Append($"<b>이번 런</b>  레벨 {RunLevel} · {SaveData.FormatTime(RunElapsed)} · <color=#ffd84d>골드 {RunStats.Gold}</color>\n");
             if (mana != null) // 지금까지 날린 마나와 지금 판정 (결과 창 "누구 탓?" 미리보기, Chunks/BlameVerdict)
                 text.Append(BlameVerdict.Running(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB))).Append('\n');
+            AppendExploreLine(text);
             text.Append("\n<b>특성</b>\n");
             if (progression != null)
             {
@@ -190,6 +191,20 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(textX, y, textWidth, lineHeight), line, small);
                 y += Mathf.Max(lineHeight, RelicListIconSize + 2f) + 2f;
             }
+        }
+
+        // 탐험 줄: "방 N/M 탐험 · 마을 찾음/아직" (방 격자 스테이지만, 마을이 없는 스테이지면 방 수만). 모든 방을 가 봤으면 금색.
+        private void AppendExploreLine(System.Text.StringBuilder text)
+        {
+            if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
+            var streamer = pauseMap != null ? pauseMap.Streamer : null;
+            if (streamer == null || !streamer.IsRoomMode) return;
+            int total = streamer.Rooms.Rooms.Count;
+            int seen = Mathf.Min(streamer.VisitedCount, total);
+            string rooms = seen >= total ? $"<color=#ffd84d>방 {seen}/{total} 탐험</color>" : $"방 {seen}/{total} 탐험";
+            var village = streamer.VillageFound;
+            string villageText = village == null ? "" : village.Value ? " · <color=#ffa07a>마을 찾음</color>" : " · 마을 아직";
+            text.Append(rooms).Append(villageText).Append('\n');
         }
 
         private float PauseVolumeSlider(Rect rect, string name, float value)
