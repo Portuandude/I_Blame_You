@@ -28,6 +28,29 @@ namespace IBlameYou.Systems
         private bool taken;
         private PlayerMovement touching; // 지금 상자에 닿아 있는 플레이어 (잠든 Rigidbody는 Stay 콜백이 멈추므로 Update에서 다시 묻는다)
 
+        // 떨어지는 등장 (보상 연출, 2026-11-13): 방금 나온 상자는 그림만 DropHeight 위에서 떨어져 "쿵" 착지하고 납작하게 눌렸다 돌아온다.
+        // 판정(트리거)은 처음부터 바닥에 있어 떨어지는 중에 닿아도 바로 열린다.
+        private const float DropHeight = 3f;
+        private const float DropTime = 0.32f;
+        private const float LandSquashTime = 0.22f;
+        private const float LandSquash = 0.22f; // 착지 순간 세로 -22%
+        private Transform visual;
+        private float dropElapsed = -1f; // 0 이상이면 떨어지거나 눌리는 중
+
+        // 들썩임 (보상 연출, 2026-11-13): 열지 않은 상자에 플레이어가 NearRadius 안으로 오면 HopInterval마다 살짝 뛰며 좌우로 기우뚱.
+        private const float NearRadius = 2.5f;
+        private const float NearCheckInterval = 0.2f;
+        private const float HopInterval = 1.1f;
+        private const float HopTime = 0.28f;
+        private const float HopHeight = 0.16f;
+        private const float HopTilt = 7f; // 도
+        private float nearCheckTimer;
+        private bool playerNear;
+        private float hopTimer = 0.35f; // 가까이 오고 조금 뒤 첫 들썩
+        private float hopElapsed = -1f; // 0 이상이면 뛰는 중
+        private float hopSide = 1f;
+        private static readonly Collider2D[] NearHits = new Collider2D[8];
+
         // position: 상자가 놓일 바닥 위 가운데 (월드). dropped: 방금 나온 것이면 등장 이펙트를 보여준다.
         public static RelicChest Create(Transform parent, Vector2 position, int seed, int chunkIndex, bool dropped, Action onTaken)
         {
@@ -49,9 +72,14 @@ namespace IBlameYou.Systems
                 new Color(0.95f, 0.75f, 0.3f), 0.8f, 3);
             visual.transform.localPosition = new Vector3(0f, VisualHeight, 0f);
             visual.transform.localScale = new Vector3(VisualScale, VisualScale, 1f);
+            chest.visual = visual.transform;
             VfxPlayer.AttachSparkle(go.transform, VisualHeight + 0.3f); // 열기 전까지 반짝임 (Take에서 상자째 사라짐)
 
-            if (dropped) EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * VisualHeight, 1.4f);
+            if (dropped)
+            {
+                chest.dropElapsed = 0f;
+                visual.transform.localPosition = new Vector3(0f, VisualHeight + DropHeight, 0f);
+            }
             return chest;
         }
 
@@ -85,7 +113,104 @@ namespace IBlameYou.Systems
         // 영창 중처럼 열 수 없었던 경우, 닿아 있는 동안 매 프레임 다시 묻는다.
         private void Update()
         {
+            UpdateDrop();
+            UpdateHop();
             if (touching != null) TryOpen(touching);
+        }
+
+        private void UpdateHop()
+        {
+            if (visual == null || taken || dropElapsed >= 0f) return;
+
+            nearCheckTimer -= Time.deltaTime;
+            if (nearCheckTimer <= 0f)
+            {
+                nearCheckTimer = NearCheckInterval;
+                playerNear = false;
+                var filter = new ContactFilter2D();
+                filter.NoFilter();
+                int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층만 (바닥 칸이 버퍼를 채우지 않게, ArenaReward와 같음)
+                if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
+                int count = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.up * VisualHeight, NearRadius, filter, NearHits);
+                for (int i = 0; i < count; i++)
+                {
+                    var player = TrapCommon.PlayerFrom(NearHits[i]);
+                    if (player == null) continue;
+                    var health = player.GetComponent<HealthSystem>();
+                    if (health != null && health.IsDead) continue;
+                    playerNear = true;
+                    break;
+                }
+            }
+
+            if (hopElapsed >= 0f)
+            {
+                hopElapsed += Time.deltaTime;
+                float k = Mathf.Clamp01(hopElapsed / HopTime);
+                float lift = Mathf.Sin(k * Mathf.PI); // 올라갔다 내려온다
+                visual.localPosition = new Vector3(0f, VisualHeight + HopHeight * lift, 0f);
+                visual.localRotation = Quaternion.Euler(0f, 0f, HopTilt * hopSide * lift);
+                if (k >= 1f)
+                {
+                    hopElapsed = -1f;
+                    visual.localPosition = new Vector3(0f, VisualHeight, 0f);
+                    visual.localRotation = Quaternion.identity;
+                }
+                return;
+            }
+
+            if (!playerNear || waiting)
+            {
+                hopTimer = 0.35f;
+                return;
+            }
+
+            hopTimer -= Time.deltaTime;
+            if (hopTimer > 0f) return;
+            hopTimer = HopInterval;
+            hopElapsed = 0f;
+            hopSide = -hopSide; // 번갈아 반대쪽으로 기우뚱
+        }
+
+        private void UpdateDrop()
+        {
+            if (dropElapsed < 0f || visual == null) return;
+            float before = dropElapsed;
+            dropElapsed += Time.deltaTime;
+
+            if (dropElapsed < DropTime)
+            {
+                float t = dropElapsed / DropTime;
+                visual.localPosition = new Vector3(0f, VisualHeight + DropHeight * (1f - t * t), 0f); // 점점 빨라지며 떨어진다
+                return;
+            }
+
+            if (before < DropTime) Land();
+
+            float k = (dropElapsed - DropTime) / LandSquashTime;
+            if (k >= 1f)
+            {
+                dropElapsed = -1f;
+                visual.localPosition = new Vector3(0f, VisualHeight, 0f);
+                visual.localScale = new Vector3(VisualScale, VisualScale, 1f);
+                return;
+            }
+
+            float squash = LandSquash * (1f - k) * (1f - k); // 눌렸다가 부드럽게 돌아온다
+            float sy = 1f - squash;
+            float sx = 1f + squash * 0.6f;
+            // 그림 아래 끝(바닥)이 그대로 있게 가운데를 내린다 (그림 가운데가 바닥 위 VisualHeight = 반 높이)
+            visual.localPosition = new Vector3(0f, VisualHeight - VisualHeight * (1f - sy), 0f);
+            visual.localScale = new Vector3(VisualScale * sx, VisualScale * sy, 1f);
+        }
+
+        private void Land()
+        {
+            var feet = transform.position;
+            VfxPlayer.Dust(feet, 1f);
+            EffectLibrary.PlayHit(Element.Neutral, feet + Vector3.up * VisualHeight, 1.4f); // 예전 등장 터짐은 착지 순간으로
+            GameAudio.PlaySfx("ChestLand", 0.75f);
+            CameraFollow.ShakeMain(0.1f, 0.06f);
         }
 
         private void TryOpen(PlayerMovement player)
@@ -126,6 +251,7 @@ namespace IBlameYou.Systems
         private void Take()
         {
             taken = true;
+            if (dropElapsed >= 0f && dropElapsed < DropTime) Land(); // 떨어지는 중에 열면 바닥에 내려놓고 착지 연출부터
             var center = transform.position + Vector3.up * VisualHeight;
             if (!VfxPlayer.ChestOpen(center, VisualScale)) EffectLibrary.PlayHit(Element.Neutral, center, 1.4f); // 열기 그림이 없으면 예전 터짐
             CameraFollow.ShakeMain(0.12f, 0.08f);

@@ -2,6 +2,17 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 00:18 자동 실행이 추가 — 적 등장·보상 연출)
+
+DIRECTION ① "플레이 감각 다듬기" 중 사람 선택이 필요 없는 연출만. 수치·배치(시드 지형)는 그대로 둔다.
+
+- DONE (claude/project-thread-z4fuxu): 전투 구역에서 소환되는 적이 "뿅" 하고 길게 늘어났다가 제 모양으로 (`EnemySquash.Spawn`, 그림만)
+- DONE (claude/project-thread-z4fuxu): 유물 상자가 위에서 떨어져 "쿵" 착지 (떨어지는 동안·눌림 그림만, 판정은 바로 바닥) + 먼지 + 새 효과음 `ChestLand`
+- DONE (claude/project-thread-z4fuxu): 열지 않은 유물 상자에 가까이 가면 상자가 들썩들썩 (그림만, 2.5칸 안)
+- DONE (claude/project-thread-z4fuxu): 회복 구슬이 나올 때 작게 시작해 통통 커지며 나타남 (그림만)
+- DONE (claude/project-thread-z4fuxu): 상자에서 나온 장비가 튀어 올라 한 바퀴 돌며 떨어지고 "톡" (그림만)
+- DONE (claude/project-thread-z4fuxu): 전투 구역 소환 자리에 붉은 타원 예고, 그 적이 나오면 사라짐
+
 
 
 ## 다음 (2026-11-13 00:15 자동 실행이 추가 — 전투 구역 연출)

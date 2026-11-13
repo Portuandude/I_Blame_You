@@ -125,8 +125,15 @@ namespace IBlameYou.Systems
                 StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
             }
 
-            foreach (var spawn in spawns)
+            // 소환 자리 예고 (적 등장 연출, 2026-11-13): 문이 닫히면 보스가 아닌 적이 나올 바닥마다 붉은 타원이 깜빡이다가, 그 적이 나오면 사라진다.
+            var marks = new List<SpriteRenderer>(spawns.Count);
+            foreach (var spawn in spawns) marks.Add(IsBoss(spawn) ? null : CreateSpawnMark(spawn.Position));
+            StartCoroutine(PulseSpawnMarks(marks));
+
+            for (int i = 0; i < spawns.Count; i++)
             {
+                var spawn = spawns[i];
+                if (marks[i] != null) Destroy(marks[i].gameObject);
                 bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
                 if (!dropsIn)
                 {
@@ -134,7 +141,10 @@ namespace IBlameYou.Systems
                     GameAudio.PlaySfx("Summon", 0.6f); // 붉은 연기 속에서 "뿅"
                 }
                 pendingSpawns--;
-                RegisterEnemy(spawnEnemy(spawn.Kind, spawn.Position, transform));
+                var spawned = spawnEnemy(spawn.Kind, spawn.Position, transform);
+                RegisterEnemy(spawned);
+                // 연기 속에서 길쭉하게 "뿅" 솟았다가 제 모양으로 (그림만, 판정·발 위치 그대로)
+                if (!dropsIn && spawned != null) IBlameYou.Enemies.EnemySquash.For(spawned.gameObject).Spawn();
                 yield return new WaitForSeconds(SpawnInterval);
             }
 
@@ -165,6 +175,44 @@ namespace IBlameYou.Systems
             StageEvents.PostNotice(ClearNotice(Time.time - lockedAt));
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
+        }
+
+        private static readonly Color SpawnMarkColor = new Color(1f, 0.3f, 0.35f);
+        private const float SpawnMarkWidth = 1.3f;
+        private const float SpawnMarkHeight = 0.32f;
+
+        // position: 적이 만들어질 자리 (바닥 + SpawnLift). 땅 그림 위, 캐릭터 뒤에 납작한 타원.
+        private SpriteRenderer CreateSpawnMark(Vector3 position)
+        {
+            var go = new GameObject("SpawnMark");
+            go.transform.SetParent(transform, true);
+            go.transform.position = new Vector3(position.x, position.y - ChunkStreamer.SpawnLift + 0.05f, 0f); // 적은 바닥에서 SpawnLift 위에 만들어진다
+            go.transform.localScale = new Vector3(SpawnMarkWidth, SpawnMarkHeight, 1f);
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = SolidSpriteFactory.CreateCircle();
+            renderer.color = new Color(SpawnMarkColor.r, SpawnMarkColor.g, SpawnMarkColor.b, 0.5f);
+            renderer.sortingOrder = -1; // 땅 그림(-3 이하) 위, 발판·캐릭터(0 이상) 뒤 (착지 먼지와 같은 층)
+            return renderer;
+        }
+
+        // 남은 예고 타원이 0.3~0.75 사이로 빠르게 깜빡이며 살짝 커졌다 줄었다 한다. 다 사라지면 끝.
+        private IEnumerator PulseSpawnMarks(List<SpriteRenderer> marks)
+        {
+            while (true)
+            {
+                bool any = false;
+                float wave = 0.5f + 0.5f * Mathf.Sin(Time.time * 14f);
+                foreach (var mark in marks)
+                {
+                    if (mark == null) continue;
+                    any = true;
+                    mark.color = new Color(SpawnMarkColor.r, SpawnMarkColor.g, SpawnMarkColor.b, Mathf.Lerp(0.3f, 0.75f, wave));
+                    float s = Mathf.Lerp(0.9f, 1.05f, wave);
+                    mark.transform.localScale = new Vector3(SpawnMarkWidth * s, SpawnMarkHeight * s, 1f);
+                }
+                if (!any) yield break;
+                yield return null;
+            }
         }
 
         private void CreateGate(float x)

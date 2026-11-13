@@ -43,6 +43,11 @@ namespace IBlameYou.Systems
         private float magnetRelicTimer;
         private SpriteRenderer orbRenderer;
         private float trailTimer;
+        // 등장 (보상 연출, 2026-11-13): 방금 나온 구슬은 그림이 AppearStart배에서 통통하게 조금 넘쳤다가(1.15배) 제 크기로.
+        private const float AppearTime = 0.35f;
+        private const float AppearStart = 0.1f;
+        private Vector3 visualBaseScale;
+        private float appearElapsed = -1f; // 0 이상이면 커지는 중
         // 자석 꼬리: 끌려오는 동안 구슬 뒤로 분홍 잔상이 짧게 남는다 (Afterimage, 빨라졌을 때만)
         private const float TrailInterval = 0.05f;
         private const float TrailMinSpeed = 3f;
@@ -82,7 +87,13 @@ namespace IBlameYou.Systems
             reward.honeyRim.sortingOrder = 2; // 구슬(3) 뒤
             reward.honeyRim.enabled = AnyPlayerHasHoney();
 
-            if (dropped) EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * FloatHeight, 1.2f);
+            if (dropped)
+            {
+                EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * FloatHeight, 1.2f);
+                reward.visualBaseScale = reward.visual.localScale;
+                reward.appearElapsed = 0f;
+                reward.visual.localScale = reward.visualBaseScale * AppearStart;
+            }
             return reward;
         }
 
@@ -105,8 +116,25 @@ namespace IBlameYou.Systems
             if (visual == null) return;
             float y = FloatHeight + Mathf.Sin((Time.time + phase) * BobSpeed) * BobAmplitude;
             visual.localPosition = new Vector3(0f, y, 0f);
+            UpdateAppear();
             UpdateHoneyRim();
             UpdateMagnet();
+        }
+
+        private void UpdateAppear()
+        {
+            if (appearElapsed < 0f) return;
+            appearElapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(appearElapsed / AppearTime);
+            // 0.1 → 1.15 (t=0.6) → 1: 앞 60%는 빠르게 부풀고, 뒤 40%는 살짝 줄어들며 자리 잡는다
+            float k = t < 0.6f ? Mathf.Lerp(AppearStart, 1.15f, 1f - (1f - t / 0.6f) * (1f - t / 0.6f))
+                               : Mathf.Lerp(1.15f, 1f, (t - 0.6f) / 0.4f);
+            visual.localScale = visualBaseScale * k;
+            if (t >= 1f)
+            {
+                visual.localScale = visualBaseScale;
+                appearElapsed = -1f;
+            }
         }
 
         // 가까이 온 플레이어 쪽으로 구슬(트리거째)이 빨라지며 끌려온다. 닿으면 OnTriggerEnter2D로 줍는다.

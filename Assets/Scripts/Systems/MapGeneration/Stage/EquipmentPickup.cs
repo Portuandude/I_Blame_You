@@ -23,6 +23,12 @@ namespace IBlameYou.Systems
         private bool askedWhileTouching; // 두고 가기를 골랐으면 떨어졌다가 다시 닿을 때까지 묻지 않는다
         private bool gone;
 
+        // 튀어나오는 등장 (보상 연출, 2026-11-13): 방금 나온 장비는 아이콘이 PopHeight만큼 솟았다가 한 바퀴 돌며 제자리로 떨어지고 "톡".
+        // 판정(트리거)은 처음부터 바닥에 있다.
+        private const float PopHeight = 1.6f;
+        private const float PopTime = 0.45f;
+        private float popElapsed = -1f; // 0 이상이면 튀어나오는 중
+
         public static EquipmentPickup Create(Transform parent, Vector2 position, EquipmentItem item, bool dropped, Action<EquipmentItem> onChanged)
         {
             var go = new GameObject("EquipmentPickup");
@@ -43,7 +49,11 @@ namespace IBlameYou.Systems
             pickup.icon.sortingOrder = 3;
             pickup.SetItem(item);
             VfxPlayer.AttachSparkle(go.transform, IconHeight + 0.3f);
-            if (dropped) EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * IconHeight, 1f);
+            if (dropped)
+            {
+                EffectLibrary.PlayHit(Element.Neutral, go.transform.position + Vector3.up * IconHeight, 1f);
+                pickup.popElapsed = 0f;
+            }
             return pickup;
         }
 
@@ -69,10 +79,28 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 위아래로 살짝 떠 있는다
+        // 위아래로 살짝 떠 있는다 (방금 나왔으면 먼저 튀어 올랐다 떨어진다)
         private void LateUpdate()
         {
-            if (icon != null) icon.transform.localPosition = new Vector3(0f, IconHeight + Mathf.Sin(Time.time * 2.5f) * 0.08f, 0f);
+            if (icon != null)
+            {
+                float bob = Mathf.Sin(Time.time * 2.5f) * 0.08f;
+                if (popElapsed >= 0f)
+                {
+                    popElapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(popElapsed / PopTime);
+                    // 4t(1-t): 처음과 끝은 0, 가운데서 PopHeight. 끝에 둥실 높이(bob)로 이어지게 t만큼 섞는다
+                    icon.transform.localPosition = new Vector3(0f, IconHeight + PopHeight * 4f * t * (1f - t) + bob * t, 0f);
+                    icon.transform.localRotation = Quaternion.Euler(0f, 0f, 360f * t);
+                    if (t >= 1f)
+                    {
+                        popElapsed = -1f;
+                        icon.transform.localRotation = Quaternion.identity;
+                        GameAudio.PlaySfx("Land", 0.35f, 0.1f); // 바닥에 톡
+                    }
+                }
+                else icon.transform.localPosition = new Vector3(0f, IconHeight + bob, 0f);
+            }
             if (touching != null) TryOpen(touching);
         }
 

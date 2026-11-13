@@ -583,6 +583,21 @@ def summon():
     return normalize(fade_edges(lowpass(out + puff, 4500)))
 
 
+def chest_land():
+    """유물 상자 착지: 묵직한 나무 "쿵" (낮은 사인 낙하 + 나무 판 울림) + 안에서 짤랑 (높은 종 두 개, 작게), 약 0.45초."""
+    n = int(0.45 * SR)
+    t = np.arange(n) / SR
+    thud = osc("sine", 120 * np.exp(-t * 14) + 50, n) * env_exp(n, 0.09)
+    wood = bandpass(noise(n), 250, 1200) * env_exp(n, 0.035) * 0.5
+    knock = osc("tri", 210 * np.exp(-t * 6) + 140, n) * env_exp(n, 0.05) * 0.3
+    out = thud + wood + knock
+    for at, f in ((0.06, 2350.0), (0.11, 3140.0)):  # 상자 안 동전·보석 짤랑
+        s0 = int(at * SR)
+        m = n - s0
+        out[s0:] += osc("sine", f, m) * env_exp(m, 0.08) * 0.16
+    return normalize(fade_edges(lowpass(out, 6000)))
+
+
 def heartbeat():
     """체력 30% 이하 경고: 부드러운 심장 "두-근" (낮은 사인 쿵 두 개, 0.13초 간격), 0.36초. 맥동마다 나므로 작고 둥글게."""
     n = int(0.36 * SR)
@@ -1183,7 +1198,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat, "Summon": summon, "ChestLand": chest_land,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
