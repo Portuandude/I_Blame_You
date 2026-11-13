@@ -233,6 +233,8 @@ namespace IBlameYou.Enemies
             }
 
             phaseTimeRemaining -= Time.deltaTime;
+            if (phase == AttackPhase.Windup && landMark == null) // 기사 기술로 잠시 지워졌다가 다시 웅크리는 중이면 되살린다 (리뷰 LOW)
+                landMark = LandingMarkFx.Create(gameObject, BodyBounds.size.x * 1.3f);
             if (phase == AttackPhase.Windup && landMark != null)
                 PlaceLandMark(PredictLandingX(target), 1f - Mathf.Clamp01(phaseTimeRemaining / WindupTime)); // 웅크릴수록 진해진다
             if (phaseTimeRemaining > 0f) return;
