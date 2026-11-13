@@ -176,7 +176,7 @@ namespace IBlameYou.UI
                         new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
-                bool chosen = GUI.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);
+                bool chosen = CuteButton.Button(new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f), "고르기", cardButton);
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {

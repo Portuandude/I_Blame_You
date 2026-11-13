@@ -238,7 +238,7 @@ namespace IBlameYou.UI
                 int cost = VillagePrice.Apply(food.Price, rate);
                 string price = check == FoodBuyCheck.NotEnoughGold ? $"<color=#ff6b6b>{cost} G</color>" : $"{cost} G";
                 if (cost < food.Price) price += " <size=11><color=#7dff8a>도장</color></size>"; // 단골 도장 할인
-                if (GUI.Button(buy, price, new GUIStyle(cardButton) { richText = true })) BuyFood(food);
+                if (CuteButton.Button(buy, price, new GUIStyle(cardButton) { richText = true })) BuyFood(food);
                 GUI.enabled = wasEnabled;
                 y += rowHeight;
             }
@@ -246,7 +246,7 @@ namespace IBlameYou.UI
             if (!string.IsNullOrEmpty(villageMessage))
                 GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage,
                     new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
-            if (GUI.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
+            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
             GUI.matrix = previousMatrix;
         }
     }

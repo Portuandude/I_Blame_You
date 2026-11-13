@@ -143,7 +143,7 @@ namespace IBlameYou.UI
                     GUI.enabled = shop.CanBuy(i, current, gold, rate);
                     string price = current != null ? $"{cost} G <size=11>(-{current.SellPrice})</size>" : $"{cost} G";
                     if (cost < EquipmentShop.NetCost(item, current)) price += " <size=11><color=#7dff8a>도장</color></size>"; // 단골 도장 할인 (식당과 같은 표시)
-                    if (GUI.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), price, buttonRich)) BuyEquipment(shop, i);
+                    if (CuteButton.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), price, buttonRich)) BuyEquipment(shop, i);
                     GUI.enabled = wasEnabled;
                 }
                 else
@@ -167,11 +167,11 @@ namespace IBlameYou.UI
                 else
                 {
                     DrawShopItem(row, "", item, labelRich, smallRich);
-                    if (GUI.Button(new Rect(row.xMax - 250f, row.y + 6f, 110f, row.height - 12f), $"팔기 +{item.SellPrice}", buttonRich))
+                    if (CuteButton.Button(new Rect(row.xMax - 250f, row.y + 6f, 110f, row.height - 12f), $"팔기 +{item.SellPrice}", buttonRich))
                         SellEquipment(slot);
                     bool wasEnabled = GUI.enabled;
                     GUI.enabled = EquipmentShop.CanReroll(item, gold);
-                    if (GUI.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), $"바꾸기 {item.RerollCost} G", buttonRich))
+                    if (CuteButton.Button(new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f), $"바꾸기 {item.RerollCost} G", buttonRich))
                         RerollEquipment(shop, slot);
                     GUI.enabled = wasEnabled;
                 }
@@ -180,7 +180,7 @@ namespace IBlameYou.UI
 
             if (!string.IsNullOrEmpty(villageMessage))
                 GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage, new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
-            if (GUI.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
+            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
             GUI.matrix = previousMatrix;
         }
 
