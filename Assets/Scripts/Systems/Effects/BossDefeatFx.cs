@@ -36,7 +36,7 @@ namespace IBlameYou.Systems
                 EffectLibrary.PlayOneShot(position, frames, 14f, Color.clear, 0f, false, BurstScale, sortingOrder: 8);
             VfxPlayer.DeathPop(position, 2f);
             if (!string.IsNullOrEmpty(bossName)) VfxPlayer.RelicBanner(position + Vector3.up * BannerHeight, $"{bossName} 격파!");
-            GameAudio.PlaySfx("LevelUp", 0.8f);
+            GameAudio.PlaySfx("BossDefeat", 0.9f, 0f); // 격파 전용 "쾅" + 반짝 아르페지오 (Tools/AudioGen BossDefeat)
         }
 
         private float Elapsed => Time.unscaledTime - startTime;
