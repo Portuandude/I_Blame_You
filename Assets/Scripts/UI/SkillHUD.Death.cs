@@ -8,6 +8,7 @@ namespace IBlameYou.UI
     // 1) 쓰러진 순간 슬로모션 (시간 0.25배, 실제 시간 1.2초 뒤 정상 속도로 복귀)
     // 2) 캐릭터가 회색으로 바래며 반투명해짐
     // 3) 쓰러진 캐릭터 둘레만 동그랗게 남기고 화면이 서서히 어두워지며(원이 좁아짐) 그 뒤 게임오버 창이 떠오름. 창이 다 뜨기 전에는 R/M이 먹지 않는다 (연타로 바로 넘어가지 않게).
+    // 6) 캐릭터 그림(Visual)이 살짝 튀어 올랐다가 뒤로 넘어가 옆으로 눕는다. 그림만 돌리고 충돌체는 그대로 (PlayerSquash는 끈다)
     // 5) 몸에서 크림색 영혼 별이 좌우로 흔들리며 떠올라 사라진다 (어둠 위, 게임오버 창 뒤)
     // 0) 쓰러진 순간 화면이 하얗게 번쩍(0.15초)하고 카메라가 짧게 흔들린다
     // 4) 쓰러짐 소리 PlayerDown (Tools/AudioGen), 음악은 테이프처럼 느려지며(빠르기 0.6) 먹먹해진다. 게임오버 징글 때 꺼진다 (SkillHUD.EndScreen.cs)
@@ -26,6 +27,11 @@ namespace IBlameYou.UI
         private const float SoulDuration = 1.5f;
         private const float SoulRise = 90f;             // 떠오르는 높이 (화면 픽셀)
         private const float SoulSize = 22f;
+        private const float FallHopHeight = 0.35f;      // 튀어 오르는 높이 (월드 단위)
+        private const float FallHopTime = 0.45f;        // 실제 시간
+        private const float FallTurnStart = 0.08f;
+        private const float FallTurnTime = 0.42f;
+        private const float FallAngle = 90f;            // 양수 = 뒤로 (HitStun 젖히기와 같은 쪽, 루트 좌우 반전이 방향도 뒤집는다)
         private static readonly Color SoulColor = new Color(1f, 0.96f, 0.84f); // palette.py cream
         private const float GameOverDelay = 1.4f;       // 쓰러지고 게임오버 창이 뜨기 시작할 때까지
         private const float GameOverFadeIn = 0.4f;
@@ -42,6 +48,9 @@ namespace IBlameYou.UI
         private bool deathSlowMotion;
         private SpriteRenderer deathVisual;
         private Color deathVisualStart = Color.white;
+        private Transform fallVisual;      // 눕힐 그림 (Visual 자식, 없으면 눕히지 않음)
+        private Vector3 fallStartPosition;
+        private Vector3 fallLyingPosition; // 다 누웠을 때 발 높이에 몸 옆면이 닿는 위치
 
         private static Texture2D deathSpotTexture; // 가운데가 뚫린 둥근 어둠 (런타임에 한 번 만든다)
 
@@ -58,6 +67,7 @@ namespace IBlameYou.UI
 
             deathVisual = health.GetComponentInChildren<SpriteRenderer>();
             if (deathVisual != null) deathVisualStart = deathVisual.color;
+            BeginFall();
             CameraFollow.ShakeMain(DeathShakeTime, DeathShakeMagnitude);
             GameAudio.PlaySfx("PlayerDown", 0.85f, 0f);
             GameAudio.SetMusicPitch(DeathMusicPitch); // 다음 곡을 틀면 1로 돌아간다
@@ -73,6 +83,42 @@ namespace IBlameYou.UI
 
             if (deathVisual != null)
                 deathVisual.color = Color.Lerp(deathVisualStart, DeadTint, Mathf.Clamp01(elapsed / DeathTintDuration));
+            UpdateFall(elapsed);
+        }
+
+        private void BeginFall()
+        {
+            fallVisual = health.transform.Find("Visual");
+            if (fallVisual == null) return;
+            var squash = health.GetComponent<IBlameYou.Player.PlayerSquash>();
+            if (squash != null) squash.enabled = false; // 크기·위치를 원래대로 돌려놓고 더는 덮어쓰지 않는다 (OnDisable)
+
+            fallStartPosition = fallVisual.localPosition;
+            fallLyingPosition = fallStartPosition;
+            var sprite = fallVisual.GetComponent<SpriteRenderer>();
+            var movement = health.GetComponent<IBlameYou.Player.PlayerMovement>();
+            if (sprite == null || sprite.sprite == null || movement == null) return;
+
+            // 90도(반시계) 돌리면 그림 안의 점 (x, y)는 (-sy·y, sx·x)로 간다.
+            // 옆면(왼쪽 가장자리)이 발 높이에 닿게 내리고, 누운 몸이 원래 자리 가운데 오게 옆으로 민다.
+            var bounds = sprite.sprite.bounds;
+            var scale = fallVisual.localScale;
+            float sx = Mathf.Abs(scale.x), sy = Mathf.Abs(scale.y);
+            fallLyingPosition = new Vector3(
+                fallStartPosition.x + sy * bounds.center.y,
+                movement.FeetLocalY - sx * (bounds.center.x - bounds.extents.x),
+                fallStartPosition.z);
+        }
+
+        private void UpdateFall(float elapsed)
+        {
+            if (fallVisual == null) return;
+
+            float turn = Mathf.Clamp01((elapsed - FallTurnStart) / FallTurnTime);
+            float eased = 1f - (1f - turn) * (1f - turn) * (1f - turn); // 빨리 넘어가다 끝에서 천천히
+            float hop = elapsed < FallHopTime ? Mathf.Sin(Mathf.PI * elapsed / FallHopTime) * FallHopHeight : 0f;
+            fallVisual.localRotation = Quaternion.Euler(0f, 0f, FallAngle * eased);
+            fallVisual.localPosition = Vector3.Lerp(fallStartPosition, fallLyingPosition, eased) + Vector3.up * hop;
         }
 
         private void EndDeathSlowMotion()
