@@ -69,6 +69,9 @@ namespace IBlameYou.Enemies
         private float nextAttackTime;
         private bool leapPending;
         private Vector2 leapVelocity;
+        private LandingMarkFx landMark; // 도약해 떨어질 땅 예고 (웅크림~공중)
+        private const float LandMarkRayUp = 1f;
+        private const float LandMarkRayLength = 8f;
 
         protected override bool ContactDamageActive => phase == AttackPhase.None;
 
@@ -121,7 +124,11 @@ namespace IBlameYou.Enemies
 
         protected override void OnAliveUpdate()
         {
-            if (Suspended) return;
+            if (Suspended)
+            {
+                RemoveLandMark(); // 기사 기술이 몸을 맡는 동안엔 예고를 지운다
+                return;
+            }
             var target = FindTarget();
             UpdateChaseState(target);
 
@@ -208,6 +215,10 @@ namespace IBlameYou.Enemies
             attackedThisLeap.Clear();
             EnterPhase(AttackPhase.Windup, WindupTime);
             EnemySquash.For(gameObject).Windup(WindupTime); // 웅크렸다가
+            EnemyTelegraph.Windup(this, BodyBounds);
+            RemoveLandMark();
+            landMark = LandingMarkFx.Create(gameObject, BodyBounds.size.x * 1.3f);
+            PlaceLandMark(PredictLandingX(target), 0f);
             if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             return true;
         }
@@ -222,6 +233,10 @@ namespace IBlameYou.Enemies
             }
 
             phaseTimeRemaining -= Time.deltaTime;
+            if (phase == AttackPhase.Windup && landMark == null) // 기사 기술로 잠시 지워졌다가 다시 웅크리는 중이면 되살린다 (리뷰 LOW)
+                landMark = LandingMarkFx.Create(gameObject, BodyBounds.size.x * 1.3f);
+            if (phase == AttackPhase.Windup && landMark != null)
+                PlaceLandMark(PredictLandingX(target), 1f - Mathf.Clamp01(phaseTimeRemaining / WindupTime)); // 웅크릴수록 진해진다
             if (phaseTimeRemaining > 0f) return;
 
             switch (phase)
@@ -232,6 +247,7 @@ namespace IBlameYou.Enemies
                     EnterPhase(AttackPhase.Air, AirTime);
                     break;
                 case AttackPhase.Air:
+                    RemoveLandMark(); // 착지
                     EnterPhase(AttackPhase.Recover, RecoverTime);
                     break;
                 case AttackPhase.Recover:
@@ -252,6 +268,33 @@ namespace IBlameYou.Enemies
 
             leapVelocity = new Vector2(vx, vy);
             leapPending = true;
+            PlaceLandMark(transform.position.x + vx * AirTime, 1f); // 실제로 뛴 속도로 자리를 굳힌다
+        }
+
+        // BeginLeap과 같은 식: 지금 플레이어 위치로 뛰면 떨어질 x.
+        private float PredictLandingX(Transform target)
+        {
+            float dx = target != null ? target.position.x - transform.position.x : facing * attackRange;
+            float vx = Mathf.Clamp(dx / AirTime, -maxLeapSpeed, maxLeapSpeed);
+            return transform.position.x + vx * AirTime;
+        }
+
+        // 떨어질 x 아래의 땅을 찾아 타원을 놓는다. 땅이 없으면(낭떠러지) 숨긴다.
+        private void PlaceLandMark(float x, float strength)
+        {
+            if (landMark == null) return;
+            float feetY = BodyBounds.min.y;
+            var hit = obstacleLayer.value != 0
+                ? Physics2D.Raycast(new Vector2(x, feetY + LandMarkRayUp), Vector2.down, LandMarkRayLength, obstacleLayer)
+                : default;
+            bool hasGround = hit.collider != null && hit.distance > 0f; // 0이면 벽 안에서 시작 → 자리를 믿지 않는다
+            landMark.Place(new Vector2(x, hasGround ? hit.point.y : feetY), strength, hasGround);
+        }
+
+        private void RemoveLandMark()
+        {
+            if (landMark != null) landMark.Remove();
+            landMark = null;
         }
 
         private void ApplyAttackDamage()
@@ -277,6 +320,7 @@ namespace IBlameYou.Enemies
         private void EndAttack(bool startCooldown)
         {
             if (phase == AttackPhase.Windup) EnemySquash.For(gameObject).Cancel(); // 웅크리다 끊기면 바로 펴기
+            RemoveLandMark();
             phase = AttackPhase.None;
             leapPending = false;
             if (startCooldown) nextAttackTime = Time.time + attackCooldown;

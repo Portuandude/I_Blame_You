@@ -15,16 +15,18 @@ namespace IBlameYou.Systems
 
         private SpriteRenderer ring;
         private Color baseColor;
+        private float size = 1f;
         private float age;
 
-        public static void Create(Transform follow, Vector3 localOffset, Color color)
+        public static void Create(Transform follow, Vector3 localOffset, Color color, float size = 1f)
         {
             if (follow == null) return;
             var go = new GameObject("ManaRing");
             go.transform.SetParent(follow, false);
             go.transform.localPosition = localOffset;
-            go.transform.localScale = Vector3.one * StartScale;
+            go.transform.localScale = Vector3.one * StartScale * size;
             var fx = go.AddComponent<ManaRingFx>();
+            fx.size = Mathf.Max(0.1f, size);
             fx.ring = go.AddComponent<SpriteRenderer>();
             fx.ring.sprite = RingSprite();
             fx.ring.sortingOrder = 7;
@@ -37,7 +39,7 @@ namespace IBlameYou.Systems
             age += Time.deltaTime;
             float t = Mathf.Clamp01(age / Lifetime);
             float eased = 1f - (1f - t) * (1f - t); // 처음엔 빠르게 퍼지고 끝에서 느려진다
-            float scale = Mathf.Lerp(StartScale, EndScale, eased);
+            float scale = Mathf.Lerp(StartScale, EndScale, eased) * size;
             // 부모(플레이어)가 좌우로 뒤집혀도 고리는 대칭이라 상관없다. 부모 크기만 상쇄.
             Vector3 parentScale = transform.parent != null ? transform.parent.lossyScale : Vector3.one;
             transform.localScale = new Vector3(scale / Mathf.Max(0.01f, Mathf.Abs(parentScale.x)), scale / Mathf.Max(0.01f, Mathf.Abs(parentScale.y)), 1f);

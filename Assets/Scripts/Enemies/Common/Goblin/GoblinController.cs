@@ -137,6 +137,8 @@ namespace IBlameYou.Enemies
             phase = AttackPhase.Windup;
             phaseTimeRemaining = WindupTime / Stats.AttackSpeedMultiplier;
             EnemySquash.For(gameObject).Windup(phaseTimeRemaining); // 웅크렸다가
+            EnemyTelegraph.Windup(this, BodyBounds);
+            VfxPlayer.AimGlint(SwingCenter() + new Vector2(0f, hitboxSize.y * 0.35f)); // 무기 쪽(판정 자리) 위에 작은 반짝
             if (Animator != null) Animator.SetBool(IsAttackingParam, true);
             return true;
         }
@@ -168,7 +170,7 @@ namespace IBlameYou.Enemies
         private void Swing()
         {
             struck.Clear();
-            Vector2 center = (Vector2)transform.position + new Vector2(facing * hitboxForward, hitboxHeight);
+            Vector2 center = SwingCenter();
             foreach (var hit in Physics2D.OverlapBoxAll(center, hitboxSize, 0f))
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();
@@ -178,6 +180,8 @@ namespace IBlameYou.Enemies
 
             EffectLibrary.PlayOneShot(center, EffectLibrary.SlashFrames, 24f, new Color(1f, 1f, 1f, 0.5f), 0.8f, facing < 0f);
         }
+
+        private Vector2 SwingCenter() => (Vector2)transform.position + new Vector2(facing * hitboxForward, hitboxHeight);
 
         private void EndAttack(bool startCooldown)
         {
