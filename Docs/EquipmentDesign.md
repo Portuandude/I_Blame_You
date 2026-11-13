@@ -133,7 +133,7 @@
 | 든든한 도시락 | 다음 전투 방 하나 동안 받는 피해 -20% | 30 |
 
 - 표는 데이터(순수 C# 배열)로 두고 EditMode 테스트로 가격·효과 범위를 확인한다.
-- 구현 (2026-11-12): `Player/Equipment/Data/VillageFood.cs`(메뉴·`RestaurantVisit` 방문 규칙), 창 `UI/SkillHUD.Village.cs`. 방문 = 마을 방에 들어올 때마다 새로(`StageEvents.VillageVisit`). 체력·마나가 이미 가득이면 수프·차는 못 산다(소용없음). 도시락은 산 뒤 다음 전투 구역을 돌파할 때까지 받는 피해 -20% (`LunchboxGuard`, 이동 방에서 받는 피해도 같이 준다). 1~5·클릭으로 사고 Esc/W/↑로 닫는다. 게임은 멈춘다.
+- 구현 (2026-11-12): `Player/Equipment/Data/VillageFood.cs`(메뉴·`RestaurantVisit` 방문 규칙), 창 `UI/SkillHUD.Village.cs`. 방문 = 마을 방에 들어올 때마다 새로(`StageEvents.VillageVisit`). 체력·마나가 이미 가득이면 수프·차는 못 산다(소용없음). 도시락은 산 뒤 다음 전투 구역을 돌파할 때까지 받는 피해 -20% (`LunchboxGuard`, 이동 방에서 받는 피해도 같이 준다). 1~5·클릭으로 사고 Esc/W/↑로 닫는다. (2026-11-13) ↓로 키보드 고르기를 시작하면 ↑↓ + Enter·Space로 사고, 그동안은 Esc로 닫는다. 장비 상점도 같고 지금 장비 줄은 ←→로 팔기/바꾸기를 고른다. 게임은 멈춘다.
 
 ## 11. 골드 수지 (어림, 플레이테스트로 조정)
 

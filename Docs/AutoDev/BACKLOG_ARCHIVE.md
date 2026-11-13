@@ -2,6 +2,14 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 2026-11-13 09:02 자동 실행 — 마을 창·장비 카드 다듬기 (PR #71)
+
+- DONE (claude/project-thread-cph33a): 식당 창 키보드 고르기 (↓로 시작, ↑↓, Enter·Space, 고르는 중 Esc로 닫기)
+- DONE (claude/project-thread-cph33a): 장비 상점 창 키보드 고르기 (진열 4 + 지금 장비 3줄, ←→ 팔기/바꾸기)
+- DONE (claude/project-thread-cph33a): 장비 비교 카드 ←→ + Enter, 열림 PauseOpen, 배경 어둠 깔림
+- DONE (claude/project-thread-cph33a): 사기 반응 (줄 금색 번쩍, 창 왼쪽 위 골드 톡/모자라면 흔들림)
+- DONE (claude/project-thread-cph33a): 마을 창 배경 0.15초 깔림, 사람이 닫을 때 PauseClose
+
 ## 2026-11-13 09:05 자동 실행 — 특성 창 다듬기 (PR #70)
 
 - DONE (claude/project-thread-140hhw): 특성 창 키보드 찍기 (←→·A/D, Enter·Space, 금색 테두리)
