@@ -1,3 +1,4 @@
+using IBlameYou.Core;
 using IBlameYou.Player;
 using UnityEngine;
 
@@ -5,6 +6,8 @@ namespace IBlameYou.Systems
 {
     // 마을 NPC: 식당 주인(요리사 모자 분홍 슬라임)·상인(깃털 모자 하늘색 슬라임). 건물 문 옆에서 숨 쉬듯 4프레임 Idle,
     // 플레이어가 가까이 오면 머리 위에 말풍선 한 줄 (다가올 때마다 다음 대사). 콜라이더가 없어 길을 막지 않는다.
+    // 2026-11-13 반응: 말풍선이 새로 뜰 때 "뽀로롱" 말소리(NpcTalk, 식당 주인 낮게·상인 높게), 판에서 처음 다가오면 인사 + 톡 뛰기
+    // (그 전까지 머리 위 금색 "!"), 체력·골드에 따른 상황 대사, 멀어지면 작별 말풍선.
     // 그림: Tools/ArtGen/generate_village.py (NpcChef_0~3, NpcMerchant_0~3, 20x22, 16픽셀 = 1유닛). 슬라임은 눈 없음 규칙.
     public class VillageNpc : MonoBehaviour
     {
@@ -16,6 +19,12 @@ namespace IBlameYou.Systems
         private const float ReactionTime = 1.5f;           // 사고팔 때 반응 말풍선 시간 (창을 닫은 뒤)
         private const float HopTime = 0.3f;
         private const float HopHeight = 0.25f;
+        private const float FarewellTime = 1.2f;
+        private const float LeaveSlack = 0.5f;             // 말풍선 거리 밖으로 나갈 때는 이만큼 더 멀어져야 (경계 떨림 방지)           // 말풍선 거리 밖으로 나간 뒤 작별 말풍선 시간
+        private const float LowHealthRatio = 0.5f;         // 식당 주인 "창백해요" 대사 (체력 이 비율 이하)
+        private const int RichGold = 300;                  // 상인 "주머니가 두둑" 대사 (골드 이 값 이상)
+        private const float TalkVolume = 0.8f;
+        private static readonly Color ExclaimColor = new Color(1f, 0.84f, 0.3f); // 금색 (RoomDoorMarkers Gold)
         private static readonly Color BubbleColor = new Color(1f, 0.957f, 0.839f);   // cream
         private static readonly Color OutlineColor = new Color(0.094f, 0.078f, 0.102f); // outline #18141a
 
@@ -27,6 +36,10 @@ namespace IBlameYou.Systems
         {
             "좋은 물건 들어왔어요!", "수식어는 운이에요, 운!", "안 쓰는 장비는 사 드려요", "구경은 공짜랍니다~"
         };
+
+        // 판에서 처음 다가왔을 때 인사를 한 NPC (스테이지 시드로 판을 구분한다. 방을 다시 불러와도 인사는 한 번만).
+        private static readonly System.Collections.Generic.Dictionary<VillageService, int> greetedSeed =
+            new System.Collections.Generic.Dictionary<VillageService, int>();
 
         private Sprite[] frames;
         private SpriteRenderer body;
@@ -41,7 +54,13 @@ namespace IBlameYou.Systems
         private string reaction;          // 사고팔 때 받은 대사 (창이 닫혀 게임이 다시 흐르면 보여 준다)
         private float reactionLeft;       // 반응 말풍선이 남은 시간 (게임 시간)
         private PlayerMovement player;
+        private HealthSystem playerHealth;
         private float time;
+        private float talkPitch;          // 말소리 음높이 (식당 주인 낮게, 상인 높게)
+        private float greetHop = -1f;     // 인사 톡 뛰기 경과 시간 (음수면 안 뜀)
+        private float farewellLeft;       // 작별 말풍선이 남은 시간
+        private string lastLine;          // 바로 전에 다가왔을 때 한 대사 (상황 대사가 매번 반복되지 않게)
+        private GameObject exclaim;       // 아직 인사 안 한 NPC 머리 위 금색 "!"
 
         public static VillageNpc Create(Transform parent, Vector2 groundPosition, VillageService service)
         {
@@ -54,6 +73,7 @@ namespace IBlameYou.Systems
             npc.basePosition = go.transform.position;
             npc.lines = chef ? ChefLines : MerchantLines;
             npc.service = service;
+            npc.talkPitch = chef ? 0.85f : 1.2f;
             StageEvents.VillageNpcSay += npc.OnSay;
             npc.frames = LoadFrames(chef ? "NpcChef" : "NpcMerchant");
             npc.body = go.AddComponent<SpriteRenderer>();
@@ -61,6 +81,7 @@ namespace IBlameYou.Systems
             if (npc.frames.Length > 0) npc.body.sprite = npc.frames[0];
             npc.time = Random.value * FrameTime * 4f; // 두 NPC가 같은 박자로 숨 쉬지 않게
             npc.CreateBubble();
+            npc.CreateExclaim();
             return npc;
         }
 
@@ -111,6 +132,38 @@ namespace IBlameYou.Systems
             bubble.SetActive(false);
         }
 
+        // 아직 인사하지 않은 NPC 머리 위 금색 "!" (검은 그림자 한 겹). 말풍선과 같은 높이라 말풍선이 뜨면 숨긴다.
+        private void CreateExclaim()
+        {
+            exclaim = new GameObject("Exclaim");
+            exclaim.transform.SetParent(transform, false);
+            exclaim.transform.localPosition = new Vector3(0f, BubbleHeight, 0f);
+            ExclaimText("Shadow", OutlineColor, new Vector3(0.05f, -0.05f, 0f), 6);
+            ExclaimText("Mark", ExclaimColor, Vector3.zero, 7);
+            exclaim.SetActive(false);
+        }
+
+        private void ExclaimText(string name, Color color, Vector3 offset, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(exclaim.transform, false);
+            go.transform.localPosition = offset;
+            var text = go.AddComponent<TextMesh>();
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = font;
+            text.text = "!";
+            text.fontSize = 64;
+            text.fontStyle = FontStyle.Bold;
+            text.characterSize = 0.06f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.color = color;
+            var renderer = go.GetComponent<MeshRenderer>();
+            if (font != null) renderer.sharedMaterial = font.material;
+            renderer.sortingOrder = order;
+        }
+
+        private bool Greeted => greetedSeed.TryGetValue(service, out int seed) && seed == StageEvents.StageSeed;
+
         private Transform Square(string name, Color color, int order)
         {
             var go = new GameObject(name);
@@ -139,41 +192,109 @@ namespace IBlameYou.Systems
                 body.sprite = frames[(int)(time / FrameTime) % frames.Length];
 
             bool nowNear = PlayerNear();
-            if (nowNear && !near) Say();
+            if (nowNear && !near)
+            {
+                farewellLeft = 0f;
+                Say();
+            }
+            else if (!nowNear && near && player != null && reaction == null)
+                Farewell(); // 멀어지면 작별 한마디 (반응 말풍선이 떠 있으면 그대로 둔다)
             near = nowNear;
+            if (farewellLeft > 0f) farewellLeft -= Time.deltaTime;
 
             float hop = 0f;
+            if (greetHop >= 0f)
+            {
+                greetHop += Time.deltaTime;
+                if (greetHop < HopTime) hop = Mathf.Sin(greetHop / HopTime * Mathf.PI) * HopHeight;
+                else greetHop = -1f;
+            }
             if (reaction != null && Time.timeScale > 0f)
             {
-                if (reactionLeft == ReactionTime) SetText(reaction); // 첫 프레임에 대사를 바꿔 끼운다
+                if (reactionLeft == ReactionTime) Speak(reaction); // 첫 프레임에 대사를 바꿔 끼운다
                 reactionLeft -= Time.deltaTime;
                 float t = ReactionTime - reactionLeft;
-                if (t < HopTime) hop = Mathf.Sin(t / HopTime * Mathf.PI) * HopHeight; // 톡 뛰기 한 번
+                if (t < HopTime) hop = Mathf.Max(hop, Mathf.Sin(t / HopTime * Mathf.PI) * HopHeight); // 톡 뛰기 한 번
                 if (reactionLeft <= 0f)
                 {
                     reaction = null;
-                    if (near && lineIndex >= 0) SetText(lines[lineIndex]); // 다시 평소 대사
+                    if (near && lastLine != null) SetText(lastLine); // 다시 다가왔을 때 한 대사로
                 }
             }
             transform.position = basePosition + Vector3.up * hop; // 말풍선은 자식이라 같이 뛴다
 
-            bool show = near || reaction != null && Time.timeScale > 0f;
+            bool show = near || reaction != null && Time.timeScale > 0f || farewellLeft > 0f;
             bubble.SetActive(show);
             if (show) bubble.transform.localPosition = new Vector3(0f, BubbleHeight + Mathf.Sin(time * 3f) * 0.04f, 0f);
+
+            // 아직 인사하지 않았으면 머리 위 "!"가 둥실둥실 (말풍선이 뜨면 숨김)
+            bool mark = !show && !Greeted;
+            exclaim.SetActive(mark);
+            if (mark) exclaim.transform.localPosition = new Vector3(0f, BubbleHeight + 0.1f + Mathf.Sin(time * 4f) * 0.08f, 0f);
         }
 
         private bool PlayerNear()
         {
             // 두 사람이 한 몸(A/B 협동)을 움직이므로 플레이어는 하나. 죽었다 다시 생기면 다시 찾는다.
-            if (player == null) player = FindFirstObjectByType<PlayerMovement>();
+            if (player == null)
+            {
+                player = FindFirstObjectByType<PlayerMovement>();
+                playerHealth = player != null ? player.GetComponent<HealthSystem>() : null;
+            }
             if (player == null) return false;
-            return ((Vector2)player.transform.position - (Vector2)transform.position).sqrMagnitude <= TalkRange * TalkRange;
+            float range = near ? TalkRange + LeaveSlack : TalkRange; // 경계에서 서성여도 인사·작별이 번갈아 수다스럽지 않게
+            return ((Vector2)player.transform.position - (Vector2)basePosition).sqrMagnitude <= range * range;
         }
 
         private void Say()
         {
-            lineIndex = (lineIndex + 1) % lines.Length;
-            if (reaction == null) SetText(lines[lineIndex]); // 반응 말풍선이 떠 있으면 그 대사를 덮지 않는다
+            string line;
+            if (!Greeted)
+            {
+                // 판에서 처음 다가옴: 인사 + 톡 뛰기
+                greetedSeed[service] = StageEvents.StageSeed;
+                line = service == VillageService.Restaurant ? "어서 와요!" : "어서 오세요, 손님!";
+                greetHop = 0f;
+            }
+            else
+            {
+                string situation = SituationLine();
+                if (situation != null && situation != lastLine) line = situation; // 상황 대사는 평소 대사와 번갈아
+                else
+                {
+                    lineIndex = (lineIndex + 1) % lines.Length;
+                    line = lines[lineIndex];
+                }
+            }
+            lastLine = line;
+            if (reaction == null) Speak(line); // 반응 말풍선이 떠 있으면 그 대사를 덮지 않는다
+        }
+
+        // 플레이어 상황에 맞는 한마디 (없으면 null): 식당 주인은 체력이 낮을 때, 상인은 골드가 없거나 많을 때.
+        private string SituationLine()
+        {
+            if (service == VillageService.Restaurant)
+            {
+                if (playerHealth != null && playerHealth.Max > 0f && playerHealth.Current <= playerHealth.Max * LowHealthRatio)
+                    return "얼굴이 창백해요! 뭐라도 먹어요";
+                return null;
+            }
+            if (RunStats.Gold <= 0) return "구경만 해도 괜찮아요~";
+            if (RunStats.Gold >= RichGold) return "주머니가 두둑하시네요!";
+            return null;
+        }
+
+        private void Farewell()
+        {
+            farewellLeft = FarewellTime;
+            Speak(service == VillageService.Restaurant ? "또 와요~" : "또 오세요!");
+        }
+
+        // 말풍선 글을 바꾸고 말소리 "뽀로롱" (NPC마다 음높이가 다르다)
+        private void Speak(string text)
+        {
+            SetText(text);
+            GameAudio.PlaySfxPitched("NpcTalk", talkPitch, TalkVolume);
         }
 
         private void SetText(string text)
