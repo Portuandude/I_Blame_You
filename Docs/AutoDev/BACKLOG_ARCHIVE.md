@@ -2,6 +2,16 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-13 09:08 자동 실행이 추가 — 유물 도감 창 다듬기)
+
+DIRECTION ① UI 다듬기 이어서. 시작 화면과 게임 중(C키)이 같은 창(`Core/RelicCodexWindow`)을 쓰므로 양쪽에 같이 들어간다. 수치·저장 형식은 바꾸지 않는다.
+
+- DONE (claude/project-thread-z8f3og): 도감 열림 연출 — 배경 어둠 0.15초 깔림 + 패널 톡(0.85→1.04→1) + 열 때 `BookOpen`, 사람이 닫을 때 `PauseClose`
+- DONE (claude/project-thread-z8f3og): 고른 칸 아이콘 톡 — 방향키·마우스로 칸이 바뀌면 그 아이콘이 1→1.18→1배로 튀고, 키로 옮길 때 작은 `UiClick`
+- DONE (claude/project-thread-z8f3og): 게임 중 도감에서 지금 가진 유물 표시 — 이번 판에 가진 유물 칸 오른쪽 위에 민트색 "보유" 점 (지금 판의 모드 화면일 때만)
+- DONE (claude/project-thread-z8f3og): 모은 수 진행 막대 — 제목 아래 요약 줄 밑에 얇은 금색 막대, 다 모으면 반짝이는 띠가 지나감
+- DONE (claude/project-thread-z8f3og): 주인별 모은 수 한 줄 — "A 3/8 · B 2/9 · 공용 4/10" (A 하늘색, B 주황)
+
 ## 2026-11-13 09:02 자동 실행 — 마을 창·장비 카드 다듬기 (PR #71)
 
 - DONE (claude/project-thread-cph33a): 식당 창 키보드 고르기 (↓로 시작, ↑↓, Enter·Space, 고르는 중 Esc로 닫기)
