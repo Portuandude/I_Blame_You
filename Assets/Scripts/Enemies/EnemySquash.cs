@@ -52,6 +52,16 @@ namespace IBlameYou.Enemies
             Begin(-WindupSquash * 1.4f, 0f, 0.25f, false);
         }
 
+        // 전투 구역에서 막 소환됐을 때 (적 등장 연출, 2026-11-13): 길쭉하게 "뿅" 솟았다가 0.3초에 걸쳐 제 모양으로.
+        public const float SpawnStretch = 0.3f;
+        private const float SpawnTime = 0.3f;
+
+        public void Spawn()
+        {
+            if (!Capture()) return;
+            Begin(SpawnStretch, 0f, SpawnTime, false);
+        }
+
         // 공격이 끊겼을 때 (경직·사망) 바로 원래 모양으로.
         public void Cancel()
         {
