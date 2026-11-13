@@ -32,6 +32,9 @@ namespace IBlameYou.Core
         private Texture2D sparkle; // 제목 둘레 반짝이 별 (HUD 마나 별 그림)
         private int keySelection;   // 키보드로 고른 아래 큰 버튼 (0부터: 이어하기가 있으면 이어하기, 시작, 기능 테스트)
         private bool keyboardUsed;  // 화살표를 눌렀으면 금색 테두리를 보인다 (마우스만 쓰면 안 보인다)
+        private float openedAt = -1f; // 패널이 처음 그려진 시각 (톡 커지는 연출)
+        private const float PopTime = 0.3f;
+        private float[] letterWidths;  // 제목 글자별 폭 (글자마다 물결치게 따로 그린다)
         private int keyActivate = -1; // Enter·Space로 누른 버튼 (그리는 자리에서 눌린 것으로 처리)
 
         public void Initialize(Action startCallback, Action continueCallback = null)
@@ -73,6 +76,10 @@ namespace IBlameYou.Core
             const float width = 640f;
             float height = Mathf.Min(640f, Screen.height - 20f); // 낮은 창에서도 버튼이 잘리지 않게
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
+            if (openedAt < 0f) openedAt = Time.unscaledTime;
+            var screenMatrix = GUI.matrix;
+            float pop = PopScale();
+            if (pop != 1f) GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), area.center); // 도감·화면 설정 창은 원래 크기로 (아래에서 되돌린다)
             GUI.Box(area, GUIContent.none, panel);
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
@@ -152,6 +159,7 @@ namespace IBlameYou.Core
             GUI.enabled = true;
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
+            GUI.matrix = screenMatrix;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
             display.Draw(panel, body, button);
         }
@@ -226,11 +234,48 @@ namespace IBlameYou.Core
         // 제목: 진한 외곽선 + gold 테두리 + 크림 글자, 위아래로 둥실, 둘레에 반짝이 별 4개가 번갈아 깜빡임.
         private static readonly Vector2[] SparkleSpots = { new Vector2(-0.36f, -0.3f), new Vector2(0.38f, -0.25f), new Vector2(-0.3f, 0.4f), new Vector2(0.33f, 0.42f) };
 
+        // 패널이 열린 직후 톡 커지는 배율 (0.85 → 1.04 → 1, 일시정지 창과 같은 모양). 끝났으면 1.
+        private float PopScale()
+        {
+            float t = (Time.unscaledTime - openedAt) / PopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
+        private const string TitleText = "I Blame You!";
+
         private void DrawTitle(Rect rect)
         {
             float time = Time.unscaledTime;
-            var bob = new Rect(rect.x, rect.y + Mathf.Sin(time * 2.2f) * 3f, rect.width, rect.height);
-            OutlinedLabel.Draw(bob, "I Blame You!", title, OutlinedLabel.Cream, OutlinedLabel.Gold, 2.5f, 2f);
+            // 글자마다 따로 그려 왼쪽부터 물결치듯 통통 (한 글자씩 0.45 라디안 늦게, 위로만 튄다)
+            if (letterWidths == null)
+            {
+                letterWidths = new float[TitleText.Length];
+                for (int i = 0; i < TitleText.Length; i++)
+                {
+                    // 글자 폭만 (스타일 여백은 빼서 글자 사이가 벌어지지 않게). 공백은 CalcSize가 작게 잡으니 글자 크기의 0.3
+                    letterWidths[i] = TitleText[i] == ' ' ? title.fontSize * 0.3f
+                        : Mathf.Max(1f, title.CalcSize(new GUIContent(TitleText[i].ToString())).x - title.padding.horizontal);
+                }
+            }
+            float total = 0f;
+            for (int i = 0; i < letterWidths.Length; i++) total += letterWidths[i];
+            float x = rect.center.x - total / 2f;
+            for (int i = 0; i < TitleText.Length; i++)
+            {
+                float w = letterWidths[i];
+                if (TitleText[i] != ' ')
+                {
+                    // 예전 둥실(±3)처럼 위로 3픽셀까지만 넘게: 2픽셀 내려 앉혀 두고 5픽셀 튄다 (BeginArea 위쪽에서 잘리지 않게)
+                    float hop = Mathf.Max(0f, Mathf.Sin(time * 3.2f - i * 0.45f)) * 5f - 2f;
+                    float boxWidth = w + title.padding.horizontal + 8f; // 외곽선이 잘리지 않게 양옆 4픽셀 여유 (가운데 정렬이라 글자는 x+w/2에 선다)
+                    var letter = new Rect(x + w / 2f - boxWidth / 2f, rect.y - hop, boxWidth, rect.height);
+                    OutlinedLabel.Draw(letter, TitleText[i].ToString(), title, OutlinedLabel.Cream, OutlinedLabel.Gold, 2.5f, 2f);
+                }
+                x += w;
+            }
 
             if (sparkle == null) return;
             var previous = GUI.color;
