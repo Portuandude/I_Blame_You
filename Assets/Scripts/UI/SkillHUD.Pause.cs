@@ -32,7 +32,7 @@ namespace IBlameYou.UI
 
             if (paused && displayWindow.IsOpen)
             {
-                displayWindow.Close(); // Esc는 화면 설정 창만 닫는다
+                displayWindow.Close(true); // Esc는 화면 설정 창만 닫는다 ("통")
                 return;
             }
 
