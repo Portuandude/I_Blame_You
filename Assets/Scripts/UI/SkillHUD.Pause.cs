@@ -264,15 +264,30 @@ namespace IBlameYou.UI
         // 탐험 줄: "방 N/M 탐험 · 마을 찾음/아직" (방 격자 스테이지만, 마을이 없는 스테이지면 방 수만). 모든 방을 가 봤으면 금색.
         private void AppendExploreLine(System.Text.StringBuilder text)
         {
+            string line = ExploreText(false);
+            if (line.Length > 0) text.Append(line).Append('\n');
+        }
+
+        // 탐험 줄 글 (rich text). 결과 창은 withCoins로 "동전 무더기 a/b"도 붙인다 (다 주웠으면 금색, 무더기가 없는 시드면 생략).
+        // 방 격자 스테이지가 아니면 빈 문자열.
+        private string ExploreText(bool withCoins)
+        {
             if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
             var streamer = pauseMap != null ? pauseMap.Streamer : null;
-            if (streamer == null || !streamer.IsRoomMode) return;
+            if (streamer == null || !streamer.IsRoomMode) return "";
             int total = streamer.Rooms.Rooms.Count;
             int seen = Mathf.Min(streamer.VisitedCount, total);
             string rooms = seen >= total ? $"<color=#ffd84d>방 {seen}/{total} 탐험</color>" : $"방 {seen}/{total} 탐험";
+            string coins = "";
+            if (withCoins)
+            {
+                int piles = streamer.CoinPilesTotal;
+                int got = streamer.CoinPilesCollected;
+                if (piles > 0) coins = got >= piles ? $" · <color=#ffd84d>동전 무더기 {got}/{piles}</color>" : $" · 동전 무더기 {got}/{piles}";
+            }
             var village = streamer.VillageFound;
             string villageText = village == null ? "" : village.Value ? " · <color=#ffa07a>마을 찾음</color>" : " · 마을 아직";
-            text.Append(rooms).Append(villageText).Append('\n');
+            return rooms + coins + villageText;
         }
 
         private float PauseVolumeSlider(Rect rect, string name, float value)

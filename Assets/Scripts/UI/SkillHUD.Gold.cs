@@ -93,14 +93,17 @@ namespace IBlameYou.UI
             OutlinedLabel.Draw(textRect, $"-{goldSpendAmount}", goldSpendText, color, outline, 0f, 1.5f);
         }
 
-        // 결과 창 오른쪽 위: 금화 + "골드 N"
-        private void DrawEndGold(Rect panelRect)
+        // 결과 창 오른쪽 위: 금화 + "골드 N". shown은 올라가며 세는 중인 값, pop은 다 센 순간 톡 커지는 배율 (SkillHUD.EndScreen.cs)
+        private void DrawEndGold(Rect panelRect, int shown, float pop)
         {
             EnsureGoldArt();
             var row = new Rect(panelRect.xMax - 150f, panelRect.y + 10f, 140f, 28f);
+            var previousMatrix = GUI.matrix;
+            if (pop > 1f) GUIUtility.ScaleAroundPivot(Vector2.one * pop, new Vector2(row.x + 40f, row.center.y));
             if (coinIcon != null) GUI.DrawTexture(new Rect(row.x, row.y + 2f, 24f, 24f), coinIcon, ScaleMode.ScaleToFit, true);
-            OutlinedLabel.Draw(new Rect(row.x + 28f, row.y, row.width - 28f, row.height), $"골드 {RunStats.Gold}", goldText,
+            OutlinedLabel.Draw(new Rect(row.x + 28f, row.y, row.width - 28f, row.height), $"골드 {shown}", goldText,
                 OutlinedLabel.Gold, OutlinedLabel.Outline, 0f, 1.5f);
+            GUI.matrix = previousMatrix;
             RecordBestGold(); // 판이 끝난 뒤 들어온 골드(보스)까지 기록
             // 마을에서 골드를 썼으면 아래에 작게 "모음 N · 씀 M" (안 썼으면 남은 골드 = 모은 골드라 생략), 최고 기록이면 금색 "최고 골드!"
             bool best = NewBestGold;

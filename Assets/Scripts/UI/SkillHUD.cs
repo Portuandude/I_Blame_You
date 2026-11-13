@@ -263,8 +263,9 @@ namespace IBlameYou.UI
 
             if (GameOverReady || stageCleared)
             {
-                if (Input.GetKeyDown(KeyCode.R)) restart?.Invoke(false);
-                else if (Input.GetKeyDown(KeyCode.M)) restart?.Invoke(true);
+                if (Input.GetKeyDown(KeyCode.R)) RequestRestart(false);
+                else if (Input.GetKeyDown(KeyCode.M)) RequestRestart(true);
+                else UpdateEndButtonsInput(); // ←→·A/D 고르기, Enter·Space 누르기 (SkillHUD.EndScreen.cs)
             }
         }
 
@@ -519,28 +520,8 @@ namespace IBlameYou.UI
             if (alpha <= 0f) return;
             var previousColor = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, alpha);
-
-            float extra = HasDefeatCompare ? 24f : 0f; // 평소와 비교 줄이 있으면 아래 줄을 그만큼 내린다
-            float fav = string.IsNullOrEmpty(FavoriteLine()) ? 0f : 22f; // 최애 마법 줄 (SkillHUD.EndScreen.cs)
-            var rect = new Rect((Screen.width - 600f) / 2f, Screen.height * 0.35f, 600f, 240f + extra + fav);
-            var previousMatrix = BeginEndScreenPop(rect); // 팝 등장 (SkillHUD.EndScreen.cs)
-            GUI.Box(rect, GUIContent.none, panel);
-            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), "쓰러졌다! 누구 탓이지?", true);
-            DrawEndGold(rect); // 이번 판 골드 (SkillHUD.Gold.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
-                $"A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawBlameVerdict(new Rect(rect.x, rect.y + 86f, rect.width, 26f)); // 누구 탓? 판정 (SkillHUD.EndScreen.cs)
-            DrawDefeatPlace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 쓰러진 곳 (SkillHUD.EndScreen.cs)
-            DrawDefeatCompare(new Rect(rect.x, rect.y + 136f, rect.width, 24f)); // 평소보다 더/덜 갔다 (SkillHUD.EndScreen.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 140f + extra, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            extra += DrawFavoriteLine(rect.x, rect.y + 168f + extra, rect.width); // B 최애 마법 · A 최애 방어막
-            DrawEndRelicsAndEquipment(new Rect(rect.x + 12f, rect.y + 170f + extra, rect.width - 24f, 26f)); // 유물 아이콘 줄 + 장비 3칸 (SkillHUD.RelicIcons.cs·Equipment.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 200f + extra, rect.width, 30f), "R: 다시 시작 · M: 시작 화면",
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+            DrawEndPanel(false, 600f); // 줄 목록·차례로 나타남·버튼 (SkillHUD.EndScreen.cs)
             GUI.color = previousColor;
-            GUI.matrix = previousMatrix;
         }
 
         // 스테이지 이름 꼬리표. 진행도 막대(%)는 2026-11-12 사람 결정으로 없앴다 (방을 돌아다니며 탐험 → Trash/Assets/Scripts/UI/SkillHUD.DrawStageBar_20261112.cs.txt).
@@ -556,25 +537,7 @@ namespace IBlameYou.UI
         private void DrawStageClear()
         {
             DrawConfetti(); // 패널 뒤로 별·하트 색종이 (SkillHUD.EndScreen.cs)
-            float fav = string.IsNullOrEmpty(FavoriteLine()) ? 0f : 22f; // 최애 마법 줄 (SkillHUD.EndScreen.cs)
-            var rect = new Rect((Screen.width - 680f) / 2f, Screen.height * 0.35f, 680f, 240f + fav);
-            var previousMatrix = BeginEndScreenPop(rect);
-            GUI.Box(rect, GUIContent.none, panel);
-            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), $"{StageEvents.StageName} 클리어!", false);
-            DrawEndGold(rect); // 이번 판 골드 (SkillHUD.Gold.cs)
-            string best = newBestTime ? " (최고 기록!)" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
-            GUI.Label(new Rect(rect.x, rect.y + 60f, rect.width, 30f),
-                $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · A가 날린 마나 {mana.WastedBy(ManaUser.PlayerA):0} · B가 날린 마나 {mana.WastedBy(ManaUser.PlayerB):0}",
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            DrawBlameVerdict(new Rect(rect.x, rect.y + 86f, rect.width, 26f)); // 누구 탓? 판정 (SkillHUD.EndScreen.cs)
-            DrawClearPace(new Rect(rect.x, rect.y + 112f, rect.width, 26f)); // 목표 시간 비교 (SkillHUD.EndScreen.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 140f, rect.width, 30f), RunStats.Summary(RunLevel, RelicCount),
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            float shift = DrawFavoriteLine(rect.x, rect.y + 168f, rect.width); // B 최애 마법 · A 최애 방어막
-            DrawEndRelicsAndEquipment(new Rect(rect.x + 12f, rect.y + 170f + shift, rect.width - 24f, 26f)); // 유물 아이콘 줄 + 장비 3칸 (SkillHUD.RelicIcons.cs·Equipment.cs)
-            GUI.Label(new Rect(rect.x, rect.y + 200f + shift, rect.width, 30f), "R: 새 맵으로 다시 · M: 시작 화면",
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
-            GUI.matrix = previousMatrix;
+            DrawEndPanel(true, 680f); // 줄 목록·차례로 나타남·버튼 (SkillHUD.EndScreen.cs)
         }
     }
 }
