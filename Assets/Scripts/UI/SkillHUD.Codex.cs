@@ -28,7 +28,7 @@ namespace IBlameYou.UI
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return false;
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return false;
 
-            codexWindow.Show(GameSession.DevMode);
+            codexWindow.Show(GameSession.DevMode, relics != null ? relics.Owned : null); // 이번 판에 가진 유물에 "보유" 점
             codexLocked = true;
             control.Locked = true;
             Time.timeScale = 0f;
