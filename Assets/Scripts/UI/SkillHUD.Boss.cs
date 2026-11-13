@@ -44,7 +44,7 @@ namespace IBlameYou.UI
             bossWasActive = active;
             DrawBossIntro();
             float sinceDefeat = Time.unscaledTime - BossDefeatFx.LastTime;
-            if (sinceDefeat >= 0f && sinceDefeat < DefeatBarTime)
+            if (sinceDefeat >= 0f && sinceDefeat < DefeatBarTime && bossIntroStart <= BossDefeatFx.LastTime) // 그사이 새 보스가 나오면 새 바를 그린다
             {
                 DrawBossDefeatBar(sinceDefeat);
                 return;
