@@ -4,9 +4,9 @@
 
 ## 2026-11-13 08:53 UTC
 - 브랜치/PR: `claude/project-thread-140hhw` → #70 (develop 대상, 자동 머지 켬). #69 머지된 develop에서 시작, 열린 PR 없음. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "유물 상자 창 다듬기" 5개 추가
-- 완료 (5개, 적대적 리뷰 2회 APPROVE, LOW만): ① ←→·A/D(+2×2면 ↑↓) + Enter·Space 키보드 고르기 — Enter·Space는 연 뒤 0.4초·화살표 뒤에만 ② 배경 페이드·패널 팝·`ChestCreak` ③ 창 아래 가진 유물 아이콘 줄 ④ 고른 아이콘이 HUD 유물 칸으로 날아감 (`SkillHUD.RelicFly.cs`) ⑤ 도착 칸 반짝임 + `RelicSlot`
+- 완료 (9개, 적대적 리뷰 3회 APPROVE, LOW만): [유물 상자 창] ① ←→·A/D(+2×2면 ↑↓) + Enter·Space 키보드 고르기 — Enter·Space는 연 뒤 0.4초·화살표 뒤에만 ② 배경 페이드·패널 팝·`ChestCreak` ③ 창 아래 가진 유물 아이콘 줄 ④ 고른 아이콘이 HUD 유물 칸으로 날아감 (`SkillHUD.RelicFly.cs`) ⑤ 도착 칸 반짝임 + `RelicSlot` / [특성 창, 백로그에 4개 더 추가] ⑥ ←→·A/D + Enter·Space 찍기 ⑦ 배경 페이드·패널 팝·`BookOpen`, Tab/Esc 닫기 `PauseClose` ⑧ 칸마다 "다음 별까지 N" ⑨ 포인트 0이면 다음 레벨까지 경험치 + "포인트 없음"
 - 실패/보류: 없음. 유물 후보·효과·시드 그대로
-- 다음 실행 메모: 플레이테스트 필요 — 키보드 고르기 감, 날아가는 아이콘 속도, 가진 유물 줄 겹침 여부
+- 다음 실행 메모: 플레이테스트 필요 — 키보드 고르기 감, 날아가는 아이콘 속도, 가진 유물 줄 겹침 여부, 특성 창 BookOpen 소리. 작업 6개를 넘겨 인수인계 후 새 실행을 걸었다
 
 ## 2026-11-13 08:40 UTC
 - 브랜치/PR: `claude/project-thread-5xcr1g` → #69 (develop 대상, 자동 머지 켬). #68 머지된 develop에서 시작, 열린 PR 없음. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "결과 창 다듬기" 5개 추가

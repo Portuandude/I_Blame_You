@@ -2,6 +2,13 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 2026-11-13 09:05 자동 실행 — 특성 창 다듬기 (PR #70)
+
+- DONE (claude/project-thread-140hhw): 특성 창 키보드 찍기 (←→·A/D, Enter·Space, 금색 테두리)
+- DONE (claude/project-thread-140hhw): 특성 창 열림 연출 + BookOpen·닫기 PauseClose
+- DONE (claude/project-thread-140hhw): 칸마다 "다음 별까지 N"
+- DONE (claude/project-thread-140hhw): 포인트 0이면 다음 레벨까지 경험치 + "포인트 없음"
+
 ## 2026-11-13 08:53 자동 실행 — 유물 상자 창 다듬기 (PR #70)
 
 - DONE (claude/project-thread-140hhw): 유물 상자 창 키보드 고르기 (←→·A/D, Enter·Space, 금색 테두리)
