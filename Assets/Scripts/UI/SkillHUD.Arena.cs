@@ -4,7 +4,7 @@ using UnityEngine;
 namespace IBlameYou.UI
 {
     // 전투 구역(ArenaZone)에서 문이 닫혀 싸우는 동안: 화면 위쪽 가운데에 "남은 적 N" 알약 (줄어들 때마다 1.3배로 톡 튐).
-    // 남은 수 = 살아 있는 적 + 아직 안 나온 적. 보스 구역은 그 자리에 보스 체력바가 있어 그리지 않는다.
+    // 남은 수 = 살아 있는 적 + 아직 안 나온 적. 하나 남으면 금색 "마지막 하나!". 보스 구역은 그 자리에 보스 체력바가 있어 그리지 않는다.
     public partial class SkillHUD
     {
         private const float ArenaPopTime = 0.25f;
@@ -51,7 +51,9 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
             var previous = GUI.matrix;
             GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), rect.center);
-            OutlinedLabel.Draw(rect, $"남은 적 {count}", arenaText, ArenaCountColor, OutlinedLabel.Outline, 0f, 1.5f);
+            // 하나 남으면 금색 "마지막 하나!" (머리 위 ▼와 함께, SkillHUD.LastEnemy.cs)
+            if (count == 1) OutlinedLabel.Draw(rect, "마지막 하나!", arenaText, OutlinedLabel.Gold, OutlinedLabel.Outline, 0f, 1.5f);
+            else OutlinedLabel.Draw(rect, $"남은 적 {count}", arenaText, ArenaCountColor, OutlinedLabel.Outline, 0f, 1.5f);
             GUI.matrix = previous;
         }
     }
