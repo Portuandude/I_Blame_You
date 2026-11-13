@@ -49,6 +49,7 @@ namespace IBlameYou.Systems
         private float hopTimer = 0.35f; // 가까이 오고 조금 뒤 첫 들썩
         private float hopElapsed = -1f; // 0 이상이면 뛰는 중
         private float hopSide = 1f;
+        private static readonly Collider2D[] NearHits = new Collider2D[8];
 
         // position: 상자가 놓일 바닥 위 가운데 (월드). dropped: 방금 나온 것이면 등장 이펙트를 보여준다.
         public static RelicChest Create(Transform parent, Vector2 position, int seed, int chunkIndex, bool dropped, Action onTaken)
@@ -126,9 +127,14 @@ namespace IBlameYou.Systems
             {
                 nearCheckTimer = NearCheckInterval;
                 playerNear = false;
-                foreach (var hit in Physics2D.OverlapCircleAll((Vector2)transform.position + Vector2.up * VisualHeight, NearRadius))
+                var filter = new ContactFilter2D();
+                filter.NoFilter();
+                int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층만 (바닥 칸이 버퍼를 채우지 않게, ArenaReward와 같음)
+                if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
+                int count = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.up * VisualHeight, NearRadius, filter, NearHits);
+                for (int i = 0; i < count; i++)
                 {
-                    var player = TrapCommon.PlayerFrom(hit);
+                    var player = TrapCommon.PlayerFrom(NearHits[i]);
                     if (player == null) continue;
                     var health = player.GetComponent<HealthSystem>();
                     if (health != null && health.IsDead) continue;
@@ -245,6 +251,7 @@ namespace IBlameYou.Systems
         private void Take()
         {
             taken = true;
+            if (dropElapsed >= 0f && dropElapsed < DropTime) Land(); // 떨어지는 중에 열면 바닥에 내려놓고 착지 연출부터
             var center = transform.position + Vector3.up * VisualHeight;
             if (!VfxPlayer.ChestOpen(center, VisualScale)) EffectLibrary.PlayHit(Element.Neutral, center, 1.4f); // 열기 그림이 없으면 예전 터짐
             CameraFollow.ShakeMain(0.12f, 0.08f);
