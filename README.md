@@ -120,7 +120,7 @@ Assets/
       Traps/                  # SpikeTrap(가시), FlameJetTrap(화염 분출구), ArrowTrap(화살 발사대), Stalactite(동굴 떨어지는 종유석, 떨어질 때 적도 2배 피해), CrumblingPlatform(무너지는 발판, 플레이어·적이 밟으면 무너짐), BlinkPlatform(깜빡 발판: 보임 2초 → 깜빡 경고 0.6초 → 사라짐 1.4초, 발판마다 0.7초씩 늦게 — 무너지는 다리 방의 변형, 난이도 40% 이상 절반 확률, 후보 목록 `Docs/ContentIdeas.md`), MovingPlatform(움직이는 발판), TrapCommon
       LevelArtConfig.cs       # 아트/프리팹 설정 ScriptableObject 정의
     UI/                       # StatusBarsUI — 캐릭터 머리 위 HP/마나/기력 바, SkillHUD — 체력·마나 캡슐 바(SkillHUD.Bars, 그림 Tools/ArtGen/generate_hud.py), 미니게임/영창/마나 탓하기 피드(IMGUI, 피드는 SkillHUD.Feed — 같은 줄 ×N 합치기)
-                              # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출. 게임오버/클리어 창에 런 기록(Core/RunStats)
+                              # SkillHUD.LowHealth — 체력 30% 이하 화면 경고등, SkillHUD.Pause — Esc 일시정지(볼륨), SkillHUD.Death — 사망 연출(번쩍임·흔들림·PlayerDown 소리·느려지는 음악·눕기·영혼 별·동그란 조명 어둠). 게임오버/클리어 창에 런 기록(Core/RunStats)
                               # SkillHUD.Traits — 레벨 막대 + Tab 특성 창, SkillHUD.Boss — 보스 체력바, SkillHUD.Relics — 유물 고르기 창·가진 유물
                               # EnemyHealthBar — 적 머리 위 체력 바(맞으면 잠깐 보임), CapsuleBar — 머리 위 둥근 캡슐 바 + 흰 잔상 공용
     Editor/                   # GameAssetSetup, PrefabSetup (에디터 전용 툴)
