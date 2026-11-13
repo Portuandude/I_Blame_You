@@ -27,6 +27,14 @@ namespace IBlameYou.Systems
             new Vector2(-0.9f, 0.5f), new Vector2(0.8f, 0.9f), new Vector2(-0.5f, -0.4f), new Vector2(0.7f, -0.2f),
         };
 
+        // 도메인 다시 불러오기를 끈 에디터에서도 이전 플레이의 격파가 남지 않게.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetLast()
+        {
+            LastName = null;
+            LastTime = -100f;
+        }
+
         private float startTime;
         private bool slowing;
         private Vector3 origin;
