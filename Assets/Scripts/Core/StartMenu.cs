@@ -174,7 +174,11 @@ namespace IBlameYou.Core
             GUI.enabled = wasEnabled;
             GUI.matrix = screenMatrix;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
+            bool displayWasOpen = display.IsOpen;
             display.Draw(panel, body, button);
+            // 화면 설정 창을 Enter·Space로 닫고 그 키를 누르고 있으면, 키 반복이 뒤 메뉴 버튼을 누르지 않게 (리뷰 LOW)
+            if (displayWasOpen && !display.IsOpen && (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter) || Input.GetKey(KeyCode.Space)))
+                activateKeyHeld = true;
         }
 
         // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트. 온라인은 준비 중이라 고를 수 없다.

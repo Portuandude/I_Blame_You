@@ -39,6 +39,17 @@ namespace IBlameYou.UI
         private GameObject playerObject;
         private PlayerRelics relics; // 탐험가의 나침반 확인용 (늦게 붙을 수 있어 처음 쓸 때 찾는다)
         private bool expanded;
+
+        // 큰 지도 펼침·접힘 연출 (2026-11-13): 작은 지도 쪽(오른쪽 아래)에서 톡 커지며 펼쳐지고, 접을 땐 그쪽으로 쏙 줄어든다.
+        // 뒤 게임 화면은 살짝 어두워진다. 펼친 동안 지금 방 칸에서 하늘색 고리가 주기적으로 퍼져 내 위치를 알린다.
+        private const float ExpandTime = 0.2f;
+        private const float CollapseTime = 0.14f;
+        private const float ExpandFrom = 0.35f;     // 펼치기 시작 크기
+        private const float PingPeriod = 1.4f;      // 지금 방 고리 주기
+        private const float PingTime = 0.8f;        // 고리 하나가 퍼지는 시간
+        private float expandedAt = -10f;
+        private float collapsedAt = -10f;
+        public bool Expanded => expanded;
         private GUIStyle legend;
         private GUIStyle legendLeft;
 
@@ -129,8 +140,56 @@ namespace IBlameYou.UI
             if (control != null && control.AKeyboardBlocked) return;
             // 일시정지 중에는 새로 펼치지 않는다 (펼친 지도는 닫을 수 있게 둔다)
             if (Time.timeScale == 0f && !expanded) return;
-            if (Input.GetKeyDown(KeyCode.BackQuote)) expanded = !expanded;
+            if (Input.GetKeyDown(KeyCode.BackQuote)) SetExpanded(!expanded);
         }
+
+        // 큰 지도 펼치기·접기 (소리 포함). 일시정지 메뉴 Esc는 펼친 지도를 먼저 접는다 (SkillHUD.Pause.cs).
+        public void SetExpanded(bool value)
+        {
+            if (expanded == value) return;
+            expanded = value;
+            if (value)
+            {
+                expandedAt = Time.unscaledTime;
+                GameAudio.PlaySfx("BookOpen", 0.45f, 0.05f);
+            }
+            else
+            {
+                collapsedAt = Time.unscaledTime;
+                GameAudio.PlaySfx("PauseClose", 0.45f, 0.05f);
+            }
+        }
+
+        // 큰 지도 크기 배율: 펼칠 때 ExpandFrom → 1 (살짝 넘침), 접을 때 1 → ExpandFrom. 나침반 자동 펼침은 연출 없이 1.
+        private float ExpandScale(bool closing)
+        {
+            float now = Time.unscaledTime;
+            if (closing)
+            {
+                float c = Mathf.Clamp01((now - collapsedAt) / CollapseTime);
+                return Mathf.Lerp(1f, ExpandFrom, c * c);
+            }
+            if (!expanded) return 1f;
+            float t = (now - expandedAt) / ExpandTime;
+            if (t >= 1f) return 1f;
+            float k = Mathf.Clamp01(t) - 1f;
+            const float s = 1.70158f;
+            float back = 1f + k * k * ((s + 1f) * k + s); // ease-out-back
+            return ExpandFrom + (1f - ExpandFrom) * back;
+        }
+
+        // 펼침 정도 0~1 (뒤 화면 어둠에 쓴다)
+        private float ExpandAmount(bool closing)
+        {
+            float now = Time.unscaledTime;
+            if (closing) return 1f - Mathf.Clamp01((now - collapsedAt) / CollapseTime);
+            if (!expanded) return 1f;
+            return Mathf.Clamp01((now - expandedAt) / ExpandTime);
+        }
+
+        // 작은 지도 가운데 (펼침·접힘 연출의 기준점)
+        private static Vector2 SmallMapCenter =>
+            new Vector2(Screen.width - Margin - SmallCols * SmallCell / 2f, Screen.height - Margin - SmallRows * SmallCell / 2f);
 
         private void UpdateCompassShow()
         {
@@ -166,8 +225,20 @@ namespace IBlameYou.UI
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
 
-            if (expanded || CompassShowing)
+            bool closing = !expanded && Time.unscaledTime - collapsedAt < CollapseTime;
+            if (expanded || CompassShowing || closing)
             {
+                bool animate = expanded || (closing && !CompassShowing);
+                float amount = animate ? ExpandAmount(closing) : 1f;
+                if (animate && amount > 0f) Fill(new Rect(0f, 0f, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.3f * amount)); // 뒤 게임 화면을 살짝 어둡게
+                var screenMatrix = GUI.matrix;
+                float scale = animate ? ExpandScale(closing) : 1f;
+                if (scale != 1f)
+                {
+                    // 화면 가운데와 작은 지도 사이 기준점: 작을수록 작은 지도 쪽에서 나오는 것처럼 보인다
+                    var screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+                    GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.Lerp(screenCenter, SmallMapCenter, 0.55f));
+                }
                 int cols = layout.MaxX - layout.MinX + 1;
                 int rows = layout.MaxY - layout.MinY + 1;
                 float cell = Mathf.Min(Screen.width * 0.86f / cols, Screen.height * 0.6f / rows, 40f);
@@ -175,13 +246,15 @@ namespace IBlameYou.UI
                 var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
                 Background(new Rect(area.x - 16f, area.y - 36f, area.width + 32f, area.height + 72f), new Color(0.05f, 0.04f, 0.1f, 0.85f));
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
+                if (expanded) DrawPing(CellRect(current.X, current.Y, layout.MinX, layout.MaxY, area, cell));
                 EnsureStyle();
                 // 나침반이 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다 (탐험가의 나침반)
                 string title = CompassShowing && !expanded
                     ? "탐험가의 나침반! 안 가 본 방이 흐리게 보인다"
-                    : HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)";
+                    : (HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)") + " · " + FoundText(layout);
                 GUI.Label(new Rect(area.x - 120f, area.y - 30f, area.width + 240f, 24f), title, legend);
                 DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
+                GUI.matrix = screenMatrix;
             }
             else
             {
@@ -193,6 +266,31 @@ namespace IBlameYou.UI
                     current.X - SmallCols / 2, current.Y + SmallRows / 2);
                 GUI.EndGroup();
             }
+        }
+
+        // 큰 지도 제목 줄 끝: "찾은 방 N/M" (다 찾았으면 금색). 일시정지 창 탐험 줄과 같은 셈.
+        private string FoundText(RoomLayoutData layout)
+        {
+            int seen = 0;
+            foreach (var room in layout.Rooms) if (streamer.HasVisited(room.Index)) seen++;
+            int total = layout.Rooms.Count;
+            return seen >= total ? $"<color=#ffd84d>찾은 방 {seen}/{total}</color>" : $"찾은 방 {seen}/{total}";
+        }
+
+        // 지금 방 칸에서 퍼지는 하늘색 고리 (PingPeriod마다 하나, PingTime 동안 커지며 흐려진다).
+        private static void DrawPing(Rect cellRect)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            float t = (Time.unscaledTime % PingPeriod) / PingTime;
+            if (t >= 1f) return;
+            float grow = cellRect.width * 1.1f * (1f - (1f - t) * (1f - t)); // ease-out
+            var r = new Rect(cellRect.x - grow / 2f, cellRect.y - grow / 2f, cellRect.width + grow, cellRect.height + grow);
+            var color = new Color(RestColor.r, RestColor.g, RestColor.b, 0.85f * (1f - t));
+            const float w = 2f;
+            Fill(new Rect(r.x, r.y, r.width, w), color);
+            Fill(new Rect(r.x, r.yMax - w, r.width, w), color);
+            Fill(new Rect(r.x, r.y, w, r.height), color);
+            Fill(new Rect(r.xMax - w, r.y, w, r.height), color);
         }
 
         // 일시정지 창 왼쪽에 그리는 전체 지도 (SkillHUD.Pause.cs가 자기 OnGUI 안에서 부른다 — 이 컴포넌트의 OnGUI는 일시정지 중 쉰다).

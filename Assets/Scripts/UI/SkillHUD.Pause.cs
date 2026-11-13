@@ -32,7 +32,8 @@ namespace IBlameYou.UI
 
             if (paused && displayWindow.IsOpen)
             {
-                displayWindow.Close(); // Esc는 화면 설정 창만 닫는다
+                if (displayWindow.Applying) return; // "적용됨!" 띠 동안은 Esc도 무시 (곧 저절로 닫힌다)
+                displayWindow.Close(true); // Esc는 화면 설정 창만 닫는다 ("통")
                 return;
             }
 
@@ -43,6 +44,12 @@ namespace IBlameYou.UI
             }
 
             if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
+            if (pauseMap != null && pauseMap.Expanded)
+            {
+                pauseMap.SetExpanded(false); // 펼친 큰 지도가 있으면 Esc는 지도만 접는다
+                return;
+            }
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return;
 
             paused = true;
