@@ -70,6 +70,8 @@ namespace IBlameYou.Enemies
         private bool leapPending;
         private Vector2 leapVelocity;
         private LandingMarkFx landMark; // 도약해 떨어질 땅 예고 (웅크림~공중)
+        private bool leapAirborne; // 도약 뒤 아직 땅에 닿지 않음 (착지 연출을 한 번만, SlimeLandFx)
+        private float lastLeapVy;
         private const float LandMarkRayUp = 1f;
         private const float LandMarkRayLength = 8f;
 
@@ -127,6 +129,7 @@ namespace IBlameYou.Enemies
             if (Suspended)
             {
                 RemoveLandMark(); // 기사 기술이 몸을 맡는 동안엔 예고를 지운다
+                leapAirborne = false; // 몸을 맡긴 동안의 착지는 슬라임 도약 착지가 아니다 (리뷰 LOW)
                 return;
             }
             var target = FindTarget();
@@ -233,6 +236,7 @@ namespace IBlameYou.Enemies
             }
 
             phaseTimeRemaining -= Time.deltaTime;
+            UpdateLeapLanding();
             if (phase == AttackPhase.Windup && landMark == null) // 기사 기술로 잠시 지워졌다가 다시 웅크리는 중이면 되살린다 (리뷰 LOW)
                 landMark = LandingMarkFx.Create(gameObject, BodyBounds.size.x * 1.3f);
             if (phase == AttackPhase.Windup && landMark != null)
@@ -268,8 +272,33 @@ namespace IBlameYou.Enemies
 
             leapVelocity = new Vector2(vx, vy);
             leapPending = true;
+            leapAirborne = true;
+            lastLeapVy = 0f;
+            SlimeLandFx.Hop(FeetPoint(), HeavyLanding); // 뛰어오르는 순간 먼지 + "뾱" (그림·소리만)
             PlaceLandMark(transform.position.x + vx * AirTime, 1f); // 실제로 뛴 속도로 자리를 굳힌다
         }
+
+        // 떨어지던(아래로 빠르던) 몸이 멈춘 순간 = 실제로 땅에 닿음. 꼭대기(위→아래 바뀜)나 천장 박치기는 해당 안 됨.
+        private void UpdateLeapLanding()
+        {
+            if (!leapAirborne || leapPending) return;
+            float vy = Rb.linearVelocity.y;
+            if (lastLeapVy < -1f && vy > -0.1f)
+            {
+                leapAirborne = false;
+                SlimeLandFx.Landed(gameObject, FeetPoint(), HeavyLanding); // 눌림 + 먼지 + 방울 + "퐁" (그림·소리만)
+            }
+            lastLeapVy = vy;
+        }
+
+        private Vector3 FeetPoint()
+        {
+            var bounds = BodyBounds;
+            return new Vector3(bounds.center.x, bounds.min.y, 0f);
+        }
+
+        // 어미 슬라임(정예)·슬라임 기사(중간보스)는 착지를 더 무겁게.
+        private bool HeavyLanding => IBlameYou.Core.RunGold.RankOf(this) != EnemyRank.Normal;
 
         // BeginLeap과 같은 식: 지금 플레이어 위치로 뛰면 떨어질 x.
         private float PredictLandingX(Transform target)
@@ -323,6 +352,7 @@ namespace IBlameYou.Enemies
             RemoveLandMark();
             phase = AttackPhase.None;
             leapPending = false;
+            leapAirborne = false;
             if (startCooldown) nextAttackTime = Time.time + attackCooldown;
             if (Animator != null) Animator.SetBool(IsAttackingParam, false);
         }

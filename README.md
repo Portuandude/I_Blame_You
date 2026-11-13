@@ -102,6 +102,8 @@ Assets/
       Common/Slime/           # SlimeController(플레이어 추적/왕복 순찰), SlimeSpawner(구성 수치/콜라이더/프리팹 조립) — 적마다 이 형태로 폴더를 추가
       Common/Goblin/          # GoblinController(근접 고블린류 공통), GoblinSpawner(고블린/병사)
       Common/GoblinArcher/    # GoblinArcherController(거리 유지 + 화살), GoblinArcherSpawner
+      SlimeLandFx.cs          # 슬라임 도약 연출: 뛸 때 먼지 + "뾱" SlimeHop, 실제로 땅에 닿으면 눌림 + 방울 + "퐁" SlimePlop, 정예·기사는 충격파·흔들림 (그림·소리만)
+      GoblinArrowFx.cs        # 궁수 화살 연출: 놓을 때 "팅" BowTwang, 흰 꼬리, 곁을 스치면 "슈웅" ArrowWhiz, 벽에 박혀 떨다 1.5초 뒤 사라짐 + "턱" ArrowThunk, 맞으면 나무 조각 (그림·소리만)
       Elite/MotherSlime/      # 어미 슬라임(사망 시 슬라임 3기로 분열)
       Elite/GoblinWarrior/    # 고블린 대전사 + EnrageAbility(광폭화) + EnrageFx(광폭화 연출: 켜질 때 히트스톱·붉은 고리, 붉은 김·잔상, 끝나기 3초 전 빠른 깜빡임, 풀리면 회색 김·"헉헉…"·EnrageEnd)
       Bosses/                 # BossEvents(보스 체력바 값)

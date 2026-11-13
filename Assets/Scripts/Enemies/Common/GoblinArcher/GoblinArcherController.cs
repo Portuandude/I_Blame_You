@@ -174,9 +174,17 @@ namespace IBlameYou.Enemies
 
             var go = new GameObject("Arrow");
             go.transform.position = origin;
-            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
-            go.AddComponent<Projectile>().Launch(Stats, false, DamageKind.Physical, Element.Neutral, direction, arrowSpeed, 0.2f,
+            var look = EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
+            var arrow = go.AddComponent<Projectile>();
+            arrow.Launch(Stats, false, DamageKind.Physical, Element.Neutral, direction, arrowSpeed, 0.2f,
                 shootRange * 1.6f, false);
+
+            // 연출 (그림·소리만): 팅·꼬리·스침, 벽에 박힘, 맞으면 나무 조각 (GoblinArrowFx)
+            GoblinArrowFx.Released(origin);
+            GoblinArrowFx.Attach(go, target);
+            Vector2 flight = direction.normalized;
+            arrow.Impact = point => GoblinArrowFx.Stick(point, flight, look);
+            arrow.Hit = health => GoblinArrowFx.Splinter(go.transform.position, flight);
         }
 
         private void EndShot()
