@@ -10,6 +10,8 @@ namespace IBlameYou.UI
     public partial class SkillHUD
     {
         private bool traitWindowOpen;
+        private int traitSelection;   // 키보드로 고른 칸 (←→·A/D, Enter·Space로 찍기)
+        private bool traitKeyboard;   // 화살표를 한 번이라도 눌렀으면 금색 테두리를 그린다
 
         private void OnLeveledUp(int level)
         {
@@ -33,7 +35,12 @@ namespace IBlameYou.UI
 
             if (traitWindowOpen)
             {
-                if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape)) CloseTraitWindow();
+                if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
+                {
+                    GameAudio.PlaySfx("PauseClose", 0.6f); // 일시정지 창 닫기와 같은 "통" (쓰러짐·클리어로 닫힐 땐 안 냄)
+                    CloseTraitWindow();
+                }
+                else UpdateTraitKeys();
                 return;
             }
 
@@ -41,7 +48,10 @@ namespace IBlameYou.UI
             if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return; // 영창/미니게임 중에는 열지 않는다
 
             traitWindowOpen = true;
-            traitWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs)
+            traitWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs), 패널 팝·배경 페이드
+            traitSelection = 0;
+            traitKeyboard = false;
+            GameAudio.PlaySfx("BookOpen", 0.6f); // 책 펼치는 "파라락" (Tools/AudioGen)
             control.Locked = true;
             Time.timeScale = 0f;
         }
@@ -52,6 +62,48 @@ namespace IBlameYou.UI
             traitWindowOpen = false;
             Time.timeScale = 1f;
             if (!deathHandled && !stageCleared) control.Locked = false;
+        }
+
+        // ←→·A/D로 칸 옮기기, Enter·Space로 그 칸 찍기. 첫 화살표는 지금 칸(첫 칸)을 보여 주기만 한다.
+        // 찍어도 창은 열린 채라 키가 게임으로 새지 않는다 (닫는 건 Tab·Esc).
+        private void UpdateTraitKeys()
+        {
+            int count = TraitTree.All.Length;
+            if (count == 0) return;
+            int step = 0;
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) step = -1;
+            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) step = 1;
+            if (step != 0)
+            {
+                if (traitKeyboard) traitSelection = ((traitSelection + step) % count + count) % count;
+                traitKeyboard = true;
+                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                return;
+            }
+
+            if (!traitKeyboard || !(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))) return;
+            int i = Mathf.Clamp(traitSelection, 0, count - 1);
+            var trait = TraitTree.All[i];
+            if (progression.Raise(trait)) OnTraitRaisedInWindow(i, progression.Rank(trait));
+            else GameAudio.PlaySfx("Fizzle", 0.5f); // 포인트가 없거나 최대 랭크
+        }
+
+        // 창 열림 연출: 배경 어둠이 RelicFadeTime 동안 깔리고 패널이 유물 창과 같은 곡선으로 톡 (SkillHUD.Relics.cs의 상수 공유).
+        private float TraitPanelScale()
+        {
+            float t = (Time.unscaledTime - traitWindowOpenedAt) / RelicPopTime;
+            if (t >= 1f || t < 0f) return 1f;
+            return t < 0.6f
+                ? Mathf.Lerp(0.85f, 1.04f, Mathf.SmoothStep(0f, 1f, t / 0.6f))
+                : Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (t - 0.6f) / 0.4f));
+        }
+
+        // 다음 마일스톤까지 남은 포인트. 다 모았으면 -1.
+        private static int PointsToNextStar(int rank)
+        {
+            foreach (int milestone in TraitTree.Milestones)
+                if (rank < milestone) return milestone - rank;
+            return -1;
         }
 
         private const float LevelFlashTime = 0.6f;
@@ -141,15 +193,22 @@ namespace IBlameYou.UI
             var rect = new Rect((Screen.width - width) / 2f, Screen.height * 0.18f, width, 380f);
 
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - traitWindowOpenedAt) / RelicFadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
+            var windowMatrix = GUI.matrix; // 패널 팝: 카드 팝(BeginCardPop)은 이 위에 겹친다
+            float panelScale = TraitPanelScale();
+            if (panelScale != 1f) GUIUtility.ScaleAroundPivot(Vector2.one * panelScale, rect.center);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "특성", big);
+            // 포인트가 없으면 다음 레벨까지 남은 경험치를 보여 준다
+            string pointsText = progression.Points > 0
+                ? $"남은 포인트 <color=#ffd84d>{progression.Points}</color>"
+                : $"남은 포인트 0 · 다음 레벨까지 경험치 <color=#c8b5ff>{Mathf.Max(1, Mathf.CeilToInt(progression.XpToNext - progression.Experience))}</color>";
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                $"레벨 {progression.Level} · 남은 포인트 <color=#ffd84d>{progression.Points}</color> · A와 B가 함께 쓰는 포인트 · Tab/Esc 닫기",
+                $"레벨 {progression.Level} · {pointsText} · A와 B가 함께 쓰는 포인트 · ←→ + Enter 찍기 · Tab/Esc 닫기",
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             for (int i = 0; i < TraitTree.All.Length; i++)
@@ -165,6 +224,10 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(column.x + 10f, column.y + 8f, column.width - 20f, 26f),
                     $"<b>{TraitTree.Name(trait)}</b>  <color={ownerColor}>{owner}</color>", label);
                 GUI.Label(new Rect(column.x + 10f, column.y + 34f, column.width - 20f, 22f), $"{rank} / {TraitTree.MaxRank}", label);
+                int toStar = PointsToNextStar(rank); // 오른쪽: 다음 별까지 남은 포인트
+                GUI.Label(new Rect(column.x + 10f, column.y + 34f, column.width - 20f, 22f),
+                    toStar > 0 ? $"<color=#ffd84d>다음 별까지 {toStar}</color>" : "<color=#ffd84d>★ 완성</color>",
+                    new GUIStyle(small) { alignment = TextAnchor.MiddleRight, richText = true });
 
                 // 랭크 막대: gold 캡슐 바 (SkillHUD.Bars.cs, 빛 테두리 여백 BarGlow만큼 안쪽으로)
                 var bar = new Rect(column.x + 10f + BarGlow, column.y + 58f, column.width - 20f - 2f * BarGlow, BarHeight);
@@ -191,14 +254,18 @@ namespace IBlameYou.UI
                     y += 44f;
                 }
 
+                if (traitKeyboard && i == traitSelection) CuteButton.DrawSelection(column); // 키보드로 고른 칸 둘레 금색 테두리
                 GUI.enabled = progression.CanRaise(trait);
-                if (CuteButton.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), "+ 찍기", cardButton))
+                string raiseText = progression.Points <= 0 ? "포인트 없음" : rank >= TraitTree.MaxRank ? "최대" : "+ 찍기";
+                if (CuteButton.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), raiseText, cardButton))
                 {
                     if (progression.Raise(trait)) OnTraitRaisedInWindow(i, progression.Rank(trait));
                 }
                 GUI.enabled = true;
                 GUI.matrix = previousMatrix;
             }
+
+            GUI.matrix = windowMatrix;
         }
     }
 }
