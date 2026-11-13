@@ -221,7 +221,7 @@ namespace IBlameYou.UI
 
             if (!string.IsNullOrEmpty(villageMessage))
                 GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage, new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
-            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
+            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage(false, true);
             GUI.matrix = previousMatrix;
         }
 

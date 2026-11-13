@@ -76,10 +76,12 @@ namespace IBlameYou.UI
         }
 
         // keepLockThisFrame: 키로 닫은 경우 그 키(Esc·W)가 일시정지·순간이동으로 새지 않게 잠금은 다음 프레임에 푼다.
-        private void CloseVillage(bool keepLockThisFrame = false)
+        // playSound: 사람이 닫았을 때만 "통"(PauseClose, 일시정지 창 닫기와 같은 소리). 쓰러짐·클리어로 닫힐 땐 안 낸다.
+        private void CloseVillage(bool keepLockThisFrame = false, bool playSound = false)
         {
             if (!villageOpen) return;
             villageOpen = false;
+            if (playSound) GameAudio.PlaySfx("PauseClose", 0.6f);
             Time.timeScale = 1f;
             if (keepLockThisFrame) villageUnlockFrame = Time.frameCount + 1;
             else if (!deathHandled && !stageCleared) control.Locked = false;
@@ -98,7 +100,7 @@ namespace IBlameYou.UI
             if (Time.frameCount <= villageOpenedFrame) return true;
             if (Input.GetKeyDown(KeyCode.Escape) || (!villageKeyboard && (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))))
             {
-                CloseVillage(true);
+                CloseVillage(true, true);
                 return true;
             }
 
@@ -267,11 +269,13 @@ namespace IBlameYou.UI
             GUI.matrix = previousMatrix;
         }
 
-        // 창 뒤 화면을 어둡게
-        private static void DrawVillageBackdrop()
+        // 창 뒤 화면을 어둡게 (열 때 VillageFadeTime 동안 깔린다, 유물 창과 같은 길이)
+        private const float VillageFadeTime = 0.15f;
+
+        private void DrawVillageBackdrop()
         {
             var previous = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * Mathf.Clamp01((Time.unscaledTime - villageOpenedAt) / VillageFadeTime));
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
         }
@@ -351,7 +355,7 @@ namespace IBlameYou.UI
             if (!string.IsNullOrEmpty(villageMessage))
                 GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage,
                     new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
-            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage();
+            if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage(false, true);
             GUI.matrix = previousMatrix;
         }
     }
