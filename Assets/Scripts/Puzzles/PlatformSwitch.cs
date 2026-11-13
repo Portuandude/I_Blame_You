@@ -119,8 +119,14 @@ namespace IBlameYou.Puzzles
                 return;
             }
 
+            var sigilAt = transform.position + Vector3.up * SigilHeight;
+            var streamColor = ElementInfo.Color(required);
             foreach (var platform in platforms)
-                if (platform != null) platform.Activate(ActiveTime);
+                if (platform != null)
+                {
+                    SwitchPlatformFx.Stream(sigilAt, platform.transform, streamColor); // 문양에서 발판으로 마력 줄기
+                    platform.Activate(ActiveTime);
+                }
 
             EffectLibrary.PlayHit(required, transform.position + Vector3.up * SigilHeight, 1.5f);
             GameAudio.PlaySfx($"Hit_{required}", 0.6f);
@@ -128,12 +134,13 @@ namespace IBlameYou.Puzzles
             ApplyGlow(true);
         }
 
-        // 틀린 속성: 문양이 잠깐 하얗게 번쩍인다 (문구 없음).
+        // 틀린 속성: 문양이 잠깐 하얗게 번쩍이고 "팅" + 흰 불꽃 조각 (문구 없음).
         private void Deflect()
         {
             if (Time.time < nextDeflectTime) return;
             nextDeflectTime = Time.time + DeflectCooldown;
             flashUntil = Time.time + DeflectFlash;
+            ElementGateFx.Deflected(transform.position + Vector3.up * SigilHeight); // 봉인문과 같은 "팅" + 흰 불꽃 조각
         }
 
         private void Update()
