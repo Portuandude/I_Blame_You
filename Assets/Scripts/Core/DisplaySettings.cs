@@ -151,9 +151,9 @@ namespace IBlameYou.Core
             int at = Mathf.Max(0, available.IndexOf(resolution));
             float y = rect.y + 56f;
             GUI.Label(new Rect(rect.x + 24f, y, 90f, 36f), "해상도", body);
-            if (GUI.Button(new Rect(rect.x + 120f, y, 44f, 36f), "◀", button)) at = Mathf.Max(0, at - 1);
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 120f, y, 44f, 36f), "◀", button)) at = Mathf.Max(0, at - 1);
             GUI.Label(new Rect(rect.x + 164f, y, 184f, 36f), DisplayRules.ResolutionName(available[at]), center);
-            if (GUI.Button(new Rect(rect.x + 348f, y, 44f, 36f), "▶", button)) at = Mathf.Min(available.Count - 1, at + 1);
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 348f, y, 44f, 36f), "▶", button)) at = Mathf.Min(available.Count - 1, at + 1);
             resolution = available[at];
 
             y += 50f;
@@ -161,7 +161,7 @@ namespace IBlameYou.Core
             for (int i = 0; i < DisplayRules.ModeNames.Length; i++)
             {
                 string label = (i == mode ? "● " : "") + DisplayRules.ModeNames[i];
-                if (GUI.Button(new Rect(rect.x + 24f + i * (modeWidth + 8f), y, modeWidth, 44f), label, button)) mode = i;
+                if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 24f + i * (modeWidth + 8f), y, modeWidth, 44f), label, button)) mode = i;
             }
 
             y += 56f;
@@ -171,12 +171,12 @@ namespace IBlameYou.Core
 
             y += 50f;
             float half = (rect.width - 48f - 8f) / 2f;
-            if (GUI.Button(new Rect(rect.x + 24f, y, half, 44f), "적용", button))
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 24f, y, half, 44f), "적용", button))
             {
                 DisplaySettings.Set(resolution, mode);
                 Close();
             }
-            if (GUI.Button(new Rect(rect.x + 32f + half, y, half, 44f), "닫기 (Esc)", button)) Close();
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 32f + half, y, half, 44f), "닫기 (Esc)", button)) Close();
         }
     }
 }
