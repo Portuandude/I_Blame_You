@@ -25,6 +25,9 @@ namespace IBlameYou.Enemies
 
         public bool Active => remaining > 0f;
 
+        // 광폭화가 풀리기까지 남은 초 (꺼져 있으면 0).
+        public float Remaining => Mathf.Max(0f, remaining);
+
         // false면 체력 조건으로 스스로 켜지지 않고 Trigger로만 켜진다 (쌍둥이 슬라임 기사: 짝이 쓰러지면 광폭화).
         public bool AutoTrigger { get; set; } = true;
 
