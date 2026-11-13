@@ -14,6 +14,7 @@ namespace IBlameYou.Systems
         private const int SfxVoices = 12;
         private const float SameClipCooldown = 0.05f; // 같은 소리가 한꺼번에 겹쳐 터지는 것을 막는다
         private const float MusicFadeTime = 0.8f;
+        private const float MusicCutTime = 0.1f; // SilenceMusic: 이만큼 만에 뚝 줄인다 (0이면 딸깍 소리가 난다)
 
         private static GameAudio instance;
 
@@ -27,6 +28,7 @@ namespace IBlameYou.Systems
         private string currentMusicName;
         private float musicPitch = 1f; // 지금 곡의 목표 빠르기 (곡을 바꾸면 1로 돌아간다)
         private float musicDuck = 1f; // SetMusicDuck
+        private float silentUntil = -1f; // SilenceMusic: 이 실제 시각까지 모든 곡을 0으로
         private const float MusicPitchSpeed = 0.5f; // 초당 바뀌는 빠르기 (1 → 1.08이 0.16초)
 
         private static GameAudio Instance
@@ -67,6 +69,14 @@ namespace IBlameYou.Systems
         {
             if (instance == null && scale >= 1f) return; // 아직 소리를 안 냈으면 되돌릴 것도 없다 (종료 중 오브젝트를 새로 만들지 않게)
             Instance.musicDuck = Mathf.Clamp01(scale);
+        }
+
+        // 배경음악을 seconds초(실제 시간) 동안 뚝 끊는다 (예: 보스 격파 순간의 정적). 그사이 곡이 바뀌어도 끝나면 새 곡이 평소처럼 차오른다.
+        // 크기 조절(SetMusicDuck)과 따로 움직이므로 다른 쪽이 정한 크기를 건드리지 않는다.
+        public static void SilenceMusic(float seconds)
+        {
+            if (instance == null) return; // 아직 곡이 없으면 끊을 것도 없다
+            instance.silentUntil = Mathf.Max(instance.silentUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
         }
 
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
@@ -151,16 +161,17 @@ namespace IBlameYou.Systems
         private void Update()
         {
             // 지금 곡은 MusicVolume까지 올리고, 이전 곡은 줄여서 끈다.
-            float step = Time.unscaledDeltaTime / MusicFadeTime * Mathf.Max(MusicVolume, 0.1f); // 볼륨이 0이어도 이전 곡은 꺼지게
-            Fade(musicA, step);
-            Fade(musicB, step);
+            bool silent = Time.unscaledTime < silentUntil;
+            float step = Time.unscaledDeltaTime / (silent ? MusicCutTime : MusicFadeTime) * Mathf.Max(MusicVolume, 0.1f); // 볼륨이 0이어도 이전 곡은 꺼지게
+            Fade(musicA, step, silent);
+            Fade(musicB, step, silent);
             if (currentMusic != null) currentMusic.pitch = Mathf.MoveTowards(currentMusic.pitch, musicPitch, Time.unscaledDeltaTime * MusicPitchSpeed);
         }
 
-        private void Fade(AudioSource source, float step)
+        private void Fade(AudioSource source, float step, bool silent)
         {
             if (!source.isPlaying) return;
-            float target = source == currentMusic ? MusicVolume * musicDuck : 0f;
+            float target = source == currentMusic && !silent ? MusicVolume * musicDuck : 0f;
             source.volume = Mathf.MoveTowards(source.volume, target, step);
             if (source != currentMusic && source.volume <= 0f) source.Stop();
         }
