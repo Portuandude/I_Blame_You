@@ -573,6 +573,18 @@ def boss_near():
     return normalize(fade_edges(lowpass(out, 1500), 30))
 
 
+def heartbeat():
+    """체력 30% 이하 경고: 부드러운 심장 "두-근" (낮은 사인 쿵 두 개, 0.13초 간격), 0.36초. 맥동마다 나므로 작고 둥글게."""
+    n = int(0.36 * SR)
+    out = np.zeros(n)
+    for at, amp in ((0.0, 1.0), (0.13, 0.7)):
+        m = int(0.2 * SR)
+        tm = np.arange(m) / SR
+        beat = osc("sine", 85 * np.exp(-tm * 16) + 48, m) * env_exp(m, 0.06)
+        mix_at(out, amp * beat, int(at * SR))
+    return normalize(fade_edges(lowpass(out, 1200), 6))
+
+
 def vampire_heart():
     """흡혈 하트가 플레이어에 닿을 때: 작고 말랑한 "뽁" (아래→위로 튀는 둥근 사인 + 살짝 낮은 몸통), 0.18초."""
     n = int(0.18 * SR)
@@ -1161,7 +1173,7 @@ def main():
         "RelicOpen": relic_open, "Switch_On": switch_on, "Switch_Tick": switch_tick,
         "GateOpen": gate_open, "Pickup": pickup, "ArenaLock": arena_lock, "StarShard": star_shard, "VampireHeart": vampire_heart,
         "RelicNew": relic_new, "Crumble": crumble, "Crumble_Back": crumble_back, "JellySquish": jelly_squish, "JellyDrip": jelly_drip, "MagnetWhoosh": magnet_whoosh, "Coin": coin, "CoinPile": coin_pile, "Crit": crit, "Combo": combo, "Notice": notice, "TrapWarn": trap_warn, "FlameHiss": flame_hiss,
-        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near,
+        "Blink": blink, "Fizzle": fizzle, "Step": step, "UiClick": ui_click, "BossNear": boss_near, "Heartbeat": heartbeat,
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
@@ -1170,7 +1182,7 @@ def main():
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
