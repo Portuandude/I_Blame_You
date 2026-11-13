@@ -151,7 +151,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비 상점", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
-                $"골드 <color=#ffd84d>{SpendableGold}</color> · 같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " : "")}{VillageKeysHint("1~4")}",
+                $"골드 <color=#ffd84d>{SpendableGold}</color> · 같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " + VillageKeysHint("1~4", "누르기") : VillageKeysHint("1~4"))}",
                 new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
 
             int gold = SpendableGold;

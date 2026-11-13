@@ -136,8 +136,8 @@ namespace IBlameYou.UI
         }
 
         // 창 위 안내 글의 조작 부분
-        private string VillageKeysHint(string numbers) => villageKeyboard
-            ? "↑↓ 고르기 · Enter 사기 · Esc 닫기"
+        private string VillageKeysHint(string numbers, string verb = "사기") => villageKeyboard
+            ? $"↑↓ 고르기 · Enter {verb} · Esc 닫기"
             : $"{numbers} 사기 · ↓ 고르기 · Esc/W 닫기";
 
         private bool HealthFull => health.Current >= health.Max - 0.01f;
