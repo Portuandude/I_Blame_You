@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 00:15 UTC
+- 브랜치/PR: `claude/project-thread-s2gsje` → #61 (develop 대상, 자동 머지 켬). 00:10 실행 인수인계로 #60 head 위에서 시작 (#59 CI 성공·자동 머지 대기, #60 CI 진행 중). 백로그가 비어 DIRECTION ① "전투 구역 연출" 5개 추가
+- 완료 (6개, 적대적 리뷰 APPROVE): ① 장벽이 위에서 "쿵" 떨어지며 먼지 ② 돌파하면 장벽이 위로 걷히며 사라짐 + `GateOpen` ③ 닫힌 장벽 숨쉬기 ④ 적 소환 "뿅" `Summon` ⑤ "구역 돌파! (N초)" ⑥ 보스 방 앞 첫 입장 때 화면 가장자리 검붉은 맥동 + 안내 (`Stage/ArenaGate.cs` 새 파일). 6개 끝 → 인수인계 후 새 실행
+- 실패/보류: 없음. 적 수·박자·피해·시드 지형 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 장벽 낙하·걷힘이 자연스러운지, 숨쉬는 장벽이 거슬리지 않는지, "뿅" 크기, 돌파 시간 숫자, 보스 방 앞 붉은 가장자리·안내
+
 ## 2026-11-13 00:10 UTC
 - 브랜치/PR: `claude/project-thread-0xe6cj` → #60 (develop 대상, 자동 머지 켬). 00:02 실행 인수인계로 #59 head 위에서 시작 (#58 머지됨, #59 자동 머지 대기). 백로그가 비어 DIRECTION ① "소리 다듬기" 추가
 - 완료 (6개, 적대적 리뷰 APPROVE): ① 순간이동 `Blink` ② 빨간 실패 알림 `Fizzle`(0.2초 쿨다운, `SkillMessages.Post`) ③ 발소리 `Step`(걷기 0.34초·달리기 0.24초) ④ 버튼 `UiClick`(모든 게임 IMGUI 버튼 → `CuteButton.Button`/`LayoutButton`) ⑤ 보스 방 앞 방 배경음악 0.55배 + `BossNear` (`GameAudio.SetMusicDuck`) ⑥ 체력 경고 맥동마다 `Heartbeat`. 6개 끝 → 인수인계 후 새 실행
