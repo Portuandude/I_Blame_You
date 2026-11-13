@@ -697,6 +697,7 @@ namespace IBlameYou.Systems
             PlaceAtArrival(next.Index, RoomLayout.Opposite(passed));
             EnterRoom(next.Index);
             ScreenFlash.RoomFade(); // 옮긴 순간을 어둡게 덮었다가 밝혀 순간이동처럼 튀어 보이지 않게
+            GameAudio.PlaySfx("RoomPass", 0.8f, 0.05f); // 어두워지는 순간 가벼운 "휙" (Tools/AudioGen RoomPass, 2026-11-13 방 입장 연출)
         }
 
         // 방을 옮기면 떠난 방의 적은 바로 치운다 (쓰러뜨린 것으로 치지 않아 그 방에 다시 들어가면 다시 나온다).
