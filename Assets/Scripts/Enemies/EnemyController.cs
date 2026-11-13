@@ -176,6 +176,7 @@ namespace IBlameYou.Enemies
         private const float NoticeSfxCooldown = 0.25f;
         private const float NoticeHeight = 0.5f; // 몸 윗면에서 띄우는 높이
         private static readonly Color NoticeColor = new Color(1f, 0.85f, 0.2f);
+        private static readonly Color EliteNoticeColor = new Color(0.78f, 0.45f, 1f);
         private static float lastNoticeSfxTime = -1f;
         private const float NoticeBornGrace = 0.4f; // 막 나타난 적(구역 소환·분열)은 이미 싸우는 중이라 "!" 없음
         private float nextNoticeTime;
@@ -186,7 +187,9 @@ namespace IBlameYou.Enemies
             if (IsDead || Time.time < nextNoticeTime || Time.time - bornTime < NoticeBornGrace) return;
             nextNoticeTime = Time.time + NoticeCooldown;
             var body = BodyBounds;
-            DamageNumbers.ShowText(new Vector3(body.center.x, body.max.y + NoticeHeight, 0f), "!", NoticeColor, 1.15f);
+            bool elite = IBlameYou.Core.RunGold.RankOf(this) == EnemyRank.Elite; // 정예는 더 크고 보라 "!!" (정예 경고와 같은 계열)
+            DamageNumbers.ShowText(new Vector3(body.center.x, body.max.y + NoticeHeight, 0f), elite ? "!!" : "!",
+                elite ? EliteNoticeColor : NoticeColor, elite ? 1.5f : 1.15f);
             if (lastNoticeSfxTime >= 0f && Time.unscaledTime - lastNoticeSfxTime < NoticeSfxCooldown) return;
             lastNoticeSfxTime = Time.unscaledTime;
             GameAudio.PlaySfx("Notice", 0.5f);
