@@ -584,11 +584,16 @@ namespace IBlameYou.Tests
                         foreach (var f in chunk.Features)
                         {
                             if (f.Y != m.Y) continue;
-                            if (f.Kind == FeatureKind.Enemy) Assert.AreNotEqual(m.X, f.X, where + ": 버섯 칸의 적");
+                            if (f.Kind == FeatureKind.Enemy) Assert.Greater(System.Math.Abs(f.X - m.X), 2, where + ": 버섯 옆의 적");
                             if (f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet)
                                 Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < m.X - 2 || f.X > m.X + 2, where + $": 버섯 옆 {f.Kind}");
                         }
                     }
+
+                    // P2 → 맨 위 판 사이 빈 칸은 좌우 모두 1칸
+                    int p2Edge = RoomShaper.MushroomTowerOnLeft(room) ? RoomShaper.TowerShelf2X1 : RoomShaper.TowerCol(false, RoomShaper.TowerShelf2X1);
+                    int topEdge = RoomShaper.MushroomTowerOnLeft(room) ? RoomShaper.HoleX0 - 1 : RoomShaper.HoleX1 + 1;
+                    Assert.AreEqual(2, System.Math.Abs(topEdge - p2Edge), where + ": 마지막 뛰기 간격");
 
                     // 길 버섯을 덤 버섯으로 바꾸면 바닥에서 위 문으로 못 간다
                     var copy = new ChunkData { Index = chunk.Index, Kind = chunk.Kind, Difficulty = chunk.Difficulty };
