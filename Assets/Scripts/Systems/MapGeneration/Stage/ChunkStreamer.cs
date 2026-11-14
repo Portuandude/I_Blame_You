@@ -916,6 +916,8 @@ namespace IBlameYou.Systems
             var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
             if (health == null) return;
             RegisterEnemy(health);
+            if (chest != null) chest.Watch(health);
+            // 어미 슬라임이 분열해 나온 슬라임은 SplitOnDeath가 이 스트리머(IEnemyGroup)에 넣어 방을 떠나면 함께 치워진다. 보상은 어미가 쓰러진 순간
             health.HealthChanged += (current, max) =>
             {
                 if (current > 0f || cursedBroken.Contains(index)) return;

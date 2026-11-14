@@ -20,6 +20,15 @@ namespace IBlameYou.Systems
         private bool awake;
         private float wispTimer;
         private float shakeLeft;
+        private HealthSystem elite;
+        private bool watching;
+
+        // 깨어난 정예를 지켜본다: 쓰러지지 않고 사라지면(낭떠러지 등으로 치워짐) 상자가 다시 잠들어 닿으면 다시 깨어난다.
+        public void Watch(HealthSystem enemy)
+        {
+            elite = enemy;
+            watching = enemy != null;
+        }
 
         public static CursedChest Create(Transform parent, Vector2 position, Action onAwaken)
         {
@@ -57,6 +66,11 @@ namespace IBlameYou.Systems
 
         private void Update()
         {
+            if (watching && elite == null)
+            {
+                watching = false;
+                awake = false;
+            }
             if (visual == null) return;
             if (shakeLeft > 0f)
             {
