@@ -19,6 +19,7 @@ namespace IBlameYou.Core
         private static readonly TestEvent[] Events = (TestEvent[])Enum.GetValues(typeof(TestEvent));
         private static int PickCount => Monsters.Length + Events.Length;
         private ArenaZone ambushZone;
+        private int ambushCount;
         private int cursedCount;
 
         // 유물 해제는 효과를 되돌리는 대신 시험 맵을 다시 만들고 남은 유물만 다시 단다 (유물 효과는 얻을 때 한 번 적용되므로).
@@ -164,7 +165,7 @@ namespace IBlameYou.Core
             return stage.Chunks[index].SurfaceAt(column);
         }
 
-        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다).
+        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다. 두 번째마다 땅속 매복).
         // 구역 안에 서 있으니 바로 문이 닫힌다. 다 쓰러뜨리면 문이 열리고, 다시 누르면 새로 연다.
         private static readonly StageEnemy[] AmbushEnemies = { StageEnemy.Slime, StageEnemy.Goblin, StageEnemy.GoblinArcher };
         private static readonly int[] AmbushColumns = { 9, 16, 23 };
@@ -205,6 +206,8 @@ namespace IBlameYou.Core
             ambushZone = ArenaZone.Create(enemyRoot, left, left + ChunkData.Width, ground, spawns, false, spawner,
                 () => StageEvents.PostNotice("매복 시험 끝 — F8로 다시"));
             ambushZone.Ambush = true;
+            ambushZone.Burrow = ambushCount % 2 == 1; // 번갈아: 천장에서 떨어짐 → 땅속에서 튀어나옴
+            ambushCount++;
         }
 
         // 저주받은 상자 시험: 바라보는 쪽 4칸 앞 바닥에 상자. 닿으면 정예(엄마 슬라임·고블린 전사 번갈아)가 깨어나고, 쓰러뜨리면 유물 2개 중 고르기 상자.
