@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-14 00:26 UTC
+- 브랜치/PR: `claude/project-thread-8lk6uu` → #91 (develop 대상, 자동 머지 켬, #90 head 위에 쌓음). 시작할 때 #89·#90 열림 (자동 머지 대기)
+- 완료 (5개, 적대적 리뷰 결함 없음, LOW 1개 고침): 통통 버섯 튕김 연출 — ① 튕길 때 플레이어 세로 +30% 늘어남 (`PlayerSquash.Stretch`) ② 오르는 동안 분홍 잔상 (새 `Systems/Effects/BounceTrailFx`) ③ 최고점 반짝 + 포자 ④ 연달아 밟으면 "통" 음 높이 올림 (최대 3단계), 적은 낮은 음 + 잔상 ⑤ 가만히 있는 버섯에서 포자가 떠오름 (`MushroomSpore`). 빠진 `Systems/Traps.meta` 추가
+- 실패/보류: 없음. 튕기는 높이·판정 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 연속 "통" 음이 시끄럽지 않은지, 포자가 너무 많지 않은지
+
 ## 2026-11-14 00:20 UTC
 - 브랜치/PR: `claude/project-thread-7ql488` → #90 (develop 대상, 자동 머지 켬, #89 head 위에 쌓음 — 시작할 때 #89 CI 진행 중). 백로그가 사람 판단뿐이라 00:10 인수인계 후보로 "통통 버섯 넓히기" 추가
 - 완료 (4개, 적대적 리뷰 APPROVE, LOW 2개 고침): ① 언덕 청크에도 버섯 덤 길 (근처 언덕이 바닥 + 3보다 높으면 안 놓음, `BounceReachGuard`) ② 위에서 내려앉은 적도 약 4.5칸 튕김 (`BounceMushroom.TryBounceEnemy`) ③ 기능 테스트 맵 2구역 "통통 버섯 방" (`ChunkGenerator.AddBounceLedge`) ④ 두 갈래 길 아래 길 버섯 (`PlaceTwinPathMushroom`, 떨어져도 위 길로). 난수 안 씀, 로컬 175/175
