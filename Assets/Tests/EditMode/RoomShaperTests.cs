@@ -273,7 +273,8 @@ namespace IBlameYou.Tests
                     var style = RoomShaper.PickShaftStyle(seed, room);
                     var chunk = RoomShaper.BuildShaft(seed, room, style).Chunk;
                     var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile && f.Y != RoomShaper.WindLedgeRow + 1
-                        && f.Y != RoomShaper.ShaftGround + RoomShaper.MushroomShelfRise); // 바람 지름길·버섯 선반 동전은 따로
+                        && f.Y != RoomShaper.ShaftGround + RoomShaper.MushroomShelfRise
+                        && style != RoomShaper.ShaftStyle.MushroomTower); // 바람 지름길·버섯 선반·버섯 탑 동전은 따로
                     bool expected = style == RoomShaper.ShaftStyle.Shelves && room.Kind == RoomKind.Travel
                         && room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty;
                     string tag = $"seed {seed} room {room.Index} {style}";
@@ -588,6 +589,16 @@ namespace IBlameYou.Tests
                             if (f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet)
                                 Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < m.X - 2 || f.X > m.X + 2, where + $": 버섯 옆 {f.Kind}");
                         }
+                    }
+
+                    // P2 벽 쪽 끝 동전 (난이도 문턱 이상)
+                    int stand2 = RoomShaper.ShaftGround + 2 * RoomShaper.TowerStep;
+                    var coins = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                    Assert.AreEqual(room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty ? 1 : 0, coins.Count, where);
+                    foreach (var c in coins)
+                    {
+                        Assert.AreEqual(stand2, c.Y, where);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), where + ": P2 위 동전");
                     }
 
                     // P2 → 맨 위 판 사이 빈 칸은 좌우 모두 1칸
