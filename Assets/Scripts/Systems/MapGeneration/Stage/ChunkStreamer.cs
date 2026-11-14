@@ -921,7 +921,7 @@ namespace IBlameYou.Systems
             var origin = Origin(index);
             int cols = RoomCols(index);
             float local = player.position.x - origin.x;
-            var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)));
+            var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)), headroom: EnemyHeadroom);
             if (!spot.HasValue) return;
             var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(spot.Value.x, spot.Value.y + SpawnLift, 0f), transform);
             if (health == null) return;
@@ -1000,7 +1000,7 @@ namespace IBlameYou.Systems
             var spawned = new List<HealthSystem>();
             for (int i = 0; i < kinds.Length; i++)
             {
-                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i]) ?? chestPosition;
+                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i], headroom: EnemyHeadroom) ?? chestPosition;
                 var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
                 EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
                 var health = spawnEnemy(kinds[i], position, transform);
@@ -1032,7 +1032,7 @@ namespace IBlameYou.Systems
             if (spawnEnemy == null) return;
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
             int side = player != null && player.position.x < chestPosition.x ? 1 : -1;
-            var spot = FindStandSpot(index, chestColumn + side * 4) ?? chestPosition;
+            var spot = FindStandSpot(index, chestColumn + side * 4, headroom: EnemyHeadroom) ?? chestPosition;
             var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
             EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
             GameAudio.PlaySfx("Summon", 0.7f);
@@ -1059,7 +1059,9 @@ namespace IBlameYou.Systems
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
         // 반환: 그 칸 바닥 가운데의 월드 좌표 (발밑). 못 찾으면 null.
         // avoidEnemies: 찾은 바닥 칸 ±1열·±1행에 청크 적이 서 있으면 그 열을 건너뛴다 (저주 상자 — 세로 방은 바닥에 적이 서 있다).
-        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false)
+        // headroom: 바닥 위로 비어 있어야 하는 칸 수. 적은 EnemyHeadroom(3) — SpawnLift(1.2)만큼 띄워 만들어서 대전사(키 1.35)는 머리가 바닥+2.55까지 온다.
+        //   두 칸만 보면 세로 방 첫 발판(바닥+3 줄) 바로 밑에서 발판에 몸이 박혀 걸린다 (2026-11-14 자동 실행).
+        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false, int headroom = 2)
         {
             var chunk = stage.Chunks[index];
             var origin = Origin(index);
@@ -1072,6 +1074,7 @@ namespace IBlameYou.Systems
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {
                         if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
+                        if (!HeadClear(chunk, x, y, headroom)) break; // 이 열 바닥은 머리 위가 낮다 (발판 밑) → 다음 열
                         if (avoidEnemies && HasEnemyNear(chunk, x, y)) break; // 이 열 바닥엔 적이 선다 → 다음 열
                         return new Vector2(origin.x + x + 0.5f, origin.y + y);
                     }
@@ -1079,6 +1082,15 @@ namespace IBlameYou.Systems
             }
             return null;
         }
+
+        private static bool HeadClear(ChunkData chunk, int x, int y, int headroom)
+        {
+            for (int k = 2; k < headroom; k++)
+                if (y + k < ChunkData.Height && chunk.IsSolid(x, y + k)) return false;
+            return true;
+        }
+
+        private const int EnemyHeadroom = 3;
 
         // 그 열에 적이 아닌 지형 요소(가시·함정·발판·버섯·바람 구멍·동전 등)가 있으면 true.
         private static bool HasTerrainFeature(ChunkData chunk, int x)
