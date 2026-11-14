@@ -36,6 +36,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
         private readonly HashSet<int> cursedQuick = new HashSet<int>(); // 그중 빠른 해제(CursedChestRule.QuickTime 안)로 유물 3개 중 고르기인 방
+        private readonly HashSet<int> cursedLeftAwake = new HashSet<int>(); // 깨웠지만 아직 못 푼 저주 상자 방 (떠났다 오면 "다시 잠들었다")
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
@@ -140,6 +141,13 @@ namespace IBlameYou.Systems
         // 미니맵 방 이벤트 점: 그 방에 보물 고블린이 아직 살아 있는지 (잡거나 10초가 지나 도망치면 false)
         private HealthSystem treasureGoblin;
         private int treasureGoblinRoom = -1;
+        // 세로 방 보물 고블린은 플레이어가 바닥 가까이(GoblinWakeHeight칸 안) 내려와야 나타난다 (2026-11-14 자동 실행).
+        // 위 문으로 들어오면 바닥까지 22칸을 내려오는 사이 10초가 흘러 잡을 틈이 없었다. 나타나기 전에 떠나면 다음에 올 때까지 기다린다.
+        private readonly HashSet<int> goblinWaiting = new HashSet<int>();
+        private const float GoblinWakeHeight = 9f;
+
+        // 미니맵: 세로 방에서 아직 나타나지 않고 기다리는 보물 고블린 (들어가 본 방, 깜빡이지 않는 옅은 금색 점)
+        public bool HasWaitingTreasureGoblin(int index) => goblinWaiting.Contains(index);
         private readonly Dictionary<int, Vector2> goblinEquipmentSpots = new Dictionary<int, Vector2>(); // 보물 고블린이 떨군 장비 자리 (방 → 발밑)
         public bool HasTreasureGoblin(int index) =>
             index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
@@ -298,6 +306,7 @@ namespace IBlameYou.Systems
                 }
 
                 CheckDoors();
+                WakeWaitingGoblin();
                 StageEvents.Depth = RoomDepth(currentRoom);
             }
             else
@@ -910,8 +919,26 @@ namespace IBlameYou.Systems
             }
             // 방 이벤트 보물 고블린 (2026-11-14 사람 결정): 이동 방(세로 방 포함 — Chunks/RoomEventRule)에 처음 들어가면 금화 자루를 멘 고블린이 나타나 도망친다 (난수 안 씀)
             if (firstVisit && RoomEventRule.IsTreasureGoblinRoom(stage.Seed, entered))
-                SpawnTreasureGoblin(index);
+            {
+                if (entered.IsVertical) goblinWaiting.Add(index); // 바닥 가까이 내려오면 (WakeWaitingGoblin)
+                else SpawnTreasureGoblin(index);
+            }
+            // 기다리는 보물 고블린이 있는 세로 방에 위쪽으로 들어오면 아래에서 금화 소리 (2026-11-14 자동 실행): 내려가 보라는 힌트
+            if (goblinWaiting.Contains(index) && player != null && player.position.y - Origin(index).y > GoblinWakeHeight)
+            {
+                StageEvents.PostNotice("아래에서 금화 짤랑이는 소리가 들린다...");
+                GameAudio.PlaySfx("CoinPile", 0.35f, 0f);
+            }
             RoomEntered?.Invoke(index);
+        }
+
+        // 세로 방에서 기다리던 보물 고블린: 플레이어가 그 방 바닥에서 GoblinWakeHeight칸 안으로 내려오면 나타난다.
+        private void WakeWaitingGoblin()
+        {
+            if (goblinWaiting.Count == 0 || !goblinWaiting.Contains(currentRoom)) return;
+            if (player.position.y - Origin(currentRoom).y > GoblinWakeHeight) return;
+            goblinWaiting.Remove(currentRoom);
+            SpawnTreasureGoblin(currentRoom);
         }
 
         // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다.
@@ -921,7 +948,7 @@ namespace IBlameYou.Systems
             var origin = Origin(index);
             int cols = RoomCols(index);
             float local = player.position.x - origin.x;
-            var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)));
+            var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)), headroom: EnemyHeadroom);
             if (!spot.HasValue) return;
             var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(spot.Value.x, spot.Value.y + SpawnLift, 0f), transform);
             if (health == null) return;
@@ -973,6 +1000,9 @@ namespace IBlameYou.Systems
                 return;
             }
 
+            // 깨운 채 떠났다가 돌아오면 상자가 처음 상태로 돌아갔다고 알려 준다 (2026-11-14 자동 실행)
+            if (cursedLeftAwake.Remove(index)) StageEvents.PostNotice("상자의 저주가 다시 잠들었다...");
+
             CursedChest chest = null;
             bool swarm = CursedChestRule.IsSwarm(stage.Seed, index);
             chest = CursedChest.Create(root, position, () =>
@@ -1000,7 +1030,7 @@ namespace IBlameYou.Systems
             var spawned = new List<HealthSystem>();
             for (int i = 0; i < kinds.Length; i++)
             {
-                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i]) ?? chestPosition;
+                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i], headroom: EnemyHeadroom) ?? chestPosition;
                 var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
                 EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
                 var health = spawnEnemy(kinds[i], position, transform);
@@ -1021,6 +1051,7 @@ namespace IBlameYou.Systems
                 };
             }
             if (spawned.Count == 0) return;
+            cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             GameAudio.PlaySfx("Summon", 0.7f);
             if (chest != null) chest.Watch(spawned.ToArray());
         }
@@ -1032,12 +1063,13 @@ namespace IBlameYou.Systems
             if (spawnEnemy == null) return;
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
             int side = player != null && player.position.x < chestPosition.x ? 1 : -1;
-            var spot = FindStandSpot(index, chestColumn + side * 4) ?? chestPosition;
+            var spot = FindStandSpot(index, chestColumn + side * 4, headroom: EnemyHeadroom) ?? chestPosition;
             var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
             EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
             GameAudio.PlaySfx("Summon", 0.7f);
             var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
             if (health == null) return;
+            cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             RegisterEnemy(health);
             if (chest != null) chest.Watch(health);
             // 어미 슬라임이 분열해 나온 슬라임은 SplitOnDeath가 이 스트리머(IEnemyGroup)에 넣어 방을 떠나면 함께 치워진다. 보상은 어미가 쓰러진 순간
@@ -1052,6 +1084,7 @@ namespace IBlameYou.Systems
 
         private void SpawnCursedReward(Transform root, int index, Vector2 position, bool dropped)
         {
+            cursedLeftAwake.Remove(index);
             int offer = cursedQuick.Contains(index) ? CursedChestRule.QuickOfferSize : CursedChestRule.OfferSize;
             RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), offer);
         }
@@ -1059,7 +1092,9 @@ namespace IBlameYou.Systems
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
         // 반환: 그 칸 바닥 가운데의 월드 좌표 (발밑). 못 찾으면 null.
         // avoidEnemies: 찾은 바닥 칸 ±1열·±1행에 청크 적이 서 있으면 그 열을 건너뛴다 (저주 상자 — 세로 방은 바닥에 적이 서 있다).
-        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false)
+        // headroom: 바닥 위로 비어 있어야 하는 칸 수. 적은 EnemyHeadroom(3) — SpawnLift(1.2)만큼 띄워 만들어서 대전사(키 1.35)는 머리가 바닥+2.55까지 온다.
+        //   두 칸만 보면 세로 방 첫 발판(바닥+3 줄) 바로 밑에서 발판에 몸이 박혀 걸린다 (2026-11-14 자동 실행).
+        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false, int headroom = 2)
         {
             var chunk = stage.Chunks[index];
             var origin = Origin(index);
@@ -1072,6 +1107,7 @@ namespace IBlameYou.Systems
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {
                         if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
+                        if (!HeadClear(chunk, x, y, headroom)) break; // 이 열 바닥은 머리 위가 낮다 (발판 밑) → 다음 열
                         if (avoidEnemies && HasEnemyNear(chunk, x, y)) break; // 이 열 바닥엔 적이 선다 → 다음 열
                         return new Vector2(origin.x + x + 0.5f, origin.y + y);
                     }
@@ -1079,6 +1115,15 @@ namespace IBlameYou.Systems
             }
             return null;
         }
+
+        private static bool HeadClear(ChunkData chunk, int x, int y, int headroom)
+        {
+            for (int k = 2; k < headroom; k++)
+                if (y + k < ChunkData.Height && chunk.IsSolid(x, y + k)) return false;
+            return true;
+        }
+
+        private const int EnemyHeadroom = 3;
 
         // 그 열에 적이 아닌 지형 요소(가시·함정·발판·버섯·바람 구멍·동전 등)가 있으면 true.
         private static bool HasTerrainFeature(ChunkData chunk, int x)
