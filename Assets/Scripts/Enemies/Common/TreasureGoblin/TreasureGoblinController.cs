@@ -15,6 +15,7 @@ namespace IBlameYou.Enemies
         private const float WallCheckDistance = 0.6f;
         private const float WallCheckHeight = 0.4f;
         private const float SparkleInterval = 0.35f;
+        private const float TrailInterval = 0.22f; // 달리는 동안 발밑 동전 자국 간격 (TreasureGoblinTrail)
         private static readonly Color CountColor = new Color(1f, 0.85f, 0.3f);
 
         private LayerMask ground;
@@ -23,6 +24,7 @@ namespace IBlameYou.Enemies
         private float bornAt;
         private float turnLockUntil;
         private float nextSparkle;
+        private float nextTrail;
         private int lastCount = -1;
         private bool escaped;
 
@@ -103,6 +105,14 @@ namespace IBlameYou.Enemies
             }
 
             moveDirection = Blocked(facing) ? 0f : facing;
+
+            // 달리는 동안(땅 위) 발밑에 금빛 동전 자국 — 어디로 갔는지 보이게
+            if (moveDirection != 0f && Mathf.Abs(Rb.linearVelocity.y) < 0.2f && Time.time >= nextTrail)
+            {
+                nextTrail = Time.time + TrailInterval;
+                var body = BodyBounds;
+                TreasureGoblinTrail.Drop(new Vector3(body.center.x - facing * 0.2f, body.min.y, 0f));
+            }
         }
 
         protected override void Move()
