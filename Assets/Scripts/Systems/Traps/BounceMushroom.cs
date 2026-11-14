@@ -14,6 +14,13 @@ namespace IBlameYou.Systems
         private const float LandTolerance = 0.4f; // 발이 갓 윗면보다 이만큼 아래여도 내려앉은 것으로 본다
         private const float Cooldown = 0.25f;
         private const float SquashTime = 0.35f;
+        private const float PlayerStretch = 0.3f;  // 튕겨 오를 때 세로 +30% (보통 점프 20%보다 크게)
+        private const float PlayerStretchTime = 0.24f;
+        private const float ChainWindow = 1.6f;    // 이 안에 다시 튕기면 "연속" (같은 버섯 왕복 ≈ 1.4초)
+        private const int MaxChain = 3;
+        private const float ChainPitchStep = 0.12f;
+        private const float SporeMinGap = 2.5f;     // 가만히 있을 때 포자가 피어오르는 간격
+        private const float SporeMaxGap = 4.5f;
         private static readonly Color CapColor = new Color(1f, 0.42f, 0.64f);
         private static readonly Color CapRim = new Color(0.86f, 0.28f, 0.5f);
         private static readonly Color StemColor = new Color(1f, 0.94f, 0.84f);
@@ -22,6 +29,9 @@ namespace IBlameYou.Systems
         private Transform visual;
         private float lastBounce = -10f;
         private float squashAge = 10f;
+        private float nextSpore = -1f;
+        private static float lastPlayerBounce = -10f;
+        private static int chain;
 
         // feet: 버섯이 선 바닥 윗면의 가운데 (월드).
         public static BounceMushroom Create(Transform parent, Vector2 feet)
@@ -83,7 +93,10 @@ namespace IBlameYou.Systems
             float gravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Max(0.01f, body.gravityScale);
             body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Sqrt(2f * gravity * LaunchHeight));
             player.ResetAirborne(); // 낮은 점프 끊기·코요테 점프·가짜 착지 먼지가 끼어들지 않게
-            Bounced(new Vector3(transform.position.x, capTop, 0f));
+            var squash = player.GetComponent<PlayerSquash>();
+            if (squash != null) squash.Stretch(PlayerStretch, PlayerStretchTime);
+            BounceTrailFx.Play(player.gameObject, true);
+            Bounced(new Vector3(transform.position.x, capTop, 0f), ChainPitch());
         }
 
         // 적도 위에서 떨어져 내려앉으면 튕긴다 (2026-11-14: 도약하는 슬라임·떨어지는 적이 버섯에 닿으면 통 튀어 오른다).
@@ -105,13 +118,23 @@ namespace IBlameYou.Systems
             lastBounce = Time.time;
             float gravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Max(0.01f, body.gravityScale);
             body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Sqrt(2f * gravity * EnemyLaunchHeight));
-            Bounced(new Vector3(transform.position.x, capTop, 0f));
+            BounceTrailFx.Play(body.gameObject, false);
+            Bounced(new Vector3(transform.position.x, capTop, 0f), 0.9f); // 적은 조금 낮은 "통"
         }
 
-        private void Bounced(Vector3 top)
+        // 플레이어가 버섯(어느 버섯이든)을 연달아 밟으면 "통-통-통" 음이 한 단계씩 올라간다 (최대 3단계)
+        private static float ChainPitch()
+        {
+            float since = Time.time - lastPlayerBounce;
+            chain = since >= 0f && since < ChainWindow ? Mathf.Min(chain + 1, MaxChain) : 0;
+            lastPlayerBounce = Time.time;
+            return 1f + ChainPitchStep * chain;
+        }
+
+        private void Bounced(Vector3 top, float pitch)
         {
             squashAge = 0f;
-            GameAudio.PlaySfx("MushroomBoing", 0.7f, 0.05f);
+            GameAudio.PlaySfxPitched("MushroomBoing", pitch, 0.7f, 0.03f);
             if (!SlimeSplitFx.OnScreen(top)) return;
             VfxPlayer.Dust(new Vector3(top.x, transform.position.y, 0f), 0.35f);
             for (int i = 0; i < 6; i++)
@@ -137,6 +160,18 @@ namespace IBlameYou.Systems
             // 가만히 있을 때: 숨 쉬듯 살짝 부풀었다 줄어든다 (버섯마다 박자가 다르게 위치로 어긋냄)
             float breathe = Mathf.Sin(Time.time * 2.2f + transform.position.x * 0.7f) * 0.03f;
             visual.localScale = new Vector3(1f - breathe * 0.5f, 1f + breathe, 1f);
+            UpdateSpores();
+        }
+
+        // 가만히 있을 때 갓에서 포자가 가끔 하나씩 피어오른다 (밟을 수 있는 물건이라는 눈짓, 화면 안일 때만)
+        private void UpdateSpores()
+        {
+            if (nextSpore < 0f) nextSpore = Time.time + Random.Range(0.5f, SporeMaxGap); // 버섯마다 첫 박자를 어긋냄
+            if (Time.time < nextSpore) return;
+            nextSpore = Time.time + Random.Range(SporeMinGap, SporeMaxGap);
+            var cap = transform.position + new Vector3(Random.Range(-0.35f, 0.35f), CapTop, 0f);
+            if (!SlimeSplitFx.OnScreen(cap)) return;
+            MushroomSpore.Float(cap, Random.value < 0.3f ? Color.white : Spore, Random.Range(0.07f, 0.11f));
         }
     }
 }
