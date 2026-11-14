@@ -236,7 +236,7 @@ namespace IBlameYou.UI
             foreach (var s in item.Stats())
             {
                 if (stats.Length > 0) stats.Append(" · ");
-                stats.Append(EquipmentBook.Describe(s));
+                stats.Append(StatLineText(s));
             }
             GUI.Label(new Rect(row.x + 46f, row.y + 22f, row.width - 310f, 20f), stats.ToString(), smallRich);
         }

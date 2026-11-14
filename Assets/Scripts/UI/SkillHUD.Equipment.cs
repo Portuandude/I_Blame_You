@@ -68,7 +68,7 @@ namespace IBlameYou.UI
                 else
                 {
                     var stats = new List<string>();
-                    foreach (var stat in item.Stats()) stats.Add(EquipmentBook.Describe(stat));
+                    foreach (var stat in item.Stats()) stats.Add(StatLineText(stat));
                     text = $"<color={GradeColor(item.Grade)}>{item.Name}</color> — {string.Join(", ", stats)}";
                 }
 
