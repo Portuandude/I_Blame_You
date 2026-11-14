@@ -422,6 +422,8 @@ namespace IBlameYou.Systems
         public const int MushroomShelfX = 5;   // 버섯 열 (왼쪽 기준. 오른쪽이면 W-1-5). 좌우 문 도착 칸(1)과 그 옆 함정 여유(2칸)에서 떨어뜨림
         public const int MushroomShelfHalf = ChunkGenerator.BounceLedgeHalf;
 
+        public const int MushroomEnemyShift = 4; // 옮긴 적이 버섯 열 ±2(선반 아래)를 벗어나고, 아래 문 도착 칸(11, 20)과는 2칸 떨어지게
+
         public static bool MushroomShelfOnLeft(RoomData room) => (room.Index & 1) == 0;
 
         private static void AddMushroomShelf(RoomData room, ChunkData chunk)
@@ -432,6 +434,17 @@ namespace IBlameYou.Systems
             int stand = g + MushroomShelfRise;
             chunk.SetRow(x - MushroomShelfHalf, x + MushroomShelfHalf, stand - 1, StageTile.Platform);
             chunk.AddFeature(FeatureKind.BounceMushroom, x, g);
+            // 쫄몹 자리(5, 26)와 버섯 열이 겹치면 그 적만 방 안쪽으로 MushroomEnemyShift칸 옮긴다 (적 난수는 그대로)
+            int inward = MushroomShelfOnLeft(room) ? 1 : -1;
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || f.Y != g || f.X != x) continue;
+                int to = x + inward * MushroomEnemyShift;
+                while (chunk.Features.Exists(o => o.Kind == FeatureKind.Enemy && o.Y == g && o.X == to)) to += inward;
+                f.X = to;
+                chunk.Features[i] = f;
+            }
             chunk.AddFeature(FeatureKind.CoinPile, MushroomShelfOnLeft(room) ? x - 1 : x + 1, stand); // 벽 쪽 (버섯 바로 위를 비워 내려앉을 자리)
         }
 
