@@ -140,6 +140,10 @@ namespace IBlameYou.Systems
         // 미니맵 방 이벤트 점: 그 방에 보물 고블린이 아직 살아 있는지 (잡거나 10초가 지나 도망치면 false)
         private HealthSystem treasureGoblin;
         private int treasureGoblinRoom = -1;
+        // 세로 방 보물 고블린은 플레이어가 바닥 가까이(GoblinWakeHeight칸 안) 내려와야 나타난다 (2026-11-14 자동 실행).
+        // 위 문으로 들어오면 바닥까지 22칸을 내려오는 사이 10초가 흘러 잡을 틈이 없었다. 나타나기 전에 떠나면 다음에 올 때까지 기다린다.
+        private readonly HashSet<int> goblinWaiting = new HashSet<int>();
+        private const float GoblinWakeHeight = 9f;
         private readonly Dictionary<int, Vector2> goblinEquipmentSpots = new Dictionary<int, Vector2>(); // 보물 고블린이 떨군 장비 자리 (방 → 발밑)
         public bool HasTreasureGoblin(int index) =>
             index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
@@ -298,6 +302,7 @@ namespace IBlameYou.Systems
                 }
 
                 CheckDoors();
+                WakeWaitingGoblin();
                 StageEvents.Depth = RoomDepth(currentRoom);
             }
             else
@@ -910,8 +915,20 @@ namespace IBlameYou.Systems
             }
             // 방 이벤트 보물 고블린 (2026-11-14 사람 결정): 이동 방(세로 방 포함 — Chunks/RoomEventRule)에 처음 들어가면 금화 자루를 멘 고블린이 나타나 도망친다 (난수 안 씀)
             if (firstVisit && RoomEventRule.IsTreasureGoblinRoom(stage.Seed, entered))
-                SpawnTreasureGoblin(index);
+            {
+                if (entered.IsVertical) goblinWaiting.Add(index); // 바닥 가까이 내려오면 (WakeWaitingGoblin)
+                else SpawnTreasureGoblin(index);
+            }
             RoomEntered?.Invoke(index);
+        }
+
+        // 세로 방에서 기다리던 보물 고블린: 플레이어가 그 방 바닥에서 GoblinWakeHeight칸 안으로 내려오면 나타난다.
+        private void WakeWaitingGoblin()
+        {
+            if (goblinWaiting.Count == 0 || !goblinWaiting.Contains(currentRoom)) return;
+            if (player.position.y - Origin(currentRoom).y > GoblinWakeHeight) return;
+            goblinWaiting.Remove(currentRoom);
+            SpawnTreasureGoblin(currentRoom);
         }
 
         // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다.
