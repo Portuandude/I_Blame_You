@@ -71,7 +71,7 @@ namespace IBlameYou.Systems
         public struct RoomEventTally
         {
             public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
-            public int PuzzleMet, PuzzleSolved; // 추리 퍼즐 방 (등불 순서): 가 본 것 / 푼 것
+            public int PuzzleMet, PuzzleSolved; // 추리 퍼즐 방 (등불 순서·거울 룬): 가 본 것 / 푼 것
             public bool Any => AmbushMet + CursedMet + GoblinMet + PuzzleMet > 0;
         }
 
@@ -97,7 +97,7 @@ namespace IBlameYou.Systems
                     tally.CursedMet++;
                     if (cursedBroken.Contains(index)) tally.CursedSolved++;
                 }
-                if (chunk.Kind == ChunkKind.LanternPuzzle)
+                if (IsDeductionPuzzle(chunk.Kind))
                 {
                     tally.PuzzleMet++;
                     if (solvedPuzzles.Contains(index)) tally.PuzzleSolved++;
@@ -141,9 +141,11 @@ namespace IBlameYou.Systems
             return switchElements[index];
         }
 
-        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
+        private static bool IsDeductionPuzzle(ChunkKind kind) => kind == ChunkKind.LanternPuzzle || kind == ChunkKind.MirrorPuzzle;
+
+        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서·거울 룬)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
         public bool HasPuzzleLeft(int index) =>
-            stage != null && index >= 0 && index < stage.Chunks.Count && stage.Chunks[index].Kind == ChunkKind.LanternPuzzle
+            stage != null && index >= 0 && index < stage.Chunks.Count && IsDeductionPuzzle(stage.Chunks[index].Kind)
             && (!solvedPuzzles.Contains(index) || !takenRelics.Contains(index));
 
         // 미니맵 방 이벤트 점 (2026-11-14): 저주받은 상자 방에서 아직 유물을 안 골랐는지 (상자가 잠들어 있거나, 정예를 잡고 유물 상자만 남았거나).
@@ -511,18 +513,20 @@ namespace IBlameYou.Systems
             if (rooms != null) LoadRoomExtras(index, root, origin);
         }
 
-        // 퍼즐 방 "등불 순서" (Docs/PuzzleRoomDesign.md 3절): 등불 셋 + 벽화. 셋을 순서대로 켜면 상자 자리에 유물 상자가 떨어진다.
+        // 퍼즐 방 "등불 순서"·"거울 룬" (Docs/PuzzleRoomDesign.md): 등불 셋 + 벽화(또는 거울). 셋을 순서대로 켜면 상자 자리에 유물 상자가 떨어진다.
         // 푼 방은 다시 와도 등불이 켜진 채이고, 유물을 안 골랐으면 상자가 남는다 (SpawnRelicChest가 takenRelics를 본다).
         private void LoadLanternPuzzle(int index, Transform root, ChunkData chunk, float ox, float oy)
         {
             List<IBlameYou.Puzzles.LanternPuzzle.LanternSpec> specs = null;
             int lowest = int.MaxValue;
             Vector2 mural = Vector2.zero;
+            bool mirror = false;
             Vector2? chest = null;
             foreach (var f in chunk.Features)
             {
                 if (f.Kind == FeatureKind.Lantern) lowest = Mathf.Min(lowest, f.Y);
                 else if (f.Kind == FeatureKind.LanternMural) mural = new Vector2(ox + f.X + 0.5f, oy + f.Y);
+                else if (f.Kind == FeatureKind.MirrorMural) { mural = new Vector2(ox + f.X + 0.5f, oy + f.Y); mirror = true; } // 거울 룬
                 else if (f.Kind == FeatureKind.PuzzleChest) chest = new Vector2(ox + f.X + 0.5f, oy + f.Y);
             }
             if (lowest == int.MaxValue) return;
@@ -545,7 +549,7 @@ namespace IBlameYou.Systems
             {
                 solvedPuzzles.Add(index);
                 if (root != null) SpawnRelicChest(root, index, chestAt, true);
-            });
+            }, mirror);
             if (solved) SpawnRelicChest(root, index, chestAt, false);
         }
 
