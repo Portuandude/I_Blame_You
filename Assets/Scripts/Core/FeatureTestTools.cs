@@ -147,6 +147,7 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKing: return "슬라임 왕 (보스)";
                 case StageEnemy.SlimeKnightFire: return "슬라임 기사 불 (중간보스)";
                 case StageEnemy.SlimeKnightWater: return "슬라임 기사 물 (중간보스)";
+                case StageEnemy.TreasureGoblin: return "보물 고블린 (10초)";
                 default: return kind.ToString();
             }
         }

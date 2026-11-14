@@ -237,6 +237,7 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKing: enemy = SlimeKingSpawner.Spawn(position, artConfig); break;
                 case StageEnemy.SlimeKnightFire: enemy = SlimeKnightSpawner.Spawn(position, Element.Fire, artConfig); break;
                 case StageEnemy.SlimeKnightWater: enemy = SlimeKnightSpawner.Spawn(position, Element.Water, artConfig); break;
+                case StageEnemy.TreasureGoblin: enemy = TreasureGoblinSpawner.Spawn(position, artConfig); break;
                 default: enemy = SlimeSpawner.Spawn(position, artConfig); break;
             }
 
