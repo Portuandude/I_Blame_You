@@ -35,6 +35,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
+        private readonly HashSet<int> cursedQuick = new HashSet<int>(); // 그중 빠른 해제(CursedChestRule.QuickTime 안)로 유물 3개 중 고르기인 방
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
@@ -953,7 +954,7 @@ namespace IBlameYou.Systems
                     down = true;
                     if (AnyAlive(spawned) || cursedBroken.Contains(index)) return;
                     cursedBroken.Add(index);
-                    if (chest != null) chest.Break();
+                    if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
                     if (root != null) SpawnCursedReward(root, index, chestPosition, true);
                 };
             }
@@ -982,14 +983,15 @@ namespace IBlameYou.Systems
             {
                 if (current > 0f || cursedBroken.Contains(index)) return;
                 cursedBroken.Add(index);
-                if (chest != null) chest.Break();
+                if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
                 if (root != null) SpawnCursedReward(root, index, chestPosition, true);
             };
         }
 
         private void SpawnCursedReward(Transform root, int index, Vector2 position, bool dropped)
         {
-            RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), CursedChestRule.OfferSize);
+            int offer = cursedQuick.Contains(index) ? CursedChestRule.QuickOfferSize : CursedChestRule.OfferSize;
+            RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), offer);
         }
 
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
