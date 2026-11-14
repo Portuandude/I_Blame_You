@@ -35,6 +35,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
+        private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
@@ -443,6 +444,7 @@ namespace IBlameYou.Systems
             // 협동 봉인문이 선 세로 곁방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
             if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
+            if (IsCursedChestRoom(index)) PlaceCursedChest(root, index);
             if (room.Kind == RoomKind.Treasure) SpawnRelicChest(root, index, floor, false);
             else if (room.Kind == RoomKind.Spring) SpawnReward(root, index, floor, false);
             else if (room.Kind == RoomKind.Village)
@@ -862,28 +864,103 @@ namespace IBlameYou.Systems
         private void SpawnTreasureGoblin(int index)
         {
             if (spawnEnemy == null || player == null) return;
-            var chunk = stage.Chunks[index];
             var origin = Origin(index);
             int cols = RoomCols(index);
             float local = player.position.x - origin.x;
-            int center = Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f));
+            var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)));
+            if (!spot.HasValue) return;
+            var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(spot.Value.x, spot.Value.y + SpawnLift, 0f), transform);
+            if (health == null) return;
+            RegisterEnemy(health);
+            StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
+            GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
+        }
+
+        // 방 이벤트 저주받은 상자 (2026-11-14 사람 결정, Chunks/CursedChestRule): 가로 이동 방 가운데. 보물 고블린 방에는 놓지 않는다.
+        private bool IsCursedChestRoom(int index)
+        {
+            var room = rooms.Rooms[index];
+            if (room.Kind != RoomKind.Travel || room.IsVertical) return false;
+            float depth = RoomDepth(index);
+            return CursedChestRule.IsCursedChestRoom(stage.Seed, index, depth, true)
+                && !TreasureGoblinRule.IsTreasureGoblinRoom(stage.Seed, index, depth, true);
+        }
+
+        private void PlaceCursedChest(Transform root, int index)
+        {
+            if (takenRelics.Contains(index)) return;
+            var spot = FindStandSpot(index, RoomCols(index) / 2);
+            if (!spot.HasValue) return;
+            var position = spot.Value;
+            if (cursedBroken.Contains(index))
+            {
+                SpawnCursedReward(root, index, position, false); // 정예는 이미 쓰러뜨렸고 유물만 남았다
+                return;
+            }
+
+            CursedChest chest = null;
+            chest = CursedChest.Create(root, position, () => AwakenCursedElite(root, index, position, chest));
+        }
+
+        // 상자 옆(플레이어 반대쪽 4칸, 막히면 반대쪽)에 정예를 부른다. 쓰러뜨리면 상자가 풀려 유물 상자(2개 중 고르기)가 된다.
+        // 정예를 두고 방을 떠나면 정예는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다.
+        private void AwakenCursedElite(Transform root, int index, Vector2 chestPosition, CursedChest chest)
+        {
+            if (spawnEnemy == null) return;
+            int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
+            int side = player != null && player.position.x < chestPosition.x ? 1 : -1;
+            var spot = FindStandSpot(index, chestColumn + side * 4) ?? chestPosition;
+            var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
+            EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
+            GameAudio.PlaySfx("Summon", 0.7f);
+            var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
+            if (health == null) return;
+            RegisterEnemy(health);
+            health.HealthChanged += (current, max) =>
+            {
+                if (current > 0f || cursedBroken.Contains(index)) return;
+                cursedBroken.Add(index);
+                if (chest != null) chest.Break();
+                if (root != null) SpawnCursedReward(root, index, chestPosition, true);
+            };
+        }
+
+        private void SpawnCursedReward(Transform root, int index, Vector2 position, bool dropped)
+        {
+            RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), CursedChestRule.OfferSize);
+        }
+
+        // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
+        // 반환: 그 칸 바닥 가운데의 월드 좌표 (발밑). 못 찾으면 null.
+        private Vector2? FindStandSpot(int index, int center)
+        {
+            var chunk = stage.Chunks[index];
+            var origin = Origin(index);
+            int cols = RoomCols(index);
             for (int offset = 0; offset <= 8; offset++)
             {
                 foreach (int x in new[] { center + offset, center - offset })
                 {
-                    if (x < 3 || x > cols - 4) continue;
+                    if (x < 3 || x > cols - 4 || HasTerrainFeature(chunk, x)) continue;
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {
                         if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
-                        var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(origin.x + x + 0.5f, origin.y + y + SpawnLift, 0f), transform);
-                        if (health == null) return;
-                        RegisterEnemy(health);
-                        StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
-                        GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
-                        return;
+                        return new Vector2(origin.x + x + 0.5f, origin.y + y);
                     }
                 }
             }
+            return null;
+        }
+
+        // 그 열에 적이 아닌 지형 요소(가시·함정·발판·버섯·바람 구멍·동전 등)가 있으면 true.
+        private static bool HasTerrainFeature(ChunkData chunk, int x)
+        {
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind == FeatureKind.Enemy || f.Kind == FeatureKind.PlayerStart) continue;
+                if (x >= f.X - 1 && x <= f.X + Math.Max(1, f.Width)) return true;
+            }
+            return false;
         }
 
         private const float BossNearMusicDuck = 0.55f;

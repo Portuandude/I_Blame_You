@@ -6,6 +6,7 @@ using UnityEngine;
 namespace IBlameYou.Systems
 {
     // 정예 전투 구역을 돌파하면 회복 구슬 옆에 나오는 유물 상자. 닿으면 HUD가 유물 3개 중 하나를 고르는 창을 연다 (게임 정지).
+    // 저주받은 상자(CursedChest)를 풀면 나오는 상자는 offerSize = 2 (2026-11-14).
     // 고르면 유물을 얻고 상자는 사라진다. 고르지 못하고 창이 닫히면(쓰러짐 등) 상자는 그대로 남는다.
     // 줍지 않고 떠나도 청크 기록(ChunkStreamer)에 남아서, 다시 돌아오면 같은 자리에 또 있다.
     public class RelicChest : MonoBehaviour
@@ -24,6 +25,7 @@ namespace IBlameYou.Systems
         private int seed;
         private int chunkIndex;
         private Action onTaken;
+        private int offerSize; // 0이면 보통(3개, 클로버 4개). 저주받은 상자는 2개 (클로버면 +1)
         private bool waiting; // 창이 열려 고르기를 기다리는 중
         private bool taken;
         private PlayerMovement touching; // 지금 상자에 닿아 있는 플레이어 (잠든 Rigidbody는 Stay 콜백이 멈추므로 Update에서 다시 묻는다)
@@ -52,7 +54,7 @@ namespace IBlameYou.Systems
         private static readonly Collider2D[] NearHits = new Collider2D[8];
 
         // position: 상자가 놓일 바닥 위 가운데 (월드). dropped: 방금 나온 것이면 등장 이펙트를 보여준다.
-        public static RelicChest Create(Transform parent, Vector2 position, int seed, int chunkIndex, bool dropped, Action onTaken)
+        public static RelicChest Create(Transform parent, Vector2 position, int seed, int chunkIndex, bool dropped, Action onTaken, int offerSize = 0)
         {
             var go = new GameObject("RelicChest");
             go.transform.SetParent(parent, false);
@@ -67,6 +69,7 @@ namespace IBlameYou.Systems
             chest.seed = seed;
             chest.chunkIndex = chunkIndex;
             chest.onTaken = onTaken;
+            chest.offerSize = offerSize;
 
             var visual = EffectLibrary.CreateVisual(go.transform, "Chest", TrapCommon.Frames("RelicChest"), 8f, true,
                 new Color(0.95f, 0.75f, 0.3f), 0.8f, 3);
@@ -222,7 +225,9 @@ namespace IBlameYou.Systems
             if (health != null && health.IsDead) return;
 
             var relics = PlayerRelics.For(player.gameObject);
-            var offer = RelicBook.Offer(seed, chunkIndex, relics.Owned);
+            var offer = offerSize > 0
+                ? RelicBook.Offer(seed, chunkIndex, relics.Owned, offerSize + (relics.Has(RelicId.Clover) ? 1 : 0))
+                : RelicBook.Offer(seed, chunkIndex, relics.Owned);
             if (offer.Length == 0)
             {
                 // 유물을 다 가졌으면 상자는 빈 채로 사라진다.
