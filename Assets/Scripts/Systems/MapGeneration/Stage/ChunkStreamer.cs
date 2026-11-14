@@ -71,7 +71,8 @@ namespace IBlameYou.Systems
         public struct RoomEventTally
         {
             public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
-            public bool Any => AmbushMet + CursedMet + GoblinMet > 0;
+            public int PuzzleMet, PuzzleSolved; // 추리 퍼즐 방 (등불 순서): 가 본 것 / 푼 것
+            public bool Any => AmbushMet + CursedMet + GoblinMet + PuzzleMet > 0;
         }
 
         private readonly HashSet<int> goblinsMet = new HashSet<int>();
@@ -95,6 +96,11 @@ namespace IBlameYou.Systems
                 {
                     tally.CursedMet++;
                     if (cursedBroken.Contains(index)) tally.CursedSolved++;
+                }
+                if (chunk.Kind == ChunkKind.LanternPuzzle)
+                {
+                    tally.PuzzleMet++;
+                    if (solvedPuzzles.Contains(index)) tally.PuzzleSolved++;
                 }
             }
             return tally;
@@ -134,6 +140,11 @@ namespace IBlameYou.Systems
             }
             return switchElements[index];
         }
+
+        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
+        public bool HasPuzzleLeft(int index) =>
+            stage != null && index >= 0 && index < stage.Chunks.Count && stage.Chunks[index].Kind == ChunkKind.LanternPuzzle
+            && (!solvedPuzzles.Contains(index) || !takenRelics.Contains(index));
 
         // 미니맵 방 이벤트 점 (2026-11-14): 저주받은 상자 방에서 아직 유물을 안 골랐는지 (상자가 잠들어 있거나, 정예를 잡고 유물 상자만 남았거나).
         public bool HasCursedChestLeft(int index) =>
