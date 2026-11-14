@@ -25,7 +25,7 @@ namespace IBlameYou.Systems
     {
         Start,
         Travel,    // 이동 방 (지형·함정·쫄몹). 2026-11-14 사람 결정으로 방 격자에서는 더 나오지 않는다 (기능 테스트·옛 외길 스테이지용)
-        Puzzle,    // 퍼즐 방: 몹이 나오지 않는다 (2026-11-14). 이중 스위치 발판 하나 + 추리 퍼즐 하나 (등불 순서·거울 룬) (Docs/PuzzleRoomDesign.md)
+        Puzzle,    // 퍼즐 방: 몹이 나오지 않는다 (2026-11-14). 이중 스위치 발판 하나 + 퍼즐 하나 (등불 순서·거울 룬·방어막 다리) (Docs/PuzzleRoomDesign.md)
         Combat,    // 들어가면 문이 잠기는 전투 방. 좌우 방은 앞 구간에 기믹 지형, 세로 방(탑·굴)은 바닥 전체가 전투 구역
         Elite,     // 정예 전투 방 (유물 상자)
         Rest,      // 숨 고르기 방 (전투 사이 완충. 체크포인트는 2026-11-10 제거)
@@ -440,7 +440,7 @@ namespace IBlameYou.Systems
             rest.Sort((a, b) => a.Distance.CompareTo(b.Distance));
 
             // 퍼즐 방 2개 (몹 없음): 좌우 방 중 깊이 0.5(이중 스위치)와 0.3·0.75에 가까운 곳. 중간보스 바로 뒤 좌우 방이면 그 방을 먼저
-            // (전투가 끝난 뒤 숨 고르는 자리 — 옛 숨 고르기 방 자리). 첫 퍼즐은 이중 스위치 발판, 둘째는 추리 퍼즐 등불 순서/거울 룬 (2026-11-14, 예전 속성 봉인문).
+            // (전투가 끝난 뒤 숨 고르는 자리 — 옛 숨 고르기 방 자리). 첫 퍼즐은 이중 스위치 발판, 둘째는 등불 순서/거울 룬/방어막 다리 (2026-11-14, 예전 속성 봉인문).
             var puzzles = new List<RoomData>();
             var afterMid = path[mid.PathIndex + 1];
             if (afterMid != boss && !afterMid.IsVertical && rest.Contains(afterMid)) puzzles.Add(afterMid);
@@ -481,8 +481,9 @@ namespace IBlameYou.Systems
             return true;
         }
 
-        // 추리 퍼즐 종류: 시드 짝수면 등불 순서, 홀수면 거울 룬 (배치 난수열을 쓰지 않아 다른 방은 그대로).
-        public static ChunkKind DeductionPuzzle(int seed) => (seed & 1) == 0 ? ChunkKind.LanternPuzzle : ChunkKind.MirrorPuzzle;
+        // 둘째 퍼즐 방 종류: 시드를 3으로 나눈 나머지로 등불 순서 · 거울 룬 · 방어막 다리 (배치 난수열을 쓰지 않아 다른 방은 그대로).
+        private static readonly ChunkKind[] SecondPuzzles = { ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.ShieldBridge };
+        public static ChunkKind DeductionPuzzle(int seed) => SecondPuzzles[((seed % 3) + 3) % 3];
 
         private static double PuzzleScore(RoomData r, float want) =>
             Math.Abs(r.Difficulty - want) + (r.Distance <= 1 ? 1.0 : 0.0);
@@ -557,7 +558,8 @@ namespace IBlameYou.Systems
                 case ChunkKind.MovingBridge:
                 case ChunkKind.SwitchBridge:
                 case ChunkKind.LanternPuzzle:
-                case ChunkKind.MirrorPuzzle: return RoomKind.Puzzle;
+                case ChunkKind.MirrorPuzzle:
+                case ChunkKind.ShieldBridge: return RoomKind.Puzzle;
                 default: return RoomKind.Travel;
             }
         }

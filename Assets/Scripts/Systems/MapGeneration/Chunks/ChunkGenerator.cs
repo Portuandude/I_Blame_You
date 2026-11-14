@@ -52,6 +52,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
                 case ChunkKind.LanternPuzzle: BuildLanternPuzzle(chunk, heights, rng); break;
                 case ChunkKind.MirrorPuzzle: BuildMirrorPuzzle(chunk, heights, rng); break;
+                case ChunkKind.ShieldBridge: BuildShieldBridge(chunk, heights, rng); break;
                 case ChunkKind.Boss: BuildBoss(chunk, heights); break;
                 default: Flat(heights, entryHeight); break;
             }
@@ -76,6 +77,7 @@ namespace IBlameYou.Systems
             if (kind == ChunkKind.Start) chunk.AddFeature(FeatureKind.PlayerStart, 4, entryHeight);
             if (kind == ChunkKind.LanternPuzzle) AddLanternPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0))); // 대체 청크에도 퍼즐은 둔다
             if (kind == ChunkKind.MirrorPuzzle) AddMirrorPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0)));
+            if (kind == ChunkKind.ShieldBridge) AddShieldBridge(chunk, entryHeight, new Random(Hash(index, 7, 0)));
             chunk.ExitHeight = entryHeight;
             return chunk;
         }
@@ -923,6 +925,46 @@ namespace IBlameYou.Systems
                 });
             chunk.AddFeature(FeatureKind.MirrorMural, MirrorCenterX, ground);
             chunk.AddFeature(FeatureKind.PuzzleChest, MirrorChestX, ground);
+        }
+
+        // 퍼즐 방 "방어막 다리" (2026-11-14, Docs/PuzzleRoomDesign.md 2절 2번). 바닥 길은 비워 두고(문은 막지 않음), 위에 단단한 선반:
+        //   계단 발판(3~6열, 선 칸 바닥 + 2) → 선반(8~27열, 선 칸 바닥 + 4). 선반 위 11~15열·18~22열에 서로 다른 속성 분출 통로 둘,
+        //   사이 16~17열은 숨 돌리는 칸(방어막을 바꿔 두른다), 끝 24~26열에 동전 무더기 셋.
+        // 분출은 쉬지 않는다: 그 속성 방어막(같은 속성 마법 피해 무효)을 두른 A만 지나가고, 아니면 피해 조금 + 통로 입구(9열)로 튕겨 돌아간다.
+        // 선반이 단단해서 아래에서 뚫고 오를 수 없고, 마력 안개(11~27열)가 순간이동·대시로 건너뛰는 것을 막는다.
+        // 방어막은 3초·마나 25라 둘째 통로 앞에서 다시 둘러야 한다 → B가 마나를 아껴야 하는 협동 퍼즐.
+        public const int ShieldStairX0 = 3, ShieldStairX1 = 6;    // 계단 발판 (행 = 바닥 + 1)
+        public const int ShieldLedgeX0 = 8, ShieldLedgeX1 = 27;   // 선반 (행 = 바닥 + 3, 단단함)
+        public const int ShieldLedgeRise = 4;                     // 선반 위 선 칸 = 바닥 + 4
+        public const int ShieldJet1X = 11, ShieldJet2X = 18, ShieldJetWidth = 5;
+        public const int ShieldReturnX = 9;
+        public const int ShieldCoinX0 = 24, ShieldCoinCount = 3;
+
+        private static void BuildShieldBridge(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+            AddShieldBridge(chunk, ground, rng);
+        }
+
+        private static void AddShieldBridge(ChunkData chunk, int ground, Random rng)
+        {
+            int stand = ground + ShieldLedgeRise;
+            chunk.SetRow(ShieldStairX0, ShieldStairX1, ground + 1, StageTile.Platform);
+            chunk.SetRow(ShieldLedgeX0, ShieldLedgeX1, stand - 1, StageTile.Solid);
+            int first = rng.Next(GateElementCount);
+            int second = (first + 1 + rng.Next(GateElementCount - 1)) % GateElementCount;
+            chunk.Features.Add(new ChunkFeature
+            {
+                Kind = FeatureKind.ElementJet, X = ShieldJet1X, Y = stand, Width = ShieldJetWidth, ElementIndex = first, Direction = ShieldReturnX
+            });
+            chunk.Features.Add(new ChunkFeature
+            {
+                Kind = FeatureKind.ElementJet, X = ShieldJet2X, Y = stand, Width = ShieldJetWidth, ElementIndex = second, Direction = ShieldReturnX
+            });
+            chunk.AddFeature(FeatureKind.BlinkWard, ShieldJet1X, 0, ShieldLedgeX1 - ShieldJet1X + 1);
+            for (int i = 0; i < ShieldCoinCount; i++) chunk.AddFeature(FeatureKind.CoinPile, ShieldCoinX0 + i, stand);
         }
 
         // 0 ~ count-1을 섞은 배열 (Fisher-Yates).
