@@ -83,6 +83,7 @@ namespace IBlameYou.UI
             RunGold.Arrived += OnGoldArrived; // 동전이 닿으면 골드 숫자가 톡 튄다 (SkillHUD.Gold.cs)
             RunStats.GoldSpentNow += OnGoldSpent; // 골드를 쓰면 알약 아래 빨간 -N (SkillHUD.Gold.cs)
             EnemyController.Killed += OnEnemyKilled;
+            TreasureGoblinController.Hit += OnTreasureGoblinHit;
             health.Damaged += OnPlayerDamaged;
             InitializeRelics();
             InitializeEquipmentCard();
@@ -94,6 +95,11 @@ namespace IBlameYou.UI
             if (!RunStats.Ended) RunStats.Kills++;
             CountKillStreak(enemy); // "N연속!" (SkillHUD.KillStreak.cs)
             if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
+        }
+
+        private void OnTreasureGoblinHit(TreasureGoblinController goblin)
+        {
+            if (health != null) RunGold.OnTreasureGoblinHit(goblin, health.transform); // 맞힐 때마다 금화 조금 (Core/RunGold.cs)
         }
 
         private void OnPlayerDamaged(float amount)
@@ -123,6 +129,7 @@ namespace IBlameYou.UI
             StageEvents.Cleared -= OnStageCleared;
             if (paused || deathHandled) GameAudio.SetMusicMuffled(false); // 일시정지 창이 열린 채·쓰러진 채 씬이 정리돼도 먹먹함이 남지 않게
             EnemyController.Killed -= OnEnemyKilled;
+            TreasureGoblinController.Hit -= OnTreasureGoblinHit;
             RunGold.Arrived -= OnGoldArrived;
             RunStats.GoldSpentNow -= OnGoldSpent;
             if (health != null) health.Damaged -= OnPlayerDamaged;
