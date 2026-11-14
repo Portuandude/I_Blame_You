@@ -28,6 +28,7 @@
 - DONE (claude/project-thread-gmpgdi): 매복 변형 "벽 위 궁수" — 난이도 40%+ 매복 방은 구역 양쪽 끝 높은 선반(바닥+5) 위 궁수 둘이 떨어지지 않고 그 자리에 나타나 쏜다 (가장 바깥 적 둘을 바꿈, 난수 안 씀)
 - DONE (claude/project-thread-gmpgdi): 보물 고블린 맞힐 때마다 금화 흘림 — 맞을 때마다 골드 2 (한 마리 5번까지, 잡는 순간 제외). 놓쳐도 맞힌 만큼은 남는다
 - DONE (claude/project-thread-gmpgdi): 매복 돌파 보너스 — 매복 방을 돌파하면 "매복 돌파!" + 골드 조금 (경고를 보고 버틴 보상)
+- DONE (claude/project-thread-gmpgdi): 보물 고블린을 놓치면 알림에 흘린 금화 합계 "(흘린 금화 +N)"
 
 ## 최우선: 플레이테스트 결과 (2026-11-12 사람 피드백)
 
