@@ -144,6 +144,9 @@ namespace IBlameYou.Systems
         // 위 문으로 들어오면 바닥까지 22칸을 내려오는 사이 10초가 흘러 잡을 틈이 없었다. 나타나기 전에 떠나면 다음에 올 때까지 기다린다.
         private readonly HashSet<int> goblinWaiting = new HashSet<int>();
         private const float GoblinWakeHeight = 9f;
+
+        // 미니맵: 세로 방에서 아직 나타나지 않고 기다리는 보물 고블린 (들어가 본 방, 깜빡이지 않는 옅은 금색 점)
+        public bool HasWaitingTreasureGoblin(int index) => goblinWaiting.Contains(index);
         private readonly Dictionary<int, Vector2> goblinEquipmentSpots = new Dictionary<int, Vector2>(); // 보물 고블린이 떨군 장비 자리 (방 → 발밑)
         public bool HasTreasureGoblin(int index) =>
             index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
