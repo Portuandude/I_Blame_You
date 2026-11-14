@@ -376,7 +376,7 @@ namespace IBlameYou.UI
             float y = Screen.height * 0.62f;
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
-                $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost:0}) — 영창하라:", label);
+                $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
             GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
 
             var field = new Rect(x, y + 8f, width, 40f);
