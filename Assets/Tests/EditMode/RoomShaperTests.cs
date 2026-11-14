@@ -257,7 +257,7 @@ namespace IBlameYou.Tests
                 }
             }
 
-            Assert.AreEqual(5, seen.Count, "지그재그·양 갈래·선반·무너지는 계단·깜빡 계단이 모두 나와야 함");
+            Assert.AreEqual(6, seen.Count, "지그재그·양 갈래·선반·무너지는 계단·깜빡 계단·버섯 탑이 모두 나와야 함");
         }
 
         // 선반 세로 방: 이동 방이고 난이도 문턱 이상이면 높은 선반 위에 동전 무더기 하나 (발판 위 빈 칸). 다른 모양에는 없다.
@@ -272,7 +272,9 @@ namespace IBlameYou.Tests
                     if (!room.IsVertical) continue;
                     var style = RoomShaper.PickShaftStyle(seed, room);
                     var chunk = RoomShaper.BuildShaft(seed, room, style).Chunk;
-                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile && f.Y != RoomShaper.WindLedgeRow + 1); // 바람 지름길 동전은 따로
+                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile && f.Y != RoomShaper.WindLedgeRow + 1
+                        && f.Y != RoomShaper.ShaftGround + RoomShaper.MushroomShelfRise
+                        && style != RoomShaper.ShaftStyle.MushroomTower); // 바람 지름길·버섯 선반·버섯 탑 동전은 따로
                     bool expected = style == RoomShaper.ShaftStyle.Shelves && room.Kind == RoomKind.Travel
                         && room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty;
                     string tag = $"seed {seed} room {room.Index} {style}";
@@ -306,7 +308,8 @@ namespace IBlameYou.Tests
                     var geometry = RoomShaper.Build(seed, room);
                     var chunk = geometry.Chunk;
                     var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.WindVent);
-                    bool expected = RoomShaper.WantsWindShortcut(room) && style != RoomShaper.ShaftStyle.TwinStairs && style != RoomShaper.ShaftStyle.Shelves;
+                    bool expected = RoomShaper.WantsWindShortcut(room) && style != RoomShaper.ShaftStyle.TwinStairs && style != RoomShaper.ShaftStyle.Shelves
+                        && style != RoomShaper.ShaftStyle.MushroomTower;
                     string tag = $"seed {seed} room {room.Index} {style}";
                     Assert.AreEqual(expected ? 1 : 0, found.Count, tag);
                     foreach (var v in found)
@@ -490,6 +493,136 @@ namespace IBlameYou.Tests
             Assert.Greater(shelves, 0, "지름길 선반이 한 번도 안 나옴");
         }
     
+        // 버섯 굴 선반: 위 문 없는 이동 세로 방에서 순간이동 선반이 없을 때만 (둘 중 하나). 버섯은 바닥 위, 그 위 바닥 + 6에
+        // 버섯 열 ±2 발판 선반과 동전, 버섯 열과 선반 사이(몸이 오르는 길)는 비어 있고, 버섯 근처 바닥에 함정이 없으며,
+        // 선반 칸은 걷기·점프로 닿지 않는 덤 길이다.
+        [Test]
+        public void MushroomShelvesFillCavesWithoutTeleportShelf()
+        {
+            int shelves = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var geometry = RoomShaper.Build(seed, room);
+                    var chunk = geometry.Chunk;
+                    string where = $"seed {seed} room {room.Index}";
+                    var mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom && f.Direction == 0); // 버섯 탑의 길 버섯은 따로
+                    bool teleport = chunk.Features.Exists(f => f.Kind == FeatureKind.Reward);
+                    bool expected = room.Kind == RoomKind.Travel && (room.Doors & DoorDir.Up) == 0 && !teleport
+                        && room.Difficulty >= ChunkGenerator.BounceMinDifficulty;
+                    Assert.AreEqual(expected ? 1 : 0, mushrooms.Count, where);
+                    if (!expected) continue;
+                    shelves++;
+
+                    var m = mushrooms[0];
+                    int g = RoomShaper.ShaftGround;
+                    int stand = g + RoomShaper.MushroomShelfRise;
+                    Assert.AreEqual(g, m.Y, where);
+                    Assert.IsTrue(chunk.IsSolid(m.X, g - 1), where + ": 버섯 밑 바닥");
+                    for (int x = m.X - RoomShaper.MushroomShelfHalf; x <= m.X + RoomShaper.MushroomShelfHalf; x++)
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(x, stand - 1), where + $": 선반 ({x})");
+                    for (int y = g; y < stand - 1; y++) Assert.AreEqual(StageTile.Empty, chunk.Get(m.X, y), where + $": 버섯 위 길 ({y})");
+                    for (int y = stand; y <= stand + 1; y++) Assert.IsFalse(chunk.IsSolid(m.X, y), where + ": 선반 위 몸 자리");
+                    Assert.Greater(BounceMushroom_LaunchReach, stand - g, "튕김 높이가 선반에 닿아야 한다");
+
+                    var coin = chunk.Features.Find(f => f.Kind == FeatureKind.CoinPile && f.Y == stand);
+                    Assert.IsNotNull(coin, where + ": 선반 위 동전");
+                    Assert.LessOrEqual(System.Math.Abs(coin.X - m.X), RoomShaper.MushroomShelfHalf, where);
+                    Assert.AreNotEqual(m.X, coin.X, where + ": 버섯 바로 위는 내려앉을 자리");
+
+                    Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Enemy && f.Y == g
+                        && System.Math.Abs(f.X - m.X) <= RoomShaper.MushroomShelfHalf), where + ": 버섯 근처에 선 적");
+                    foreach (var f in chunk.Features)
+                        if ((f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet) && f.Y == g)
+                            Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < m.X - 2 || f.X > m.X + 2, where + $": 버섯 옆 {f.Kind} {f.X}");
+
+                    var arrivals = new List<(int x, int y)>(geometry.Arrivals.Values);
+                    string reason;
+                    Assert.IsFalse(StageValidator.ValidateRoom(chunk, arrivals, new List<(int x, int y)> { (m.X, stand) }, out reason),
+                        $"{where}: 선반이 걷기·점프로 닿는 필수 경로에 있다");
+                }
+            }
+
+            Assert.Greater(shelves, 0, "버섯 굴 선반이 한 번도 안 나옴");
+        }
+
+        // 버섯 탑: 지그재그 대신 고른 이동 방에만, 길 버섯 둘(Direction 1)이 각각 TowerStep칸 위 선반 아래에 있고,
+        // 버섯 열 위가 선반까지 비어 있으며, 길 버섯 없이는 위 문에 못 오른다(버섯이 진짜 길이다). 함정·적은 버섯 칸에 없다.
+        [Test]
+        public void MushroomTowersClimbOnlyByMushrooms()
+        {
+            int towers = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    var geometry = RoomShaper.BuildShaft(seed, room, style);
+                    var chunk = geometry.Chunk;
+                    string where = $"seed {seed} room {room.Index} {style}";
+                    var path = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom && f.Direction == 1);
+                    if (style != RoomShaper.ShaftStyle.MushroomTower)
+                    {
+                        Assert.AreEqual(0, path.Count, where);
+                        continue;
+                    }
+
+                    towers++;
+                    Assert.AreEqual(RoomKind.Travel, room.Kind, where);
+                    Assert.GreaterOrEqual(room.Difficulty, RoomShaper.MushroomTowerMinDifficulty, where);
+                    Assert.IsTrue(geometry.Valid, where + ": " + geometry.Reason);
+                    Assert.AreEqual(2, path.Count, where);
+                    Assert.Less(RoomShaper.TowerStep, BounceMushroom_LaunchReach, "튕김이 선반 위로 넉넉히 올라야 한다");
+                    foreach (var m in path)
+                    {
+                        Assert.IsTrue(chunk.Get(m.X, m.Y - 1) != StageTile.Empty, where + ": 버섯 밑 발판");
+                        int stand = m.Y + RoomShaper.TowerStep;
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(m.X, stand - 1), where + ": 버섯 위 선반");
+                        for (int y = m.Y; y < stand - 1; y++) Assert.IsFalse(chunk.IsSolid(m.X, y), where + $": 버섯 위 길 ({y})");
+                        foreach (var f in chunk.Features)
+                        {
+                            if (f.Y != m.Y) continue;
+                            if (f.Kind == FeatureKind.Enemy) Assert.Greater(System.Math.Abs(f.X - m.X), 2, where + ": 버섯 옆의 적");
+                            if (f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet)
+                                Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < m.X - 2 || f.X > m.X + 2, where + $": 버섯 옆 {f.Kind}");
+                        }
+                    }
+
+                    // P2 벽 쪽 끝 동전 (난이도 문턱 이상)
+                    int stand2 = RoomShaper.ShaftGround + 2 * RoomShaper.TowerStep;
+                    var coins = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                    Assert.AreEqual(room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty ? 1 : 0, coins.Count, where);
+                    foreach (var c in coins)
+                    {
+                        Assert.AreEqual(stand2, c.Y, where);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), where + ": P2 위 동전");
+                    }
+
+                    // P2 → 맨 위 판 사이 빈 칸은 좌우 모두 1칸
+                    int p2Edge = RoomShaper.MushroomTowerOnLeft(room) ? RoomShaper.TowerShelf2X1 : RoomShaper.TowerCol(false, RoomShaper.TowerShelf2X1);
+                    int topEdge = RoomShaper.MushroomTowerOnLeft(room) ? RoomShaper.HoleX0 - 1 : RoomShaper.HoleX1 + 1;
+                    Assert.AreEqual(2, System.Math.Abs(topEdge - p2Edge), where + ": 마지막 뛰기 간격");
+
+                    // 길 버섯을 덤 버섯으로 바꾸면 바닥에서 위 문으로 못 간다
+                    var copy = new ChunkData { Index = chunk.Index, Kind = chunk.Kind, Difficulty = chunk.Difficulty };
+                    for (int x = 0; x < ChunkData.Width; x++)
+                        for (int y = 0; y < ChunkData.Height; y++) copy.Tiles[x, y] = chunk.Tiles[x, y];
+                    var top = geometry.Exits[DoorDir.Up];
+                    string reason;
+                    Assert.IsFalse(StageValidator.ValidateRoom(copy, new List<(int x, int y)> { geometry.Floor.Value },
+                        new List<(int x, int y)> { top }, out reason), where + ": 버섯 없이도 오를 수 있다");
+                }
+            }
+
+            Assert.Greater(towers, 0, "버섯 탑이 한 번도 안 나옴");
+        }
+
+        // BounceMushroom.LaunchHeight(7.5) + 갓 높이(0.95). 테스트 어셈블리가 MonoBehaviour 쪽을 참조하지 않아 값을 옮겨 둔다
+        private const float BounceMushroom_LaunchReach = 7.5f + 0.95f;
+
         // 협동 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
         // 첫 속성(A 방어막)과 둘째 속성(B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
         [Test]

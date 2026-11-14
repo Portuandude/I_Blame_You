@@ -37,7 +37,8 @@ namespace IBlameYou.Systems
 
         // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
         // / 무너지는 계단(난이도 CrumbleStairsMinDifficulty 이상) / 깜빡 계단(BlinkStairsMinDifficulty 이상)
-        public enum ShaftStyle { Zigzag, TwinStairs, Shelves, CrumbleStairs, BlinkStairs }
+        // / 버섯 탑(MushroomTowerMinDifficulty 이상 이동 방에서 지그재그 대신 절반 확률, 2026-11-14)
+        public enum ShaftStyle { Zigzag, TwinStairs, Shelves, CrumbleStairs, BlinkStairs, MushroomTower }
 
         public const float CrumbleStairsMinDifficulty = 0.3f;
         public const float BlinkStairsMinDifficulty = 0.45f;
@@ -217,7 +218,14 @@ namespace IBlameYou.Systems
             if ((room.Doors & DoorDir.Up) == 0 || room.Difficulty < 0.15f) return ShaftStyle.Zigzag;
             var rng = new Random(unchecked(seed * 31 + room.Index * 7919 + 11)); // 지형 난수열과 따로 (지그재그 방 모양이 그대로 남게)
             int count = room.Difficulty >= BlinkStairsMinDifficulty ? 5 : room.Difficulty >= CrumbleStairsMinDifficulty ? 4 : 3;
-            return (ShaftStyle)rng.Next(count);
+            var style = (ShaftStyle)rng.Next(count);
+            // 버섯 탑은 지그재그로 뽑힌 이동 방 일부만 바꾼다 (다른 모양을 고르는 난수는 그대로). 따로 굴리는 난수
+            if (style == ShaftStyle.Zigzag && room.Kind == RoomKind.Travel && room.Difficulty >= MushroomTowerMinDifficulty)
+            {
+                var towerRng = new Random(unchecked(seed * 73 + room.Index * 104729 + 41));
+                if (towerRng.NextDouble() < MushroomTowerChance) style = ShaftStyle.MushroomTower;
+            }
+            return style;
         }
 
         internal static RoomGeometry BuildShaft(int seed, RoomData room, ShaftStyle style)
@@ -250,11 +258,12 @@ namespace IBlameYou.Systems
             if (up)
             {
                 if (style == ShaftStyle.TwinStairs) AddTwinStairs(chunk, g);
+                else if (style == ShaftStyle.MushroomTower) AddMushroomTower(room, chunk, g, rng);
                 else AddStairs(chunk, g, rng);
                 if (style == ShaftStyle.Shelves) AddShelves(chunk, room, rng);
                 if (style == ShaftStyle.CrumbleStairs || style == ShaftStyle.BlinkStairs)
                     MakeStairsUnsteady(chunk, g, style == ShaftStyle.BlinkStairs);
-                if (style != ShaftStyle.TwinStairs && style != ShaftStyle.Shelves) AddWindShortcut(room, chunk);
+                if (style != ShaftStyle.TwinStairs && style != ShaftStyle.Shelves && style != ShaftStyle.MushroomTower) AddWindShortcut(room, chunk);
             }
 
             var geometry = new RoomGeometry { Chunk = chunk };
@@ -270,8 +279,11 @@ namespace IBlameYou.Systems
             }
 
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
+            if (up && style == ShaftStyle.MushroomTower) ClearTowerFloor(room, chunk, g);
+            // 위 문 없는 굴: 순간이동 선반이 없으면 통통 버섯 선반. 버섯 열을 함정이 피하도록 함정보다 먼저 둔다
+            // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
+            if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
-            if (!up && room.Kind == RoomKind.Travel) AddTeleportShelf(seed, room, chunk);
             return Check(geometry);
         }
 
@@ -288,6 +300,59 @@ namespace IBlameYou.Systems
                 left = !left;
             }
         }
+
+        // 버섯 탑 (2026-11-14 "세로 방 다양화"): 계단 대신 통통 버섯 두 개로 오른다. 바닥 버섯(M1) → 튕겨 바닥 + 7 선반(P1)에 서고,
+        // P1 위 버섯(M2) → 튕겨 다시 7칸 위 선반(P2)에 서고, P2에서 점프(위로 2칸)로 위 문 아래 맨 위 판에 오른다.
+        // 버섯은 "길 버섯"(Direction = 1)이라 검증기가 버섯 열 위로 TowerMushroomReach칸까지 오르는 길로 본다.
+        // 방 번호 짝·홀로 왼쪽/오른쪽 탑 (지형 난수 하나를 지그재그 계단처럼 써서 적 자리 난수열 위치가 같게).
+        public const float MushroomTowerMinDifficulty = 0.25f;
+        public const float MushroomTowerChance = 0.5f;
+        public const int TowerStep = 7;             // 버섯 하나로 오르는 높이 (튕김 7.5 + 갓 0.95 ≈ 8.45 아래로 넉넉히)
+        public const int TowerMushroom1X = 6;       // 바닥 버섯 열 (왼쪽 탑 기준, 오른쪽이면 TowerCol 거울 자리)
+        public const int TowerMushroom2X = 8;       // P1 위 버섯 열
+        public const int TowerShelf1X0 = 4, TowerShelf1X1 = 9;   // P1 (행 = 바닥 + TowerStep - 1)
+        public const int TowerShelf2X0 = 6, TowerShelf2X1 = 11;  // P2 (행 = P1 서는 칸 + TowerStep - 1)
+
+        public static bool MushroomTowerOnLeft(RoomData room) => (room.Index & 1) == 0;
+
+        private static void AddMushroomTower(RoomData room, ChunkData chunk, int g, Random rng)
+        {
+            rng.Next(2); // 지그재그 AddStairs와 같은 수만큼 난수를 써서 뒤의 적 자리 난수열을 맞춘다
+            bool left = MushroomTowerOnLeft(room);
+            int stand1 = g + TowerStep;
+            int stand2 = stand1 + TowerStep;
+            chunk.SetRow(HoleX0 - 1, HoleX1 + 1, TopPlatformRow, StageTile.Platform);
+            SetRowEither(chunk, TowerCol(left, TowerShelf1X0), TowerCol(left, TowerShelf1X1), stand1 - 1);
+            SetRowEither(chunk, TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1), stand2 - 1);
+            chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom1X), g, 1, 1);
+            chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom2X), stand1, 1, 1);
+            // 두 번 튕겨 오른 P2 벽 쪽 끝에 동전 무더기 (선반 세로 방과 같은 문턱). 위 문으로 가는 길(안쪽 끝)은 비워 둔다
+            if (room.Difficulty >= ShelfCoinMinDifficulty)
+                chunk.AddFeature(FeatureKind.CoinPile, TowerCol(left, TowerShelf2X0), stand2);
+        }
+
+        // 오른쪽 탑은 위 구멍 가운데(15열) 기준 거울 자리라 P2 → 맨 위 판 간격이 왼쪽과 같은 1칸이다
+        public static int TowerCol(bool left, int x) => left ? x : (HoleX0 + HoleX1) - x;
+
+        // 버섯 탑 바닥 버섯 ±2칸에 선 쫄몹은 방 안쪽, 버섯 열 + 3칸부터 빈 열로 옮긴다 (적 난수는 그대로. 내려앉아 튕길 자리를 비움)
+        private static void ClearTowerFloor(RoomData room, ChunkData chunk, int g)
+        {
+            bool left = MushroomTowerOnLeft(room);
+            int m = TowerCol(left, TowerMushroom1X);
+            int inward = left ? 1 : -1;
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || f.Y != g || Math.Abs(f.X - m) > 2) continue;
+                int to = m + inward * 3;
+                while (chunk.Features.Exists(o => o.Kind == FeatureKind.Enemy && o.Y == g && o.X == to)) to += inward;
+                f.X = to;
+                chunk.Features[i] = f;
+            }
+        }
+
+        private static void SetRowEither(ChunkData chunk, int a, int b, int row) =>
+            chunk.SetRow(Math.Min(a, b), Math.Max(a, b), row, StageTile.Platform);
 
         // 무너지는/깜빡 계단: 지그재그 계단에서 맨 위 판(위 문 아래)과 맨 아래 판(바닥에서 뛰어오르는 첫 판)을 뺀 판들을
         // 타일 대신 무너지는 발판(Crumble) 또는 깜빡 발판(BlinkPlatform)으로 바꾼다. 둘 다 아래에서 뚫고 오르는 한쪽 발판이고
@@ -400,15 +465,50 @@ namespace IBlameYou.Systems
         public const int TeleportShelfRise = 5;
         public const float TeleportShelfChance = 0.5f;
 
-        private static void AddTeleportShelf(int seed, RoomData room, ChunkData chunk)
+        private static bool AddTeleportShelf(int seed, RoomData room, ChunkData chunk)
         {
             var rng = new Random(unchecked(seed * 92821 + room.Index * 68917 + 29));
-            if (rng.NextDouble() >= TeleportShelfChance) return;
+            if (rng.NextDouble() >= TeleportShelfChance) return false;
             bool left = rng.Next(2) == 0;
             int row = ShaftGround + TeleportShelfRise - 1; // 발판 행 (윗면에 서는 칸 = row + 1)
             int x0 = left ? 2 : W - 6;
             chunk.SetRow(x0, x0 + 3, row, StageTile.Platform);
             chunk.AddFeature(FeatureKind.Reward, x0 + 1, row + 1);
+            return true;
+        }
+
+        // 버섯 굴 선반 (2026-11-14 "세로 방 다양화"): 위 문 없는 이동 세로 방(굴)에 순간이동 선반이 없으면, 벽 쪽 바닥에
+        // 통통 버섯 하나와 그 바로 위 바닥 + MushroomShelfRise 높이에 5칸 발판 선반, 선반 위에 동전 무더기를 둔다.
+        // 점프해서 버섯 갓에 내려앉으면 튕겨 올라 한쪽 발판을 아래에서 뚫고 선반에 선다 (평지 버섯 선반과 같은 높이).
+        // 방 번호 짝·홀로 왼쪽·오른쪽을 고르고 난수는 쓰지 않는다. 덤 길이라 검증기에는 닿지 않는 칸으로 남는다.
+        public const int MushroomShelfRise = ChunkGenerator.BounceLedgeRise; // 선반 서는 칸 = 바닥 + 6
+        public const int MushroomShelfX = 5;   // 버섯 열 (왼쪽 기준. 오른쪽이면 W-1-5). 좌우 문 도착 칸(1)과 그 옆 함정 여유(2칸)에서 떨어뜨림
+        public const int MushroomShelfHalf = ChunkGenerator.BounceLedgeHalf;
+
+        public const int MushroomEnemyShift = 4; // 옮긴 적이 버섯 열 ±2(선반 아래)를 벗어나고, 아래 문 도착 칸(11, 20)과는 2칸 떨어지게
+
+        public static bool MushroomShelfOnLeft(RoomData room) => (room.Index & 1) == 0;
+
+        private static void AddMushroomShelf(RoomData room, ChunkData chunk)
+        {
+            if (room.Difficulty < ChunkGenerator.BounceMinDifficulty) return;
+            int g = ShaftGround;
+            int x = MushroomShelfOnLeft(room) ? MushroomShelfX : W - 1 - MushroomShelfX;
+            int stand = g + MushroomShelfRise;
+            chunk.SetRow(x - MushroomShelfHalf, x + MushroomShelfHalf, stand - 1, StageTile.Platform);
+            chunk.AddFeature(FeatureKind.BounceMushroom, x, g);
+            // 쫄몹 자리(5, 26)와 버섯 열이 겹치면 그 적만 방 안쪽으로 MushroomEnemyShift칸 옮긴다 (적 난수는 그대로)
+            int inward = MushroomShelfOnLeft(room) ? 1 : -1;
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || f.Y != g || f.X != x) continue;
+                int to = x + inward * MushroomEnemyShift;
+                while (chunk.Features.Exists(o => o.Kind == FeatureKind.Enemy && o.Y == g && o.X == to)) to += inward;
+                f.X = to;
+                chunk.Features[i] = f;
+            }
+            chunk.AddFeature(FeatureKind.CoinPile, MushroomShelfOnLeft(room) ? x - 1 : x + 1, stand); // 벽 쪽 (버섯 바로 위를 비워 내려앉을 자리)
         }
 
         // 세로 방의 쫄몹: 구멍과 문에서 떨어진 바닥에 1~3마리.
@@ -492,6 +592,7 @@ namespace IBlameYou.Systems
             {
                 if (f.Kind == FeatureKind.Enemy && f.Y == g) Block(safe, f.X, f.X);
                 if (f.Kind == FeatureKind.WindVent && f.Y == g) Block(safe, f.X, f.X + f.Width - 1); // 바람에 실려 가시·불기둥 위로 떨어지지 않게
+                if (f.Kind == FeatureKind.BounceMushroom && f.Y == g) Block(safe, f.X, f.X); // 버섯에서 튕겨 내려오는 자리
             }
             return safe;
         }

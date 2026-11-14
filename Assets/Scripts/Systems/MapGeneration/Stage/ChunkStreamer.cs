@@ -353,7 +353,7 @@ namespace IBlameYou.Systems
                         SpawnCoinPile(root, CoinPileKey(index, coinOrdinal++), new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.Difficulty);
                         break;
                     case FeatureKind.BounceMushroom:
-                        BounceMushroom.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y));
+                        BounceMushroom.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), f.Direction == 1); // 버섯 탑 길 버섯이면 꺾쇠 표시
                         break;
                     case FeatureKind.WindVent:
                         WindVent.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width, f.Direction);
