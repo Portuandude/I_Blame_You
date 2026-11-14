@@ -59,6 +59,22 @@ namespace IBlameYou.Tests
             Assert.IsTrue(StageValidator.Validate(chunk, out string reason), reason);
         }
 
+        // 바람 구멍: 같은 방 오른쪽에 환풍구 하나, 기둥 안은 비어 있고 꼭대기가 옆 선반보다 높고, 선반 위 동전 (2026-11-14)
+        [Test]
+        public void BounceAreaHasWindVentBesideLedge()
+        {
+            var chunk = FeatureTestStage.Build().Chunks[FeatureTestStage.BounceArea];
+            var vent = chunk.Features.Single(f => f.Kind == FeatureKind.WindVent);
+            int stand = vent.Y + ChunkGenerator.BounceLedgeRise;
+            Assert.AreEqual(FeatureTestStage.WindVentX, vent.X);
+            Assert.Greater(vent.Y + vent.Direction, stand + 1);
+            for (int x = vent.X; x < vent.X + vent.Width; x++)
+                for (int y = vent.Y; y < vent.Y + vent.Direction; y++) Assert.AreEqual(StageTile.Empty, chunk.Get(x, y), $"기둥 안 ({x},{y})");
+            Assert.AreEqual(StageTile.Platform, chunk.Get(vent.X - 1, stand - 1));
+            Assert.IsTrue(chunk.Features.Any(f => f.Kind == FeatureKind.CoinPile && f.Y == stand && f.X < vent.X));
+            Assert.IsTrue(StageValidator.Validate(chunk, out string reason), reason);
+        }
+
         [Test]
         public void EndsWithWalls()
         {

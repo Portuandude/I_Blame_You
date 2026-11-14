@@ -1,7 +1,7 @@
 namespace IBlameYou.Systems
 {
     // 기능 테스트 모드 맵 (2026-11-12 플레이테스트 피드백: 7·8·11·19번 "테스트 불가").
-    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 빈 방(오른쪽 벽).
+    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯·바람 구멍 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 빈 방(오른쪽 벽).
     // 몬스터·유물은 이 맵 위에서 FeatureTestTools(키)로 불러 시험한다. 순수 C#이라 EditMode 테스트에서 그대로 검증한다.
     public static class FeatureTestStage
     {
@@ -17,7 +17,7 @@ namespace IBlameYou.Systems
 
         public const int BounceArea = 1; // 통통 버섯 방 (청크 번호)
 
-        public static readonly string[] Names = { "텅 빈 방", "통통 버섯 방", "협동 봉인문", "이중 스위치 발판", "끝 방" };
+        public static readonly string[] Names = { "텅 빈 방", "통통 버섯·바람 방", "협동 봉인문", "이중 스위치 발판", "끝 방" };
 
         public static StageData Build()
         {
@@ -36,7 +36,11 @@ namespace IBlameYou.Systems
 
                 if (chunk == null) chunk = ChunkGenerator.Fallback(index, kind, 1f, height);
                 if (kind == ChunkKind.ElementGate) MakeCoopGate(chunk);
-                if (index == BounceArea) ChunkGenerator.AddBounceLedge(chunk); // 평평한 빈 방 가운데에 버섯 + 높은 선반 + 동전
+                if (index == BounceArea)
+                {
+                    ChunkGenerator.AddBounceLedge(chunk); // 평평한 빈 방 가운데에 버섯 + 높은 선반 + 동전
+                    AddWindVent(chunk);                   // 오른쪽에 바람 구멍 + 선반 + 동전
+                }
                 if (index == Order.Length - 1) chunk.FillColumn(ChunkData.Width - 1, ChunkData.Height); // 끝 벽
 
                 stage.Chunks.Add(chunk);
@@ -44,6 +48,24 @@ namespace IBlameYou.Systems
             }
 
             return stage;
+        }
+
+        // 바람 구멍 시험 자리 (2026-11-14): 오른쪽 벽 쪽 바닥에 환풍구(2칸), 그 왼쪽에 버섯 선반과 같은 높이의 선반 + 동전.
+        // 바람을 타고 오르다 왼쪽으로 붙으면 선반에 내려앉는다. 바닥이 평평하지 않으면 두지 않는다.
+        public const int WindVentX = ChunkData.Width - 7;
+        public const int WindLedgeWidth = 4;
+        public const int WindTopRise = 3;
+
+        private static void AddWindVent(ChunkData chunk)
+        {
+            int g = chunk.SurfaceAt(WindVentX);
+            for (int x = WindVentX - WindLedgeWidth; x < WindVentX + RoomShaper.WindVentWidth; x++)
+                if (chunk.SurfaceAt(x) != g) return;
+            int stand = g + ChunkGenerator.BounceLedgeRise;
+            if (stand + WindTopRise >= ChunkData.Height - 1) return;
+            chunk.SetRow(WindVentX - WindLedgeWidth, WindVentX - 1, stand - 1, StageTile.Platform);
+            chunk.AddFeature(FeatureKind.WindVent, WindVentX, g, RoomShaper.WindVentWidth, stand + WindTopRise - g);
+            chunk.AddFeature(FeatureKind.CoinPile, WindVentX - 2, stand);
         }
 
         // 봉인문을 협동 봉인문으로: 첫 속성은 A 방어막, 둘째는 B 마법 (RoomShaper 보물 곁방 문과 같은 규칙).

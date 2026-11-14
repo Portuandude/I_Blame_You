@@ -272,7 +272,7 @@ namespace IBlameYou.Tests
                     if (!room.IsVertical) continue;
                     var style = RoomShaper.PickShaftStyle(seed, room);
                     var chunk = RoomShaper.BuildShaft(seed, room, style).Chunk;
-                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile);
+                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile && f.Y != RoomShaper.WindLedgeRow + 1); // 바람 지름길 동전은 따로
                     bool expected = style == RoomShaper.ShaftStyle.Shelves && room.Kind == RoomKind.Travel
                         && room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty;
                     string tag = $"seed {seed} room {room.Index} {style}";
@@ -288,6 +288,73 @@ namespace IBlameYou.Tests
             }
 
             Assert.Greater(piles, 0, "선반 동전이 한 번도 안 나옴");
+        }
+
+        // 바람 지름길: 위 문이 있는 이동 방(계단 모양)에서 문이 없는 벽 쪽에만. 환풍구는 바닥 위, 기둥 안은 바닥부터 꼭대기까지 비어 있고,
+        // 기둥 꼭대기가 선반 서는 칸보다 높고, 선반 위에 동전, 선반은 계단 판에서 5칸 떨어져 있고, 환풍구 위에 함정이 없다.
+        [Test]
+        public void WindShortcutsLiftToCoinLedgeAwayFromDoors()
+        {
+            int vents = 0;
+            int g = RoomShaper.ShaftGround;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    var geometry = RoomShaper.Build(seed, room);
+                    var chunk = geometry.Chunk;
+                    var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.WindVent);
+                    bool expected = RoomShaper.WantsWindShortcut(room) && style != RoomShaper.ShaftStyle.TwinStairs && style != RoomShaper.ShaftStyle.Shelves;
+                    string tag = $"seed {seed} room {room.Index} {style}";
+                    Assert.AreEqual(expected ? 1 : 0, found.Count, tag);
+                    foreach (var v in found)
+                    {
+                        bool left = v.X < ChunkData.Width / 2;
+                        Assert.AreEqual(DoorDir.None, room.Doors & (left ? DoorDir.Left : DoorDir.Right), tag + ": 문 쪽 벽");
+                        Assert.AreEqual(RoomShaper.WindVentWidth, v.Width, tag);
+                        Assert.AreEqual(g, v.Y, tag);
+                        int top = v.Y + v.Direction;
+                        int stand = RoomShaper.WindLedgeRow + 1;
+                        Assert.Greater(top, stand + 1, tag + ": 기둥 꼭대기가 선반보다 높아야");
+                        Assert.Less(top, ChunkData.Height - 1, tag + ": 천장 아래");
+                        for (int x = v.X; x < v.X + v.Width; x++)
+                        {
+                            Assert.IsTrue(chunk.IsSolid(x, g - 1), tag + $": 환풍구 바닥 ({x})");
+                            for (int y = g; y < top; y++) Assert.AreEqual(StageTile.Empty, chunk.Get(x, y), tag + $": 기둥 안 ({x},{y})");
+                        }
+
+                        int ledgeX0 = left ? v.X - RoomShaper.WindLedgeWidth : v.X + v.Width;
+                        for (int x = ledgeX0; x < ledgeX0 + RoomShaper.WindLedgeWidth; x++)
+                        {
+                            Assert.AreEqual(StageTile.Platform, chunk.Get(x, RoomShaper.WindLedgeRow), tag + $": 선반 ({x})");
+                            Assert.IsFalse(chunk.IsSolid(x, stand) || chunk.IsSolid(x, stand + 1), tag + $": 선반 위 빈 칸 ({x})");
+                        }
+                        Assert.IsTrue(chunk.Features.Exists(f => f.Kind == FeatureKind.CoinPile && f.Y == stand
+                            && f.X >= ledgeX0 && f.X < ledgeX0 + RoomShaper.WindLedgeWidth), tag + ": 선반 위 동전");
+
+                        // 계단 판(타일·무너지는·깜빡 발판)과 가로로 5칸 이상 떨어짐 (걷기 점프로 닿지 않게)
+                        int near = left ? ledgeX0 + RoomShaper.WindLedgeWidth - 1 : ledgeX0;
+                        for (int y = g + 1; y < ChunkData.Height - 1; y++)
+                            for (int x = 0; x < ChunkData.Width; x++)
+                            {
+                                if (chunk.Get(x, y) != StageTile.Platform || (y == RoomShaper.WindLedgeRow && x >= ledgeX0 && x < ledgeX0 + RoomShaper.WindLedgeWidth)) continue;
+                                Assert.Greater(System.Math.Abs(x - near), 5, tag + $": 계단 판 ({x},{y})이 선반과 가까움");
+                            }
+                        foreach (var f in chunk.Features)
+                        {
+                            if (f.Kind == FeatureKind.Crumble || f.Kind == FeatureKind.BlinkPlatform)
+                                Assert.Greater(System.Math.Min(System.Math.Abs(f.X - near), System.Math.Abs(f.X + f.Width - 1 - near)), 5, tag + ": 흔들 발판이 선반과 가까움");
+                            if (f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet)
+                                Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < v.X || f.X > v.X + v.Width - 1, tag + ": 환풍구 위 함정");
+                        }
+                        vents++;
+                    }
+                }
+            }
+
+            Assert.Greater(vents, 5, "바람 지름길이 거의 안 나옴");
         }
 
         // 무너지는/깜빡 계단: 난이도 기준 이상에서만 나오고, 맨 위 판·맨 아래 판은 타일 발판 그대로,
