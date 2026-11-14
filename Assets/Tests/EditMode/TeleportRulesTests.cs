@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace IBlameYou.Tests
 {
-    // 순간이동 규칙(TeleportRules): 네 방향 고정, 위·옆 막힘, 아래 발판 뚫기와 낙사 방지.
+    // 순간이동 규칙(TeleportRules): 네 방향 고정, 옆 막힘, 위 발판 뚫기·천장 멈춤, 아래 발판 뚫기와 낙사 방지.
     // 한 열(column)만 본 단순한 세계: 판(top, bottom, 발판 여부) 목록과 키 1.8의 몸.
     public class TeleportRulesTests
     {
@@ -77,6 +77,58 @@ namespace IBlameYou.Tests
             Assert.AreEqual(Distance, TeleportRules.Blocked(Distance, float.PositiveInfinity), 1e-4f);
             Assert.AreEqual(2f - TeleportRules.Skin, TeleportRules.Blocked(Distance, 2f), 1e-4f);
             Assert.AreEqual(0f, TeleportRules.Blocked(Distance, 0.01f), 1e-4f);
+        }
+
+        // 위: 발이 feetY인 몸을 올린다. solidHit는 머리 위 땅(발판 제외)의 아랫면까지 (TeleportSkill.HeadCast).
+        private static float PlanUp(float feetY, params Slab[] slabs)
+        {
+            float head = feetY + BodyHeight;
+            float solidHit = float.PositiveInfinity;
+            foreach (var s in slabs)
+                if (!s.OneWay && s.Bottom >= head - 1e-4f) solidHit = Math.Min(solidHit, s.Bottom - head);
+
+            Func<float, bool> overlaps = t =>
+            {
+                float lo = feetY + t, hi = lo + BodyHeight;
+                foreach (var s in slabs)
+                    if (lo < s.Top - 1e-4f && hi > s.Bottom + 1e-4f) return true;
+                return false;
+            };
+            return TeleportRules.PlanUp(Distance, solidHit, overlaps);
+        }
+
+        [Test]
+        public void UpPassesThroughPlatformAboveAndLandsOnIt()
+        {
+            // 발판(윗면 3) 바로 아래 바닥(0)에 서서 위로: 발판을 뚫고 위로 4칸 (발 4 > 발판 윗면 3)
+            float t = PlanUp(0f, Ground(0f), Platform(3f));
+            Assert.AreEqual(Distance, t, 1e-4f);
+            Assert.Greater(0f + t, 3f);
+        }
+
+        [Test]
+        public void UpPassesThroughMovingPlatformAbove()
+        {
+            Assert.AreEqual(Distance, PlanUp(0f, Ground(0f), MovingPlatform(2.6f)), 1e-4f);
+        }
+
+        [Test]
+        public void UpEndingInsidePlatformBacksOffToFreeSpot()
+        {
+            // 발판(4.5~4.25)이 도착 자리(발 4~머리 5.8)와 겹친다: 겹치지 않는 가장 먼 자리 = 머리가 발판 아랫면 밑 (발 2.25 이하)
+            float t = PlanUp(0f, Ground(0f), Platform(4.5f));
+            Assert.Greater(t, TeleportRules.MinTravel - 1e-4f);
+            Assert.LessOrEqual(t + BodyHeight, 4.25f + 1e-4f);
+        }
+
+        [Test]
+        public void UpStopsUnderSolidCeiling()
+        {
+            // 천장(땅) 아랫면 3.8: 머리(1.8)에서 2칸 위 → 2 - Skin
+            var ceiling = new Slab(8.8f, 3.8f, false);
+            Assert.AreEqual(2f - TeleportRules.Skin, PlanUp(0f, Ground(0f), ceiling), 1e-4f);
+            // 천장에 머리가 붙어 있으면 실패
+            Assert.Less(PlanUp(0f, Ground(0f), new Slab(6.8f, 1.85f, false)), 0f);
         }
 
         [Test]
