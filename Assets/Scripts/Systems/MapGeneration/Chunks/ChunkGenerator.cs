@@ -175,6 +175,43 @@ namespace IBlameYou.Systems
 
             if (rng.NextDouble() < 0.25 + 0.4 * chunk.Difficulty) PlaceSpikeStrip(chunk, heights, occupied, rng, 2);
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
+            PlaceBounceLedge(chunk, heights, occupied);
+        }
+
+        // 통통 버섯 덤 길 (2026-11-14, 레벨 재설계: 평지가 심심하다는 플레이테스트 의견).
+        // 평지 가운데 쪽 평평한 5칸 위, 바닥 + BounceLedgeRise 높이에 5칸 발판 선반을 걸고 가운데에 버섯, 선반 위에 동전 무더기.
+        // 보통 점프(약 2.4칸)로는 못 닿고 버섯을 밟아 튕겨야 오른다. 지나가는 길은 그대로라 검증과 무관한 덤이다.
+        // 난수를 쓰지 않아 기존 시드의 지형·적 배치가 바뀌지 않는다 (가운데에서 가까운 열부터 찾는다).
+        public const int BounceLedgeRise = 6;    // 선반 서는 칸 = 바닥 + 6
+        public const int BounceLedgeHalf = 2;    // 선반 = 버섯 열 ± 2
+        public const float BounceMinDifficulty = 0.1f;
+
+        private static void PlaceBounceLedge(ChunkData chunk, int[] heights, bool[] occupied)
+        {
+            if (chunk.Difficulty < BounceMinDifficulty) return;
+            int center = W / 2;
+            for (int k = 0; k < W; k++)
+            {
+                int x = center + ((k & 1) == 0 ? k / 2 : -(k / 2 + 1));
+                if (x - BounceLedgeHalf - 1 < 4 || x + BounceLedgeHalf + 1 > W - 5) continue;
+                int g = heights[x];
+                int stand = g + BounceLedgeRise;
+                if (stand + 2 > ChunkData.Height - 2) continue; // 선반 위로 몸이 들어갈 자리 (천장 줄 아래)
+                bool ok = true;
+                for (int c = x - BounceLedgeHalf - 1; c <= x + BounceLedgeHalf + 1 && ok; c++)
+                {
+                    // 선반 아래는 평평한 같은 바닥, 양옆 한 칸도 바닥보다 높지 않게 (언덕에서 걸어 올라 닿지 않게)
+                    if (c >= x - BounceLedgeHalf && c <= x + BounceLedgeHalf ? heights[c] != g : heights[c] > g) ok = false;
+                    if (occupied[c]) ok = false; // 가시·적이 있는 곳은 피한다
+                }
+                if (!ok) continue;
+
+                for (int c = x - BounceLedgeHalf; c <= x + BounceLedgeHalf; c++) chunk.Tiles[c, stand - 1] = StageTile.Platform;
+                chunk.AddFeature(FeatureKind.BounceMushroom, x, g);
+                chunk.AddFeature(FeatureKind.CoinPile, x + 1, stand);
+                Mark(occupied, x, BounceLedgeHalf);
+                return;
+            }
         }
 
         // 높낮이 차가 1~2칸인 언덕. 높은 계단 벽에 화살 발사대가 박혀 낮은 쪽(플레이어가 오는 왼쪽)을 쏜다.

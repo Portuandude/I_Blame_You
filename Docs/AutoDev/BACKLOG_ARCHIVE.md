@@ -2,6 +2,26 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-14 00:15 자동 실행이 추가 — 레벨 재설계: 통통 버섯 덤 길)
+
+DIRECTION ① "방 종류 늘리기" 중 사람 선택이 필요 없는 지형 변형 (플레이테스트 "길이는 괜찮은데 심심하다"). 지나가는 길은 그대로 두고 덤 길만 더한다. 난수를 쓰지 않아 기존 시드 지형·적 그대로.
+
+- DONE (claude/project-thread-gim36q): 통통 버섯 (새 `Systems/Traps/BounceMushroom`) — 위에서 내려앉으면 7.5칸 튕김, 걸어서는 그냥 지나감, 대시 중엔 안 튕김
+- DONE (claude/project-thread-gim36q): 배치 — 난이도 10%+ 평지 가운데 쪽 평평한 5칸 위, 바닥 + 6에 5칸 발판 선반 + 선반 위 동전 무더기 (`ChunkGenerator.PlaceBounceLedge`, `FeatureKind.BounceMushroom`)
+- DONE (claude/project-thread-gim36q): 효과음 `MushroomBoing` ("보잉")
+- DONE (claude/project-thread-gim36q): 연출 — 튕길 때 납작 눌렸다 길쭉하게 흔들림 + 분홍·흰 포자 + 먼지, 가만히 있을 때 숨 쉬듯 부풂
+- DONE (claude/project-thread-gim36q): 테스트 `PlainsBounceMushroomLiftsToCoinLedge` (선반 높이·평평함·천장·동전·적 없음·검증 통과)
+
+## 다음 (2026-11-14 00:10 자동 실행이 추가 — 무너지는 발판 무너짐·복귀 연출)
+
+DIRECTION ① "플레이 감각 다듬기". 무너지는 발판이 곧 무너진다·곧 다시 생긴다를 눈과 귀로 읽히게. 흔들림·사라짐·다시 생기는 시간과 판정 그대로 (그림·소리만, `Systems/Effects/CrumblePlatformFx`).
+
+- DONE (claude/project-thread-gim36q): 무너짐 — 칸마다 나무 조각이 튀어 떨어짐 (젤리 방석이면 기존 분홍 방울 그대로, 화면 안만)
+- DONE (claude/project-thread-gim36q): 흔들림 — 흔들리는 동안 판자가 점점 어두워지고 밑에서 부스러기가 0.14초마다 톡 떨어짐 (젤리 방석 제외)
+- DONE (claude/project-thread-gim36q): 복귀 예고 — 깜빡임 0.6초 동안 아래에서 나무 조각이 모여 올라와 제자리에 스며듦
+- DONE (claude/project-thread-gim36q): 복귀 — 판자가 왼쪽부터 차례로 0.6배 → 1.14배 → 제자리로 톡 커짐 (그림만) + 양 끝 반짝
+- DONE (claude/project-thread-gim36q): 소리 — "Crumble_Back" 0.15초 간격 제한, 무너짐·복귀 소리 거리 판정을 가로만 → 가로·세로(카메라 12칸 안)로 (세로 방 먼 층 소리 안 나게)
+
 ## 다음 (2026-11-13 15:40 자동 실행이 추가 — 움직이는 발판 도착·출발 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 움직이는 발판이 끝에 닿아 멈추고 다시 떠나는 박자가 눈과 귀로 읽혀 올라탈 때를 잡기 쉽게. 속도·멈춤 시간·판정 그대로 (그림·소리만, `Systems/Effects/MovingPlatformFx`). 스위치 발판의 깨어남·잠듦 연출은 그대로 둔다.
