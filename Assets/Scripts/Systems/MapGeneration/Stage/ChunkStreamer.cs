@@ -669,7 +669,7 @@ namespace IBlameYou.Systems
                 collectedCoins.Add(key);
                 // 방어막 다리: 끝의 동전 무더기를 모두 주우면 퍼즐을 푼 것 → 마음 가루
                 int room = key / 16; // CoinPileKey의 청크 번호
-                if (room < stage.Chunks.Count && stage.Chunks[room].Kind == ChunkKind.ShieldBridge && !HasCoinsLeft(room))
+                if (rooms != null && room < stage.Chunks.Count && stage.Chunks[room].Kind == ChunkKind.ShieldBridge && !HasCoinsLeft(room)) // 기능 테스트(rooms 없음)는 세지 않음
                     IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle);
             });
         }
