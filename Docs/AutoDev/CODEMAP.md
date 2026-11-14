@@ -20,7 +20,7 @@
 | --- | --- |
 | 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch), 저장 `Core/RunSave.cs`·`SaveData.cs`, 카메라 `Core/CameraFollow.cs` |
 | 스테이지 계획·청크 지형 (순수 C#, 테스트 가능) | `Systems/MapGeneration/Chunks/`: `StagePlanner`(청크 순서·시간), `ChunkGenerator`(청크 지형), `StageValidator`(갈 수 있는지), `ChunkData`(타일·적·기능 데이터) |
-| 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(방 배치·중간보스·곁방·리듬), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
+| 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 전투 5+·퍼즐 2+·마을 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
 | 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환·보상), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |
 | 함정·발판 | `Systems/Traps/` |
 | 퍼즐 (봉인문) | `Puzzles/ElementGate.cs` |
