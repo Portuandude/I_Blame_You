@@ -46,7 +46,7 @@ namespace IBlameYou.Tests
                         if (CursedChestRule.IsSwarm(seed, room.Index)) c.CursedSwarm++;
                         if (CursedChestRule.IsSwarm(seed, room.Index) && depth >= CursedChestRule.SwarmEliteDifficulty) c.DeepSwarm++;
                     }
-                    if (room.IsVertical && room.Kind == RoomKind.Travel)
+                    if (room.IsVertical && RoomEventRule.IsEventRoom(room))
                     {
                         var style = RoomShaper.PickShaftStyle(seed, room);
                         if (RoomShaper.IsArcherTower(room, style)) { c.Tower++; any = true; }
@@ -76,7 +76,6 @@ namespace IBlameYou.Tests
             Assert.Greater(c.Mixed, 0, tag + ": 섞인 매복");
             Assert.Greater(c.DeepSwarm, 0, tag + ": 정예 섞인 무리");
             Assert.Greater(c.Tower, 0, tag + ": 궁수 탑");
-            Assert.Greater(c.TowerGuard, 0, tag + ": 깊은 궁수 탑");
         }
 
         [Test]
@@ -96,7 +95,7 @@ namespace IBlameYou.Tests
                 {
                     if (!RoomEventRule.IsCursedChestRoom(seed, room)) continue;
                     string tag = $"seed {seed} room {room.Index}";
-                    Assert.AreEqual(RoomKind.Travel, room.Kind, tag);
+                    Assert.IsTrue(RoomEventRule.IsEventRoom(room), tag);
                     Assert.IsFalse(RoomEventRule.IsTreasureGoblinRoom(seed, room), tag);
                     if (!room.IsVertical) continue;
                     shafts++;
@@ -107,14 +106,14 @@ namespace IBlameYou.Tests
             Assert.Greater(shafts, 0, "세로 방 저주 상자가 한 번도 안 나옴");
         }
 
-        // 보물 고블린·저주 상자는 이동 방에만 (전투·보상·마을 방에는 없다)
+        // 보물 고블린·저주 상자는 일반 전투 방에만 (2026-11-14 이동 방 삭제. 정예·퍼즐·보상·마을 방에는 없다)
         [Test]
-        public void EventsOnlyInTravelRooms()
+        public void EventsOnlyInCombatRooms()
         {
             for (int seed = 0; seed < SeedCount; seed++)
                 foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
                 {
-                    if (room.Kind == RoomKind.Travel) continue;
+                    if (RoomEventRule.IsEventRoom(room)) continue;
                     Assert.IsFalse(RoomEventRule.IsTreasureGoblinRoom(seed, room), $"seed {seed} room {room.Index} {room.Kind}");
                     Assert.IsFalse(RoomEventRule.IsCursedChestRoom(seed, room), $"seed {seed} room {room.Index} {room.Kind}");
                 }

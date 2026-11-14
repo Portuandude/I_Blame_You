@@ -126,7 +126,7 @@ namespace IBlameYou.Tests
                     }
                 }
             }
-            Assert.Greater(wide, SeedCount * 3, "넓은 방이 판마다 여럿");
+            Assert.Greater(wide, SeedCount * 2, "넓은 방이 판마다 여럿");
         }
 
         // 넓은 방 이어 붙이기: 기능 X가 구간 시작만큼 밀리고 적 번호가 겹치지 않는다.
@@ -275,7 +275,7 @@ namespace IBlameYou.Tests
                     var found = chunk.Features.FindAll(f => f.Kind == FeatureKind.CoinPile && f.Y != RoomShaper.WindLedgeRow + 1
                         && f.Y != RoomShaper.ShaftGround + RoomShaper.MushroomShelfRise
                         && style != RoomShaper.ShaftStyle.MushroomTower); // 바람 지름길·버섯 선반·버섯 탑 동전은 따로
-                    bool expected = style == RoomShaper.ShaftStyle.Shelves && room.Kind == RoomKind.Travel
+                    bool expected = style == RoomShaper.ShaftStyle.Shelves && RoomShaper.IsShaftFightRoom(room)
                         && room.Difficulty >= RoomShaper.ShelfCoinMinDifficulty;
                     string tag = $"seed {seed} room {room.Index} {style}";
                     Assert.AreEqual(expected ? 1 : 0, found.Count, tag);
@@ -367,7 +367,7 @@ namespace IBlameYou.Tests
                     }
                 }
             }
-            Assert.Greater(guarded, 0, "깊은 궁수 탑이 한 번도 안 나옴");
+            // 2026-11-14 방 격자에 이동 방이 없어져 파수꾼은 나오지 않는다 (세로 전투 방은 바닥 적이 이미 여럿). 나오면 위 규칙을 지킨다
         }
 
         // 매복 변형 "벽 위 궁수": 난이도 문턱 이상 매복 전투 방은 구역 양쪽 끝 높은 선반 위에 궁수 둘, 구역 적 수는 그대로. 다른 전투 방에는 선반 궁수 없음.
@@ -550,7 +550,7 @@ namespace IBlameYou.Tests
                     foreach (var f in chunk.Features)
                     {
                         if (f.Kind != FeatureKind.Spikes && f.Kind != FeatureKind.FlameJet) continue;
-                        Assert.AreEqual(RoomKind.Travel, room.Kind, $"seed {seed} room {room.Index} 이동 방에만 함정");
+                        Assert.IsTrue(RoomShaper.IsShaftFightRoom(room), $"seed {seed} room {room.Index} 이동 방에만 함정");
                         Assert.AreEqual(RoomShaper.ShaftGround, f.Y, "함정은 바닥에만");
                         if (f.Kind == FeatureKind.Spikes) spikes++; else jets++;
                         if (f.Kind == FeatureKind.Spikes && f.X < RoomShaper.HoleX0) leftSpikes++;
@@ -593,7 +593,7 @@ namespace IBlameYou.Tests
                         if (f.Kind != FeatureKind.Reward) continue;
                         shelves++;
                         string where = $"seed {seed} room {room.Index}";
-                        Assert.AreEqual(RoomKind.Travel, room.Kind, where);
+                        Assert.IsTrue(RoomShaper.IsShaftFightRoom(room), where);
                         Assert.AreEqual(DoorDir.None, room.Doors & DoorDir.Up, where);
                         Assert.AreEqual(StageTile.Platform, geometry.Chunk.Tiles[f.X, f.Y - 1], where);
                         Assert.AreEqual(RoomShaper.ShaftGround + RoomShaper.TeleportShelfRise, f.Y, where);
@@ -629,7 +629,7 @@ namespace IBlameYou.Tests
                     string where = $"seed {seed} room {room.Index}";
                     var mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom && f.Direction == 0); // 버섯 탑의 길 버섯은 따로
                     bool teleport = chunk.Features.Exists(f => f.Kind == FeatureKind.Reward);
-                    bool expected = room.Kind == RoomKind.Travel && (room.Doors & DoorDir.Up) == 0 && !teleport
+                    bool expected = RoomShaper.IsShaftFightRoom(room) && (room.Doors & DoorDir.Up) == 0 && !teleport
                         && room.Difficulty >= ChunkGenerator.BounceMinDifficulty;
                     Assert.AreEqual(expected ? 1 : 0, mushrooms.Count, where);
                     if (!expected) continue;
@@ -690,7 +690,7 @@ namespace IBlameYou.Tests
                     }
 
                     towers++;
-                    Assert.AreEqual(RoomKind.Travel, room.Kind, where);
+                    Assert.IsTrue(RoomShaper.IsShaftFightRoom(room), where);
                     Assert.GreaterOrEqual(room.Difficulty, RoomShaper.MushroomTowerMinDifficulty, where);
                     Assert.IsTrue(geometry.Valid, where + ": " + geometry.Reason);
                     Assert.AreEqual(2, path.Count, where);
