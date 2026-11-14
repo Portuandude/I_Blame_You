@@ -184,7 +184,7 @@ namespace IBlameYou.Systems
         // 난수를 쓰지 않아 기존 시드의 지형·적 배치가 바뀌지 않는다 (가운데에서 가까운 열부터 찾는다).
         public const int BounceLedgeRise = 6;    // 선반 서는 칸 = 바닥 + 6
         public const int BounceLedgeHalf = 2;    // 선반 = 버섯 열 ± 2
-            public const float BounceMinDifficulty = 0.1f;
+        public const float BounceMinDifficulty = 0.1f;
         public const int BounceReachGuard = 6;   // 선반 양끝에서 이 칸 안의 언덕이 바닥 + 3보다 높으면 걸어 올라 점프로 닿으므로 놓지 않는다
 
         // 이미 만든 청크에 통통 버섯 덤 길을 더한다 (기능 테스트 맵용). 바닥 높이는 타일에서 읽고, 기능이 있는 열은 피한다.
@@ -428,6 +428,28 @@ namespace IBlameYou.Systems
             int strips = 1 + (chunk.Difficulty >= 0.5f ? 1 : 0);
             for (int i = 0; i < strips; i++) PlaceSpikeStrip(chunk, heights, occupied, rng, 2);
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
+            PlaceTwinPathMushroom(chunk, ground, occupied);
+        }
+
+        // 두 갈래 길 아래 길의 통통 버섯 (2026-11-14): 위 길에서 떨어져도 버섯을 밟아 다시 오를 수 있다.
+        // 가시·적을 다 놓은 뒤 비어 있는 열에 두어 난수·기존 배치를 바꾸지 않는다 (가운데에서 가까운 열부터).
+        // 튕김(갓 윗면 + 7.5칸)이 위 길 윗면(바닥 + 6)보다 넉넉히 높고, 위 길 발판은 아래에서 통과해 올라선다.
+        public const int TwinPathMushroomMinX = TwinPathWalkStart + 2;
+        public const int TwinPathMushroomMaxX = TwinPathWalkEnd - 2;
+
+        private static void PlaceTwinPathMushroom(ChunkData chunk, int ground, bool[] occupied)
+        {
+            if (chunk.Difficulty < BounceMinDifficulty) return;
+            int center = (TwinPathMushroomMinX + TwinPathMushroomMaxX) / 2;
+            for (int k = 0; k <= TwinPathMushroomMaxX - TwinPathMushroomMinX; k++)
+            {
+                int x = center + ((k & 1) == 0 ? k / 2 : -(k / 2 + 1));
+                if (x < TwinPathMushroomMinX || x > TwinPathMushroomMaxX) continue;
+                if (IsNear(occupied, x, 1)) continue; // 가시·적 곁은 피한다
+                chunk.AddFeature(FeatureKind.BounceMushroom, x, ground);
+                Mark(occupied, x, 1);
+                return;
+            }
         }
 
         // 평지에 가시 줄이 이어진다. 3칸짜리 가시 위에는 발판을 놓아 밟고 건널 수 있게 한다.
