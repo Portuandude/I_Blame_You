@@ -326,6 +326,9 @@ namespace IBlameYou.Systems
             SetRowEither(chunk, TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1), stand2 - 1);
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom1X), g, 1, 1);
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom2X), stand1, 1, 1);
+            // 두 번 튕겨 오른 P2 벽 쪽 끝에 동전 무더기 (선반 세로 방과 같은 문턱). 위 문으로 가는 길(안쪽 끝)은 비워 둔다
+            if (room.Difficulty >= ShelfCoinMinDifficulty)
+                chunk.AddFeature(FeatureKind.CoinPile, TowerCol(left, TowerShelf2X0), stand2);
         }
 
         // 오른쪽 탑은 위 구멍 가운데(15열) 기준 거울 자리라 P2 → 맨 위 판 간격이 왼쪽과 같은 1칸이다
