@@ -11,7 +11,7 @@ namespace IBlameYou.Systems
         public static bool IsFast(float clearSeconds, float targetSeconds) =>
             targetSeconds > 0f && clearSeconds <= targetSeconds;
 
-        // 예: "목표 15분 00초보다 1분 23초 빠름 · 방 22개 (주 경로 19 · 곁방 3)".
+        // 예: "목표 15분 00초보다 1분 23초 빠름 · 방 22개". 2026-11-14 사람 결정: "곁방" 구분 없이 격자의 방 수만 (주 경로·막다른 방 합).
         // 목표가 없으면 빈 문자열. 방 수가 0이면(예전 외길 청크 스테이지) 방 부분을 뺀다.
         public static string Describe(float clearSeconds, float targetSeconds, int mainRooms, int sideRooms)
         {
@@ -23,11 +23,11 @@ namespace IBlameYou.Systems
                 ? $"목표 {Format(target)} 딱 맞춤"
                 : $"목표 {Format(target)}보다 {Format(diff)} {(clear < target ? "빠름" : "느림")}";
             if (mainRooms <= 0) return pace;
-            return $"{pace} · 방 {mainRooms + Math.Max(0, sideRooms)}개 (주 경로 {mainRooms} · 곁방 {Math.Max(0, sideRooms)})";
+            return $"{pace} · 방 {mainRooms + Math.Max(0, sideRooms)}개";
         }
 
         // 게임오버 결과 창의 "쓰러진 곳" 한 줄 (2026-11-12 진행도 % 삭제 → 시작 방에서의 방 거리).
-        // 예: "쓰러진 곳: 시작 방에서 3칸 (곁방) · 가장 멀리 4칸 · 버틴 시간 5분 12초".
+        // 예: "쓰러진 곳: 시작 방에서 3칸 · 가장 멀리 4칸 · 버틴 시간 5분 12초". sideRoom은 2026-11-14부터 표시하지 않는다 (곁방 개념 없앰).
         // distance: 쓰러진 방이 시작 방에서 문 몇 개 거리인지 (방 격자가 아니면 -1 → 방 부분을 뺀다).
         // farthest: 이번 판에 가 본 가장 먼 방 거리. distance보다 클 때만 적는다.
         public static string DescribeDefeat(int distance, int farthest, bool sideRoom, float seconds)
@@ -35,7 +35,7 @@ namespace IBlameYou.Systems
             var parts = new System.Collections.Generic.List<string>();
             if (distance >= 0)
             {
-                parts.Add(distance == 0 ? $"시작 방{(sideRoom ? " (곁방)" : "")}" : $"시작 방에서 {distance}칸{(sideRoom ? " (곁방)" : "")}");
+                parts.Add(distance == 0 ? "시작 방" : $"시작 방에서 {distance}칸");
                 if (farthest > distance) parts.Add($"가장 멀리 {farthest}칸");
             }
             if (seconds > 0f) parts.Add($"버틴 시간 {Format((int)Math.Floor(seconds))}");
