@@ -129,7 +129,10 @@ namespace IBlameYou.Enemies
             escaped = true;
             EffectLibrary.PlayOneShot(transform.position + Vector3.up * 0.5f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.85f, 0.4f, 0.7f), 1.2f);
             GameAudio.PlaySfx("BlinkVanish", 0.7f);
-            StageEvents.PostNotice("보물 고블린이 도망쳤다...");
+            // 맞혀서 흘린 금화가 있으면 같이 알려 준다 (놓쳐도 헛걸음은 아니었다는 느낌)
+            StageEvents.PostNotice(hitDrops > 0
+                ? $"보물 고블린이 도망쳤다... (흘린 금화 +{hitDrops * TreasureGoblinRule.HitGold})"
+                : "보물 고블린이 도망쳤다...");
             Destroy(gameObject);
         }
     }
