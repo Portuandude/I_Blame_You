@@ -48,6 +48,14 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void QuickClearGivesThreeChoices()
+        {
+            Assert.AreEqual(3, CursedChestRule.OfferFor(0f));
+            Assert.AreEqual(3, CursedChestRule.OfferFor(CursedChestRule.QuickTime));
+            Assert.AreEqual(CursedChestRule.OfferSize, CursedChestRule.OfferFor(CursedChestRule.QuickTime + 0.1f));
+        }
+
+        [Test]
         public void SwarmIsAboutAThirdAndFixedPerRoom()
         {
             int swarm = 0, total = 0;
