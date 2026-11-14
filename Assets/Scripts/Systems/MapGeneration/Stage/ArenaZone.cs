@@ -133,7 +133,7 @@ namespace IBlameYou.Systems
                 // 매복 경고: 경고음 + 화면 가장자리 붉은 깜빡임 + 안내. 적은 아래 AmbushWarnTime 뒤 위에서 떨어진다
                 GameAudio.PlaySfx("TrapWarn", 0.9f, 0f);
                 ScreenFlash.EdgeWarn(AmbushWarnColor, 0.5f);
-                StageEvents.PostNotice("매복이다! 위를 조심해!");
+                StageEvents.PostNotice(spawns.Exists(OnLedge) ? "매복이다! 위와 벽 위 궁수를 조심해!" : "매복이다! 위를 조심해!");
             }
             else
             {
@@ -151,7 +151,7 @@ namespace IBlameYou.Systems
             {
                 for (int i = 0; i < spawns.Count; i++)
                 {
-                    drops[i] = IsBoss(spawns[i]) ? 0f : AmbushDrop(spawns[i].Position);
+                    drops[i] = IsBoss(spawns[i]) || OnLedge(spawns[i]) ? 0f : AmbushDrop(spawns[i].Position); // 벽 위 궁수(선반 위 적)는 그 자리에 나타난다
                     if (drops[i] > 0f) StartCoroutine(CeilingDust(spawns[i].Position + Vector3.up * (drops[i] + 0.6f)));
                 }
                 yield return new WaitForSeconds(AmbushWarnTime);
@@ -243,6 +243,9 @@ namespace IBlameYou.Systems
                 yield return null;
             }
         }
+
+        // 바닥보다 높은 선반 위에 놓인 구역 적인지 (RoomShaper 매복 변형 "벽 위 궁수"). 바닥 적은 area.yMin + SpawnLift에 만들어진다.
+        private bool OnLedge(Spawn spawn) => spawn.Position.y > area.yMin + ChunkStreamer.SpawnLift + 1.5f;
 
         // 매복 적이 떨어질 높이: 자리 위로 천장·발판이 있으면 그 아래까지. 너무 낮으면 0 (제자리 소환).
         private static float AmbushDrop(Vector3 position)
