@@ -168,6 +168,7 @@ namespace IBlameYou.Core
         // 구역 안에 서 있으니 바로 문이 닫힌다. 다 쓰러뜨리면 문이 열리고, 다시 누르면 새로 연다.
         private static readonly StageEnemy[] AmbushEnemies = { StageEnemy.Slime, StageEnemy.Goblin, StageEnemy.GoblinArcher };
         private static readonly int[] AmbushColumns = { 9, 16, 23 };
+        private const float AmbushEdge = 3.5f; // ArenaZone 트리거는 양 끝 3칸 안쪽 + 몸 반 폭 — 그보다 끝이면 문이 닫히지 않는다
 
         private void StartAmbush()
         {
@@ -180,7 +181,7 @@ namespace IBlameYou.Core
             int index = ChunkAt(player.transform.position.x);
             float left = index * ChunkData.Width;
             float local = player.transform.position.x - left;
-            if (index < 0 || local < 2f || local > ChunkData.Width - 2f)
+            if (index < 0 || local < AmbushEdge || local > ChunkData.Width - AmbushEdge)
             {
                 StageEvents.PostNotice("매복 시험: 구역 가운데 쪽에서 눌러 주세요");
                 return;
@@ -274,6 +275,8 @@ namespace IBlameYou.Core
         // 구역 i의 왼쪽(입구) 바닥 위로 옮긴다. 떨어지는 속도는 지운다.
         private void JumpToArea(int index)
         {
+            // 매복 싸움 중에 다른 구역으로 가면 그 매복을 치운다 (문·카메라 잠금이 남지 않게 — ArenaZone.OnDestroy가 카메라를 푼다)
+            if (ambushZone != null && ambushZone.IsLocked) Destroy(ambushZone.gameObject);
             area = index;
             const int column = 3;
             float x = index * ChunkData.Width + column + 0.5f; // 외길 모드: 청크 i의 원점 = (i × Width, 0)
