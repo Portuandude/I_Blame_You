@@ -20,17 +20,27 @@ namespace IBlameYou.Systems
         private bool awake;
         private float wispTimer;
         private float shakeLeft;
-        private HealthSystem elite;
+        private HealthSystem[] guards;
         private bool watching;
+        private bool swarm;
 
-        // 깨어난 정예를 지켜본다: 쓰러지지 않고 사라지면(낭떠러지 등으로 치워짐) 상자가 다시 잠들어 닿으면 다시 깨어난다.
-        public void Watch(HealthSystem enemy)
+        // 깨어난 정예(또는 쫄몹 무리)를 지켜본다: 저주가 풀리기 전에 모두 사라지면(방을 떠나 치워짐 등) 상자가 다시 잠들어 닿으면 다시 깨어난다.
+        public void Watch(params HealthSystem[] enemies)
         {
-            elite = enemy;
-            watching = enemy != null;
+            guards = enemies;
+            watching = AnyAlive();
         }
 
-        public static CursedChest Create(Transform parent, Vector2 position, Action onAwaken)
+        private bool AnyAlive()
+        {
+            if (guards == null) return false;
+            foreach (var g in guards)
+                if (g != null) return true;
+            return false;
+        }
+
+        // swarm: 정예 대신 쫄몹 무리가 깨어나는 변형 (CursedChestRule.IsSwarm). 알림 문구만 다르다.
+        public static CursedChest Create(Transform parent, Vector2 position, Action onAwaken, bool swarm = false)
         {
             var go = new GameObject("CursedChest");
             go.transform.SetParent(parent, false);
@@ -43,6 +53,7 @@ namespace IBlameYou.Systems
 
             var chest = go.AddComponent<CursedChest>();
             chest.onAwaken = onAwaken;
+            chest.swarm = swarm;
             var v = EffectLibrary.CreateVisual(go.transform, "Chest", TrapCommon.Frames("RelicChest"), 8f, true, CurseColor, 0.8f, 3);
             v.transform.localPosition = new Vector3(0f, VisualHeight, 0f);
             v.transform.localScale = new Vector3(VisualScale, VisualScale, 1f);
@@ -59,14 +70,14 @@ namespace IBlameYou.Systems
             shakeLeft = ShakeTime;
             GameAudio.PlaySfx("EliteWarn", 0.85f, 0f);
             ScreenFlash.EdgeWarn(CurseColor, 0.6f);
-            StageEvents.PostNotice("저주받은 상자! 정예를 쓰러뜨려라!");
+            StageEvents.PostNotice(swarm ? "저주받은 상자! 몰려든 무리를 모두 쓰러뜨려라!" : "저주받은 상자! 정예를 쓰러뜨려라!");
             EffectLibrary.PlayOneShot(transform.position + Vector3.up * VisualHeight, EffectLibrary.TeleportFrames, 20f, new Color(CurseColor.r, CurseColor.g, CurseColor.b, 0.8f), 1.4f);
             onAwaken?.Invoke();
         }
 
         private void Update()
         {
-            if (watching && elite == null)
+            if (watching && !AnyAlive())
             {
                 watching = false;
                 awake = false;
@@ -87,7 +98,7 @@ namespace IBlameYou.Systems
                 EffectLibrary.TeleportFrames, 14f, color, 0.4f, false, 0.45f);
         }
 
-        // 정예를 쓰러뜨림: 저주가 풀리며 상자가 터진다 (그 자리에 유물 상자는 ChunkStreamer가 놓는다).
+        // 정예(또는 무리 전부)를 쓰러뜨림: 저주가 풀리며 상자가 터진다 (그 자리에 유물 상자는 ChunkStreamer가 놓는다).
         public void Break()
         {
             var center = transform.position + Vector3.up * VisualHeight;

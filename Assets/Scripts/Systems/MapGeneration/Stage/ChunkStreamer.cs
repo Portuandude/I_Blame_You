@@ -912,7 +912,48 @@ namespace IBlameYou.Systems
             }
 
             CursedChest chest = null;
-            chest = CursedChest.Create(root, position, () => AwakenCursedElite(root, index, position, chest));
+            bool swarm = CursedChestRule.IsSwarm(stage.Seed, index);
+            chest = CursedChest.Create(root, position, () =>
+            {
+                if (swarm) AwakenCursedSwarm(root, index, position, chest);
+                else AwakenCursedElite(root, index, position, chest);
+            }, swarm);
+        }
+
+        // 변형 "쫄몹 무리" (CursedChestRule.IsSwarm): 상자 양옆(SwarmOffsets 칸)에 쫄몹 4마리. 모두 쓰러뜨리면 저주가 풀린다.
+        // 남은 채 방을 떠나면 무리는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다 (정예와 같음).
+        private void AwakenCursedSwarm(Transform root, int index, Vector2 chestPosition, CursedChest chest)
+        {
+            if (spawnEnemy == null) return;
+            int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
+            var kinds = CursedChestRule.SwarmFor(stage.Seed, index);
+            var spawned = new List<HealthSystem>();
+            int alive = 0;
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i]) ?? chestPosition;
+                var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
+                EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
+                var health = spawnEnemy(kinds[i], position, transform);
+                if (health == null) continue;
+                RegisterEnemy(health);
+                spawned.Add(health);
+                alive++;
+                bool down = false;
+                health.HealthChanged += (current, max) =>
+                {
+                    if (current > 0f || down) return;
+                    down = true;
+                    alive--;
+                    if (alive > 0 || cursedBroken.Contains(index)) return;
+                    cursedBroken.Add(index);
+                    if (chest != null) chest.Break();
+                    if (root != null) SpawnCursedReward(root, index, chestPosition, true);
+                };
+            }
+            if (spawned.Count == 0) return;
+            GameAudio.PlaySfx("Summon", 0.7f);
+            if (chest != null) chest.Watch(spawned.ToArray());
         }
 
         // 상자 옆(플레이어 반대쪽 4칸, 막히면 반대쪽)에 정예를 부른다. 쓰러뜨리면 상자가 풀려 유물 상자(2개 중 고르기)가 된다.
