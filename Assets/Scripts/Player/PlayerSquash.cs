@@ -69,6 +69,14 @@ namespace IBlameYou.Player
             wasGrounded = true;
         }
 
+        // 통통 버섯처럼 밖에서 높이 튕겨 올릴 때 보통 점프보다 크게 늘인다 (BounceMushroom이 부른다).
+        // 늘어나는 중에는 위 LateUpdate의 점프 늘어남이 덮어쓰지 않는다.
+        public void Stretch(float strength, float time)
+        {
+            if (visual == null) return;
+            Begin(strength, time);
+        }
+
         private void Begin(float strength, float time)
         {
             amount = strength;
