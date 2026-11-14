@@ -48,6 +48,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Pillars: tint = new Color(1f, 0.62f, 0.35f, 0.16f); break; // 기둥 숲: 노을빛 (깊은 낭떠러지 느낌)
                 case ChunkKind.TwinPath: tint = new Color(0.45f, 0.9f, 0.5f, 0.14f); break; // 두 갈래 길: 연두
                 case ChunkKind.MirrorPuzzle:
+                case ChunkKind.ShieldBridge:
                 case ChunkKind.LanternPuzzle: tint = new Color(0.12f, 0.1f, 0.3f, 0.45f); break; // 등불 순서 방: 어두운 남색 (켜진 등불이 돋보이게)
             }
 
