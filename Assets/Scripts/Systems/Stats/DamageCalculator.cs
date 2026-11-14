@@ -50,6 +50,7 @@ namespace IBlameYou.Systems
                 : (attack != null ? attack.ElementDamage(element) : 0f);
             raw *= multiplier;
             if (attacker != null) raw *= attacker.DamageMultiplier;
+            if (attacker != null && kind == DamageKind.Magic) raw *= Mathf.Max(0.1f, attacker.MagicDamageMultiplier);
 
             float damage;
             float affinity = 1f;
