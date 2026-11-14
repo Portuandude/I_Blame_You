@@ -285,6 +285,7 @@ namespace IBlameYou.Systems
             // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
             if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
+            if (up && IsArcherTower(room, style)) AddArcherTower(geometry);
             return Check(geometry);
         }
 
@@ -456,6 +457,42 @@ namespace IBlameYou.Systems
         }
 
         public const float ShelfCoinMinDifficulty = 0.3f;
+
+        // 적 배치 변형 "궁수 탑" (2026-11-14 사람 결정, ContentIdeas 적 3): 난이도 ArcherTowerMinDifficulty 이상인 선반 세로 이동 방은
+        // 낮은 선반에도 고블린 궁수가 서서(높은 선반 궁수와 합쳐 둘) 위아래에서 쏘고, 두 선반 아래 바닥에 가시 줄(2칸)을 깐다.
+        // 난수를 쓰지 않아 방 모양·다른 적·함정 자리는 그대로다. 가시는 SafeTrapColumns(문·첫 발판 밑·적 자리 피함)와 기존 함정 ±2칸을 피한다.
+        public const float ArcherTowerMinDifficulty = 0.5f;
+        public const int ArcherTowerSpikeWidth = 2;
+
+        public static bool IsArcherTower(RoomData room, ShaftStyle style) =>
+            style == ShaftStyle.Shelves && room.Kind == RoomKind.Travel && room.Difficulty >= ArcherTowerMinDifficulty
+            && (room.Doors & DoorDir.Up) != 0;
+
+        private static void AddArcherTower(RoomGeometry geometry)
+        {
+            var chunk = geometry.Chunk;
+            int g = ShaftGround;
+            bool leftLow = chunk.Get(6, ShelfRowLow) == StageTile.Platform; // 왼쪽 선반은 4~7 또는 5~8열이라 6열은 늘 선반 안
+            chunk.AddEnemy(StageEnemy.GoblinArcher, leftLow ? 6 : 25, ShelfRowLow + 1);
+
+            bool[] safe = SafeTrapColumns(geometry); // 방금 세운 궁수는 선반 위라 바닥 자리에 영향 없음
+            foreach (var f in chunk.Features)
+                if ((f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet) && f.Y == g) Block(safe, f.X, f.X + Math.Max(1, f.Width) - 1);
+
+            foreach (var range in new[] { new[] { 4, 8 }, new[] { 23, 26 } }) // 두 선반 아래
+            {
+                int x0 = range[0], x1 = range[1];
+                for (int x = x0; x + ArcherTowerSpikeWidth - 1 <= x1; x++)
+                {
+                    bool ok = true;
+                    for (int i = 0; i < ArcherTowerSpikeWidth; i++) ok &= safe[x + i];
+                    if (!ok) continue;
+                    chunk.AddFeature(FeatureKind.Spikes, x, g, ArcherTowerSpikeWidth);
+                    Block(safe, x, x + ArcherTowerSpikeWidth - 1);
+                    break;
+                }
+            }
+        }
 
         // 바람 지름길 (2026-11-14 레벨 재설계 2차 "세로 방 다양화"): 위 문이 있는 이동 방에서 문이 없는 쪽 벽 가까이
         // 바닥 환풍구(WindVent, 2칸 폭)가 바람 기둥을 올리고, 기둥 꼭대기 옆 높은 선반에 동전 무더기를 둔다.
