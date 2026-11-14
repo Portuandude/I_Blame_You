@@ -1,5 +1,7 @@
 # 인수인계 (2026-11-14 01:05 UTC)
 
+> 2026-11-14 01:05 UTC: 사람 요청으로 자동 개발 일시 정지 (기획안 다듬기). 그 사이 기능 테스트 맵 "버섯 탑 방"만 추가 (`claude/project-thread-5nx76k`). 재개할 때 기획 결정부터 백로그에 반영할 것.
+
 - 브랜치/PR: `claude/project-thread-ix71zl` → #95 (develop 대상, GitHub 자동 머지 켬, #94 위에 쌓임, `editmode` CI 대기)
 - 하던 작업: 없음 (무너지는 버섯 탑·저격 선반·기획서 DONE, 리뷰 APPROVE, LOW 주석 2개 고침)
 - 바로 다음 할 일:
