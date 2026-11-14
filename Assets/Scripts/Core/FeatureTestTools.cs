@@ -19,6 +19,7 @@ namespace IBlameYou.Core
         private static readonly TestEvent[] Events = (TestEvent[])Enum.GetValues(typeof(TestEvent));
         private static int PickCount => Monsters.Length + Events.Length;
         private ArenaZone ambushZone;
+        private int ambushCount;
         private int cursedCount;
 
         // 유물 해제는 효과를 되돌리는 대신 시험 맵을 다시 만들고 남은 유물만 다시 단다 (유물 효과는 얻을 때 한 번 적용되므로).
@@ -164,7 +165,7 @@ namespace IBlameYou.Core
             return stage.Chunks[index].SurfaceAt(column);
         }
 
-        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다).
+        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다. 두 번째마다 땅속 매복).
         // 구역 안에 서 있으니 바로 문이 닫힌다. 다 쓰러뜨리면 문이 열리고, 다시 누르면 새로 연다.
         private static readonly StageEnemy[] AmbushEnemies = { StageEnemy.Slime, StageEnemy.Goblin, StageEnemy.GoblinArcher };
         private static readonly int[] AmbushColumns = { 9, 16, 23 };
@@ -205,6 +206,8 @@ namespace IBlameYou.Core
             ambushZone = ArenaZone.Create(enemyRoot, left, left + ChunkData.Width, ground, spawns, false, spawner,
                 () => StageEvents.PostNotice("매복 시험 끝 — F8로 다시"));
             ambushZone.Ambush = true;
+            ambushZone.Burrow = ambushCount % 2 == 1; // 번갈아: 천장에서 떨어짐 → 땅속에서 튀어나옴
+            ambushCount++;
         }
 
         // 저주받은 상자 시험: 바라보는 쪽 4칸 앞 바닥에 상자. 닿으면 정예(엄마 슬라임·고블린 전사 번갈아)가 깨어나고, 쓰러뜨리면 유물 2개 중 고르기 상자.
@@ -221,12 +224,57 @@ namespace IBlameYou.Core
             }
 
             var position = new Vector2(x, ground.Value);
-            var elite = cursedCount % 2 == 0 ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
+            // 세 번째마다 변형 "쫄몹 무리" (엄마 슬라임 → 고블린 전사 → 무리 → ...)
+            bool swarm = cursedCount % 3 == 2;
+            var elite = cursedCount % 3 == 0 ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
             int offerIndex = 1000 + cursedCount; // 유물 후보가 매번 달라지게
             cursedCount++;
             CursedChest chest = null;
-            chest = CursedChest.Create(enemyRoot, position, () => AwakenCursedElite(chest, position, elite, offerIndex));
-            StageEvents.PostNotice($"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
+            chest = CursedChest.Create(enemyRoot, position, () =>
+            {
+                if (swarm) AwakenCursedSwarm(chest, position, offerIndex);
+                else AwakenCursedElite(chest, position, elite, offerIndex);
+            }, swarm);
+            StageEvents.PostNotice(swarm ? "저주받은 상자를 놓았다 (닿으면 쫄몹 무리)" : $"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
+        }
+
+        // 무리 중 아직 살아 있는 것이 있나 (쓰러지지 않고 치워진 것 — 낭떠러지 등 — 은 셈하지 않는다)
+        private static bool AnyAlive(List<HealthSystem> group)
+        {
+            foreach (var g in group)
+                if (g != null && !g.IsDead) return true;
+            return false;
+        }
+
+        private void AwakenCursedSwarm(CursedChest chest, Vector2 chestPosition, int offerIndex)
+        {
+            if (chest == null) return;
+            var kinds = CursedChestRule.SwarmFor(stage.Seed, offerIndex);
+            var spawned = new List<HealthSystem>();
+            bool broken = false;
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                float x = chestPosition.x + CursedChestRule.SwarmOffsets[i];
+                var ground = GroundAt(x) ?? chestPosition.y;
+                var position = new Vector3(x, ground + ChunkStreamer.SpawnLift, 0f);
+                EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
+                var health = spawner(kinds[i], position, enemyRoot);
+                if (health == null) continue;
+                spawned.Add(health);
+                bool down = false;
+                health.HealthChanged += (current, max) =>
+                {
+                    if (current > 0f || down) return;
+                    down = true;
+                    if (AnyAlive(spawned) || broken || chest == null) return;
+                    broken = true;
+                    int offer = chest.Break();
+                    RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, offer);
+                };
+            }
+            if (spawned.Count == 0) return;
+            GameAudio.PlaySfx("Summon", 0.7f);
+            chest.Watch(spawned.ToArray());
         }
 
         private void AwakenCursedElite(CursedChest chest, Vector2 chestPosition, StageEnemy elite, int offerIndex)
@@ -246,8 +294,8 @@ namespace IBlameYou.Core
             {
                 if (current > 0f || broken || chest == null) return;
                 broken = true;
-                chest.Break();
-                RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
+                int offer = chest.Break();
+                RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, offer);
             };
         }
 

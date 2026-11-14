@@ -35,6 +35,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedRewards = new HashSet<int>(); // 전투 구역 보상을 주운 청크
         private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
+        private readonly HashSet<int> cursedQuick = new HashSet<int>(); // 그중 빠른 해제(CursedChestRule.QuickTime 안)로 유물 3개 중 고르기인 방
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
@@ -416,6 +417,7 @@ namespace IBlameYou.Systems
                             });
                         arenaZone.Ambush = ambush;
                         arenaZone.WallArchers = ambush && RoomShaper.IsWallArcherAmbush(stage.Seed, rooms.Rooms[index]);
+                        arenaZone.Burrow = ambush && !arenaZone.WallArchers && AmbushRule.IsBurrow(stage.Seed, index);
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
                         if (midBoss && clearedArenas.Contains(index))
                             SpawnRelicChest(root, index, rewardPosition, false); // 회복은 처치 순간에 이미 받았다
@@ -912,7 +914,53 @@ namespace IBlameYou.Systems
             }
 
             CursedChest chest = null;
-            chest = CursedChest.Create(root, position, () => AwakenCursedElite(root, index, position, chest));
+            bool swarm = CursedChestRule.IsSwarm(stage.Seed, index);
+            chest = CursedChest.Create(root, position, () =>
+            {
+                if (swarm) AwakenCursedSwarm(root, index, position, chest);
+                else AwakenCursedElite(root, index, position, chest);
+            }, swarm);
+        }
+
+        // 무리 중 아직 살아 있는 것이 있나 (쓰러지지 않고 치워진 것 — 낭떠러지 등 — 은 셈하지 않는다)
+        private static bool AnyAlive(List<HealthSystem> group)
+        {
+            foreach (var g in group)
+                if (g != null && !g.IsDead) return true;
+            return false;
+        }
+
+        // 변형 "쫄몹 무리" (CursedChestRule.IsSwarm): 상자 양옆(SwarmOffsets 칸)에 쫄몹 4마리. 모두 쓰러뜨리면 저주가 풀린다.
+        // 남은 채 방을 떠나면 무리는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다 (정예와 같음).
+        private void AwakenCursedSwarm(Transform root, int index, Vector2 chestPosition, CursedChest chest)
+        {
+            if (spawnEnemy == null) return;
+            int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
+            var kinds = CursedChestRule.SwarmFor(stage.Seed, index);
+            var spawned = new List<HealthSystem>();
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i]) ?? chestPosition;
+                var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
+                EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
+                var health = spawnEnemy(kinds[i], position, transform);
+                if (health == null) continue;
+                RegisterEnemy(health);
+                spawned.Add(health);
+                bool down = false;
+                health.HealthChanged += (current, max) =>
+                {
+                    if (current > 0f || down) return;
+                    down = true;
+                    if (AnyAlive(spawned) || cursedBroken.Contains(index)) return;
+                    cursedBroken.Add(index);
+                    if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
+                    if (root != null) SpawnCursedReward(root, index, chestPosition, true);
+                };
+            }
+            if (spawned.Count == 0) return;
+            GameAudio.PlaySfx("Summon", 0.7f);
+            if (chest != null) chest.Watch(spawned.ToArray());
         }
 
         // 상자 옆(플레이어 반대쪽 4칸, 막히면 반대쪽)에 정예를 부른다. 쓰러뜨리면 상자가 풀려 유물 상자(2개 중 고르기)가 된다.
@@ -935,14 +983,15 @@ namespace IBlameYou.Systems
             {
                 if (current > 0f || cursedBroken.Contains(index)) return;
                 cursedBroken.Add(index);
-                if (chest != null) chest.Break();
+                if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
                 if (root != null) SpawnCursedReward(root, index, chestPosition, true);
             };
         }
 
         private void SpawnCursedReward(Transform root, int index, Vector2 position, bool dropped)
         {
-            RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), CursedChestRule.OfferSize);
+            int offer = cursedQuick.Contains(index) ? CursedChestRule.QuickOfferSize : CursedChestRule.OfferSize;
+            RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), offer);
         }
 
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.

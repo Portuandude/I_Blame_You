@@ -46,5 +46,33 @@ namespace IBlameYou.Tests
             var offer = IBlameYou.Player.RelicBook.Offer(5, 3, null, CursedChestRule.OfferSize);
             Assert.AreEqual(2, offer.Length);
         }
+
+        [Test]
+        public void QuickClearGivesThreeChoices()
+        {
+            Assert.AreEqual(3, CursedChestRule.OfferFor(0f));
+            Assert.AreEqual(3, CursedChestRule.OfferFor(CursedChestRule.QuickTime));
+            Assert.AreEqual(CursedChestRule.OfferSize, CursedChestRule.OfferFor(CursedChestRule.QuickTime + 0.1f));
+        }
+
+        [Test]
+        public void SwarmIsAboutAThirdAndFixedPerRoom()
+        {
+            int swarm = 0, total = 0;
+            for (int s = 0; s < 300; s++)
+                for (int room = 0; room < 12; room++)
+                {
+                    total++;
+                    bool a = CursedChestRule.IsSwarm(s, room);
+                    Assert.AreEqual(a, CursedChestRule.IsSwarm(s, room));
+                    if (a) swarm++;
+                    var group = CursedChestRule.SwarmFor(s, room);
+                    Assert.AreEqual(CursedChestRule.SwarmSize, group.Length);
+                    Assert.AreEqual(CursedChestRule.SwarmSize, CursedChestRule.SwarmOffsets.Length);
+                    foreach (var e in group)
+                        Assert.IsTrue(e == StageEnemy.Slime || e == StageEnemy.Goblin || e == StageEnemy.GoblinArcher, "쫄몹만");
+                }
+            Assert.AreEqual(1 / 3.0, swarm / (double)total, 0.06);
+        }
     }
 }

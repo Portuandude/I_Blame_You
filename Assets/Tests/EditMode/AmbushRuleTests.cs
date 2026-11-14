@@ -39,5 +39,20 @@ namespace IBlameYou.Tests
             double ratio = yes / (double)total;
             Assert.AreEqual(AmbushRule.ChancePercent / 100.0, ratio, 0.06);
         }
+
+        [Test]
+        public void BurrowIsAboutAThirdAndFixed()
+        {
+            int yes = 0, total = 0;
+            for (int seed = 0; seed < 300; seed++)
+                for (int room = 0; room < 12; room++)
+                {
+                    total++;
+                    bool b = AmbushRule.IsBurrow(seed, room);
+                    Assert.AreEqual(b, AmbushRule.IsBurrow(seed, room));
+                    if (b) yes++;
+                }
+            Assert.AreEqual(AmbushRule.BurrowPercent / 100.0, yes / (double)total, 0.06);
+        }
     }
 }
