@@ -66,7 +66,12 @@ namespace IBlameYou.Systems
         {
             if (Time.time - lastBounce < Cooldown && Time.time >= lastBounce) return;
             var player = TrapCommon.PlayerFrom(other);
-            if (player == null || player.IsDashing) return;
+            if (player == null)
+            {
+                TryBounceEnemy(other);
+                return;
+            }
+            if (player.IsDashing) return;
             var body = player.GetComponent<Rigidbody2D>();
             if (body == null || body.linearVelocity.y > 0.5f) return; // 올라가는 중(아래에서 뛰어 지나감)이면 튕기지 않는다
             var health = player.GetComponent<HealthSystem>();
@@ -78,6 +83,28 @@ namespace IBlameYou.Systems
             float gravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Max(0.01f, body.gravityScale);
             body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Sqrt(2f * gravity * LaunchHeight));
             player.ResetAirborne(); // 낮은 점프 끊기·코요테 점프·가짜 착지 먼지가 끼어들지 않게
+            Bounced(new Vector3(transform.position.x, capTop, 0f));
+        }
+
+        // 적도 위에서 떨어져 내려앉으면 튕긴다 (2026-11-14: 도약하는 슬라임·떨어지는 적이 버섯에 닿으면 통 튀어 오른다).
+        // 걸어 다니는 적은 발이 갓 윗면보다 낮아 그냥 지나간다. 감지 범위 같은 트리거는 몸이 아니므로 무시한다.
+        public const float EnemyLaunchHeight = 4.5f;
+
+        private void TryBounceEnemy(Collider2D other)
+        {
+            if (other == null || other.isTrigger) return;
+            var enemy = other.GetComponentInParent<EnemyController>();
+            if (enemy == null) return;
+            var body = enemy.GetComponent<Rigidbody2D>();
+            if (body == null || body.bodyType != RigidbodyType2D.Dynamic || body.linearVelocity.y > 0.5f) return;
+            var health = enemy.GetComponent<HealthSystem>();
+            if (health != null && health.IsDead) return;
+            float capTop = transform.position.y + CapTop;
+            if (other.bounds.min.y < capTop - LandTolerance) return;
+
+            lastBounce = Time.time;
+            float gravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Max(0.01f, body.gravityScale);
+            body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Sqrt(2f * gravity * EnemyLaunchHeight));
             Bounced(new Vector3(transform.position.x, capTop, 0f));
         }
 
