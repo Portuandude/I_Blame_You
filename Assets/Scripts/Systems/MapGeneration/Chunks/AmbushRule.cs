@@ -9,6 +9,22 @@ namespace IBlameYou.Systems
         public const int ChancePercent = 50;     // 조건에 맞는 전투 방의 절반
         public const int ClearGold = 8;          // 매복 방을 돌파하면 받는 골드 (2026-11-14, 일반 적 1~4 몇 마리 몫)
 
+        // 변형 "땅속 매복" (2026-11-14 자동 실행): 매복 방의 1/3은 적이 천장 대신 바닥에서 튀어나온다 (벽 위 궁수 방 제외는 ChunkStreamer).
+        // IsAmbush와 다른 해시라 어떤 방이 매복인지는 그대로다.
+        public const int BurrowPercent = 33;
+
+        public static bool IsBurrow(int seed, int roomIndex)
+        {
+            unchecked
+            {
+                uint h = (uint)seed * 3266489917u ^ (uint)(roomIndex + 7) * 668265263u;
+                h ^= h >> 16;
+                h *= 2246822519u;
+                h ^= h >> 13;
+                return h % 100u < (uint)BurrowPercent;
+            }
+        }
+
         public static bool IsAmbush(int seed, int roomIndex, float difficulty, bool plainArena)
         {
             if (!plainArena || difficulty < MinDifficulty) return false;
