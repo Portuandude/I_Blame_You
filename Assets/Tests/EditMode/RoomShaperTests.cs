@@ -530,6 +530,8 @@ namespace IBlameYou.Tests
                     Assert.LessOrEqual(System.Math.Abs(coin.X - m.X), RoomShaper.MushroomShelfHalf, where);
                     Assert.AreNotEqual(m.X, coin.X, where + ": 버섯 바로 위는 내려앉을 자리");
 
+                    Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Enemy && f.Y == g
+                        && System.Math.Abs(f.X - m.X) <= RoomShaper.MushroomShelfHalf), where + ": 버섯 근처에 선 적");
                     foreach (var f in chunk.Features)
                         if ((f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet) && f.Y == g)
                             Assert.IsTrue(f.X + System.Math.Max(1, f.Width) - 1 < m.X - 2 || f.X > m.X + 2, where + $": 버섯 옆 {f.Kind} {f.X}");
