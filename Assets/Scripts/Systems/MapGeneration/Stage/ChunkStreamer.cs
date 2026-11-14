@@ -851,7 +851,39 @@ namespace IBlameYou.Systems
                 GameAudio.PlaySfx("StarShard", 0.7f, 0f);
                 GameAudio.PlaySfxDelayed("StarShard", 0.14f, 0.6f);
             }
+            // 방 이벤트 보물 고블린 (2026-11-14 사람 결정): 가로 이동 방에 처음 들어가면 금화 자루를 멘 고블린이 나타나 도망친다 (Chunks/TreasureGoblinRule, 난수 안 씀)
+            if (firstVisit && entered.Kind == RoomKind.Travel && !entered.IsVertical
+                && TreasureGoblinRule.IsTreasureGoblinRoom(stage.Seed, index, RoomDepth(index), true))
+                SpawnTreasureGoblin(index);
             RoomEntered?.Invoke(index);
+        }
+
+        // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다.
+        private void SpawnTreasureGoblin(int index)
+        {
+            if (spawnEnemy == null || player == null) return;
+            var chunk = stage.Chunks[index];
+            var origin = Origin(index);
+            int cols = RoomCols(index);
+            float local = player.position.x - origin.x;
+            int center = Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f));
+            for (int offset = 0; offset <= 8; offset++)
+            {
+                foreach (int x in new[] { center + offset, center - offset })
+                {
+                    if (x < 3 || x > cols - 4) continue;
+                    for (int y = 1; y < ChunkData.Height - 3; y++)
+                    {
+                        if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
+                        var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(origin.x + x + 0.5f, origin.y + y + SpawnLift, 0f), transform);
+                        if (health == null) return;
+                        RegisterEnemy(health);
+                        StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
+                        GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
+                        return;
+                    }
+                }
+            }
         }
 
         private const float BossNearMusicDuck = 0.55f;
