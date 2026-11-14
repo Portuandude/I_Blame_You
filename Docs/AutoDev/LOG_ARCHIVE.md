@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 15:30 UTC
+- 브랜치/PR: `claude/project-thread-ahr3bv` → #88 (develop 대상, 자동 머지 켬). 시작할 때 열린 PR 없음 (#87까지 머지됨). 백로그 "깜빡 발판 연출" 5개 처리 뒤 DIRECTION ① "움직이는 발판 도착·출발 연출" 5개 추가
+- 완료 (10개, 적대적 리뷰 모두 APPROVE, LOW 2개 고침). 깜빡 발판 (새 `Systems/Effects/BlinkPlatformFx`): ① 꺼질 때 하늘빛 조각 ② 나타날 때 톡 커짐 + 반짝 ③ "띵" `BlinkAppear` 0.25초 간격 ④ 서 있다 꺼지면 "퐁" `BlinkVanish` + 발밑 먼지 ⑤ 솜구름 피어오름·걷힐 때 퍼짐
+- 움직이는 발판 (새 `Systems/Effects/MovingPlatformFx`): ① 끝 도착 눌림 + 앞쪽 먼지 ② 멈춤 마지막 0.3초 밝아짐 ③ 출발 뒤쪽 먼지 ④ "탁" `PlatformStop` 0.2초 간격 (곧 잠드는 스위치 발판은 생략) ⑤ 플레이어가 내려앉으면 눌림
+- 실패/보류: 없음. 박자·속도·멈춤 시간·판정 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 다리 위 "띵"이 박자처럼 들리는지·시끄럽지 않은지, 움직이는 발판 "탁"이 여러 개 겹치지 않는지, 출발 직전 밝아짐이 보이는지
 ## 2026-11-13 10:29 UTC
 - 브랜치/PR: `claude/project-thread-bynbiy` → #86 (develop 대상, 자동 머지 켬, #85 head 위에 쌓음 — #85는 실행 중 머지됨). 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① 4묶음 20개 추가
 - 완료 (20개, 적대적 리뷰 모두 APPROVE, 낭떠러지는 MEDIUM 1개 고친 뒤). ① 고블린 근접 휘두르기 (새 `Enemies/GoblinSwingFx`): "붕" `GoblinSwing`, 흰 초승달 궤적, 맞힘 노란 불꽃, 헛스윙 먼지, 대전사는 무겁게 + 함정 화살도 `GoblinArrowFx` 공유

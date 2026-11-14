@@ -16,6 +16,16 @@
 
 - TODO (사람 필요: 15분 플레이테스트 뒤 판단): 숨 고르기 방 채우기 — 체크포인트가 빠진 휴식(Rest) 방이 빈 평지가 됐다. 회복 없이 볼거리만(반짝이는 버섯·나비 장식, 다음 방 미리보기 표지판 등) 두거나, 방 리듬 완충을 이동 방으로 바꿀지 플레이테스트 뒤 판단. 회복 구슬을 두면 회복 수지가 다시 커지므로 넣지 않는다
 
+## 다음 (2026-11-14 00:30 자동 실행이 추가 — 통통 버섯 튕김 연출)
+
+DIRECTION ① 플레이 감각 다듬기. 버섯을 밟는 맛을 키운다 (튕기는 높이·판정은 그대로).
+
+- DONE (claude/project-thread-8lk6uu): 튕겨 오를 때 플레이어가 세로 +30% 늘어남 (`PlayerSquash.Stretch`, 보통 점프 늘어남이 덮어쓰지 않음)
+- DONE (claude/project-thread-8lk6uu): 오르는 동안 분홍 잔상 꼬리 (새 `Systems/Effects/BounceTrailFx`, 최고점·1.2초에서 멈춤)
+- DONE (claude/project-thread-8lk6uu): 최고점에서 머리 위 반짝 + 포자 다섯 알 (플레이어만, 화면 안일 때)
+- DONE (claude/project-thread-8lk6uu): 1.6초 안에 연달아 밟으면 "통" 음이 한 단계씩 올라감 (최대 3단계), 적이 튕기면 조금 낮은 음 + 잔상
+- DONE (claude/project-thread-8lk6uu): 가만히 있는 버섯 갓에서 포자가 2.5~4.5초마다 하나씩 떠오름 (`MushroomSpore`, 화면 안일 때만)
+
 ## 다음 (2026-11-14 00:20 자동 실행이 추가 — 통통 버섯 넓히기·기능 테스트 도구)
 
 DIRECTION ① 레벨 재설계·플레이 감각 다듬기. 00:10 실행 인수인계 후보. ContentIdeas·EquipmentDesign의 열린 결정은 손대지 않는다.
