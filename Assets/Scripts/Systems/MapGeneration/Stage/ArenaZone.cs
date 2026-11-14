@@ -248,7 +248,7 @@ namespace IBlameYou.Systems
         private static float AmbushDrop(Vector3 position)
         {
             float drop = AmbushDropHeight;
-            var hit = Physics2D.Raycast(position + Vector3.up * 0.6f, Vector2.up, AmbushDropHeight + AmbushCeilingMargin, 1 << TrapCommon.GroundLayer);
+            var hit = Physics2D.BoxCast(position + Vector3.up * 0.6f, new Vector2(1f, 0.2f), 0f, Vector2.up, AmbushDropHeight + AmbushCeilingMargin, 1 << TrapCommon.GroundLayer); // 몸 폭만큼 (발판 끝에 걸리지 않게)
             if (hit.collider != null) drop = Mathf.Min(drop, hit.distance + 0.6f - AmbushCeilingMargin);
             return drop >= AmbushMinDrop ? drop : 0f;
         }
