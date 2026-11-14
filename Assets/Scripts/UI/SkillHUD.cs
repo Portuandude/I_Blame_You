@@ -166,7 +166,7 @@ namespace IBlameYou.UI
             CloseVillage();
             CloseCodex();
             stageCleared = true;
-            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 마음 가루
+            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 마음 가루 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
             RunStats.Ended = true;
             RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
