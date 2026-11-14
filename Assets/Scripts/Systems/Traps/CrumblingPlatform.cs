@@ -15,16 +15,24 @@ namespace IBlameYou.Systems
         private const float GoneAlpha = 0.15f;
         private const float WarnAlpha = 0.5f;
         public const float Thickness = 0.35f;
-        private const float SoundRange = 12f;    // 카메라가 이만큼 가까울 때만 소리 (FlameJetTrap과 같다)
         // 젤리 방석: 흔들리는 대신 분홍빛으로 말랑하게 눌렸다 튀어 오른다
         private static readonly Color JellyTint = new Color(1f, 0.62f, 0.82f);
         private const float JellySquash = 0.22f;   // 세로로 눌리는 최대 비율
         private const float JellyWobbles = 2.5f;   // 흔들림 시간 동안 눌렸다 펴지는 횟수
+        // 무너지는 발판 연출 (2026-11-14, 그림만): 흔들릴수록 어두워지고 밑에서 부스러기가 떨어진다,
+        // 다시 생길 때 판자가 왼쪽부터 차례로 톡 커진다
+        private const float CrackDarken = 0.38f;   // 흔들림 끝에 어두워지는 정도 (0 = 그대로)
+        private const float CreakInterval = 0.14f; // 부스러기 간격
+        private const float PopTime = 0.18f;       // 판자 하나가 커졌다 제자리로 오는 시간
+        private const float PopStagger = 0.04f;    // 다음 판자까지 늦춤
+        private const float PopStart = 0.6f;       // 처음 크기 비율
+        private const float PopOvershoot = 0.14f;  // 넘쳐 커지는 정도
 
         private BoxCollider2D solid;
         private Transform visualRoot;
         private SpriteRenderer[] renderers;
         private Color[] baseColors;
+        private Vector3[] baseScales;
         private bool crumbling;
         private int width;
 
@@ -57,7 +65,12 @@ namespace IBlameYou.Systems
 
             platform.renderers = platform.visualRoot.GetComponentsInChildren<SpriteRenderer>();
             platform.baseColors = new Color[platform.renderers.Length];
-            for (int i = 0; i < platform.renderers.Length; i++) platform.baseColors[i] = platform.renderers[i].color;
+            platform.baseScales = new Vector3[platform.renderers.Length];
+            for (int i = 0; i < platform.renderers.Length; i++)
+            {
+                platform.baseColors[i] = platform.renderers[i].color;
+                platform.baseScales[i] = platform.renderers[i].transform.localScale;
+            }
             platform.width = width;
             return platform;
         }
@@ -112,21 +125,33 @@ namespace IBlameYou.Systems
             crumbling = true;
             if (PlayerNear()) GameAudio.PlaySfx(jelly ? "JellySquish" : "Crumble", 0.7f); // 젤리 방석이면 말랑한 "뭉-뿅"
             float elapsed = 0f;
+            float nextCreak = CreakInterval * 0.5f;
+            float bottomY = transform.position.y - Thickness / 2f;
             while (elapsed < shakeTime)
             {
                 elapsed += Time.deltaTime;
                 if (jelly) Jiggle(Mathf.Clamp01(elapsed / shakeTime));
-                else visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);
+                else
+                {
+                    visualRoot.localPosition = new Vector3(Random.Range(-ShakeAmount, ShakeAmount), Random.Range(-ShakeAmount, ShakeAmount), 0f);
+                    Darken(Mathf.Clamp01(elapsed / shakeTime) * CrackDarken); // 금이 가듯 점점 어두워진다
+                    if (elapsed >= nextCreak)
+                    {
+                        nextCreak += CreakInterval;
+                        CrumblePlatformFx.Creak(new Vector3(transform.position.x, bottomY, 0f), width);
+                    }
+                }
                 yield return null;
             }
 
             visualRoot.localPosition = Vector3.zero;
             visualRoot.localScale = Vector3.one;
-            if (jelly) SetTint(0f);
+            SetTint(0f); // 젤리 분홍·흔들림 어두움 모두 원래 색으로 (알파는 아래에서)
             solid.enabled = false;
             SetAlpha(GoneAlpha);
             // 무너질 때 발판 칸마다 나무 먼지가 펑 (발판 윗면 기준), 젤리 방석이면 분홍 방울도
             float topY = transform.position.y + Thickness / 2f;
+            if (!jelly) CrumblePlatformFx.Splinters(new Vector3(transform.position.x, topY, 0f), width); // 나무 조각이 튀어 떨어진다
             for (int i = 0; i < width; i++)
             {
                 var cell = new Vector3(transform.position.x + i - (width - 1) / 2f, topY, 0f);
@@ -137,7 +162,8 @@ namespace IBlameYou.Systems
             if (jelly && CameraNear(JellyDripRange)) GameAudio.PlaySfxDelayed("JellyDrip", JellyDripDelay, 0.6f, 0.08f);
             yield return new WaitForSeconds(RespawnTime - WarnTime);
 
-            // 다시 생기기 직전: 흐린 윤곽이 깜빡여 "곧 생긴다"를 알린다
+            // 다시 생기기 직전: 흐린 윤곽이 깜빡여 "곧 생긴다"를 알리고, 아래에서 나무 조각이 모여 올라온다
+            CrumblePlatformFx.Gather(transform.position, width, WarnTime);
             float warn = 0f;
             while (warn < WarnTime)
             {
@@ -148,16 +174,46 @@ namespace IBlameYou.Systems
 
             solid.enabled = true;
             SetAlpha(1f);
-            if (PlayerNear()) GameAudio.PlaySfx("Crumble_Back", 0.5f);
-            VfxPlayer.AimGlint(new Vector3(transform.position.x + (width - 1) / 2f, topY + 0.15f, 0f)); // 오른쪽 끝에서 작게 반짝
+            CrumblePlatformFx.Back(new Vector3(transform.position.x, topY, 0f), width); // 양 끝 반짝 + "Crumble_Back" (간격 제한)
             crumbling = false;
+            StartCoroutine(Pop()); // 판정은 이미 돌아왔고 그림만 톡 커진다
         }
 
-        private bool PlayerNear()
+        // 다시 생길 때 판자가 왼쪽부터 차례로 작게 → 살짝 크게 → 제자리. 크기만 바꾼다 (충돌체는 그대로).
+        private IEnumerator Pop()
         {
-            var cam = Camera.main;
-            return cam != null && Mathf.Abs(cam.transform.position.x - transform.position.x) < SoundRange;
+            float total = PopTime + PopStagger * Mathf.Max(0, renderers.Length - 1);
+            float elapsed = 0f;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    float t = Mathf.Clamp01((elapsed - PopStagger * i) / PopTime);
+                    // 0 → 0.6배, 0.6 지점에서 1.14배, 1 → 1배
+                    float k = t < 0.6f
+                        ? Mathf.Lerp(PopStart, 1f + PopOvershoot, Mathf.Sin(t / 0.6f * Mathf.PI * 0.5f))
+                        : Mathf.Lerp(1f + PopOvershoot, 1f, (t - 0.6f) / 0.4f);
+                    renderers[i].transform.localScale = baseScales[i] * k;
+                }
+                yield return null;
+            }
+            for (int i = 0; i < renderers.Length; i++) renderers[i].transform.localScale = baseScales[i];
         }
+
+        // amount 0이면 원래 색, 1이면 검게. 알파는 건드리지 않는다.
+        private void Darken(float amount)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                var color = Color.Lerp(baseColors[i], Color.black, amount);
+                color.a = renderers[i].color.a;
+                renderers[i].color = color;
+            }
+        }
+
+        // 카메라와의 가로·세로 거리로 본다 (세로 방에서 위아래 먼 층 발판 소리까지 나지 않게, 2026-11-14).
+        private bool PlayerNear() => CrumblePlatformFx.CameraNear(transform.position);
 
         // 젤리 방석으로 버티는 동안: 분홍빛이 차오르며 세로로 눌렸다 펴지고(가로는 반대로 늘어남),
         // 끝무렵엔 위로 살짝 튀어 오른다. 윗면 높이가 거의 그대로 보이도록 눌린 만큼 아래로 내린다.
