@@ -4,7 +4,9 @@ using System.Collections.Generic;
 namespace IBlameYou.Systems
 {
     // 방 격자형 스테이지의 배치 (Docs/LevelDesign.md). 던그리드·아이작처럼 방들이 격자 칸에 놓이고 문으로 이어진다.
-    // 스테이지 1 = 가로 5 × 세로 4 격자에 방 13~17개 (2026-11-14 사람 결정 "일반 전투 방 5+ · 퍼즐 방 2+ · 마을 1~2"로 4×3·9~12에서 늘림).
+    // 스테이지 1 = 가로 5 × 세로 4 격자 (2026-11-14 23:30 사람 결정, PR #109의 13~17방을 바꿈):
+    //   방 9~12개 = 일반 전투 5+ · 퍼즐 2+(몹 없음) · 마을 1 고정 · 중간보스 1 (+ 시작 방 · 보스 방 1 → 격자 칸 11~14개).
+    //   보물·샘 막다른 방은 이 구성에 없어 더 만들지 않는다. 정예 방은 전투 방의 한 종류로 센다. 중간보스는 후보 중 하나를 시드로 고른다 (MidBossFor).
     // 이동 방(기믹만 있는 방)은 없앴다: 기믹(버섯·바람·무너지는 발판·봉인문·움직이는 발판)은 전투 방 앞 구간에 섞이고, 세로 방도 전투 방이다.
     // 시작 방은 가운데 열(x 2), 가운데 두 줄 중 하나,
     // 방들은 나무 모양(고리 없음)으로 이어지고, 시작 방에서 멀수록(방 거리) 어렵다. 가장 먼 방이 보스, 중간 거리에 중간보스.
@@ -34,6 +36,13 @@ namespace IBlameYou.Systems
         Treasure,  // 막다른 곁방: 유물 상자
         Spring,    // 막다른 곁방: 회복 샘
         Village    // 막다른 곁방: NPC 마을 (식당·장비 상점, 적·함정 없음). 스테이지마다 하나, 방을 돌아다니며 찾는다 (2026-11-12 사람 결정)
+    }
+
+    // 중간보스 후보 (2026-11-14 23:30 사람 결정: "중간 보스는 둘 중 하나만 랜덤으로").
+    // 지금 구현된 것은 쌍둥이 슬라임 기사뿐이다. 두 번째 중간보스가 생기면 여기와 RoomLayout.MidBossPool에 더한다.
+    public enum MidBossKind
+    {
+        SlimeKnights
     }
 
     public class RoomData
@@ -69,6 +78,7 @@ namespace IBlameYou.Systems
         public readonly List<RoomData> Rooms = new List<RoomData>();
         public int Seed;
         public int MidBossPathIndex;
+        public MidBossKind MidBoss;  // 이번 판 중간보스 (후보 중 시드로 하나)
 
         public int MinX, MaxX, MinY, MaxY;
 
@@ -94,19 +104,16 @@ namespace IBlameYou.Systems
     {
         public const int GridWidth = 5;
         public const int GridHeight = 4;
-        public const int MinRooms = 13;
-        public const int MaxRooms = 17;
+        public const int MinRooms = 11;              // 시작·보스 방 포함 (사람 기준 9개 + 2)
+        public const int MaxRooms = 14;              // 시작·보스 방 포함 (사람 기준 12개 + 2)
         public const int StartX = 2;                 // 시작 방: 가운데 열, y 1 또는 2
         // 방 구성 하한 (2026-11-14 사람 결정)
         public const int MinCombatRooms = 5;         // 일반 전투 방 (정예·중간보스·보스 제외)
         public const int MinPuzzleRooms = 2;         // 퍼즐 방 (몹 없음)
-        public const int MaxVillages = 2;            // 마을 1~2개: 방이 SecondVillageRooms개 이상인 큰 판에서 두 번째 마을
-        public const int SecondVillageRooms = 16;
+        public const int Villages = 1;               // 마을 1개 고정 (2026-11-14 23:30)
         public const int MinBossDistance = 4;        // 시작 → 보스 문 수 (중간보스 앞뒤에 방이 하나씩은 있게)
         public const float MidBossDepth = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
         public const int VillageMinDistance = 2;     // 마을은 시작 방에서 문 두 개 이상 (골드를 조금 모은 뒤 찾게)
-        public const int MinRewardRooms = 1;         // 막다른 보상 방 (보물 상자 / 회복 샘)
-        public const int MaxRewardRooms = 2;
         public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
         public const float MaxSeconds = 30f * 60f;
         public const float BacktrackSeconds = 12f;   // 곁가지를 들어갔다 나오는 데 문 하나당 더 드는 시간 (어림)
@@ -203,7 +210,7 @@ namespace IBlameYou.Systems
 
         private static RoomLayoutData TryBuild(int seed, Random rng, float target)
         {
-            // 목표가 길수록 방이 많다 (15분 → 13~14, 30분 → 16~17)
+            // 목표가 길수록 방이 많다 (15분 → 11~12, 30분 → 14)
             float t = (target - MinSeconds) / (MaxSeconds - MinSeconds);
             int count = Math.Min(MaxRooms, MinRooms + rng.Next(2) + (int)Math.Round(t * 3));
             int startX = StartX;
@@ -361,8 +368,8 @@ namespace IBlameYou.Systems
             foreach (var r in layout.Rooms) r.Difficulty = Math.Min(1f, r.Distance / bossDistance);
         }
 
-        // 방 종류 (2026-11-14 사람 결정): 시작·보스·중간보스 → 마을(1~2)·보상 막다른 방 → 퍼즐 방 2개 → 나머지는 모두 전투 방.
-        // 이동 방은 만들지 않는다. 세로 방은 전투·보물·샘만 될 수 있다 (퍼즐·마을·보스는 좌우 지형).
+        // 방 종류 (2026-11-14 23:30 사람 결정): 시작·보스·중간보스 → 마을 1 → 퍼즐 방 2개 → 나머지는 모두 전투 방(일부 정예).
+        // 이동·보상 방은 만들지 않는다. 세로 방은 전투 방만 될 수 있다 (퍼즐·마을·보스·중간보스는 좌우 지형).
         private static bool AssignKinds(RoomLayoutData layout, Random rng, float target)
         {
             var start = layout.Rooms[0];
@@ -392,49 +399,28 @@ namespace IBlameYou.Systems
             mid.Kind = RoomKind.MidBoss;
             mid.Chunk = ChunkKind.EliteArena;
             layout.MidBossPathIndex = mid.PathIndex;
+            layout.MidBoss = MidBossFor(seed: layout.Seed);
 
             // 막다른 방 (주 경로 밖, 문 하나)
             var leaves = new List<RoomData>();
             foreach (var r in layout.Rooms) if (!r.MainPath && DoorCount(r) == 1) leaves.Add(r);
 
-            // 마을: 좌우 방(건물 두 채가 설 평지), 시작 방에서 VillageMinDistance칸 이상, 보스 방과 격자로 붙지 않은 곳.
-            // 난수를 쓰지 않고 정한다 (가장 먼 곳 → 위쪽 → 왼쪽). 방이 SecondVillageRooms개 이상이면 첫 마을과 떨어진(격자 거리 3+) 두 번째 마을.
-            int wantVillages = layout.Rooms.Count >= SecondVillageRooms ? MaxVillages : 1;
-            var villages = new List<RoomData>();
-            for (int v = 0; v < wantVillages; v++)
+            // 마을 1개: 좌우 막다른 방(건물 두 채가 설 평지), 시작 방에서 VillageMinDistance칸 이상, 보스 방과 격자로 붙지 않은 곳.
+            // 난수를 쓰지 않고 정한다 (가장 먼 곳 → 위쪽 → 왼쪽).
+            RoomData village = null;
+            foreach (var r in leaves)
             {
-                RoomData village = null;
-                foreach (var r in leaves)
-                {
-                    if (r.IsVertical || r.Distance < VillageMinDistance) continue;
-                    if (Math.Abs(r.X - boss.X) + Math.Abs(r.Y - boss.Y) <= 1) continue;
-                    if (villages.Exists(o => Math.Abs(r.X - o.X) + Math.Abs(r.Y - o.Y) < 3)) continue;
-                    if (village == null || r.Distance > village.Distance
-                        || (r.Distance == village.Distance && (r.Y > village.Y || (r.Y == village.Y && r.X < village.X))))
-                        village = r;
-                }
-                if (village == null) break;
-                village.Kind = RoomKind.Village;
-                village.Chunk = ChunkKind.Rest;
-                leaves.Remove(village);
-                villages.Add(village);
+                if (r.IsVertical || r.Distance < VillageMinDistance) continue;
+                if (Math.Abs(r.X - boss.X) + Math.Abs(r.Y - boss.Y) <= 1) continue;
+                if (village == null || r.Distance > village.Distance
+                    || (r.Distance == village.Distance && (r.Y > village.Y || (r.Y == village.Y && r.X < village.X))))
+                    village = r;
             }
-            if (villages.Count == 0) return false;
+            if (village == null) return false;
+            village.Kind = RoomKind.Village;
+            village.Chunk = ChunkKind.Rest;
 
-            // 보상 막다른 방: 세로 막다른 방부터(세로 방은 퍼즐·마을이 될 수 없다), 그다음 먼 곳부터 1~2개 (보물 → 샘)
-            if (leaves.Count < 1) return false;
-            leaves.Sort((a, b) =>
-            {
-                if (a.IsVertical != b.IsVertical) return a.IsVertical ? -1 : 1;
-                return b.Distance.CompareTo(a.Distance);
-            });
-            int rewards = Math.Min(layout.Rooms.Count >= MinRooms + 1 ? MaxRewardRooms : MinRewardRooms, leaves.Count);
-            for (int i = 0; i < rewards; i++)
-            {
-                leaves[i].Kind = i % 2 == 0 ? RoomKind.Treasure : RoomKind.Spring;
-                leaves[i].Chunk = ChunkKind.Rest;
-            }
-
+            // 보물·샘 막다른 방은 만들지 않는다 (2026-11-14 23:30 방 구성). 남는 막다른 방은 전투·퍼즐 방이 된다.
             var rest = new List<RoomData>();
             foreach (var r in layout.Rooms) if (r.Chunk == ChunkKind.Start && r != start) rest.Add(r); // Chunk 기본값 = Start → 아직 안 정한 방
             rest.Sort((a, b) => a.Distance.CompareTo(b.Distance));
@@ -480,6 +466,10 @@ namespace IBlameYou.Systems
 
             return true;
         }
+
+        // 중간보스 고르기: 시드로 후보 중 하나 (배치 난수열을 쓰지 않아 다른 방은 그대로).
+        public static readonly MidBossKind[] MidBossPool = { MidBossKind.SlimeKnights };
+        public static MidBossKind MidBossFor(int seed) => MidBossPool[(int)(unchecked((uint)seed * 2654435761u) % (uint)MidBossPool.Length)];
 
         // 둘째 퍼즐 방 종류: 시드를 3으로 나눈 나머지로 등불 순서 · 거울 룬 · 방어막 다리 (배치 난수열을 쓰지 않아 다른 방은 그대로).
         private static readonly ChunkKind[] SecondPuzzles = { ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.ShieldBridge };

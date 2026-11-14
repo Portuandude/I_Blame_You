@@ -773,6 +773,22 @@ namespace IBlameYou.Tests
         // BounceMushroom.LaunchHeight(7.5) + 갓 높이(0.95). 테스트 어셈블리가 MonoBehaviour 쪽을 참조하지 않아 값을 옮겨 둔다
         private const float BounceMushroom_LaunchReach = 7.5f + 0.95f;
 
+        // 2026-11-14 23:30 방 구성에서 보물 곁방이 빠져 협동 봉인문은 지금 판에 나오지 않는다. 봉인문 코드는 남겨 두므로
+        // 막다른 일반 전투 방을 보물 곁방으로 바꿔(앞 구간 없는 휴식 지형) 시험한다.
+        private static IEnumerable<RoomData> RoomsWithTreasureLeaves(int seed)
+        {
+            foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+            {
+                if (!room.MainPath && room.Doors == room.EntryDoor && room.Kind == RoomKind.Combat)
+                {
+                    room.Kind = RoomKind.Treasure;
+                    room.Chunk = ChunkKind.Rest;
+                    room.Leads.Clear();
+                }
+                yield return room;
+            }
+        }
+
         // 협동 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
         // 첫 속성(A 방어막)과 둘째 속성(B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
         [Test]
@@ -781,7 +797,7 @@ namespace IBlameYou.Tests
             int sideGates = 0, shaftGates = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
-                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                foreach (var room in RoomsWithTreasureLeaves(seed))
                 {
                     var geometry = RoomShaper.Build(seed, room);
                     var chunk = geometry.Chunk;
@@ -844,7 +860,7 @@ namespace IBlameYou.Tests
             int gates = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
-                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                foreach (var room in RoomsWithTreasureLeaves(seed))
                 {
                     var chunk = RoomShaper.Build(seed, room).Chunk;
                     foreach (var gate in chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate))

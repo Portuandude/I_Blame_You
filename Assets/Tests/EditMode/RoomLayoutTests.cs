@@ -89,7 +89,7 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void GridIsFiveByFourWithThirteenToSeventeenRooms()
+        public void GridIsFiveByFourWithElevenToFourteenRooms()
         {
             foreach (var layout in Layouts())
             {
@@ -207,7 +207,7 @@ namespace IBlameYou.Tests
                 {
                     Assert.AreEqual(RoomLayout.LeadCount(room), room.Leads.Count, $"seed {layout.Seed} room {room.Index}");
                     Assert.LessOrEqual(room.Cols, RoomLayout.CellCols);
-                    if (room.IsVertical || room.Kind == RoomKind.Start || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring
+                    if (room.IsVertical || room.Kind == RoomKind.Start
                         || room.Kind == RoomKind.Village || room.Kind == RoomKind.Puzzle)
                         Assert.AreEqual(0, room.Leads.Count, $"seed {layout.Seed} room {room.Index} {room.Kind}");
                     int puzzleLeads = room.Leads.FindAll(l => l == ChunkKind.ElementGate || l == ChunkKind.MovingBridge).Count;
@@ -234,40 +234,19 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void OnlyCombatAndRewardRoomsUseVerticalDoors()
+        public void OnlyCombatRoomsUseVerticalDoors()
         {
             foreach (var layout in Layouts())
             {
                 foreach (var room in layout.Rooms)
                 {
                     if (!room.IsVertical) continue;
-                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring,
-                        $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
+                    Assert.AreEqual(RoomKind.Combat, room.Kind, $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
                 }
             }
         }
 
-        [Test]
-        public void RewardRoomsAreDeadEndsOffThePath()
-        {
-            foreach (var layout in Layouts())
-            {
-                int treasure = 0, rewards = 0;
-                foreach (var room in layout.Rooms)
-                {
-                    if (room.Kind != RoomKind.Treasure && room.Kind != RoomKind.Spring) continue;
-                    rewards++;
-                    if (room.Kind == RoomKind.Treasure) treasure++;
-                    Assert.IsFalse(room.MainPath, $"seed {layout.Seed}");
-                    Assert.AreEqual(room.EntryDoor, room.Doors, $"seed {layout.Seed}: 보상 곁방은 문이 하나뿐");
-                }
-
-                Assert.That(rewards, Is.InRange(RoomLayout.MinRewardRooms, RoomLayout.MaxRewardRooms), $"seed {layout.Seed}");
-                Assert.GreaterOrEqual(treasure, 1);
-            }
-        }
-
-        // NPC 마을 (2026-11-12, 2026-11-14 1~2개): 판마다(목표 15·20·30분) 하나(방 SecondVillageRooms개 이상이면 둘까지), 주 경로 밖 문 하나짜리 좌우 방, 시작 방에서 2칸 이상,
+        // NPC 마을 (2026-11-12, 2026-11-14 23:30 1개 고정): 판마다(목표 15·20·30분) 하나, 주 경로 밖 문 하나짜리 좌우 방, 시작 방에서 2칸 이상,
         // 보스 방과 격자로 붙지 않음, 문이 잠기지 않고 한 화면 평지(휴식 청크).
         [Test]
         public void VillageIsOneDeadEndSideRoom()
@@ -279,7 +258,7 @@ namespace IBlameYou.Tests
                     RoomData boss = layout.Rooms.Find(r => r.Kind == RoomKind.Boss);
                     var villages = layout.Rooms.FindAll(r => r.Kind == RoomKind.Village);
                     string at = $"seed {seed} {minutes}분";
-                    Assert.That(villages.Count, Is.InRange(1, layout.Rooms.Count >= RoomLayout.SecondVillageRooms ? RoomLayout.MaxVillages : 1), at);
+                    Assert.AreEqual(RoomLayout.Villages, villages.Count, at);
                     foreach (var village in villages)
                     {
                         Assert.IsFalse(village.MainPath, at);
@@ -294,7 +273,8 @@ namespace IBlameYou.Tests
                 }
         }
 
-        // 방 구성 (2026-11-14 사람 결정): 일반 전투 방 5+, 퍼즐 방 2+(몹 없음, 이중 스위치 하나 포함), 이동 방 없음. 목표 15·20·30분 모두.
+        // 방 구성 (2026-11-14 23:30 사람 결정): 시작·보스를 뺀 방 9~12개 = 일반 전투 방 5+, 퍼즐 방 2+(몹 없음, 이중 스위치 하나 포함),
+        // 마을 1, 중간보스 1. 보스 1. 이동·휴식·보물·샘 방 없음. 목표 15·20·30분 모두.
         [Test]
         public void RoomMixFollowsDecision()
         {
@@ -310,6 +290,12 @@ namespace IBlameYou.Tests
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Chunk == ChunkKind.SwitchBridge).Count, at);
                     Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Chunk == RoomLayout.DeductionPuzzle(seed)).Count, 1, $"{at}: 추리 퍼즐 방");
                     Assert.AreEqual(0, layout.Rooms.FindAll(r => r.Kind == RoomKind.Travel || r.Kind == RoomKind.Rest).Count, $"{at}: 이동·휴식 방 없음");
+                    Assert.AreEqual(0, layout.Rooms.FindAll(r => r.Kind == RoomKind.Treasure || r.Kind == RoomKind.Spring).Count, $"{at}: 보물·샘 방 없음");
+                    Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Start).Count, at);
+                    Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Boss).Count, at);
+                    Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.MidBoss).Count, at);
+                    Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Village).Count, at);
+                    Assert.That(layout.Rooms.Count - 2, Is.InRange(9, 12), $"{at}: 시작·보스를 뺀 방 수");
                 }
         }
 
@@ -334,6 +320,22 @@ namespace IBlameYou.Tests
                     Assert.GreaterOrEqual(chunk.Features.FindAll(f => f.Kind == FeatureKind.Enemy).Count, 3, at);
                     Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Enemy && !f.Deferred), at);
                 }
+        }
+
+        // 중간보스는 후보 중 시드로 하나 (2026-11-14 23:30). 같은 시드는 같은 중간보스, 후보가 둘 이상이면 시드마다 섞여 나온다.
+        [Test]
+        public void MidBossIsPickedFromPoolBySeed()
+        {
+            var seen = new HashSet<MidBossKind>();
+            for (int seed = -50; seed < 200; seed++)
+            {
+                var kind = RoomLayout.MidBossFor(seed);
+                Assert.Contains(kind, RoomLayout.MidBossPool, $"seed {seed}");
+                Assert.AreEqual(kind, RoomLayout.MidBossFor(seed));
+                seen.Add(kind);
+            }
+            Assert.AreEqual(RoomLayout.MidBossPool.Length, seen.Count, "후보가 모두 한 번 이상 나옴");
+            Assert.AreEqual(RoomLayout.MidBossFor(7), RoomLayout.Generate(7, 20f * 60f).MidBoss);
         }
     }
 }
