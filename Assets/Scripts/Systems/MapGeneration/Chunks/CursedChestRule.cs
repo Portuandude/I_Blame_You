@@ -54,7 +54,7 @@ namespace IBlameYou.Systems
         }
 
         // 깊은 방 무리 (2026-11-14 자동 실행): 난이도 SwarmEliteDifficulty 이상 방의 무리는 맨 끝 슬라임(상자 +5칸) 대신 그 방 정예(EliteFor) 하나가 섞인다.
-        public const float SwarmEliteDifficulty = 0.7f;
+        public const float SwarmEliteDifficulty = 0.5f; // 2026-11-14 0.7 → 0.5: 저주 상자가 놓이는 바닥 막힌 세로 방은 깊이 0.6 미만뿐이라 0.7이면 한 판도 안 나왔다
 
         public static StageEnemy[] SwarmFor(int seed, int roomIndex, float difficulty)
         {

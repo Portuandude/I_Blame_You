@@ -114,7 +114,10 @@ namespace IBlameYou.Systems
         {
             if (room.IsVertical || room.Kind != RoomKind.Combat || room.Chunk != ChunkKind.Arena) return false;
             float difficulty = Math.Max(0f, Math.Min(1f, room.Difficulty)); // ChunkStreamer.RoomDepth와 같은 값
-            return difficulty >= WallArcherMinDifficulty && AmbushRule.IsAmbush(seed, room.Index, difficulty, true);
+            // 땅속 매복(AmbushRule.IsBurrow) 방은 벽 위 궁수로 바꾸지 않는다 (2026-11-14 비율 점검: 전투 방은 깊이 0.1~0.3·0.8~0.9에만 있어
+            // 0.4+ 매복이 모두 벽 위 궁수가 되면 섞인 매복(0.7+ 땅속)이 한 판도 안 나왔다). 깊은 매복 방은 2/3 벽 위 궁수, 1/3 섞인 매복.
+            return difficulty >= WallArcherMinDifficulty && AmbushRule.IsAmbush(seed, room.Index, difficulty, true)
+                && !AmbushRule.IsBurrow(seed, room.Index);
         }
 
         private static void AddWallArchers(ChunkData chunk)
