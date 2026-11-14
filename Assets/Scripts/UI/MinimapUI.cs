@@ -691,7 +691,7 @@ namespace IBlameYou.UI
                 DrawTile(curseDot, CurseColor);
             }
             else Fill(curseDot, CurseColor);
-            GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "저주 상자", legendLeft);
+            GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "저주", legendLeft);
         }
 
         private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;
