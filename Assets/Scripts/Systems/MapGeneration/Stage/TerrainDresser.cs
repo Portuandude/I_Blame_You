@@ -126,6 +126,7 @@ namespace IBlameYou.Systems
                     case FeatureKind.Exit:
                     case FeatureKind.Reward:
                     case FeatureKind.CoinPile:
+                    case FeatureKind.BounceMushroom:
                     case FeatureKind.PlatformSwitch:
                         int width = Mathf.Max(1, feature.Width);
                         for (int dx = -1; dx <= width; dx++) blocked.Add(new Vector2Int(feature.X + dx, feature.Y));

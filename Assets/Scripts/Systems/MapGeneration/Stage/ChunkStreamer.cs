@@ -352,6 +352,9 @@ namespace IBlameYou.Systems
                     case FeatureKind.CoinPile:
                         SpawnCoinPile(root, CoinPileKey(index, coinOrdinal++), new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.Difficulty);
                         break;
+                    case FeatureKind.BounceMushroom:
+                        BounceMushroom.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y));
+                        break;
                     case FeatureKind.Exit:
                         exits[index] = StageExit.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), bossCleared);
                         break;

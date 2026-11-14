@@ -55,7 +55,8 @@ namespace IBlameYou.Systems
         BlinkPlatform,  // 깜빡 발판: Width칸 발판 (Crumble과 같은 자리 규칙, 윗면 = Y + 1). 박자에 맞춰 나타났다 사라진다.
                         // Direction = 박자 순번 (0, 1, 2…: 왼쪽부터 차례로 늦게). 검증기는 발판으로 본다 (보일 때 밟으면 되므로)
         Stalactite,     // 동굴 종유석: (X, Y)는 천장 바로 아래 매달린 칸. 플레이어가 아래로 오면 떨어진다. 몸이 없어 길을 막지 않는다 (검증에서는 무시)
-        CoinPile        // 동전 무더기: (X, Y)는 무더기가 놓이는 서는 칸. 닿으면 골드(GoldDropTable.CoinPileGold)를 받는다. 방마다 한 번만. 몸이 없다 (검증에서는 무시)
+        CoinPile,       // 동전 무더기: (X, Y)는 무더기가 놓이는 서는 칸. 닿으면 골드(GoldDropTable.CoinPileGold)를 받는다. 방마다 한 번만. 몸이 없다 (검증에서는 무시)
+        BounceMushroom  // 통통 버섯: (X, Y)는 버섯이 선 서는 칸. 위에서 내려앉으면 높이 튕겨 올린다. 몸이 없는 덤 길이라 검증에서는 무시
     }
 
     public enum StageEnemy
