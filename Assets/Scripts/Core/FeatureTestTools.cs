@@ -76,7 +76,8 @@ namespace IBlameYou.Core
             if (player == null) return;
             if (Input.GetKeyDown(KeyCode.F6)) helpOpen = !helpOpen;
             if (Input.GetKeyDown(KeyCode.F5)) ToggleMinigames();
-            if (Input.GetKeyDown(KeyCode.BackQuote) && GUIUtility.keyboardControl == 0) CycleFocus(); // 영창 입력 칸에 글자를 치는 중이면 바꾸지 않는다
+            var control = player.GetComponent<PlayerControlState>();
+            if (Input.GetKeyDown(KeyCode.BackQuote) && (control == null || !control.ChantActive)) CycleFocus(); // 영창 입력 칸에 글자를 치는 중이면 바꾸지 않는다
             if (Input.GetKeyDown(KeyCode.F7)) monsterIndex = (monsterIndex + 1) % Monsters.Length;
             if (Input.GetKeyDown(KeyCode.F8)) SpawnMonster();
             if (Input.GetKeyDown(KeyCode.F9)) relicWindowOpen = !relicWindowOpen;
