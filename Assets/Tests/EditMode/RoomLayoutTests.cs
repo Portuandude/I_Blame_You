@@ -89,7 +89,7 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void GridIsFiveByFourWithElevenToFourteenRooms()
+        public void GridIsFiveByFourWithFourteenToEighteenRooms()
         {
             foreach (var layout in Layouts())
             {
@@ -207,7 +207,7 @@ namespace IBlameYou.Tests
                 {
                     Assert.AreEqual(RoomLayout.LeadCount(room), room.Leads.Count, $"seed {layout.Seed} room {room.Index}");
                     Assert.LessOrEqual(room.Cols, RoomLayout.CellCols);
-                    if (room.IsVertical || room.Kind == RoomKind.Start
+                    if (room.IsVertical || room.Kind == RoomKind.Start || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring
                         || room.Kind == RoomKind.Village || room.Kind == RoomKind.Puzzle)
                         Assert.AreEqual(0, room.Leads.Count, $"seed {layout.Seed} room {room.Index} {room.Kind}");
                     int puzzleLeads = room.Leads.FindAll(l => l == ChunkKind.ElementGate || l == ChunkKind.MovingBridge).Count;
@@ -234,15 +234,36 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void OnlyCombatRoomsUseVerticalDoors()
+        public void OnlyCombatAndRewardRoomsUseVerticalDoors()
         {
             foreach (var layout in Layouts())
             {
                 foreach (var room in layout.Rooms)
                 {
                     if (!room.IsVertical) continue;
-                    Assert.AreEqual(RoomKind.Combat, room.Kind, $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
+                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring,
+                        $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
                 }
+            }
+        }
+
+        [Test]
+        public void RewardRoomsAreDeadEndsOffThePath()
+        {
+            foreach (var layout in Layouts())
+            {
+                int treasure = 0, rewards = 0;
+                foreach (var room in layout.Rooms)
+                {
+                    if (room.Kind != RoomKind.Treasure && room.Kind != RoomKind.Spring) continue;
+                    rewards++;
+                    if (room.Kind == RoomKind.Treasure) treasure++;
+                    Assert.IsFalse(room.MainPath, $"seed {layout.Seed}");
+                    Assert.AreEqual(room.EntryDoor, room.Doors, $"seed {layout.Seed}: 보상 곁방은 문이 하나뿐");
+                }
+
+                Assert.That(rewards, Is.InRange(RoomLayout.MinRewardRooms, RoomLayout.MaxRewardRooms), $"seed {layout.Seed}");
+                Assert.GreaterOrEqual(treasure, 1);
             }
         }
 
@@ -273,8 +294,8 @@ namespace IBlameYou.Tests
                 }
         }
 
-        // 방 구성 (2026-11-14 23:30 사람 결정): 시작·보스를 뺀 방 9~12개 = 일반 전투 방 5+, 퍼즐 방 2+(몹 없음, 이중 스위치 하나 포함),
-        // 마을 1, 중간보스 1. 보스 1. 이동·휴식·보물·샘 방 없음. 목표 15·20·30분 모두.
+        // 방 구성 (2026-11-14 23:30·23:37 사람 결정): 방 14~18개(시작·보스 포함) = 일반 전투 방 5+, 퍼즐 방 2+(몹 없음, 이중 스위치 하나 포함),
+        // 마을 1, 중간보스 1, 보물·샘 1~2, 보스 1. 이동·휴식 방 없음. 목표 15·20·30분 모두.
         [Test]
         public void RoomMixFollowsDecision()
         {
@@ -290,12 +311,12 @@ namespace IBlameYou.Tests
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Chunk == ChunkKind.SwitchBridge).Count, at);
                     Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Chunk == RoomLayout.DeductionPuzzle(seed)).Count, 1, $"{at}: 추리 퍼즐 방");
                     Assert.AreEqual(0, layout.Rooms.FindAll(r => r.Kind == RoomKind.Travel || r.Kind == RoomKind.Rest).Count, $"{at}: 이동·휴식 방 없음");
-                    Assert.AreEqual(0, layout.Rooms.FindAll(r => r.Kind == RoomKind.Treasure || r.Kind == RoomKind.Spring).Count, $"{at}: 보물·샘 방 없음");
+                    Assert.That(layout.Rooms.FindAll(r => r.Kind == RoomKind.Treasure || r.Kind == RoomKind.Spring).Count, Is.InRange(1, 2), $"{at}: 보물·샘 방");
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Start).Count, at);
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Boss).Count, at);
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.MidBoss).Count, at);
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Village).Count, at);
-                    Assert.That(layout.Rooms.Count - 2, Is.InRange(9, 12), $"{at}: 시작·보스를 뺀 방 수");
+                    Assert.That(layout.Rooms.Count, Is.InRange(14, 18), $"{at}: 방 수 (시작·보스 포함)");
                 }
         }
 

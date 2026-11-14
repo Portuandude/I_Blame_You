@@ -4,9 +4,10 @@ using System.Collections.Generic;
 namespace IBlameYou.Systems
 {
     // 방 격자형 스테이지의 배치 (Docs/LevelDesign.md). 던그리드·아이작처럼 방들이 격자 칸에 놓이고 문으로 이어진다.
-    // 스테이지 1 = 가로 5 × 세로 4 격자 (2026-11-14 23:30 사람 결정, PR #109의 13~17방을 바꿈):
-    //   방 9~12개 = 일반 전투 5+ · 퍼즐 2+(몹 없음) · 마을 1 고정 · 중간보스 1 (+ 시작 방 · 보스 방 1 → 격자 칸 11~14개).
-    //   보물·샘 막다른 방은 이 구성에 없어 더 만들지 않는다. 정예 방은 전투 방의 한 종류로 센다. 중간보스는 후보 중 하나를 시드로 고른다 (MidBossFor).
+    // 스테이지 1 = 가로 5 × 세로 4 격자 (2026-11-14 23:30·23:37 사람 결정, PR #109의 13~17방을 바꿈):
+    //   방 14~18개(시작·보스 방 포함) = 일반 전투 5+ · 퍼즐 2+(몹 없음) · 마을 1 고정 · 중간보스 1 · 보물·샘 보상 방 1~2.
+    //   시작·보스를 빼고 14~18로 세면 격자 칸 16~20개라 예상 시간이 30분을 넘어 판이 만들어지지 않아서 시작·보스를 포함해 센다.
+    //   정예 방은 전투 방의 한 종류로 센다. 중간보스는 후보 중 하나를 시드로 고른다 (MidBossFor).
     // 이동 방(기믹만 있는 방)은 없앴다: 기믹(버섯·바람·무너지는 발판·봉인문·움직이는 발판)은 전투 방 앞 구간에 섞이고, 세로 방도 전투 방이다.
     // 시작 방은 가운데 열(x 2), 가운데 두 줄 중 하나,
     // 방들은 나무 모양(고리 없음)으로 이어지고, 시작 방에서 멀수록(방 거리) 어렵다. 가장 먼 방이 보스, 중간 거리에 중간보스.
@@ -104,13 +105,15 @@ namespace IBlameYou.Systems
     {
         public const int GridWidth = 5;
         public const int GridHeight = 4;
-        public const int MinRooms = 11;              // 시작·보스 방 포함 (사람 기준 9개 + 2)
-        public const int MaxRooms = 14;              // 시작·보스 방 포함 (사람 기준 12개 + 2)
+        public const int MinRooms = 14;              // 시작·보스 방 포함
+        public const int MaxRooms = 18;
         public const int StartX = 2;                 // 시작 방: 가운데 열, y 1 또는 2
         // 방 구성 하한 (2026-11-14 사람 결정)
         public const int MinCombatRooms = 5;         // 일반 전투 방 (정예·중간보스·보스 제외)
         public const int MinPuzzleRooms = 2;         // 퍼즐 방 (몹 없음)
         public const int Villages = 1;               // 마을 1개 고정 (2026-11-14 23:30)
+        public const int MinRewardRooms = 1;         // 막다른 보상 방 (보물 상자 / 회복 샘) (2026-11-14 23:37 다시 넣음)
+        public const int MaxRewardRooms = 2;
         public const int MinBossDistance = 4;        // 시작 → 보스 문 수 (중간보스 앞뒤에 방이 하나씩은 있게)
         public const float MidBossDepth = 0.55f;  // 중간보스는 보스까지 거리의 55% 안팎 (사람 결정 2026-11-09)
         public const int VillageMinDistance = 2;     // 마을은 시작 방에서 문 두 개 이상 (골드를 조금 모은 뒤 찾게)
@@ -210,7 +213,7 @@ namespace IBlameYou.Systems
 
         private static RoomLayoutData TryBuild(int seed, Random rng, float target)
         {
-            // 목표가 길수록 방이 많다 (15분 → 11~12, 30분 → 14)
+            // 목표가 길수록 방이 많다 (15분 → 14~15, 30분 → 17~18)
             float t = (target - MinSeconds) / (MaxSeconds - MinSeconds);
             int count = Math.Min(MaxRooms, MinRooms + rng.Next(2) + (int)Math.Round(t * 3));
             int startX = StartX;
@@ -368,8 +371,8 @@ namespace IBlameYou.Systems
             foreach (var r in layout.Rooms) r.Difficulty = Math.Min(1f, r.Distance / bossDistance);
         }
 
-        // 방 종류 (2026-11-14 23:30 사람 결정): 시작·보스·중간보스 → 마을 1 → 퍼즐 방 2개 → 나머지는 모두 전투 방(일부 정예).
-        // 이동·보상 방은 만들지 않는다. 세로 방은 전투 방만 될 수 있다 (퍼즐·마을·보스·중간보스는 좌우 지형).
+        // 방 종류 (2026-11-14 23:30·23:37 사람 결정): 시작·보스·중간보스 → 마을 1 → 보상 막다른 방 1~2 → 퍼즐 방 2개 → 나머지는 모두 전투 방(일부 정예).
+        // 이동 방은 만들지 않는다. 세로 방은 전투·보물·샘만 될 수 있다 (퍼즐·마을·보스·중간보스는 좌우 지형).
         private static bool AssignKinds(RoomLayoutData layout, Random rng, float target)
         {
             var start = layout.Rooms[0];
@@ -420,7 +423,21 @@ namespace IBlameYou.Systems
             village.Kind = RoomKind.Village;
             village.Chunk = ChunkKind.Rest;
 
-            // 보물·샘 막다른 방은 만들지 않는다 (2026-11-14 23:30 방 구성). 남는 막다른 방은 전투·퍼즐 방이 된다.
+            leaves.Remove(village);
+
+            // 보상 막다른 방: 세로 막다른 방부터(세로 방은 퍼즐·마을이 될 수 없다), 그다음 먼 곳부터 1~2개 (보물 → 샘)
+            if (leaves.Count < MinRewardRooms) return false;
+            leaves.Sort((a, b) =>
+            {
+                if (a.IsVertical != b.IsVertical) return a.IsVertical ? -1 : 1;
+                return b.Distance.CompareTo(a.Distance);
+            });
+            int rewards = Math.Min(MaxRewardRooms, leaves.Count);
+            for (int i = 0; i < rewards; i++)
+            {
+                leaves[i].Kind = i % 2 == 0 ? RoomKind.Treasure : RoomKind.Spring;
+                leaves[i].Chunk = ChunkKind.Rest;
+            }
             var rest = new List<RoomData>();
             foreach (var r in layout.Rooms) if (r.Chunk == ChunkKind.Start && r != start) rest.Add(r); // Chunk 기본값 = Start → 아직 안 정한 방
             rest.Sort((a, b) => a.Distance.CompareTo(b.Distance));
