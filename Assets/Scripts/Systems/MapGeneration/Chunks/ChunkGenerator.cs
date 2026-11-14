@@ -185,6 +185,20 @@ namespace IBlameYou.Systems
         public const int BounceLedgeRise = 6;    // 선반 서는 칸 = 바닥 + 6
         public const int BounceLedgeHalf = 2;    // 선반 = 버섯 열 ± 2
         public const float BounceMinDifficulty = 0.1f;
+        public const int BounceReachGuard = 6;   // 선반 양끝에서 이 칸 안의 언덕이 바닥 + 3보다 높으면 걸어 올라 점프로 닿으므로 놓지 않는다
+
+        // 이미 만든 청크에 통통 버섯 덤 길을 더한다 (기능 테스트 맵용). 바닥 높이는 타일에서 읽고, 기능이 있는 열은 피한다.
+        // 놓았으면 true. 문턱·자리 규칙은 PlaceBounceLedge 그대로.
+        public static bool AddBounceLedge(ChunkData chunk)
+        {
+            var heights = new int[W];
+            var occupied = new bool[W];
+            for (int x = 0; x < W; x++) heights[x] = chunk.SurfaceAt(x);
+            foreach (var f in chunk.Features) if (f.X >= 0 && f.X < W) Mark(occupied, f.X, 1);
+            int before = chunk.Features.Count;
+            PlaceBounceLedge(chunk, heights, occupied);
+            return chunk.Features.Count > before;
+        }
 
         private static void PlaceBounceLedge(ChunkData chunk, int[] heights, bool[] occupied)
         {
@@ -204,6 +218,9 @@ namespace IBlameYou.Systems
                     if (c >= x - BounceLedgeHalf && c <= x + BounceLedgeHalf ? heights[c] != g : heights[c] > g) ok = false;
                     if (occupied[c]) ok = false; // 가시·적이 있는 곳은 피한다
                 }
+                // 근처 높은 언덕 위에서 보통 점프(약 2.4칸)로 선반에 닿지 않게 (언덕 청크용. 평지는 한 칸씩만 오르내려 늘 통과)
+                for (int c = Math.Max(0, x - BounceLedgeHalf - BounceReachGuard); c <= Math.Min(W - 1, x + BounceLedgeHalf + BounceReachGuard) && ok; c++)
+                    if (heights[c] > g + 3) ok = false;
                 if (!ok) continue;
 
                 for (int c = x - BounceLedgeHalf; c <= x + BounceLedgeHalf; c++) chunk.Tiles[c, stand - 1] = StageTile.Platform;
@@ -242,6 +259,7 @@ namespace IBlameYou.Systems
             }
 
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1 + (chunk.Difficulty > 0.6f ? 1 : 0)));
+            PlaceBounceLedge(chunk, heights, occupied); // 2026-11-14: 언덕에도 통통 버섯 덤 길 (평평한 골짜기에만, 난수 안 씀)
         }
 
         // 낭떠러지(바닥 없는 구멍) 사이의 섬을 건넌다. 뒤로 갈수록 섬 일부가 무너지는 발판으로 바뀐다.
@@ -410,6 +428,28 @@ namespace IBlameYou.Systems
             int strips = 1 + (chunk.Difficulty >= 0.5f ? 1 : 0);
             for (int i = 0; i < strips; i++) PlaceSpikeStrip(chunk, heights, occupied, rng, 2);
             PlaceEnemies(chunk, heights, occupied, rng, TravelEnemyCount(rng, chunk.Difficulty, 1));
+            PlaceTwinPathMushroom(chunk, ground, occupied);
+        }
+
+        // 두 갈래 길 아래 길의 통통 버섯 (2026-11-14): 위 길에서 떨어져도 버섯을 밟아 다시 오를 수 있다.
+        // 가시·적을 다 놓은 뒤 비어 있는 열에 두어 난수·기존 배치를 바꾸지 않는다 (가운데에서 가까운 열부터).
+        // 튕김(갓 윗면 + 7.5칸)이 위 길 윗면(바닥 + 6)보다 넉넉히 높고, 위 길 발판은 아래에서 통과해 올라선다.
+        public const int TwinPathMushroomMinX = TwinPathWalkStart + 2;
+        public const int TwinPathMushroomMaxX = TwinPathWalkEnd - 2;
+
+        private static void PlaceTwinPathMushroom(ChunkData chunk, int ground, bool[] occupied)
+        {
+            if (chunk.Difficulty < BounceMinDifficulty) return;
+            int center = (TwinPathMushroomMinX + TwinPathMushroomMaxX) / 2;
+            for (int k = 0; k <= TwinPathMushroomMaxX - TwinPathMushroomMinX; k++)
+            {
+                int x = center + ((k & 1) == 0 ? k / 2 : -(k / 2 + 1));
+                if (x < TwinPathMushroomMinX || x > TwinPathMushroomMaxX) continue;
+                if (IsNear(occupied, x, 1)) continue; // 가시·적 곁은 피한다
+                chunk.AddFeature(FeatureKind.BounceMushroom, x, ground);
+                Mark(occupied, x, 1);
+                return;
+            }
         }
 
         // 평지에 가시 줄이 이어진다. 3칸짜리 가시 위에는 발판을 놓아 밟고 건널 수 있게 한다.

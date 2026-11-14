@@ -47,6 +47,18 @@ namespace IBlameYou.Tests
             Assert.AreEqual(2, bridge.Features.Count(f => f.Kind == FeatureKind.MovingPlatform && f.SwitchDriven));
         }
 
+        // 통통 버섯 방: 버섯 하나 + 그 위 선반 동전 (2026-11-14)
+        [Test]
+        public void BounceAreaHasMushroomAndLedgeCoins()
+        {
+            var chunk = FeatureTestStage.Build().Chunks[FeatureTestStage.BounceArea];
+            var mushroom = chunk.Features.Single(f => f.Kind == FeatureKind.BounceMushroom);
+            int stand = mushroom.Y + ChunkGenerator.BounceLedgeRise;
+            Assert.AreEqual(StageTile.Platform, chunk.Get(mushroom.X, stand - 1));
+            Assert.IsTrue(chunk.Features.Any(f => f.Kind == FeatureKind.CoinPile && f.Y == stand));
+            Assert.IsTrue(StageValidator.Validate(chunk, out string reason), reason);
+        }
+
         [Test]
         public void EndsWithWalls()
         {

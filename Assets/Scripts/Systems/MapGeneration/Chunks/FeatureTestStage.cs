@@ -1,7 +1,7 @@
 namespace IBlameYou.Systems
 {
     // 기능 테스트 모드 맵 (2026-11-12 플레이테스트 피드백: 7·8·11·19번 "테스트 불가").
-    // 적이 없는 짧은 외길: 텅 빈 방 → 빈 방 → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 빈 방(오른쪽 벽).
+    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 빈 방(오른쪽 벽).
     // 몬스터·유물은 이 맵 위에서 FeatureTestTools(키)로 불러 시험한다. 순수 C#이라 EditMode 테스트에서 그대로 검증한다.
     public static class FeatureTestStage
     {
@@ -15,7 +15,9 @@ namespace IBlameYou.Systems
             ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.Rest
         };
 
-        public static readonly string[] Names = { "텅 빈 방", "빈 방", "협동 봉인문", "이중 스위치 발판", "끝 방" };
+        public const int BounceArea = 1; // 통통 버섯 방 (청크 번호)
+
+        public static readonly string[] Names = { "텅 빈 방", "통통 버섯 방", "협동 봉인문", "이중 스위치 발판", "끝 방" };
 
         public static StageData Build()
         {
@@ -34,6 +36,7 @@ namespace IBlameYou.Systems
 
                 if (chunk == null) chunk = ChunkGenerator.Fallback(index, kind, 1f, height);
                 if (kind == ChunkKind.ElementGate) MakeCoopGate(chunk);
+                if (index == BounceArea) ChunkGenerator.AddBounceLedge(chunk); // 평평한 빈 방 가운데에 버섯 + 높은 선반 + 동전
                 if (index == Order.Length - 1) chunk.FillColumn(ChunkData.Width - 1, ChunkData.Height); // 끝 벽
 
                 stage.Chunks.Add(chunk);
