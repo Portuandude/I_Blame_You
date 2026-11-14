@@ -1,23 +1,40 @@
 using System;
+using System.Collections.Generic;
 
 namespace IBlameYou.Player
 {
-    // 장비 수식어 (Docs/EquipmentDesign.md 4절). 등급 -2 ~ +3, 0은 "보통"(이름에 안 붙음).
-    // 능력치 전체에 배율을 곱하고 가격에도 배율을 곱한다.
+    // 장비 수식어 (Docs/EquipmentDesign.md 4절, 2026-11-14 사람 결정으로 4종).
+    // 등급 -1 비틀린 · 0 흔한 · 1 숙련자의 · 2 영웅의. 장비 기본 능력치는 그대로 두고,
+    // 수식어가 "마법 공격 %"·"마나 소모 %"를 따로 더한다. 가격에는 배율을 곱한다.
     public static class EquipmentModifier
     {
-        public const int MinGrade = -2;
-        public const int MaxGrade = 3;
+        public const int MinGrade = -1;
+        public const int MaxGrade = 2;
 
-        private static readonly string[] Names = { "부서진", "낡은", "", "튼튼한", "빛나는", "전설의" };
-        private static readonly float[] StatMultipliers = { 0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f };
-        private static readonly float[] PriceMultipliers = { 0.4f, 0.7f, 1f, 1.4f, 1.9f, 2.8f };
-        private static readonly int[] Weights = { 8, 20, 40, 20, 9, 3 }; // 합 100 (= % 확률)
+        // 마법 공격(마법 피해 배율에 더함)·마나 소모(마나 소모 배율에 더함) 크기. "--"·"++"는 MagicBig.
+        public const float MagicBig = 0.15f;
+        public const float CostStep = 0.1f;
+
+        private static readonly string[] Names = { "비틀린", "흔한", "숙련자의", "영웅의" };
+        private static readonly float[] MagicBonus = { -MagicBig, 0f, 0f, MagicBig };
+        private static readonly float[] CostBonus = { CostStep, 0f, -CostStep, -CostStep };
+        private static readonly float[] PriceMultipliers = { 0.7f, 1f, 1.4f, 2f };
+        private static readonly int[] Weights = { 25, 45, 20, 10 }; // 합 100 (= % 확률)
 
         public static string Name(int grade) => Names[Index(grade)];
-        public static float StatMultiplier(int grade) => StatMultipliers[Index(grade)];
         public static float PriceMultiplier(int grade) => PriceMultipliers[Index(grade)];
         public static int Weight(int grade) => Weights[Index(grade)];
+
+        // 수식어가 더하는 능력치 (흔한은 없음). 마법 공격 먼저, 마나 소모 다음.
+        public static List<StatValue> Stats(int grade)
+        {
+            var list = new List<StatValue>();
+            float magic = MagicBonus[Index(grade)];
+            float cost = CostBonus[Index(grade)];
+            if (magic != 0f) list.Add(new StatValue(EquipStat.MagicPower, magic));
+            if (cost != 0f) list.Add(new StatValue(EquipStat.ManaCost, cost));
+            return list;
+        }
 
         public static int TotalWeight
         {
