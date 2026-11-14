@@ -51,6 +51,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
                 case ChunkKind.LanternPuzzle: BuildLanternPuzzle(chunk, heights, rng); break;
+                case ChunkKind.MirrorPuzzle: BuildMirrorPuzzle(chunk, heights, rng); break;
                 case ChunkKind.Boss: BuildBoss(chunk, heights); break;
                 default: Flat(heights, entryHeight); break;
             }
@@ -74,6 +75,7 @@ namespace IBlameYou.Systems
             }
             if (kind == ChunkKind.Start) chunk.AddFeature(FeatureKind.PlayerStart, 4, entryHeight);
             if (kind == ChunkKind.LanternPuzzle) AddLanternPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0))); // 대체 청크에도 퍼즐은 둔다
+            if (kind == ChunkKind.MirrorPuzzle) AddMirrorPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0)));
             chunk.ExitHeight = entryHeight;
             return chunk;
         }
@@ -890,6 +892,37 @@ namespace IBlameYou.Systems
                 });
             chunk.AddFeature(FeatureKind.LanternMural, LanternMuralX, ground);
             chunk.AddFeature(FeatureKind.PuzzleChest, LanternChestX, ground);
+        }
+
+        // 퍼즐 방 "거울 룬" (2026-11-14, Docs/PuzzleRoomDesign.md 2절 3번): 평지 바닥에 등불 셋(왼쪽·가운데·오른쪽, 속성·순서 섞임).
+        // 방 가운데 위에 걸린 거울이 켜는 순서를 "좌우가 뒤집힌 자리"의 작은 등불 그림을 차례로 깜빡여 보인다 (색 없음).
+        // → 거울에서 오른쪽 그림이 먼저 깜빡이면 실제로는 왼쪽 등불이 먼저. 기억 + 거울 뒤집기 추리. 등불 순서와 같은 판정(LanternPuzzle).
+        // 바닥 등불은 마법이 처음 닿는 트리거라, 먼 등불을 쏘려면 A가 가까운 등불을 지나 그 옆으로 가야 한다.
+        public const int MirrorLeftX = 5;
+        public const int MirrorCenterX = 16;
+        public const int MirrorRightX = 26;
+        public const int MirrorChestX = 11;
+
+        private static void BuildMirrorPuzzle(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+            AddMirrorPuzzle(chunk, ground, rng);
+        }
+
+        private static void AddMirrorPuzzle(ChunkData chunk, int ground, Random rng)
+        {
+            var elements = Shuffled(rng, LanternCount);
+            var order = Shuffled(rng, LanternCount);
+            int[] xs = { MirrorLeftX, MirrorCenterX, MirrorRightX };
+            for (int i = 0; i < LanternCount; i++)
+                chunk.Features.Add(new ChunkFeature
+                {
+                    Kind = FeatureKind.Lantern, X = xs[i], Y = ground, Width = 1, ElementIndex = elements[i], Direction = order[i]
+                });
+            chunk.AddFeature(FeatureKind.MirrorMural, MirrorCenterX, ground);
+            chunk.AddFeature(FeatureKind.PuzzleChest, MirrorChestX, ground);
         }
 
         // 0 ~ count-1을 섞은 배열 (Fisher-Yates).

@@ -32,7 +32,8 @@ namespace IBlameYou.Systems
         SwitchBridge,  // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
         Pillars,       // 기둥 숲: 낭떠러지 위 폭 1~2칸 기둥을 높낮이 바꿔 가며 건넌다 (진행도 20%+, 레벨 재설계 2차)
         TwinPath,      // 두 갈래 길: 아래는 가시 + 적, 위는 발판 계단 → 발판 줄(무너지는 발판 섞임). 싸울지 뛸지 고른다 (진행도 25%+)
-        LanternPuzzle  // 퍼즐 방 "등불 순서" (2026-11-14, Docs/PuzzleRoomDesign.md): 높이가 다른 등불 셋 + 켜는 순서 벽화 + 풀면 유물 상자. 몹 없음
+        LanternPuzzle, // 퍼즐 방 "등불 순서" (2026-11-14, Docs/PuzzleRoomDesign.md): 높이가 다른 등불 셋 + 켜는 순서 벽화 + 풀면 유물 상자. 몹 없음
+        MirrorPuzzle   // 퍼즐 방 "거울 룬" (2026-11-14): 바닥 등불 셋 + 위에 걸린 거울이 켜는 순서를 좌우 뒤집힌 자리로 깜빡여 보인다. 몹 없음
     }
 
     public enum FeatureKind
@@ -62,7 +63,8 @@ namespace IBlameYou.Systems
                         // 몸이 없는 덤 길이라 검증에서는 무시
         Lantern,        // 등불 순서 퍼즐의 등불: (X, Y)는 등불이 선 칸. ElementIndex = 속성(그 마법에만 켜짐), Direction = 켜는 순번 0~2. 몸이 없다 (검증에서는 무시)
         LanternMural,   // 등불 순서 벽화: (X, Y)는 벽화 가운데 아래 서는 칸 (벽 장식, 몸 없음)
-        PuzzleChest     // 퍼즐을 풀면 유물 상자가 떨어지는 서는 칸 (몸 없음)
+        PuzzleChest,    // 퍼즐을 풀면 유물 상자가 떨어지는 서는 칸 (몸 없음)
+        MirrorMural     // 거울 룬 퍼즐의 거울: (X, Y)는 거울 가운데 아래 바닥 칸 (거울은 그 위 높이 걸림, 몸 없음)
     }
 
     public enum StageEnemy
