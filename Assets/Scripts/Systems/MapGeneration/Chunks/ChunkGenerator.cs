@@ -50,6 +50,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Arena: BuildArena(chunk, heights, rng, false); break;
                 case ChunkKind.EliteArena: BuildArena(chunk, heights, rng, true); break;
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
+                case ChunkKind.LanternPuzzle: BuildLanternPuzzle(chunk, heights, rng); break;
                 case ChunkKind.Boss: BuildBoss(chunk, heights); break;
                 default: Flat(heights, entryHeight); break;
             }
@@ -72,6 +73,7 @@ namespace IBlameYou.Systems
                 chunk.AddFeature(FeatureKind.Exit, W - 4, entryHeight);
             }
             if (kind == ChunkKind.Start) chunk.AddFeature(FeatureKind.PlayerStart, 4, entryHeight);
+            if (kind == ChunkKind.LanternPuzzle) AddLanternPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0))); // 대체 청크에도 퍼즐은 둔다
             chunk.ExitHeight = entryHeight;
             return chunk;
         }
@@ -844,6 +846,65 @@ namespace IBlameYou.Systems
         {
             Flat(heights, chunk.EntryHeight);
             ApplyHeights(chunk, heights);
+        }
+
+        // 퍼즐 방 "등불 순서" (2026-11-14, Docs/PuzzleRoomDesign.md 3절). 평지 + 아래에서 뚫고 오르는 발판 둘(계단):
+        // 바닥(낮음) · 가운데 발판(선 칸 = 바닥 + 2) · 높은 발판(바닥 + 4)에 등불 하나씩. 속성과 켜는 순서는 난수로 섞는다.
+        // 벽화는 오른쪽 벽 쪽에 켜는 순서대로 등불 그림을 높이로 그린다 (색 없음 → 높이로 속성을 알아내는 추리).
+        // 등불 판정은 선 칸 바닥 위 0.1~1.8유닛이라 그 높이에 서서 쏘아야 맞는다. 문은 막지 않는다 (못 풀어도 지나간다).
+        public const int LanternLowX = 4;
+        public const int LanternMidX = 11;
+        public const int LanternHighX = 18;
+        public const int LanternMidPlatformX0 = 8, LanternMidPlatformX1 = 13;   // 발판 행 = 바닥 + 1 (선 칸 바닥 + 2)
+        public const int LanternHighPlatformX0 = 15, LanternHighPlatformX1 = 20; // 발판 행 = 바닥 + 3 (선 칸 바닥 + 4)
+        public const int LanternMidRise = 2;
+        public const int LanternHighRise = 4;
+        public const int LanternChestX = 24;
+        public const int LanternMuralX = 28;
+        public const int LanternCount = 3;
+
+        private static void BuildLanternPuzzle(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+            AddLanternPuzzle(chunk, ground, rng);
+        }
+
+        // 지형이 평평한 청크에 발판 둘 + 등불 셋 + 벽화 + 상자 자리를 놓는다 (대체 청크도 같은 모양).
+        private static void AddLanternPuzzle(ChunkData chunk, int ground, Random rng)
+        {
+            chunk.SetRow(LanternMidPlatformX0, LanternMidPlatformX1, ground + LanternMidRise - 1, StageTile.Platform);
+            chunk.SetRow(LanternHighPlatformX0, LanternHighPlatformX1, ground + LanternHighRise - 1, StageTile.Platform);
+
+            // 속성: 불·물·바람을 섞어 낮음·가운데·높음에. 순서: 0~2를 섞어 낮음·가운데·높음이 몇 번째로 켜지는지.
+            var elements = Shuffled(rng, LanternCount);
+            var order = Shuffled(rng, LanternCount);
+            int[] xs = { LanternLowX, LanternMidX, LanternHighX };
+            int[] rises = { 0, LanternMidRise, LanternHighRise };
+            for (int i = 0; i < LanternCount; i++)
+                chunk.Features.Add(new ChunkFeature
+                {
+                    Kind = FeatureKind.Lantern, X = xs[i], Y = ground + rises[i], Width = 1,
+                    ElementIndex = elements[i], Direction = order[i]
+                });
+            chunk.AddFeature(FeatureKind.LanternMural, LanternMuralX, ground);
+            chunk.AddFeature(FeatureKind.PuzzleChest, LanternChestX, ground);
+        }
+
+        // 0 ~ count-1을 섞은 배열 (Fisher-Yates).
+        private static int[] Shuffled(Random rng, int count)
+        {
+            var values = new int[count];
+            for (int i = 0; i < count; i++) values[i] = i;
+            for (int i = count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                int t = values[i];
+                values[i] = values[j];
+                values[j] = t;
+            }
+            return values;
         }
 
         // 마지막 전투: 보스 슬라임 킹. 이기면 오른쪽 끝 출구가 열린다.
