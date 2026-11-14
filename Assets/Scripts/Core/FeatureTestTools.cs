@@ -235,12 +235,19 @@ namespace IBlameYou.Core
             StageEvents.PostNotice(swarm ? "저주받은 상자를 놓았다 (닿으면 쫄몹 무리)" : $"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
         }
 
+        // 무리 중 아직 살아 있는 것이 있나 (쓰러지지 않고 치워진 것 — 낭떠러지 등 — 은 셈하지 않는다)
+        private static bool AnyAlive(List<HealthSystem> group)
+        {
+            foreach (var g in group)
+                if (g != null && !g.IsDead) return true;
+            return false;
+        }
+
         private void AwakenCursedSwarm(CursedChest chest, Vector2 chestPosition, int offerIndex)
         {
             if (chest == null) return;
             var kinds = CursedChestRule.SwarmFor(stage.Seed, offerIndex);
             var spawned = new List<HealthSystem>();
-            int alive = 0;
             bool broken = false;
             for (int i = 0; i < kinds.Length; i++)
             {
@@ -251,14 +258,12 @@ namespace IBlameYou.Core
                 var health = spawner(kinds[i], position, enemyRoot);
                 if (health == null) continue;
                 spawned.Add(health);
-                alive++;
                 bool down = false;
                 health.HealthChanged += (current, max) =>
                 {
                     if (current > 0f || down) return;
                     down = true;
-                    alive--;
-                    if (alive > 0 || broken || chest == null) return;
+                    if (AnyAlive(spawned) || broken || chest == null) return;
                     broken = true;
                     chest.Break();
                     RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
