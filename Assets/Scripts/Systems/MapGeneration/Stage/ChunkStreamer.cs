@@ -64,6 +64,40 @@ namespace IBlameYou.Systems
         public bool HasVisited(int index) => visitedRooms.Contains(index);
         public int VisitedCount => visitedRooms.Count; // 일시정지 창 "방 N/M 탐험"
 
+        // 결과 창 방 이벤트 줄 (2026-11-14 자동 실행): 이번 판에 만난(들어가 본) 방 이벤트와 해낸 수.
+        // 매복 = 가 본 매복 전투 방 / 돌파한 것, 저주 상자 = 가 본 저주 상자 방 / 저주를 푼 것, 보물 고블린 = 나타난 것 / 잡은 것.
+        public struct RoomEventTally
+        {
+            public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
+            public bool Any => AmbushMet + CursedMet + GoblinMet > 0;
+        }
+
+        private readonly HashSet<int> goblinsMet = new HashSet<int>();
+        private readonly HashSet<int> goblinsCaught = new HashSet<int>();
+
+        public RoomEventTally EventTally()
+        {
+            var tally = new RoomEventTally { GoblinMet = goblinsMet.Count, GoblinCaught = goblinsCaught.Count };
+            if (rooms == null || stage == null) return tally;
+            foreach (int index in visitedRooms)
+            {
+                if (index < 0 || index >= rooms.Rooms.Count || index >= stage.Chunks.Count) continue;
+                var chunk = stage.Chunks[index];
+                if (chunk.Kind == ChunkKind.Arena && !RoomShaper.IsMidBossArena(chunk)
+                    && AmbushRule.IsAmbush(stage.Seed, index, RoomDepth(index), true))
+                {
+                    tally.AmbushMet++;
+                    if (clearedArenas.Contains(index)) tally.AmbushCleared++;
+                }
+                if (IsCursedChestRoom(index))
+                {
+                    tally.CursedMet++;
+                    if (cursedBroken.Contains(index)) tally.CursedSolved++;
+                }
+            }
+            return tally;
+        }
+
         // 이 스테이지에 마을 방이 있으면 가 봤는지, 없으면(기능 테스트 빈 방 등) null.
         public bool? VillageFound
         {
@@ -894,6 +928,8 @@ namespace IBlameYou.Systems
             RegisterEnemy(health);
             treasureGoblin = health;
             treasureGoblinRoom = index;
+            goblinsMet.Add(index);
+            health.HealthChanged += (current, max) => { if (current <= 0f) goblinsCaught.Add(index); }; // 결과 창 방 이벤트 줄 (도망치면 HealthChanged 없이 사라진다)
             if (TreasureGoblinRule.DropsEquipment(stage.Seed, index))
             {
                 bool dropped = false;
