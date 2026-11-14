@@ -58,6 +58,7 @@ namespace IBlameYou.Systems
             }
 
             if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
+            if (IsWallArcherAmbush(seed, room)) AddWallArchers(geometry.Chunk);
             if (HasPairGate(room)) AddPairGate(seed, room, geometry.Chunk);
             return geometry;
         }
@@ -100,6 +101,65 @@ namespace IBlameYou.Systems
                     (f.Enemy == StageEnemy.SlimeKnightFire || f.Enemy == StageEnemy.SlimeKnightWater))
                     return true;
             return false;
+        }
+
+        // 매복 변형 "벽 위 궁수" (2026-11-14, ① 컨텐츠): 난이도 WallArcherMinDifficulty 이상인 매복 전투 방(AmbushRule과 같은 판정)은
+        // 전투 구역 양쪽 문 바로 안쪽 높은 곳(바닥 + WallLedgeRise)에 3칸 선반을 두고, 가장 바깥 두 적을 그 선반 위 고블린 궁수로 바꾼다 (적 수는 그대로).
+        // 선반 위 적은 떨어지지 않고 그 자리에 나타난다 (ArenaZone). 난수를 쓰지 않아 다른 방은 그대로다.
+        public const float WallArcherMinDifficulty = 0.4f;
+        public const int WallLedgeRise = 5;   // 선반 위 서는 칸 = 바닥 + 5 (발판 행은 + 4)
+        public const int WallLedgeWidth = 3;
+
+        public static bool IsWallArcherAmbush(int seed, RoomData room)
+        {
+            if (room.IsVertical || room.Kind != RoomKind.Combat || room.Chunk != ChunkKind.Arena) return false;
+            float difficulty = Math.Max(0f, Math.Min(1f, room.Difficulty)); // ChunkStreamer.RoomDepth와 같은 값
+            return difficulty >= WallArcherMinDifficulty && AmbushRule.IsAmbush(seed, room.Index, difficulty, true);
+        }
+
+        private static void AddWallArchers(ChunkData chunk)
+        {
+            int arena = chunk.Features.FindIndex(f => f.Kind == FeatureKind.Arena);
+            if (arena < 0) return;
+            var zone = chunk.Features[arena];
+            int ground = zone.Y;
+            int stand = ground + WallLedgeRise;
+            if (stand + 2 >= ChunkData.Height) return;
+            int leftX0 = zone.X + 1;
+            int rightX0 = zone.X + zone.Width - 1 - WallLedgeWidth;
+            if (!LedgeClear(chunk, leftX0, stand) || !LedgeClear(chunk, rightX0, stand)) return;
+
+            // 가장 바깥(왼쪽 끝·오른쪽 끝) 구역 적 둘을 뺀다. 둘이 안 되면 두지 않는다.
+            int outerLeft = -1, outerRight = -1;
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || !f.Deferred) continue;
+                if (outerLeft < 0 || f.X < chunk.Features[outerLeft].X) outerLeft = i;
+            }
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || !f.Deferred || i == outerLeft) continue;
+                if (outerRight < 0 || f.X > chunk.Features[outerRight].X) outerRight = i;
+            }
+            if (outerLeft < 0 || outerRight < 0) return;
+            chunk.Features.RemoveAt(Math.Max(outerLeft, outerRight));
+            chunk.Features.RemoveAt(Math.Min(outerLeft, outerRight));
+
+            chunk.SetRow(leftX0, leftX0 + WallLedgeWidth - 1, stand - 1, StageTile.Platform);
+            chunk.SetRow(rightX0, rightX0 + WallLedgeWidth - 1, stand - 1, StageTile.Platform);
+            chunk.AddEnemy(StageEnemy.GoblinArcher, leftX0 + 1, stand, true);
+            chunk.AddEnemy(StageEnemy.GoblinArcher, rightX0 + 1, stand, true);
+        }
+
+        // 선반 행(stand - 1)과 그 위 두 칸이 모두 비었는지
+        private static bool LedgeClear(ChunkData chunk, int x0, int stand)
+        {
+            for (int x = x0; x < x0 + WallLedgeWidth; x++)
+                for (int y = stand - 1; y <= stand + 1; y++)
+                    if (x < 0 || x >= chunk.Cols || chunk.Get(x, y) != StageTile.Empty) return false;
+            return true;
         }
 
         // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
