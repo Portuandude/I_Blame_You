@@ -2,6 +2,13 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-13 10:24 UTC
+- 브랜치/PR: `claude/project-thread-c3791f` → #85 (develop 대상, 자동 머지 켬, #84 head 위에 쌓음). 시작할 때 #84 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "고블린 궁수 화살 연출"·"슬라임 도약·착지 연출" 5개씩 추가
+- 완료 (10개, 적대적 리뷰 APPROVE). 화살 5개 (새 `Enemies/GoblinArrowFx.cs`): ① 놓을 때 "팅" `BowTwang` ② 흰 꼬리 ③ 곁을 스치면 "슈웅" `ArrowWhiz` 한 번 ④ 벽에 박혀 부르르·1.5초 뒤 사라짐 + "턱" `ArrowThunk` ⑤ 맞으면 나무 조각
+- 슬라임 5개 (새 `Enemies/SlimeLandFx.cs`, `SlimeController.UpdateLeapLanding`): ① 도약 먼지 + "뾱" `SlimeHop` ② 실제 착지 감지(떨어지던 속도가 멈춘 순간) ③ 눌림 + 방울 + "퐁" `SlimePlop` ④ 정예·기사는 충격파·보라 방울·약한 흔들림 ⑤ 소리 0.08초 간격
+- 실패/보류: 없음. 수치 그대로
+- 다음 실행 메모: 플레이테스트 필요 — 스침 소리가 한 번만 나는지, 박힌 화살 방향, 슬라임 여럿이 동시에 뛸 때 소리가 과하지 않은지
+
 ## 2026-11-13 10:14 UTC
 - 브랜치/PR: `claude/project-thread-8qiaw2` → #84 (develop 대상, 자동 머지 켬, #83 head 위에 쌓음). 시작할 때 #82·#83 CI 진행 중. 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "슬라임 킹 촉수 연출" 5개 추가
 - 완료 (10개, 적대적 리뷰 모두 APPROVE). 촉수 5개 (새 `Enemies/SlimeTentacleFx.cs`): ① 뻗기 "휙" `TentacleLash`(패턴당 1번) + 방울 ② 벽·바닥 "철퍽" `TentacleSlap` + 되튀는 방울 ③ 붙잡힘 0.05초 히트스톱 + 보라 고리 + "찰싹" `TentacleGrab` ④ 붙은 동안 끝 구슬 두근거림이 빨라지고 마지막 1초 붉은 깜빡임 ⑤ 끊어내면 방울 + 초록 고리 + "뽁" `TentacleSnap`
