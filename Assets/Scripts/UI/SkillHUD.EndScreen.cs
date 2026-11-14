@@ -6,7 +6,7 @@ namespace IBlameYou.UI
 {
     // 게임오버·클리어 화면 연출 (귀엽지만 화려하게).
     // - 패널이 0.6배에서 튀어 올라 1배로 (처음 그려진 순간부터 0.35초)
-    // - 제목은 OutlinedLabel 테두리 글자. 게임오버 "누구 탓이지?"는 좌우로 갸우뚱 (±4도)
+    // - 제목은 OutlinedLabel 테두리 글자. 게임오버 "쓰러졌다!"는 좌우로 갸우뚱 (±4도)
     // - 클리어는 화면 위에서 gold·berry·aqua 별·하트 색종이가 계속 떨어진다 (패널 뒤)
     // 쓰러짐 연출은 Time.timeScale을 낮추므로 시간은 unscaledTime으로 잰다. 재시작하면 HUD가 새로 만들어져 초기화된다.
     public partial class SkillHUD
@@ -101,14 +101,14 @@ namespace IBlameYou.UI
             string explore = ExploreText(true);           // 방 N/M 탐험 · 동전 무더기 a/b · 마을 (SkillHUD.Pause.cs)
             bool favorite = !string.IsNullOrEmpty(FavoriteLine());
             const float top = 60f, line = 26f, summary = 28f, small22 = 22f, relics = 30f;
-            float height = top + line * 3f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f)
+            float height = top + line * 2f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f)
                            + (favorite ? small22 : 0f) + relics + EndButtonHeight + 16f;
             float y0 = Mathf.Max(8f, Mathf.Min(Screen.height * 0.35f, Screen.height - height - 12f));
             var rect = new Rect((Screen.width - width) / 2f, y0, width, height);
 
             var previousMatrix = BeginEndScreenPop(rect); // 팝 등장
             GUI.Box(rect, GUIContent.none, panel);
-            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), clear ? $"{StageEvents.StageName} 클리어!" : "쓰러졌다! 누구 탓이지?", !clear);
+            DrawEndTitle(new Rect(rect.x, rect.y + 14f, rect.width, 40f), clear ? $"{StageEvents.StageName} 클리어!" : "쓰러졌다!", !clear);
 
             if (clear && newBestTime) DrawBestStamp(new Rect(rect.x + 14f, rect.y + 16f, 132f, 34f)); // 최고 기록! 도장
 
@@ -129,11 +129,6 @@ namespace IBlameYou.UI
                 manaText = $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · " + manaText;
             }
             GUI.Label(new Rect(rect.x, y + lift, rect.width, line), manaText, center);
-            GUI.color = previous;
-            y += line; row++;
-
-            lift = BeginRow(row, out previous);
-            DrawBlameVerdict(new Rect(rect.x, y + lift, rect.width, line)); // 누구 탓? 판정 (도장은 따로 늦게 찍힌다)
             GUI.color = previous;
             y += line; row++;
 
@@ -311,50 +306,12 @@ namespace IBlameYou.UI
             GUI.Label(rect, text, style);
         }
 
-        // 결과 창 "누구 탓?" 판정: 마나를 더 날린 쪽 이름 색(A/B), 반반·아무도 없음은 크림색 (Chunks/BlameVerdict).
-        // 연출: 창이 뜨고 BlameStampDelay 뒤 도장처럼 "쾅" 찍힌다 (1.6배 → 1배, 착지 때 쿵 소리·좌우 흔들림·흰색에서 제 색으로 번쩍).
-        private const float BlameStampDelay = 0.6f;
-        private const float BlameStampDrop = 0.18f;
-        private const float BlameStampShake = 0.3f;
-        private bool blameStamped;
+        // 결과 창 도장 연출 시간: 크게 떨어져 내려오는 시간 (1.8배 → 1배).
+        private const float StampDrop = 0.18f;
 
-        private void DrawBlameVerdict(Rect rect)
-        {
-            if (endScreenShownAt < 0f) return;
-            float t = Time.unscaledTime - endScreenShownAt - BlameStampDelay;
-            if (t < 0f) return;
-
-            float a = mana.WastedBy(ManaUser.PlayerA), b = mana.WastedBy(ManaUser.PlayerB);
-            var who = BlameVerdict.Judge(a, b);
-            var color = who == BlameVerdict.Who.A ? ColorA : who == BlameVerdict.Who.B ? ColorB : OutlinedLabel.Cream;
-
-            var previous = GUI.matrix;
-            if (t < BlameStampDrop)
-            {
-                float k = t / BlameStampDrop;
-                GUIUtility.ScaleAroundPivot(Vector2.one * Mathf.Lerp(1.6f, 1f, k * k), rect.center);
-            }
-            else
-            {
-                if (!blameStamped)
-                {
-                    blameStamped = true;
-                    GameAudio.PlaySfx("ArenaLock", 0.55f, 0f); // 도장 쿵
-                }
-                float since = t - BlameStampDrop;
-                if (since < BlameStampShake) rect.x += Mathf.Sin(since * 70f) * 4f * (1f - since / BlameStampShake);
-                color = Color.Lerp(Color.white, color, Mathf.Clamp01(since / 0.35f));
-            }
-
-            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            style.normal.textColor = color;
-            GUI.Label(rect, BlameVerdict.Describe(a, b), style);
-            GUI.matrix = previous;
-        }
-
-        // 클리어 최고 기록 도장: 탓 도장이 찍히고 조금 뒤 제목 왼쪽에 금색 "최고 기록!"이 비스듬히(-10도) 쾅.
-        // 탓 도장과 같은 움직임 (1.8배 → 1배, 착지 때 RelicNew 반짝 소리, 흰색에서 금색으로).
-        private const float BestStampDelay = BlameStampDelay + BlameStampDrop + 0.45f;
+        // 클리어 최고 기록 도장: 창이 뜨고 조금 뒤 제목 왼쪽에 금색 "최고 기록!"이 비스듬히(-10도) 쾅.
+        // 1.8배 → 1배로 떨어지고, 착지 때 RelicNew 반짝 소리, 흰색에서 금색으로.
+        private const float BestStampDelay = 0.8f;
         private bool bestStamped;
         private GUIStyle bestStampStyle;
 
@@ -372,9 +329,9 @@ namespace IBlameYou.UI
             var previous = GUI.matrix;
             GUIUtility.RotateAroundPivot(-10f, rect.center);
             var color = OutlinedLabel.Gold;
-            if (t < BlameStampDrop)
+            if (t < StampDrop)
             {
-                float k = t / BlameStampDrop;
+                float k = t / StampDrop;
                 GUIUtility.ScaleAroundPivot(Vector2.one * Mathf.Lerp(1.8f, 1f, k * k), rect.center);
                 color = Color.white;
             }
@@ -385,7 +342,7 @@ namespace IBlameYou.UI
                     bestStamped = true;
                     GameAudio.PlaySfx("RelicNew", 0.7f, 0f);
                 }
-                color = Color.Lerp(Color.white, OutlinedLabel.Gold, Mathf.Clamp01((t - BlameStampDrop) / 0.35f));
+                color = Color.Lerp(Color.white, OutlinedLabel.Gold, Mathf.Clamp01((t - StampDrop) / 0.35f));
             }
             OutlinedLabel.Draw(rect, "최고 기록!", bestStampStyle, color, OutlinedLabel.Outline, 0f, 2f); // GUI.color 알파는 Draw가 곱한다
             GUI.matrix = previous;

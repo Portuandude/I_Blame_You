@@ -45,7 +45,9 @@ namespace IBlameYou.Player
         FireDefense,
         WaterDefense,
         WindDefense,
-        EarthDefense
+        EarthDefense,
+        MagicPower,       // CombatStats.MagicDamageMultiplier에 더함 (비율, 수식어 전용)
+        ManaCost          // ManaSystem.EquipCostBonus에 더함 (비율, 음수가 좋음, 수식어 전용)
     }
 
     public struct StatValue
@@ -100,7 +102,10 @@ namespace IBlameYou.Player
 
         // 비율 능력치 (소수 그대로 곱함, 표시는 %). 나머지는 정수로 반올림한다.
         public static bool IsPercent(EquipStat stat) =>
-            stat == EquipStat.CritChance || stat == EquipStat.MoveSpeed;
+            stat == EquipStat.CritChance || stat == EquipStat.MoveSpeed || stat == EquipStat.MagicPower || stat == EquipStat.ManaCost;
+
+        // 낮을수록 좋은 능력치 (비교 색을 거꾸로).
+        public static bool LowerIsBetter(EquipStat stat) => stat == EquipStat.ManaCost;
 
         // 속성 능력치면 Element 번호(불 0, 물 1, 바람 2, 땅 3), 아니면 -1.
         public static int ElementIndex(EquipStat stat)
@@ -129,6 +134,8 @@ namespace IBlameYou.Player
                 case EquipStat.WaterDefense: return "물 방어";
                 case EquipStat.WindDefense: return "바람 방어";
                 case EquipStat.EarthDefense: return "땅 방어";
+                case EquipStat.MagicPower: return "마법 공격";
+                case EquipStat.ManaCost: return "마나 소모";
                 default: return stat.ToString();
             }
         }

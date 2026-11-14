@@ -97,6 +97,12 @@ namespace IBlameYou.Player
                     case EquipStat.MaxStamina:
                         if (stamina != null) stamina.AddMax(v, false);
                         break;
+                    case EquipStat.MagicPower:
+                        if (combat != null) combat.MagicDamageMultiplier += v;
+                        break;
+                    case EquipStat.ManaCost:
+                        if (mana != null) mana.EquipCostBonus += v;
+                        break;
                     default:
                         if (combat == null || element < 0) break;
                         if (s.Stat <= EquipStat.EarthDamage) combat.Stats.elementDamage[element] += v;

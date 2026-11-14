@@ -15,7 +15,6 @@ namespace IBlameYou.Core
         private const string KeyBestGold = "Best.Gold"; // 한 판에 모은 골드(RunStats.GoldEarned) 최고
         private const string KeyRecentClears = "Recent.Clears";
         private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
-        private const string KeyRecentBlame = "Recent.Blame";
         private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
 
@@ -115,15 +114,6 @@ namespace IBlameYou.Core
         public static int RecentDefeatAverage(bool devMode) =>
             ClearPace.RecentDefeatAverage(PlayerPrefs.GetString(ModeKey(KeyRecentDefeats, devMode), ""));
 
-        // 최근 10판 "누구 탓?" 판정 (BlameVerdict.AddRecent 형식). 모드별로 따로. 클리어·게임오버 모두.
-        public static void RecordBlame(float wastedA, float wastedB)
-        {
-            if (GameSession.FeatureTest) return;
-            string key = ModeKey(KeyRecentBlame, GameSession.DevMode);
-            PlayerPrefs.SetString(key, BlameVerdict.AddRecent(PlayerPrefs.GetString(key, ""), BlameVerdict.Judge(wastedA, wastedB)));
-            PlayerPrefs.Save();
-        }
-
         // 유물 도감: 한 번이라도 고른 유물 (RelicCodex 비트 마스크). 모드별로 따로.
         public static long RelicCodexMask(bool devMode) =>
             RelicCodex.Join(PlayerPrefs.GetInt(ModeKey(KeyRelicCodex, devMode), 0), PlayerPrefs.GetInt(ModeKey(KeyRelicCodexHigh, devMode), 0));
@@ -145,14 +135,6 @@ namespace IBlameYou.Core
         public static string RelicCodexSummary(bool devMode, int total) => RelicCodex.Summary(RelicCodexMask(devMode), total);
 
         public static bool RelicCodexComplete(bool devMode, int total) => RelicCodex.Complete(RelicCodexMask(devMode), total);
-
-        // 시작 화면용 "최근 N판 탓: A a · B b — B: 마나 먹는 하마" 한 줄 (끝은 탓 칭호). 기록이 없으면 빈 문자열.
-        public static string RecentBlameSummary(bool devMode)
-        {
-            string list = PlayerPrefs.GetString(ModeKey(KeyRecentBlame, devMode), "");
-            string summary = BlameVerdict.RecentSummary(list);
-            return string.IsNullOrEmpty(summary) ? "" : summary + " — " + BlameVerdict.RecentTitle(list);
-        }
 
         // 도달한 레벨을 기록한다. 이전 최고보다 높으면 true.
         public static bool RecordLevel(int level)

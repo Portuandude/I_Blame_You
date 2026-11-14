@@ -47,7 +47,9 @@ namespace IBlameYou.Core
             if (enemy == null || RunStats.Ended && !(enemy is SlimeKingController)) return;
             if (enemy.GetComponent<BossSummon>() != null) return; // 보스가 되풀이해 소환하는 적은 골드 없음
             var rank = RankOf(enemy);
-            int amount = GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
+            bool treasure = enemy is TreasureGoblinController; // 보물 고블린: 10초 안에 잡으면 큰 골드 (Chunks/TreasureGoblinRule)
+            int amount = treasure ? TreasureGoblinRule.Gold(UnityEngine.Random.value)
+                : GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
             var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
             if (relics != null && relics.Has(RelicId.LuckyPouch))
             {
@@ -63,6 +65,11 @@ namespace IBlameYou.Core
 
             RunStats.AddGold(amount);
             LaunchCoins(enemy.transform.position + Vector3.up * 0.5f, target, amount);
+            if (treasure)
+            {
+                StageEvents.PostNotice($"보물 고블린을 잡았다! 골드 +{amount}");
+                GameAudio.PlaySfx("CoinPile", 0.9f, 0f);
+            }
         }
 
         // 돼지 저금통 (2026-11-12): 판에서 처음 찾은 마을에 들어갈 때 (ChunkStreamer.EnterRoom). 화면에 보이는 골드(아직 날아오는 몫 제외)의

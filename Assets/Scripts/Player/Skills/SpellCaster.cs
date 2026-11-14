@@ -64,7 +64,7 @@ namespace IBlameYou.Player
             {
                 if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
                 {
-                    SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost:0})", true);
+                    SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
                     return;
                 }
 
@@ -88,7 +88,7 @@ namespace IBlameYou.Player
 
             if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
                 return;
             }
 

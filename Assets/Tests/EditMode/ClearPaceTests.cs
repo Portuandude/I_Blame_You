@@ -9,7 +9,7 @@ namespace IBlameYou.Tests.EditMode
         public void FasterThanTarget_IsGreenAndSaysFast()
         {
             Assert.IsTrue(ClearPace.IsFast(817f, 900f));
-            Assert.AreEqual("목표 15분 00초보다 1분 23초 빠름 · 방 22개 (주 경로 19 · 곁방 3)",
+            Assert.AreEqual("목표 15분 00초보다 1분 23초 빠름 · 방 22개",
                 ClearPace.Describe(817.6f, 900f, 19, 3));
         }
 
@@ -17,7 +17,7 @@ namespace IBlameYou.Tests.EditMode
         public void SlowerThanTarget_IsOrangeAndSaysSlow()
         {
             Assert.IsFalse(ClearPace.IsFast(965f, 900f));
-            Assert.AreEqual("목표 15분 00초보다 1분 05초 느림 · 방 20개 (주 경로 18 · 곁방 2)",
+            Assert.AreEqual("목표 15분 00초보다 1분 05초 느림 · 방 20개",
                 ClearPace.Describe(965f, 900f, 18, 2));
         }
 
@@ -31,7 +31,7 @@ namespace IBlameYou.Tests.EditMode
         [Test]
         public void Defeat_ShowsRoomDistanceSideRoomFarthestAndTime()
         {
-            Assert.AreEqual("쓰러진 곳: 시작 방에서 3칸 (곁방) · 가장 멀리 4칸 · 버틴 시간 5분 12초",
+            Assert.AreEqual("쓰러진 곳: 시작 방에서 3칸 · 가장 멀리 4칸 · 버틴 시간 5분 12초",
                 ClearPace.DescribeDefeat(3, 4, true, 312.9f));
             // 가장 먼 곳이 지금 방이면 "가장 멀리"는 뺀다. 시간이 0이면 시간도 뺀다.
             Assert.AreEqual("쓰러진 곳: 시작 방에서 5칸", ClearPace.DescribeDefeat(5, 5, false, 0f));

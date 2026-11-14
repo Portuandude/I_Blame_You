@@ -25,6 +25,10 @@ namespace IBlameYou.Systems
         // 레벨업 특성용 배율: 재생 속도, 소모량, 헛되이 날린 마나 중 돌려받는 비율.
         public float RegenMultiplier { get; set; } = 1f;
         public float CostMultiplier { get; set; } = 1f;
+        // 장비 수식어 "마나 소모" 합 (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
+        public float EquipCostBonus { get; set; }
+        // 실제로 곱하는 마나 소모 배율 (장비로 0.4 아래로는 내려가지 않음).
+        public float TotalCostMultiplier => CostMultiplier * Mathf.Max(0.4f, 1f + EquipCostBonus);
         public float WastedRefundRatio { get; set; }
         public float Current => current;
         public bool Infinite { get; set; } // 개발자 모드 치트
@@ -32,7 +36,7 @@ namespace IBlameYou.Systems
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
         public event Action<float, float> ManaChanged;
 
-        // (누가, 얼마나, 헛되이 날렸는지) — 서로 탓하기 로그/HUD용.
+        // (누가, 얼마나, 헛되이 날렸는지) — 결과 창 A/B 날린 마나용.
         public event Action<ManaUser, float, bool> ManaSpent;
 
         public float SpentBy(ManaUser user) => spentByUser[(int)user];
@@ -77,7 +81,7 @@ namespace IBlameYou.Systems
         public bool TryConsume(float amount, ManaUser user)
         {
             if (amount <= 0f) return true;
-            amount *= CostMultiplier;
+            amount *= TotalCostMultiplier;
             if (!HasEnough(amount))
             {
                 if (ShortfallCover == null || !ShortfallCover(user, amount - current)) return false;
@@ -97,7 +101,7 @@ namespace IBlameYou.Systems
         {
             wastedByUser[(int)user] += amount;
             ManaSpent?.Invoke(user, amount, true);
-            if (WastedRefundRatio > 0f && !Infinite) SetCurrent(current + amount * CostMultiplier * WastedRefundRatio);
+            if (WastedRefundRatio > 0f && !Infinite) SetCurrent(current + amount * TotalCostMultiplier * WastedRefundRatio);
         }
 
         private void SetCurrent(float value)

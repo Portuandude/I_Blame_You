@@ -15,8 +15,18 @@ namespace IBlameYou.Player
     //   넘패드 1~5: 속성 방어막 → W/A/S/D 순서 입력
     //
     // 개발자 모드: 상단 1~5 = A 방어막 즉시, 6~9·0 = B 공격 스킬 즉시 (미니게임 생략).
+    // 기능 테스트의 A/B 전환 (2026-11-14 사람 결정 ④ 두 사람 플레이 첫 단계): 한 사람이 한 역할만 조작해 보며 각자 무엇을 하는지 시험한다.
+    public enum ControlFocus { Both, A, B }
+
     public static class RoleInput
     {
+        // Both = 평소 (한 키보드로 둘 다). A = A 입력만 받고 B(마우스 공격·공격 스킬)는 막는다. B = 그 반대.
+        // 기능 테스트에서 ` 키로 바꾼다 (FeatureTestTools). 시험 맵을 나가면 Both로 돌아간다.
+        public static ControlFocus Focus { get; set; } = ControlFocus.Both;
+
+        private static bool ABlocked(PlayerControlState state) => state.AKeyboardBlocked || Focus == ControlFocus.B;
+        private static bool BBlocked => Focus == ControlFocus.A;
+
         private static readonly KeyCode[] NumpadKeys = { KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4, KeyCode.Keypad5 };
         private static readonly KeyCode[] TopRowFirstFive = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5 };
         private static readonly KeyCode[] TopRowLastFive = { KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9, KeyCode.Alpha0 };
@@ -25,7 +35,7 @@ namespace IBlameYou.Player
 
         public static float MoveAxis(PlayerControlState state)
         {
-            if (state.AKeyboardBlocked || state.MovementFrozen) return 0f;
+            if (ABlocked(state) || state.MovementFrozen) return 0f;
             float axis = 0f;
             if (Input.GetKey(KeyCode.D)) axis += 1f;
             if (Input.GetKey(KeyCode.A)) axis -= 1f;
@@ -33,20 +43,20 @@ namespace IBlameYou.Player
         }
 
         public static bool JumpDown(PlayerControlState state) =>
-            !state.AKeyboardBlocked && !state.MovementFrozen && Input.GetKeyDown(KeyCode.Space);
+            !ABlocked(state) && !state.MovementFrozen && Input.GetKeyDown(KeyCode.Space);
 
         // 점프 키를 누르고 있는지 (짧게 누르면 낮은 점프). 막혀 있으면 뗀 것으로 본다.
         public static bool JumpHeld(PlayerControlState state) =>
-            !state.AKeyboardBlocked && Input.GetKey(KeyCode.Space);
+            !ABlocked(state) && Input.GetKey(KeyCode.Space);
 
         public static bool RunHeld(PlayerControlState state) =>
-            !state.AKeyboardBlocked && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+            !ABlocked(state) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
         public static bool DashDown(PlayerControlState state) =>
-            !state.AKeyboardBlocked && !state.MovementFrozen && Input.GetKeyDown(KeyCode.LeftControl);
+            !ABlocked(state) && !state.MovementFrozen && Input.GetKeyDown(KeyCode.LeftControl);
 
         public static bool TeleportDown(PlayerControlState state) =>
-            !state.AKeyboardBlocked && !state.MovementFrozen &&
+            !ABlocked(state) && !state.MovementFrozen &&
             (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter));
 
         // 마을 건물 등 앞에서 상호작용: ↑를 누르거나 W를 짧게 톡 (떼는 순간).
@@ -59,19 +69,19 @@ namespace IBlameYou.Player
         {
             if (Input.GetKeyDown(KeyCode.W))
             {
-                interactWDownAt = state.AKeyboardBlocked || state.MovementFrozen ? -1f : Time.unscaledTime; // 잠긴 동안(창을 W로 닫은 프레임 등) 누른 W는 톡으로 치지 않는다
+                interactWDownAt = ABlocked(state) || state.MovementFrozen ? -1f : Time.unscaledTime; // 잠긴 동안(창을 W로 닫은 프레임 등) 누른 W는 톡으로 치지 않는다
                 interactEnterDuringW = false;
             }
             if (Input.GetKey(KeyCode.W) && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))) interactEnterDuringW = true;
             bool tap = Input.GetKeyUp(KeyCode.W) && interactWDownAt >= 0f && !interactEnterDuringW
                 && Time.unscaledTime - interactWDownAt <= InteractTapSeconds;
             if (Input.GetKeyUp(KeyCode.W)) interactWDownAt = -1f;
-            return !state.AKeyboardBlocked && !state.MovementFrozen && (tap || Input.GetKeyDown(KeyCode.UpArrow));
+            return !ABlocked(state) && !state.MovementFrozen && (tap || Input.GetKeyDown(KeyCode.UpArrow));
         }
 
         // 바람 구멍 기둥 안에서 S를 누르고 있으면 천천히 내려간다 (WindVent). 순간이동은 Enter를 눌러야 하므로 겹치지 않는다.
         public static bool DescendHeld(PlayerControlState state) =>
-            !state.AKeyboardBlocked && !state.MovementFrozen && Input.GetKey(KeyCode.S);
+            !ABlocked(state) && !state.MovementFrozen && Input.GetKey(KeyCode.S);
 
         // 순간이동 방향: 누르고 있는 W/A/S/D (대각선 가능, 네 방향 고르기는 TeleportRules.Cardinal). 아무것도 안 누르면 zero.
         public static Vector2 TeleportDirection()
@@ -87,7 +97,7 @@ namespace IBlameYou.Player
         public static bool ShieldDown(PlayerControlState state, out Element element)
         {
             element = Element.Neutral;
-            if (state.AKeyboardBlocked || state.ShieldMinigameActive) return false;
+            if (ABlocked(state) || state.ShieldMinigameActive) return false;
             return GetIndexedKeyDown(GameSession.DevMode ? TopRowFirstFive : NumpadKeys, out element);
         }
 
@@ -95,6 +105,7 @@ namespace IBlameYou.Player
         public static bool MinigameArrowDown(out char key)
         {
             key = '\0';
+            if (Focus == ControlFocus.B) return false; // B만 조작 중이면 A의 방패 미니게임 입력도 막는다
             if (Input.GetKeyDown(KeyCode.W)) key = 'W';
             else if (Input.GetKeyDown(KeyCode.A)) key = 'A';
             else if (Input.GetKeyDown(KeyCode.S)) key = 'S';
@@ -104,7 +115,7 @@ namespace IBlameYou.Player
 
         // ---- 플레이어 B ----
 
-        public static bool AttackDown(PlayerControlState state) => !state.Locked && !state.ChantActive && Input.GetMouseButtonDown(0);
+        public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && Input.GetMouseButtonDown(0);
 
         public static Vector2 AimWorldPoint(Vector2 fallback)
         {
@@ -118,7 +129,7 @@ namespace IBlameYou.Player
         public static bool SpellDown(PlayerControlState state, out Element element)
         {
             element = Element.Neutral;
-            if (state.Locked || state.ChantActive) return false;
+            if (BBlocked || state.Locked || state.ChantActive) return false;
             if (GameSession.DevMode) return GetIndexedKeyDown(TopRowLastFive, out element);
             if (state.ShieldMinigameActive && GameSession.SharedKeyboard) return false;
             return GetIndexedKeyDown(TopRowFirstFive, out element);

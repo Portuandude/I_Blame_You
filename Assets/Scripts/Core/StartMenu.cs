@@ -414,7 +414,7 @@ namespace IBlameYou.Core
 
         private static readonly string[] Tips =
         {
-            "B가 영창을 틀리면 마나만 날아간다. 누구 탓인지는 기록된다",
+            "B가 영창을 틀리면 마나만 날아간다. 결과 창에 A·B가 날린 마나가 나온다",
             "순간이동은 W/A/S/D+Enter. 아래로 가면 발판을 뚫고 내려간다",
             "안 가 본 방 문 앞에는 금빛 마름모가 반짝인다",
             "마을은 스테이지마다 하나. 식당에서 배를 채우고 상점에서 장비를 산다",
@@ -428,7 +428,7 @@ namespace IBlameYou.Core
 
         private const string IntroText = "한 마법사를 두 사람이 나눠 조작한다. A는 이동·방어, B는 공격. 마나는 하나뿐이다.";
 
-        // 기록 줄(최고·최근 클리어·쓰러진 곳·탓)이 늘어 낮은 창에서 버튼을 밀어내지 않게:
+        // 기록 줄(최고·최근 클리어·쓰러진 곳)이 늘어 낮은 창에서 버튼을 밀어내지 않게:
         // 다 들어가면 보통 글씨, 모자라면 작은 글씨, 그래도 모자라면 첫 줄만 두고 "기록 더 보기 (H)"로 접는다.
         private void DrawRecords(float innerWidth, float innerHeight)
         {
@@ -500,8 +500,7 @@ namespace IBlameYou.Core
             if (!string.IsNullOrEmpty(recent)) line += "\n" + recent;
             string defeats = SaveData.RecentDefeatSummary(dev); // 최근 쓰러진 판들이 간 방 거리 평균 (어려운 구간 찾기용)
             if (!string.IsNullOrEmpty(defeats)) line += "\n" + defeats;
-            string blame = SaveData.RecentBlameSummary(dev); // 최근 10판 누구 탓 (서로 놀릴 거리)
-            return string.IsNullOrEmpty(blame) ? line : line + "\n" + blame;
+            return line;
         }
 
         private const string DevModeHelp =

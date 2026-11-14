@@ -56,6 +56,7 @@ namespace IBlameYou.Enemies
         {
             if (objectName == "Slime" || objectName == "SlimeKing" || objectName.StartsWith("Slime_") || objectName == "MotherSlime" || objectName.StartsWith("SlimeKnight"))
                 return "Slime";
+            if (objectName == "TreasureGoblin") return "Goblin"; // 보물 고블린은 고블린 그림을 금빛으로 물들여 쓴다
             return objectName;
         }
 

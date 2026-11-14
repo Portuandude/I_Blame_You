@@ -47,7 +47,7 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void RollBonusRaisesGradeButNotPastLegendary()
+        public void RollBonusRaisesGradeButNotPastHero()
         {
             var rng = new Random(3);
             bool sawMax = false;
@@ -64,36 +64,75 @@ namespace IBlameYou.Tests
         [Test]
         public void PriceAndSellPriceFollowModifier()
         {
-            Assert.AreEqual(50, new EquipmentItem(EquipmentId.EmberStaff, 0).Price);
-            Assert.AreEqual(95, new EquipmentItem(EquipmentId.EmberStaff, 2).Price);   // 50 × 1.9
-            Assert.AreEqual(140, new EquipmentItem(EquipmentId.EmberStaff, 3).Price);  // 50 × 2.8
-            Assert.AreEqual(20, new EquipmentItem(EquipmentId.EmberStaff, -2).Price);  // 50 × 0.4
-            Assert.AreEqual(38, new EquipmentItem(EquipmentId.EmberStaff, 2).SellPrice); // 95 × 0.4
-            Assert.AreEqual(12, new EquipmentItem(EquipmentId.ApprenticeRobe, -2).Price); // 30 × 0.4
+            Assert.AreEqual(50, new EquipmentItem(EquipmentId.EmberStaff, 0).Price);   // 흔한
+            Assert.AreEqual(70, new EquipmentItem(EquipmentId.EmberStaff, 1).Price);   // 숙련자의 50 × 1.4
+            Assert.AreEqual(100, new EquipmentItem(EquipmentId.EmberStaff, 2).Price);  // 영웅의 50 × 2
+            Assert.AreEqual(35, new EquipmentItem(EquipmentId.EmberStaff, -1).Price);  // 비틀린 50 × 0.7
+            Assert.AreEqual(40, new EquipmentItem(EquipmentId.EmberStaff, 2).SellPrice); // 100 × 0.4
+            Assert.AreEqual(21, new EquipmentItem(EquipmentId.ApprenticeRobe, -1).Price); // 30 × 0.7
         }
 
         [Test]
-        public void NameShowsModifierExceptNormal()
+        public void NameAlwaysShowsModifier()
         {
-            Assert.AreEqual("불씨 지팡이", new EquipmentItem(EquipmentId.EmberStaff, 0).Name);
-            Assert.AreEqual("빛나는 불씨 지팡이", new EquipmentItem(EquipmentId.EmberStaff, 2).Name);
-            Assert.AreEqual("부서진 견습생 로브", new EquipmentItem(EquipmentId.ApprenticeRobe, -2).Name);
+            Assert.AreEqual("흔한 불씨 지팡이", new EquipmentItem(EquipmentId.EmberStaff, 0).Name);
+            Assert.AreEqual("영웅의 불씨 지팡이", new EquipmentItem(EquipmentId.EmberStaff, 2).Name);
+            Assert.AreEqual("숙련자의 불씨 지팡이", new EquipmentItem(EquipmentId.EmberStaff, 1).Name);
+            Assert.AreEqual("비틀린 견습생 로브", new EquipmentItem(EquipmentId.ApprenticeRobe, -1).Name);
+            Assert.AreEqual("비틀린 견습생 로브", new EquipmentItem(EquipmentId.ApprenticeRobe, -5).Name, "범위 밖 등급은 끝으로 자른다");
         }
 
         [Test]
-        public void StatsScaleAndNeverDropToZero()
+        public void ModifierKeepsBaseStatsAndAddsMagicAndManaCost()
         {
-            var legend = new EquipmentItem(EquipmentId.MossRobe, 3).Stats();
-            Assert.AreEqual(6f, legend[0].Value);  // 방어력 3 × 2
-            Assert.AreEqual(20f, legend[1].Value); // 체력 10 × 2
+            var def = EquipmentBook.Get(EquipmentId.MossRobe);
+            foreach (int grade in new[] { -1, 0, 1, 2 })
+            {
+                var stats = new EquipmentItem(EquipmentId.MossRobe, grade).Stats();
+                for (int i = 0; i < def.Stats.Length; i++)
+                {
+                    Assert.AreEqual(def.Stats[i].Stat, stats[i].Stat);
+                    Assert.AreEqual(def.Stats[i].Value, stats[i].Value, $"등급 {grade}: 기본 능력치는 그대로");
+                }
+            }
 
-            var broken = new EquipmentItem(EquipmentId.EmberStaff, -2).Stats();
-            Assert.AreEqual(1f, broken[0].Value, "물리 피해 1 × 0.5 = 0.5 → 사라지지 않고 1");
-            Assert.AreEqual(3f, broken[1].Value, "불 피해 5 × 0.5 = 2.5 → 반올림 3");
+            Assert.AreEqual(def.Stats.Length, new EquipmentItem(EquipmentId.MossRobe, 0).Stats().Count, "흔한은 더하는 것 없음");
 
-            var bolt = new EquipmentItem(EquipmentId.BoltShoes, 1).Stats();
-            Assert.AreEqual(0.0625f, bolt[0].Value, 1e-5, "비율 능력치는 반올림하지 않는다");
-            Assert.AreEqual(0.025f, bolt[1].Value, 1e-5);
+            var twisted = new EquipmentItem(EquipmentId.MossRobe, -1).Stats();
+            Assert.AreEqual(-EquipmentModifier.MagicBig, Find(twisted, EquipStat.MagicPower), 1e-6, "비틀린: 마법 공격 --");
+            Assert.AreEqual(EquipmentModifier.CostStep, Find(twisted, EquipStat.ManaCost), 1e-6, "비틀린: 마나 소모 +");
+
+            var skilled = new EquipmentItem(EquipmentId.MossRobe, 1).Stats();
+            Assert.IsFalse(Has(skilled, EquipStat.MagicPower), "숙련자의: 마법 공격 변화 없음");
+            Assert.AreEqual(-EquipmentModifier.CostStep, Find(skilled, EquipStat.ManaCost), 1e-6, "숙련자의: 마나 소모 -");
+
+            var hero = new EquipmentItem(EquipmentId.MossRobe, 2).Stats();
+            Assert.AreEqual(EquipmentModifier.MagicBig, Find(hero, EquipStat.MagicPower), 1e-6, "영웅의: 마법 공격 ++");
+            Assert.AreEqual(-EquipmentModifier.CostStep, Find(hero, EquipStat.ManaCost), 1e-6, "영웅의: 마나 소모 -");
+        }
+
+        [Test]
+        public void ModifierStatsDescribeAsPercent()
+        {
+            Assert.AreEqual("마법 공격 +15%", EquipmentBook.Describe(new StatValue(EquipStat.MagicPower, 0.15f)));
+            Assert.AreEqual("마나 소모 -10%", EquipmentBook.Describe(new StatValue(EquipStat.ManaCost, -0.1f)));
+            Assert.IsTrue(EquipmentBook.LowerIsBetter(EquipStat.ManaCost));
+            Assert.IsFalse(EquipmentBook.LowerIsBetter(EquipStat.MagicPower));
+            Assert.AreEqual(-1, EquipmentBook.ElementIndex(EquipStat.MagicPower));
+            Assert.AreEqual(-1, EquipmentBook.ElementIndex(EquipStat.ManaCost));
+        }
+
+        private static float Find(List<StatValue> stats, EquipStat stat)
+        {
+            foreach (var s in stats) if (s.Stat == stat) return s.Value;
+            Assert.Fail(stat + " 없음");
+            return 0f;
+        }
+
+        private static bool Has(List<StatValue> stats, EquipStat stat)
+        {
+            foreach (var s in stats) if (s.Stat == stat) return true;
+            return false;
         }
 
         [Test]

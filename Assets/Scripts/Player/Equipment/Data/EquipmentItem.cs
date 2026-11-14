@@ -24,15 +24,8 @@ namespace IBlameYou.Player
         public EquipmentDef Def => EquipmentBook.Get(Id);
         public EquipSlot Slot => Def.Slot;
 
-        // "빛나는 불씨 지팡이" (보통이면 장비 이름만)
-        public string Name
-        {
-            get
-            {
-                string modifier = EquipmentModifier.Name(Grade);
-                return modifier.Length == 0 ? Def.Name : modifier + " " + Def.Name;
-            }
-        }
+        // "영웅의 불씨 지팡이" (수식어는 늘 붙는다, 흔한 포함)
+        public string Name => EquipmentModifier.Name(Grade) + " " + Def.Name;
 
         public int Price => Math.Max(MinPrice, RoundAway(Def.BasePrice * EquipmentModifier.PriceMultiplier(Grade)));
 
@@ -40,24 +33,11 @@ namespace IBlameYou.Player
 
         public int RerollCost => Math.Max(MinPrice, RoundAway(Def.BasePrice * RerollBaseRatio * Math.Pow(RerollGrowth, RerollCount)));
 
-        // 수식어 배율을 곱한 능력치. 정수 능력치는 반올림하고, 값이 있던 능력치는 0이 되지 않게 크기 1 이상으로 둔다.
+        // 장비 기본 능력치 그대로 + 수식어가 더하는 마법 공격·마나 소모 (2026-11-14 수식어 4종).
         public List<StatValue> Stats()
         {
-            float mult = EquipmentModifier.StatMultiplier(Grade);
-            var list = new List<StatValue>();
-            foreach (var s in Def.Stats)
-            {
-                float v = s.Value * mult;
-                if (!EquipmentBook.IsPercent(s.Stat))
-                {
-                    int rounded = RoundAway(v);
-                    if (rounded == 0) rounded = s.Value < 0 ? -1 : 1;
-                    v = rounded;
-                }
-
-                list.Add(new StatValue(s.Stat, v));
-            }
-
+            var list = new List<StatValue>(Def.Stats);
+            list.AddRange(EquipmentModifier.Stats(Grade));
             return list;
         }
 

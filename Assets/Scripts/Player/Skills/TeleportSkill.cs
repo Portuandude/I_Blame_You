@@ -85,7 +85,7 @@ namespace IBlameYou.Player
 
             if (!mana.TryConsume(ManaCost, ManaUser.PlayerA))
             {
-                SkillMessages.Post(ManaUser.PlayerA, $"마나 부족: 순간이동 (필요 {ManaCost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerA, $"마나 부족: 순간이동 (필요 {ManaCost * mana.TotalCostMultiplier:0})", true);
                 return;
             }
 

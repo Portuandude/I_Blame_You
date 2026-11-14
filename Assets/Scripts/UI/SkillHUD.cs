@@ -10,7 +10,7 @@ namespace IBlameYou.UI
 {
     // 테스트용 화면 UI (IMGUI). 정식 UI 아트가 생기기 전까지 이걸로 확인한다.
     // - 좌상단: 체력·마나 바 (SkillHUD.Bars.cs), A와 B가 쓴/날린 마나, 경험치, 모드
-    // - 우상단: 스킬 알림 피드 (실패는 빨간색, 마나 부족이면 최근에 마나를 많이 쓴 쪽을 탓함)
+    // - 우상단: 스킬 알림 피드 (실패는 빨간색)
     // - 중앙: A의 방어막 미니게임(W/A/S/D 순서), B의 영창 입력창
     // - 좌상단 아래: 스테이지 이름 꼬리표·골드, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내 (사망 연출: SkillHUD.Death.cs)
@@ -21,17 +21,7 @@ namespace IBlameYou.UI
     {
         private const int MaxFeed = 7;
         private const float FeedLifetime = 6f;
-        private const float BlameWindow = 6f; // 이 시간 안에 상대가 쓴 마나를 "탓할 거리"로 본다
-
-        private struct SpendRecord
-        {
-            public float Time;
-            public ManaUser User;
-            public float Amount;
-        }
-
         private readonly List<FeedEntry> feed = new List<FeedEntry>();
-        private readonly List<SpendRecord> recentSpending = new List<SpendRecord>();
 
         private HealthSystem health;
         private ManaSystem mana;
@@ -78,7 +68,6 @@ namespace IBlameYou.UI
             progression = player.GetComponent<PlayerProgression>();
             cheats = devCheats;
 
-            mana.ManaSpent += OnManaSpent;
             SkillMessages.Posted += OnSkillMessage;
             StageEvents.Notice += OnStageNotice;
             StageEvents.Cleared += OnStageCleared;
@@ -129,7 +118,6 @@ namespace IBlameYou.UI
 
         private void OnDestroy()
         {
-            if (mana != null) mana.ManaSpent -= OnManaSpent;
             SkillMessages.Posted -= OnSkillMessage;
             StageEvents.Notice -= OnStageNotice;
             StageEvents.Cleared -= OnStageCleared;
@@ -149,11 +137,6 @@ namespace IBlameYou.UI
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
             if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
-        }
-
-        private void OnManaSpent(ManaUser user, float amount, bool wasted)
-        {
-            if (!wasted) recentSpending.Add(new SpendRecord { Time = Time.time, User = user, Amount = amount });
         }
 
         private void OnStageNotice(string text)
@@ -178,7 +161,6 @@ namespace IBlameYou.UI
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
             SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms + StageEvents.SideRooms); // 시작 화면 최근 5판 평균
-            SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
             if (progression != null) SaveData.RecordLevel(progression.Level);
             RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs)
             control.Locked = true;
@@ -188,33 +170,12 @@ namespace IBlameYou.UI
         {
             string line = $"[{SkillMessages.RoleName(who)}] {text}";
 
-            // 마나가 모자랐다면, 최근에 상대가 더 많이 썼을 때 상대 탓을 한 줄 덧붙인다.
-            if (bad && text.StartsWith("마나 부족") && (who == ManaUser.PlayerA || who == ManaUser.PlayerB))
-            {
-                var other = who == ManaUser.PlayerA ? ManaUser.PlayerB : ManaUser.PlayerA;
-                float mine = RecentSpend(who);
-                float theirs = RecentSpend(other);
-                if (theirs > mine) line += $"  ← {SkillMessages.RoleName(other)}가 마나 {theirs:0}을 썼다! {SkillMessages.RoleName(other)} 탓!";
-            }
-
             var color = bad ? ColorBad : (who == ManaUser.PlayerA ? ColorA : ColorB);
             AddFeed(line, color, bad); // 같은 줄이 이미 있으면 ×N으로 합친다 (SkillHUD.Feed.cs)
         }
 
-        private float RecentSpend(ManaUser user)
-        {
-            float total = 0f;
-            foreach (var record in recentSpending)
-            {
-                if (record.User == user && Time.time - record.Time <= BlameWindow) total += record.Amount;
-            }
-
-            return total;
-        }
-
         private void Update()
         {
-            recentSpending.RemoveAll(r => Time.time - r.Time > BlameWindow);
             UpdateFeed(); // 다 된 줄 지우기·줄 위치 따라가기 (SkillHUD.Feed.cs)
 
             if (health == null) return;
@@ -231,11 +192,7 @@ namespace IBlameYou.UI
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
                 defeatUsualRooms = stageCleared ? -1 : SaveData.RecentDefeatAverage(GameSession.DevMode); // 이번 판을 기록하기 전 평균 ("평소보다 더/덜 갔다"), 클리어 뒤 쓰러짐은 비교 안 함
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
-                if (!stageCleared)
-                {
-                    SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
-                    SaveData.RecordBlame(mana.WastedBy(ManaUser.PlayerA), mana.WastedBy(ManaUser.PlayerB)); // 시작 화면 최근 탓 기록
-                }
+                if (!stageCleared) SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
                 if (!stageCleared) RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs), 클리어 뒤 쓰러짐은 이미 기록
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
@@ -419,7 +376,7 @@ namespace IBlameYou.UI
             float y = Screen.height * 0.62f;
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
-                $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost:0}) — 영창하라:", label);
+                $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
             GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
 
             var field = new Rect(x, y + 8f, width, 40f);

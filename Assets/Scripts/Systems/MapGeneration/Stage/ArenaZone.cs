@@ -49,6 +49,14 @@ namespace IBlameYou.Systems
         public bool HasBoss => bossFight; // 보스 구역이면 위쪽 가운데는 보스 체력바 자리
         public IEnumerable<HealthSystem> AliveEnemies => alive;
 
+        // 매복 구역 (Chunks/AmbushRule): 문이 닫히면 적이 바닥 소환 대신 위에서 떨어진다. 먼저 경고(바닥 타원 + 천장 먼지 + 알림) 뒤 AmbushWarnTime 만큼 기다린다.
+        public bool Ambush { get; set; }
+        private const float AmbushWarnTime = 0.9f;
+        private const float AmbushDropHeight = 6f;   // 떨어지기 시작하는 높이 (천장·발판이 낮으면 그 아래)
+        private const float AmbushCeilingMargin = 1.2f;
+        private const float AmbushMinDrop = 1.5f;    // 이보다 낮으면 그냥 제자리에 나온다
+        private static readonly Color AmbushWarnColor = new Color(0.95f, 0.3f, 0.2f);
+
         public bool IsCleared => cleared;
         public bool IsLocked => active; // 문이 닫혀 싸우는 중 (방 문 표시가 붉게)
         public Rect Area => area; // 구역 범위 (보스가 무작위 위치를 고를 때)
@@ -120,6 +128,13 @@ namespace IBlameYou.Systems
                 ScreenFlash.EdgeWarn(EliteWarnColor, 0.6f);
                 StageEvents.PostNotice("정예 등장!");
             }
+            else if (Ambush)
+            {
+                // 매복 경고: 경고음 + 화면 가장자리 붉은 깜빡임 + 안내. 적은 아래 AmbushWarnTime 뒤 위에서 떨어진다
+                GameAudio.PlaySfx("TrapWarn", 0.9f, 0f);
+                ScreenFlash.EdgeWarn(AmbushWarnColor, 0.5f);
+                StageEvents.PostNotice("매복이다! 위를 조심해!");
+            }
             else
             {
                 StageEvents.PostNotice("적을 모두 쓰러뜨려라!");
@@ -130,21 +145,35 @@ namespace IBlameYou.Systems
             foreach (var spawn in spawns) marks.Add(IsBoss(spawn) ? null : CreateSpawnMark(spawn.Position));
             StartCoroutine(PulseSpawnMarks(marks));
 
+            // 매복: 떨어질 자리 위 천장에서 먼지가 부슬부슬 떨어지며 잠깐 기다린다
+            var drops = new float[spawns.Count];
+            if (Ambush)
+            {
+                for (int i = 0; i < spawns.Count; i++)
+                {
+                    drops[i] = IsBoss(spawns[i]) ? 0f : AmbushDrop(spawns[i].Position);
+                    if (drops[i] > 0f) StartCoroutine(CeilingDust(spawns[i].Position + Vector3.up * (drops[i] + 0.6f)));
+                }
+                yield return new WaitForSeconds(AmbushWarnTime);
+            }
+
             for (int i = 0; i < spawns.Count; i++)
             {
                 var spawn = spawns[i];
-                if (marks[i] != null) Destroy(marks[i].gameObject);
+                bool falls = drops[i] > 0f; // 매복: 표시 타원은 남겨 두고 떨어지는 적이 땅에 닿을 때까지 보이게 (WatchLanding이 지운다)
+                if (marks[i] != null && !falls) Destroy(marks[i].gameObject);
                 bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
-                if (!dropsIn)
+                if (!dropsIn && !falls)
                 {
                     EffectLibrary.PlayOneShot(spawn.Position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.4f, 0.4f, 0.7f), 1.2f);
                     GameAudio.PlaySfx("Summon", 0.6f); // 붉은 연기 속에서 "뿅"
                 }
                 pendingSpawns--;
-                var spawned = spawnEnemy(spawn.Kind, spawn.Position, transform);
+                var spawned = spawnEnemy(spawn.Kind, falls ? spawn.Position + Vector3.up * drops[i] : spawn.Position, transform);
                 RegisterEnemy(spawned);
                 // 연기 속에서 길쭉하게 "뿅" 솟았다가 제 모양으로 (그림만, 판정·발 위치 그대로)
-                if (!dropsIn && spawned != null) IBlameYou.Enemies.EnemySquash.For(spawned.gameObject).Spawn();
+                if (!dropsIn && !falls && spawned != null) IBlameYou.Enemies.EnemySquash.For(spawned.gameObject).Spawn();
+                if (falls) StartCoroutine(WatchLanding(spawned, marks[i], spawn.Position.y));
                 yield return new WaitForSeconds(SpawnInterval);
             }
 
@@ -213,6 +242,38 @@ namespace IBlameYou.Systems
                 if (!any) yield break;
                 yield return null;
             }
+        }
+
+        // 매복 적이 떨어질 높이: 자리 위로 천장·발판이 있으면 그 아래까지. 너무 낮으면 0 (제자리 소환).
+        private static float AmbushDrop(Vector3 position)
+        {
+            float drop = AmbushDropHeight;
+            var hit = Physics2D.BoxCast(position + Vector3.up * 0.6f, new Vector2(1f, 0.2f), 0f, Vector2.up, AmbushDropHeight + AmbushCeilingMargin, 1 << TrapCommon.GroundLayer); // 몸 폭만큼 (발판 끝에 걸리지 않게)
+            if (hit.collider != null) drop = Mathf.Min(drop, hit.distance + 0.6f - AmbushCeilingMargin);
+            return drop >= AmbushMinDrop ? drop : 0f;
+        }
+
+        // 천장(떨어질 자리 위)에서 흙먼지가 세 번 부슬부슬
+        private IEnumerator CeilingDust(Vector3 point)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                VfxPlayer.Dust(point + Vector3.right * ((i - 1) * 0.35f), 0.45f);
+                yield return new WaitForSeconds(AmbushWarnTime / 3f);
+            }
+        }
+
+        // 떨어진 매복 적이 바닥(경고 타원 높이) 근처에 오거나 2초가 지나면 타원을 지우고 쿵 먼지 + 착지 소리.
+        private IEnumerator WatchLanding(HealthSystem enemy, SpriteRenderer mark, float groundY)
+        {
+            float until = Time.time + 2f;
+            while (enemy != null && !enemy.IsDead && Time.time < until && enemy.transform.position.y > groundY + 0.15f)
+                yield return null;
+            if (mark != null) Destroy(mark.gameObject);
+            if (enemy == null || enemy.IsDead || Time.time >= until) yield break;
+            var feet = new Vector3(enemy.transform.position.x, groundY - ChunkStreamer.SpawnLift, 0f);
+            VfxPlayer.Dust(feet, 0.9f);
+            GameAudio.PlaySfx("Land", 0.7f);
         }
 
         private void CreateGate(float x)
