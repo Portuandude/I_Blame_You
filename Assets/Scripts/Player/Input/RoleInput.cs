@@ -35,8 +35,10 @@ namespace IBlameYou.Player
         // P1(A)·P2(B) 각자의 "다음/건너뛰기" 버튼. 둘이 동시에 꾹 누르면 건너뛴다.
         // 지금은 한 키보드를 같이 써서 둘이 같은 Space를 따로 누를 수 없으므로 P2는 마우스 왼쪽(평타 버튼)이다.
         // 입력 장치가 나뉘면(패드·온라인) 여기만 P2의 Space로 바꾸면 된다.
-        public static bool StoryButtonA => Input.GetKey(KeyCode.Space);
-        public static bool StoryButtonB => Input.GetMouseButton(0);
+        // F12(임시, 2026-11-14 사람 지시): 혼자 시험할 때 두 사람이 동시에 누른 것으로 친다 — 꾹 누르면 건너뛰기 게이지가 찬다.
+        public static bool StorySkipBoth => Input.GetKey(KeyCode.F12);
+        public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || StorySkipBoth;
+        public static bool StoryButtonB => Input.GetMouseButton(0) || StorySkipBoth;
 
         // ---- 플레이어 A ----
 
