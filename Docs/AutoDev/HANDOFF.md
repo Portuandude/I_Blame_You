@@ -1,15 +1,15 @@
-# 인수인계 (2026-11-14 08:40 UTC)
+# 인수인계 (2026-11-14 10:05 UTC)
 
-- 브랜치/PR: `claude/project-thread-lla9qi` → #102 (develop 대상, GitHub 자동 머지 켬, `editmode` CI 대기, #101 head 위에 쌓음)
-- 하던 작업: 없음. 이번 실행 3개 DONE (보물 고블린 장비 떨굼, 깊은 방 무리 정예, 섞인 매복)
+- 브랜치/PR: `claude/project-thread-d6pdn6` → #104 (develop 대상, GitHub 자동 머지 켬, `editmode` CI 대기). #103은 머지됨
+- 하던 작업: 없음. 이번 실행 5개 DONE (매복 빠른 돌파 골드·남은 시간, 저주 상자 무리 처치 골드, 미니맵 장비 점, 궁수 탑 문턱 35% + 깊은 탑 파수꾼)
 - 바로 다음 할 일:
-  1) #101·#102가 머지됐으면 develop에서, 아니면 열린 PR 중 마지막 head 위에서 시작. CI가 실패했으면 그것부터 고친다.
+  1) #104가 머지됐으면 develop에서, 아니면 #104 head 위에서 시작. CI가 실패했으면 그것부터 고친다.
   2) 남은 기획 결정(② 숲 스테이지 2, ③ 런 사이 도시, 퍼즐+추리 보상 방)은 사람이 순서를 정해야 함 → 손대지 않는다.
   3) 백로그 TODO가 없으면 DIRECTION ①(콘텐츠) 안에서 3~5개 추가. 후보:
-     - 궁수 탑 변형: 난이도 80%+ 세로 방에서 궁수 하나를 고블린 병사(방패)로
-     - 저주 상자를 쫄몹 무리로 풀면 골드 조금 더 (무리 처치 보너스)
-     - 미니맵: 보물 고블린이 떨군 장비가 남은 방에 작은 점
-     - 매복 방 돌파 시간 기록 (빠르면 골드 +4)
-- 건드린 파일: `Chunks/TreasureGoblinRule.cs`(DropsEquipment), `Chunks/CursedChestRule.cs`(SwarmFor 난이도 오버로드), `Chunks/AmbushRule.cs`(IsMixed, BurrowsAt), `Stage/ChunkStreamer.cs`(DropGoblinEquipment, goblinEquipmentSpots, Mixed 설정), `Stage/ArenaZone.cs`(Mixed, 경고 루프 하나로), `Core/FeatureTestTools.cs`(F8 매복 3단계)
-- 알아낸 것: 보물 고블린 방에는 유물 상자·저주 상자가 없어 groundEquipment 키(방 번호)를 같이 써도 겹치지 않는다. 고블린이 도망칠 때는 Destroy만 해서 HealthChanged(0)가 오지 않는다.
-- 환경 메모: 로컬 mcs는 foreach 튜플 분해·지역 함수를 못 읽는다. `unity_meta.py add`가 만든 부모 폴더 .meta(추적 안 되는 것)는 지운다.
+     - 기능 테스트 F8 "궁수 탑"에 바닥 고블린 파수꾼도 (깊은 궁수 탑 시험)
+     - 저주 상자 정예 변형도 빠른 해제(25초 안)면 골드 조금
+     - 보물 고블린 방 들어갈 때 미니맵에 고블린 점이 이미 깜빡이는지 확인·다듬기
+     - 다른 방 이벤트 비율 점검 (궁수 탑처럼 거의 안 나오는 것이 있는지 60시드로 세어 보기)
+- 건드린 파일: `Chunks/AmbushRule.cs`(ClearGoldFor, IsFastClear), `Stage/ArenaZone.cs`(빠른 돌파 골드·ShowFastClearCountdown), `Chunks/CursedChestRule.cs`(SwarmClearGold), `Stage/CursedChest.cs`(Break(swarmGold)), `Stage/ChunkStreamer.cs`(HasGoblinEquipmentLeft, 무리 골드), `UI/MinimapUI.cs`(GearColor, 범례 장비), `Chunks/RoomShaper.cs`(ArcherTowerMinDifficulty 0.35, AddTowerGuard)
+- 알아낸 것: 위 문 있는 선반 세로 이동 방은 깊은 곳(난이도 0.5+)에 거의 없다 (60시드에 27개 중 0.5+는 2개). 깊은 방 변형 문턱을 세로 방에 걸 때는 먼저 세어 볼 것.
+- 환경 메모: 브랜치 PR이 머지된 뒤 force push는 자동 모드가 막는다 → develop을 브랜치에 merge 해서 일반 push. 로컬 mcs는 foreach 튜플 분해·지역 함수를 못 읽는다.
