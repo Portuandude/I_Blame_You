@@ -9,6 +9,14 @@ namespace IBlameYou.Systems
         public const int ChancePercent = 50;     // 조건에 맞는 전투 방의 절반
         public const int ClearGold = 8;          // 매복 방을 돌파하면 받는 골드 (2026-11-14, 일반 적 1~4 몇 마리 몫)
 
+        // 빠른 돌파 (2026-11-14 자동 실행): 문이 닫힌 뒤 FastClearTime초 안에 돌파하면 FastClearGold를 더 준다.
+        public const float FastClearTime = 20f;
+        public const int FastClearGold = 4;
+
+        public static bool IsFastClear(float seconds) => seconds <= FastClearTime;
+
+        public static int ClearGoldFor(float seconds) => ClearGold + (IsFastClear(seconds) ? FastClearGold : 0);
+
         // 변형 "땅속 매복" (2026-11-14 자동 실행): 매복 방의 1/3은 적이 천장 대신 바닥에서 튀어나온다 (벽 위 궁수 방 제외는 ChunkStreamer).
         // IsAmbush와 다른 해시라 어떤 방이 매복인지는 그대로다.
         public const int BurrowPercent = 33;
