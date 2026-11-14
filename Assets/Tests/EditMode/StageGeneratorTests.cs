@@ -654,9 +654,10 @@ namespace IBlameYou.Tests
                     foreach (int entry in new[] { 3, 8, 13 })
                     {
                         string tag = $"{kind} seed {seed} diff {difficulty} entry {entry}";
-                        var chunk = ChunkGenerator.Generate(seed, 3, kind, difficulty, entry, 0);
+                        var chunk = ChunkGenerator.Generate(seed, 2, kind, difficulty, entry, 0); // 짝수 번호: 버섯 (홀수는 바람 선반)
                         var mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom);
                         Assert.LessOrEqual(mushrooms.Count, 1, tag);
+                        Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.WindVent), tag + ": 짝수 번호에 바람 구멍");
                         if (difficulty < ChunkGenerator.BounceMinDifficulty) Assert.AreEqual(0, mushrooms.Count, tag + ": 문턱 아래");
                         foreach (var m in mushrooms)
                         {
@@ -684,6 +685,63 @@ namespace IBlameYou.Tests
             }
 
             return found;
+        }
+
+        // 바람 선반 (2026-11-14): 홀수 번호 평지·언덕 청크는 버섯 대신 선반 오른쪽 바로 옆 2칸 바람 구멍.
+        // 기둥 아래·선반 아래가 같은 평평한 바닥, 기둥 꼭대기 = 선반 서는 칸 + WindTopRise (천장 아래), 선반 위 동전, 기둥 위 적 없음.
+        // 자리가 없으면 버섯이 대신 나오고, 둘이 함께 나오지는 않는다. 청크 검증은 그대로 통과한다.
+        [Test]
+        public void OddChunksGetWindLedge()
+        {
+            int wind = 0, fallback = 0;
+            foreach (var kind in new[] { ChunkKind.Plains, ChunkKind.Hills })
+            {
+                for (int seed = 0; seed < 200; seed++)
+                {
+                    foreach (float difficulty in new[] { 0.05f, 0.3f, 0.8f })
+                    {
+                        foreach (int entry in new[] { 3, 8, 13 })
+                        {
+                            string tag = $"{kind} seed {seed} diff {difficulty} entry {entry}";
+                            var chunk = ChunkGenerator.Generate(seed, 3, kind, difficulty, entry, 0);
+                            var vents = chunk.Features.FindAll(f => f.Kind == FeatureKind.WindVent);
+                            int mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom).Count;
+                            Assert.LessOrEqual(vents.Count + mushrooms, 1, tag + ": 버섯·바람 선반은 청크마다 하나");
+                            if (difficulty < ChunkGenerator.BounceMinDifficulty) Assert.AreEqual(0, vents.Count + mushrooms, tag + ": 문턱 아래");
+                            fallback += mushrooms;
+                            foreach (var v in vents)
+                            {
+                                int ledgeRight = v.X - 1;
+                                int x = ledgeRight - ChunkGenerator.BounceLedgeHalf;
+                                int stand = v.Y + ChunkGenerator.BounceLedgeRise;
+                                Assert.AreEqual(RoomShaper.WindVentWidth, v.Width, tag);
+                                Assert.AreEqual(stand + RoomShaper.WindTopRise, v.Y + v.Direction, tag + ": 기둥 꼭대기");
+                                Assert.LessOrEqual(v.Y + v.Direction, ChunkData.Height - 2, tag + ": 천장 아래");
+                                for (int c = x - ChunkGenerator.BounceLedgeHalf; c <= ledgeRight; c++)
+                                {
+                                    Assert.AreEqual(StageTile.Platform, chunk.Get(c, stand - 1), tag + $": 선반 ({c})");
+                                    Assert.AreEqual(v.Y, Surface(chunk, c), tag + $": 선반 아래 평평 ({c})");
+                                }
+                                for (int c = v.X; c < v.X + v.Width; c++)
+                                {
+                                    Assert.AreEqual(v.Y, Surface(chunk, c), tag + $": 기둥 아래 평평 ({c})");
+                                    Assert.AreNotEqual(StageTile.Platform, chunk.Get(c, stand - 1), tag + $": 기둥 위가 막힘 ({c})");
+                                }
+                                Assert.LessOrEqual(Surface(chunk, v.X + v.Width), v.Y, tag + ": 기둥 오른쪽이 높음");
+                                Assert.LessOrEqual(Surface(chunk, x - ChunkGenerator.BounceLedgeHalf - 1), v.Y, tag + ": 선반 왼쪽이 높음");
+                                Assert.IsTrue(chunk.Features.Exists(f => f.Kind == FeatureKind.CoinPile && f.Y == stand
+                                    && f.X >= x - ChunkGenerator.BounceLedgeHalf && f.X <= ledgeRight), tag + ": 선반 위 동전");
+                                Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Enemy && f.X >= v.X - 1 && f.X <= v.X + v.Width), tag + ": 기둥 위 적");
+                                Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Spikes && f.X <= v.X + v.Width && f.X + System.Math.Max(1, f.Width) - 1 >= v.X - 1), tag + ": 기둥 아래 가시");
+                                Assert.IsTrue(StageValidator.Validate(chunk, out string reason), tag + ": " + reason);
+                                wind++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(wind, 400, $"바람 선반이 거의 안 나옴 (바람 {wind}, 버섯으로 대신 {fallback})");
         }
 
         // 동전 무더기 (섬·절벽 오르기): 문턱 아래에서는 없고, 섬은 마지막 단단한 섬 위, 절벽 오르기는 절벽 위 평지(지키는 적보다 뒤).
