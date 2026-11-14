@@ -295,7 +295,7 @@ namespace IBlameYou.UI
             return rooms + coins + villageText;
         }
 
-        // 결과 창 방 이벤트 줄 (2026-11-14 자동 실행): 이번 판에 만난 방 이벤트만 "매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f". 다 해낸 것은 금색. 하나도 안 만났으면 "".
+        // 결과 창 방 이벤트 줄 (2026-11-14 자동 실행): 이번 판에 만난 방 이벤트만 "매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f · 퍼즐 g/h". 다 해낸 것은 금색. 하나도 안 만났으면 "".
         private string RoomEventText()
         {
             if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
@@ -307,6 +307,7 @@ namespace IBlameYou.UI
             if (tally.AmbushMet > 0) parts.Add(EventPart("매복 돌파", tally.AmbushCleared, tally.AmbushMet));
             if (tally.CursedMet > 0) parts.Add(EventPart("저주 상자 해제", tally.CursedSolved, tally.CursedMet));
             if (tally.GoblinMet > 0) parts.Add(EventPart("보물 고블린", tally.GoblinCaught, tally.GoblinMet));
+            if (tally.PuzzleMet > 0) parts.Add(EventPart("퍼즐", tally.PuzzleSolved, tally.PuzzleMet));
             return string.Join(" · ", parts);
         }
 

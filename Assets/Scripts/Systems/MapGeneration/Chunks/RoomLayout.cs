@@ -25,7 +25,7 @@ namespace IBlameYou.Systems
     {
         Start,
         Travel,    // 이동 방 (지형·함정·쫄몹). 2026-11-14 사람 결정으로 방 격자에서는 더 나오지 않는다 (기능 테스트·옛 외길 스테이지용)
-        Puzzle,    // 퍼즐 방: 몹이 나오지 않는다 (2026-11-14). 추리+퍼즐 방이 생기기 전까지는 이중 스위치 발판·속성 봉인문 지형
+        Puzzle,    // 퍼즐 방: 몹이 나오지 않는다 (2026-11-14). 이중 스위치 발판 하나 + 퍼즐 하나 (등불 순서·거울 룬·방어막 다리) (Docs/PuzzleRoomDesign.md)
         Combat,    // 들어가면 문이 잠기는 전투 방. 좌우 방은 앞 구간에 기믹 지형, 세로 방(탑·굴)은 바닥 전체가 전투 구역
         Elite,     // 정예 전투 방 (유물 상자)
         Rest,      // 숨 고르기 방 (전투 사이 완충. 체크포인트는 2026-11-10 제거)
@@ -440,7 +440,7 @@ namespace IBlameYou.Systems
             rest.Sort((a, b) => a.Distance.CompareTo(b.Distance));
 
             // 퍼즐 방 2개 (몹 없음): 좌우 방 중 깊이 0.5(이중 스위치)와 0.3·0.75에 가까운 곳. 중간보스 바로 뒤 좌우 방이면 그 방을 먼저
-            // (전투가 끝난 뒤 숨 고르는 자리 — 옛 숨 고르기 방 자리). 첫 퍼즐은 이중 스위치 발판, 둘째는 속성 봉인문.
+            // (전투가 끝난 뒤 숨 고르는 자리 — 옛 숨 고르기 방 자리). 첫 퍼즐은 이중 스위치 발판, 둘째는 등불 순서/거울 룬/방어막 다리 (2026-11-14, 예전 속성 봉인문).
             var puzzles = new List<RoomData>();
             var afterMid = path[mid.PathIndex + 1];
             if (afterMid != boss && !afterMid.IsVertical && rest.Contains(afterMid)) puzzles.Add(afterMid);
@@ -457,12 +457,12 @@ namespace IBlameYou.Systems
                 if (pick != null) puzzles.Add(pick);
             }
             if (puzzles.Count < MinPuzzleRooms) return false;
-            // 이중 스위치 발판은 더 깊은 쪽(0.5에 가까운 쪽)에, 봉인문은 다른 쪽에
+            // 이중 스위치 발판은 더 깊은 쪽(0.5에 가까운 쪽)에, 등불 순서는 다른 쪽에
             puzzles.Sort((a, b) => Math.Abs(a.Difficulty - StagePlanner.SwitchBridgeDepth).CompareTo(Math.Abs(b.Difficulty - StagePlanner.SwitchBridgeDepth)));
             for (int i = 0; i < puzzles.Count; i++)
             {
                 puzzles[i].Kind = RoomKind.Puzzle;
-                puzzles[i].Chunk = i == 0 ? ChunkKind.SwitchBridge : i == 1 ? ChunkKind.ElementGate : ChunkKind.MovingBridge;
+                puzzles[i].Chunk = i == 0 ? ChunkKind.SwitchBridge : DeductionPuzzle(layout.Seed); // 둘째부터 추리 퍼즐 (2026-11-14, Docs/PuzzleRoomDesign.md)
                 rest.Remove(puzzles[i]);
             }
 
@@ -480,6 +480,10 @@ namespace IBlameYou.Systems
 
             return true;
         }
+
+        // 둘째 퍼즐 방 종류: 시드를 3으로 나눈 나머지로 등불 순서 · 거울 룬 · 방어막 다리 (배치 난수열을 쓰지 않아 다른 방은 그대로).
+        private static readonly ChunkKind[] SecondPuzzles = { ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.ShieldBridge };
+        public static ChunkKind DeductionPuzzle(int seed) => SecondPuzzles[((seed % 3) + 3) % 3];
 
         private static double PuzzleScore(RoomData r, float want) =>
             Math.Abs(r.Difficulty - want) + (r.Distance <= 1 ? 1.0 : 0.0);
@@ -552,7 +556,10 @@ namespace IBlameYou.Systems
                 case ChunkKind.Boss: return RoomKind.Boss;
                 case ChunkKind.ElementGate:
                 case ChunkKind.MovingBridge:
-                case ChunkKind.SwitchBridge: return RoomKind.Puzzle;
+                case ChunkKind.SwitchBridge:
+                case ChunkKind.LanternPuzzle:
+                case ChunkKind.MirrorPuzzle:
+                case ChunkKind.ShieldBridge: return RoomKind.Puzzle;
                 default: return RoomKind.Travel;
             }
         }

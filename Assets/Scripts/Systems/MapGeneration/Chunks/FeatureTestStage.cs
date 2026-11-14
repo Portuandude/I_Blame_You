@@ -1,7 +1,8 @@
 namespace IBlameYou.Systems
 {
     // 기능 테스트 모드 맵 (2026-11-12 플레이테스트 피드백: 7·8·11·19번 "테스트 불가").
-    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯·바람 구멍 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판 → 버섯 탑 방(오른쪽 벽, 2026-11-14).
+    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯·바람 구멍 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판
+    // → 등불 순서 방 → 거울 룬 방 → 방어막 다리 방(퍼즐 방, 2026-11-14) → 버섯 탑 방(오른쪽 벽, 2026-11-14).
     // 몬스터·유물은 이 맵 위에서 FeatureTestTools(키)로 불러 시험한다. 순수 C#이라 EditMode 테스트에서 그대로 검증한다.
     public static class FeatureTestStage
     {
@@ -9,16 +10,19 @@ namespace IBlameYou.Systems
         public const int Height = StageGenerator.StartHeight;
         private const int MaxAttempts = 24;
 
-        // 순서 = 청크 번호. FeatureTestTools의 "구역으로 이동" 키(1~5)가 이 순서를 쓴다.
+        // 순서 = 청크 번호. FeatureTestTools의 "다음 구역" 키(F10)가 이 순서를 쓴다.
         public static readonly ChunkKind[] Order =
         {
-            ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.Rest
+            ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.ShieldBridge, ChunkKind.Rest
         };
 
         public const int BounceArea = 1; // 통통 버섯 방 (청크 번호)
-        public const int TowerArea = 4;  // 버섯 탑 방 (청크 번호)
+        public const int LanternArea = 4; // 등불 순서 방 (청크 번호)
+        public const int MirrorArea = 5;  // 거울 룬 방 (청크 번호)
+        public const int ShieldArea = 6;  // 방어막 다리 방 (청크 번호)
+        public const int TowerArea = 7;  // 버섯 탑 방 (청크 번호)
 
-        public static readonly string[] Names = { "텅 빈 방", "통통 버섯·바람 방", "협동 봉인문", "이중 스위치 발판", "버섯 탑 방" };
+        public static readonly string[] Names = { "텅 빈 방", "통통 버섯·바람 방", "협동 봉인문", "이중 스위치 발판", "등불 순서 방", "거울 룬 방", "방어막 다리 방", "버섯 탑 방" };
 
         public static StageData Build()
         {

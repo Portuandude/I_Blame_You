@@ -31,7 +31,10 @@ namespace IBlameYou.Systems
         Boss,          // 마지막 전투 + 출구
         SwitchBridge,  // 이중 스위치 퍼즐 (갈아타기 발판 + 룬 두 개). 판마다 하나 보장 (StagePlanner, 2026-11-12 플레이테스트: 80% 이후에만 나와 못 봄)
         Pillars,       // 기둥 숲: 낭떠러지 위 폭 1~2칸 기둥을 높낮이 바꿔 가며 건넌다 (진행도 20%+, 레벨 재설계 2차)
-        TwinPath       // 두 갈래 길: 아래는 가시 + 적, 위는 발판 계단 → 발판 줄(무너지는 발판 섞임). 싸울지 뛸지 고른다 (진행도 25%+)
+        TwinPath,      // 두 갈래 길: 아래는 가시 + 적, 위는 발판 계단 → 발판 줄(무너지는 발판 섞임). 싸울지 뛸지 고른다 (진행도 25%+)
+        LanternPuzzle, // 퍼즐 방 "등불 순서" (2026-11-14, Docs/PuzzleRoomDesign.md): 높이가 다른 등불 셋 + 켜는 순서 벽화 + 풀면 유물 상자. 몹 없음
+        MirrorPuzzle,  // 퍼즐 방 "거울 룬" (2026-11-14): 바닥 등불 셋 + 위에 걸린 거울이 켜는 순서를 좌우 뒤집힌 자리로 깜빡여 보인다. 몹 없음
+        ShieldBridge   // 퍼즐 방 "방어막 다리" (2026-11-14): 높은 선반 위 속성 분출 통로 둘. 같은 속성 방어막을 두른 A만 지나가 끝의 동전 무더기에 닿는다. 몹 없음
     }
 
     public enum FeatureKind
@@ -57,8 +60,14 @@ namespace IBlameYou.Systems
         Stalactite,     // 동굴 종유석: (X, Y)는 천장 바로 아래 매달린 칸. 플레이어가 아래로 오면 떨어진다. 몸이 없어 길을 막지 않는다 (검증에서는 무시)
         CoinPile,       // 동전 무더기: (X, Y)는 무더기가 놓이는 서는 칸. 닿으면 골드(GoldDropTable.CoinPileGold)를 받는다. 방마다 한 번만. 몸이 없다 (검증에서는 무시)
         BounceMushroom, // 통통 버섯: (X, Y)는 버섯이 선 서는 칸. 위에서 내려앉으면 높이 튕겨 올린다. 몸이 없는 덤 길이라 검증에서는 무시
-        WindVent        // 바람 구멍: (X, Y)는 환풍구 왼쪽 서는 칸, X ~ X + Width - 1 열에서 Y부터 Direction칸 높이까지 바람 기둥이 플레이어를 띄운다.
+        WindVent,       // 바람 구멍: (X, Y)는 환풍구 왼쪽 서는 칸, X ~ X + Width - 1 열에서 Y부터 Direction칸 높이까지 바람 기둥이 플레이어를 띄운다.
                         // 몸이 없는 덤 길이라 검증에서는 무시
+        Lantern,        // 등불 순서 퍼즐의 등불: (X, Y)는 등불이 선 칸. ElementIndex = 속성(그 마법에만 켜짐), Direction = 켜는 순번 0~2. 몸이 없다 (검증에서는 무시)
+        LanternMural,   // 등불 순서 벽화: (X, Y)는 벽화 가운데 아래 서는 칸 (벽 장식, 몸 없음)
+        PuzzleChest,    // 퍼즐을 풀면 유물 상자가 떨어지는 서는 칸 (몸 없음)
+        MirrorMural,    // 거울 룬 퍼즐의 거울: (X, Y)는 거울 가운데 아래 바닥 칸 (거울은 그 위 높이 걸림, 몸 없음)
+        ElementJet      // 방어막 다리의 속성 분출: X ~ X + Width - 1 열, Y(서는 칸)부터 위로 쉬지 않고 뿜는다. ElementIndex = 속성.
+                        // 그 속성 방어막을 두른 플레이어만 지나간다. 아니면 Direction 열(통로 입구)로 튕겨 돌아간다. 몸이 없다 (검증에서는 무시)
     }
 
     public enum StageEnemy

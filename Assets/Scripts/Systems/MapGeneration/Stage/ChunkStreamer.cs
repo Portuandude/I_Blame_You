@@ -40,6 +40,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
+        private readonly HashSet<int> solvedPuzzles = new HashSet<int>(); // 등불 순서 퍼즐을 푼 청크 (방). 런 이어하기 저장은 안 쓰므로 StageRecords에 넣지 않는다
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
 
@@ -70,7 +71,8 @@ namespace IBlameYou.Systems
         public struct RoomEventTally
         {
             public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
-            public bool Any => AmbushMet + CursedMet + GoblinMet > 0;
+            public int PuzzleMet, PuzzleSolved; // 퍼즐 방 (등불 순서·거울 룬·방어막 다리, 이중 스위치 제외): 가 본 것 / 푼 것
+            public bool Any => AmbushMet + CursedMet + GoblinMet + PuzzleMet > 0;
         }
 
         private readonly HashSet<int> goblinsMet = new HashSet<int>();
@@ -94,6 +96,16 @@ namespace IBlameYou.Systems
                 {
                     tally.CursedMet++;
                     if (cursedBroken.Contains(index)) tally.CursedSolved++;
+                }
+                if (IsDeductionPuzzle(chunk.Kind))
+                {
+                    tally.PuzzleMet++;
+                    if (solvedPuzzles.Contains(index)) tally.PuzzleSolved++;
+                }
+                else if (chunk.Kind == ChunkKind.ShieldBridge)
+                {
+                    tally.PuzzleMet++;
+                    if (!HasCoinsLeft(index)) tally.PuzzleSolved++; // 방어막 다리: 끝의 동전 무더기를 모두 주우면 푼 것 (미니맵은 동전 점이 대신 알린다)
                 }
             }
             return tally;
@@ -133,6 +145,13 @@ namespace IBlameYou.Systems
             }
             return switchElements[index];
         }
+
+        private static bool IsDeductionPuzzle(ChunkKind kind) => kind == ChunkKind.LanternPuzzle || kind == ChunkKind.MirrorPuzzle;
+
+        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서·거울 룬)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
+        public bool HasPuzzleLeft(int index) =>
+            stage != null && index >= 0 && index < stage.Chunks.Count && IsDeductionPuzzle(stage.Chunks[index].Kind)
+            && (!solvedPuzzles.Contains(index) || !takenRelics.Contains(index));
 
         // 미니맵 방 이벤트 점 (2026-11-14): 저주받은 상자 방에서 아직 유물을 안 골랐는지 (상자가 잠들어 있거나, 정예를 잡고 유물 상자만 남았거나).
         public bool HasCursedChestLeft(int index) =>
@@ -380,6 +399,11 @@ namespace IBlameYou.Systems
                     case FeatureKind.FlameJet:
                         FlameJetTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), f.X * 0.37f + index * 0.61f);
                         break;
+                    case FeatureKind.ElementJet:
+                        // 방어막 다리: 그 속성 방어막만 지나가고, 아니면 통로 입구(Direction 열) 선 칸 위로 튕겨 돌아간다
+                        ElementJet.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width, (Element)f.ElementIndex,
+                            new Vector2(ox + f.Direction + 0.5f, oy + f.Y + 1f));
+                        break;
                     case FeatureKind.ArrowTrap:
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f), f.Direction);
                         break;
@@ -495,7 +519,49 @@ namespace IBlameYou.Systems
                 IBlameYou.Puzzles.PlatformSwitch.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), (Element)f.ElementIndex, linked);
             }
 
+            LoadLanternPuzzle(index, root, chunk, ox, oy);
             if (rooms != null) LoadRoomExtras(index, root, origin);
+        }
+
+        // 퍼즐 방 "등불 순서"·"거울 룬" (Docs/PuzzleRoomDesign.md): 등불 셋 + 벽화(또는 거울). 셋을 순서대로 켜면 상자 자리에 유물 상자가 떨어진다.
+        // 푼 방은 다시 와도 등불이 켜진 채이고, 유물을 안 골랐으면 상자가 남는다 (SpawnRelicChest가 takenRelics를 본다).
+        private void LoadLanternPuzzle(int index, Transform root, ChunkData chunk, float ox, float oy)
+        {
+            List<IBlameYou.Puzzles.LanternPuzzle.LanternSpec> specs = null;
+            int lowest = int.MaxValue;
+            Vector2 mural = Vector2.zero;
+            bool mirror = false;
+            Vector2? chest = null;
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind == FeatureKind.Lantern) lowest = Mathf.Min(lowest, f.Y);
+                else if (f.Kind == FeatureKind.LanternMural) mural = new Vector2(ox + f.X + 0.5f, oy + f.Y);
+                else if (f.Kind == FeatureKind.MirrorMural) { mural = new Vector2(ox + f.X + 0.5f, oy + f.Y); mirror = true; } // 거울 룬
+                else if (f.Kind == FeatureKind.PuzzleChest) chest = new Vector2(ox + f.X + 0.5f, oy + f.Y);
+            }
+            if (lowest == int.MaxValue) return;
+
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind != FeatureKind.Lantern) continue;
+                (specs ?? (specs = new List<IBlameYou.Puzzles.LanternPuzzle.LanternSpec>())).Add(new IBlameYou.Puzzles.LanternPuzzle.LanternSpec
+                {
+                    Bottom = new Vector2(ox + f.X + 0.5f, oy + f.Y),
+                    Element = (Element)f.ElementIndex,
+                    Order = f.Direction,
+                    Rise = f.Y - lowest
+                });
+            }
+
+            bool solved = solvedPuzzles.Contains(index);
+            var chestAt = chest ?? mural;
+            IBlameYou.Puzzles.LanternPuzzle.Create(root, specs, mural, solved, () =>
+            {
+                solvedPuzzles.Add(index);
+                IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle); // 퍼즐을 풀면 마음 가루
+                if (root != null) SpawnRelicChest(root, index, chestAt, true);
+            }, mirror);
+            if (solved) SpawnRelicChest(root, index, chestAt, false);
         }
 
         // 세로 전투 방의 천장 구멍(위 문)·바닥 구멍(아래 문) 자리 (Chunks/RoomShaper.HoleX0~HoleX1)
@@ -598,7 +664,14 @@ namespace IBlameYou.Systems
         private void SpawnCoinPile(Transform root, int key, Vector2 position, float difficulty)
         {
             if (collectedCoins.Contains(key)) return;
-            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () => collectedCoins.Add(key));
+            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () =>
+            {
+                collectedCoins.Add(key);
+                // 방어막 다리: 끝의 동전 무더기를 모두 주우면 퍼즐을 푼 것 → 마음 가루
+                int room = key / 16; // CoinPileKey의 청크 번호
+                if (rooms != null && room < stage.Chunks.Count && stage.Chunks[room].Kind == ChunkKind.ShieldBridge && !HasCoinsLeft(room)) // 기능 테스트(rooms 없음)는 세지 않음
+                    IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle);
+            });
         }
 
         // 즉시 회복 (최대 체력 비율, 중간보스 처치·용사의 훈장). 쓰러진 뒤면 아무 일도 하지 않고 false. notice가 null이면 알림 없이.
