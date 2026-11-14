@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-14 07:47 UTC
+- 브랜치/PR: `claude/project-thread-c3ckyd` (develop 대상). 사람이 "재개"해서 다시 시작. 기획안 결정(2026-11-14 Notion 답)을 백로그 맨 위에 먼저 넣음
+- 완료: ① "누구 탓?" 기능 전부 제거 (판정·도장·최근 탓 기록·칭호·일시정지 탓 줄·HUD 상대 탓 줄·게임오버 제목·시작 팁. 결과 창 A/B 날린 마나 숫자는 남김, `BlameVerdict`와 테스트는 Trash). 적대적 리뷰 APPROVE, 로컬 178/178
+- 실패/보류: 없음
+- 다음 실행 메모: 백로그 맨 위 "기획안 결정" 순서대로 (장비 수식어 교체 → 매복 → 보물 고블린 → 저주받은 상자 → 궁수 탑 → A/B 전환 테스트 모드 → 곁방 없애기)
+
 ## 2026-11-14 01:01 UTC
 - 브랜치/PR: `claude/project-thread-5nx76k` (develop 대상, 자동 머지 켬, #95 head 위에 쌓음 — 시작할 때 #94·#95 열림)
 - 완료 (1개): 기능 테스트 맵 "버섯 탑 방" (`FeatureTestStage.TowerArea`, 테스트 `TowerAreaHasMushroomTower`). 로컬 181/181. 작은 맵 작업이라 적대적 리뷰는 생략
