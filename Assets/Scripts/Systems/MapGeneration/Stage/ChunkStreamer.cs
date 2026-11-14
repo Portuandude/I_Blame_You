@@ -384,7 +384,9 @@ namespace IBlameYou.Systems
                         var arenaRoot = root;
                         var rewardPosition = new Vector2(ox + f.X + f.Width / 2f, oy + f.Y);
                         var relicPosition = rewardPosition + Vector2.left * RelicChestOffset; // 구역 가운데 발판(7~11, 20~24칸) 사이 바닥
-                        ArenaZone.Create(root, ox + f.X, ox + f.X + f.Width, oy + f.Y, arenaSpawns, clearedArenas.Contains(index), spawnEnemy,
+                        // 매복 (2026-11-14 사람 결정): 방 격자 모드의 일반 전투 방 절반은 적이 천장 쪽에서 떨어진다 (Chunks/AmbushRule, 난수 안 씀)
+                        bool ambush = rooms != null && AmbushRule.IsAmbush(stage.Seed, index, RoomDepth(index), chunk.Kind == ChunkKind.Arena && !midBoss);
+                        var arenaZone = ArenaZone.Create(root, ox + f.X, ox + f.X + f.Width, oy + f.Y, arenaSpawns, clearedArenas.Contains(index), spawnEnemy,
                             () =>
                             {
                                 bool medalHealed = OnArenaCleared(arenaChunk, boss, midBoss && arenaRoot != null); // 중간보스 알림을 띄울 때만 훈장 알림을 합친다
@@ -401,6 +403,7 @@ namespace IBlameYou.Systems
                                 SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
                                 if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
+                        arenaZone.Ambush = ambush;
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
                         if (midBoss && clearedArenas.Contains(index))
                             SpawnRelicChest(root, index, rewardPosition, false); // 회복은 처치 순간에 이미 받았다
