@@ -502,11 +502,15 @@ namespace IBlameYou.Enemies
         // 촉수에 5초 동안 붙잡혀 있었다: 킹 앞으로 끌어와 피해를 주고 잠깐 경직시킨다.
         public IEnumerator GrabRoutine(PlayerMovement player, float pullTime, float multiplier, float stunTime)
         {
-            if (player == null || IsDead) yield break;
+            // 촉수 둘이 거의 같은 순간 붙으면 그랩이 두 번 시작될 수 있다: 먼저 끝난 쪽의 ReleaseGrab이 grabbedHealth를 비워
+            // 남은 쪽이 null을 밟았다 (2026-11-14 플레이테스트 NullReferenceException). 이미 잡고 있으면 새 그랩은 무시하고, 체력은 지역 변수로 든다.
+            if (player == null || IsDead || grabbing) yield break;
+            var health = player.GetComponent<HealthSystem>();
+            if (health == null) yield break;
 
             grabbing = true;
             grabbedControl = player.GetComponent<PlayerControlState>();
-            grabbedHealth = player.GetComponent<HealthSystem>();
+            grabbedHealth = health;
             grabbedWasLocked = grabbedControl != null && grabbedControl.Locked;
             if (grabbedControl != null) grabbedControl.Locked = true;
             var body = player.GetComponent<Rigidbody2D>();
@@ -518,7 +522,7 @@ namespace IBlameYou.Enemies
             Vector2 start = body.position;
             for (float t = 0f; t < pullTime; t += Time.fixedDeltaTime)
             {
-                if (player == null || grabbedHealth.IsDead) break;
+                if (player == null || health.IsDead || !grabbing) break;
                 var bounds = BodyBounds;
                 var end = new Vector2(bounds.center.x + side * (bounds.extents.x + 0.3f), transform.position.y + 0.2f);
                 body.position = Vector2.Lerp(start, end, t / pullTime);
@@ -526,9 +530,9 @@ namespace IBlameYou.Enemies
                 yield return new WaitForFixedUpdate();
             }
 
-            if (player != null && !grabbedHealth.IsDead)
+            if (player != null && !health.IsDead && grabbing)
             {
-                StrikePlayer(grabbedHealth, multiplier);
+                StrikePlayer(health, multiplier);
                 var stun = player.GetComponent<HitStun>();
                 if (stun != null) stun.Apply(stunTime);
                 Shake(0.25f, 0.3f);
