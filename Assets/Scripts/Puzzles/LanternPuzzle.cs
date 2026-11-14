@@ -26,6 +26,7 @@ namespace IBlameYou.Puzzles
         private readonly List<SpriteRenderer> muralHeads = new List<SpriteRenderer>(); // 순번 순서
         private int step;
         private bool solved;
+        private bool mirror;
         private Action onSolved;
 
         private static readonly Color MuralStone = new Color(0.36f, 0.33f, 0.42f, 1f);
@@ -34,18 +35,22 @@ namespace IBlameYou.Puzzles
 
         public bool Solved => solved;
 
-        // muralBottom: 벽화 가운데 아래 (월드, 바닥). solved면 처음부터 모두 켜진 채로.
-        public static LanternPuzzle Create(Transform parent, IList<LanternSpec> specs, Vector2 muralBottom, bool alreadySolved, Action onSolved)
+        // muralBottom: 벽화(거울이면 거울) 가운데 아래 (월드, 바닥). solved면 처음부터 모두 켜진 채로.
+        // mirror: "거울 룬" — 벽화 대신 높이 걸린 거울이 켜는 순서를 좌우 뒤집힌 자리의 그림으로 차례로 깜빡여 보인다.
+        public static LanternPuzzle Create(Transform parent, IList<LanternSpec> specs, Vector2 muralBottom, bool alreadySolved, Action onSolved,
+            bool mirror = false)
         {
             var go = new GameObject("LanternPuzzle");
             go.transform.SetParent(parent, false);
             var puzzle = go.AddComponent<LanternPuzzle>();
             puzzle.onSolved = onSolved;
             puzzle.solved = alreadySolved;
+            puzzle.mirror = mirror;
 
             var sorted = new List<LanternSpec>(specs);
             sorted.Sort((a, b) => a.Order.CompareTo(b.Order));
-            puzzle.BuildMural(go.transform, muralBottom, sorted);
+            if (mirror) puzzle.BuildMirror(go.transform, muralBottom, sorted);
+            else puzzle.BuildMural(go.transform, muralBottom, sorted);
 
             foreach (var spec in specs)
             {
@@ -100,6 +105,59 @@ namespace IBlameYou.Puzzles
                         new Vector2(0.11f, 0.11f), MuralLine, -2);
                     dot.sprite = SolidSpriteFactory.CreateCircle();
                 }
+            }
+        }
+
+        // 거울: 바닥 위 MirrorRise 높이에 은빛 틀의 가로 판. 순번 순서대로 작은 등불 그림을 두되, 가로 자리는 실제 등불 자리를
+        // 거울 가운데 기준으로 좌우 뒤집은 곳(줄여서). 그림은 모두 같은 높이·색 없음. 안 풀린 동안 순번대로 하얗게 깜빡이고 쉬기를 되풀이한다.
+        private const float MirrorRise = 6.5f;
+        private const float MirrorWidth = 4.6f;
+        private const float MirrorPanelHeight = 1.7f;
+        private const float MirrorSpread = 0.16f;  // 실제 가로 거리 → 거울 속 가로 거리
+        private const float MirrorBeat = 0.8f;     // 깜빡임 사이
+        private const float MirrorOn = 0.5f;       // 한 번 깜빡이는 동안
+        private const float MirrorCycle = 4.6f;    // 셋을 보이고 쉬는 데까지
+        private static readonly Color MirrorGlass = new Color(0.55f, 0.66f, 0.78f, 1f);
+        private static readonly Color MirrorRim = new Color(0.86f, 0.9f, 0.96f, 1f);
+        private readonly List<Vector3> mirrorHeadScale = new List<Vector3>();
+
+        private void BuildMirror(Transform parent, Vector2 bottom, List<LanternSpec> byOrder)
+        {
+            var frame = new GameObject("Mirror").transform;
+            frame.SetParent(parent, false);
+            frame.position = bottom;
+            float cy = MirrorRise + MirrorPanelHeight / 2f;
+            TrapCommon.AddSprite(frame, "Rim", null, new Vector2(0f, cy), new Vector2(MirrorWidth + 0.25f, MirrorPanelHeight + 0.25f), MirrorRim, -4);
+            TrapCommon.AddSprite(frame, "Glass", null, new Vector2(0f, cy), new Vector2(MirrorWidth, MirrorPanelHeight), MirrorGlass, -3);
+            // 걸이 줄 둘 (천장 쪽으로)
+            TrapCommon.AddSprite(frame, "CordL", null, new Vector2(-MirrorWidth * 0.35f, MirrorRise + MirrorPanelHeight + 0.9f), new Vector2(0.06f, 1.6f), MirrorRim, -4);
+            TrapCommon.AddSprite(frame, "CordR", null, new Vector2(MirrorWidth * 0.35f, MirrorRise + MirrorPanelHeight + 0.9f), new Vector2(0.06f, 1.6f), MirrorRim, -4);
+
+            foreach (var spec in byOrder)
+            {
+                float x = -(spec.Bottom.x - bottom.x) * MirrorSpread; // 좌우 뒤집기
+                float baseY = MirrorRise + 0.3f;
+                TrapCommon.AddSprite(frame, $"Post_{spec.Order}", null, new Vector2(x, baseY + 0.3f), new Vector2(0.1f, 0.6f), MuralLine, -2);
+                var head = TrapCommon.AddSprite(frame, $"Head_{spec.Order}", null, new Vector2(x, baseY + 0.8f), new Vector2(0.36f, 0.36f), MuralLine, -1);
+                head.sprite = SolidSpriteFactory.CreateCircle();
+                muralHeads.Add(head);
+                mirrorHeadScale.Add(head.transform.localScale);
+            }
+        }
+
+        private void Update()
+        {
+            if (!mirror) return;
+            float t = Mathf.Repeat(Time.time, MirrorCycle);
+            int beat = Mathf.FloorToInt(t / MirrorBeat);
+            bool on = !solved && t - beat * MirrorBeat < MirrorOn;
+            for (int i = 0; i < muralHeads.Count; i++)
+            {
+                var head = muralHeads[i];
+                if (head == null) continue;
+                bool flash = on && i == beat;
+                head.color = i < step ? MuralLit : flash ? Color.white : MuralLine;
+                if (i < mirrorHeadScale.Count) head.transform.localScale = mirrorHeadScale[i] * (flash ? 1.35f : 1f);
             }
         }
 
