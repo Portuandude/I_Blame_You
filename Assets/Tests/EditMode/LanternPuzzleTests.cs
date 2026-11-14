@@ -127,7 +127,9 @@ namespace IBlameYou.Tests
                     for (int x = ChunkGenerator.ShieldLedgeX0; x <= ChunkGenerator.ShieldLedgeX1; x++)
                         Assert.IsTrue(chunk.IsSolid(x, stand - 1), $"{at}: 선반 {x}");
                     Assert.AreEqual(StageTile.Empty, chunk.Get(ChunkGenerator.ShieldReturnX, stand), at);
-                    Assert.IsTrue(chunk.Features.Any(f => f.Kind == FeatureKind.BlinkWard), at);
+                    var ward = chunk.Features.Single(f => f.Kind == FeatureKind.BlinkWard);
+                    Assert.LessOrEqual(ward.X, jets.Min(j => j.X), $"{at}: 안개가 첫 통로부터");
+                    Assert.AreEqual(ChunkData.Width, ward.X + ward.Width, $"{at}: 안개가 오른쪽 벽까지 (선반 오른쪽 바닥에서 순간이동 금지)");
                     Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"{at}: {reason}");
                     // 선반 끝(동전)까지 가는 길이 있다: 동전 칸을 출구로 삼아 검사
                     var probe = ChunkGenerator.Generate(seed, 3, ChunkKind.ShieldBridge, 0.5f, entry, 0);
