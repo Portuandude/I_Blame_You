@@ -240,7 +240,21 @@ namespace IBlameYou.Core
             SaveData.SaveSettings();
             GameSession.Started = true;
             GameSession.FeatureTest = featureTest;
-            Launch(onStart);
+            if (featureTest)
+            {
+                Launch(onStart);
+                return;
+            }
+            // 일반 판은 먼저 웹툰식 스토리 소개 (2026-11-14 사람 지시). 끝나거나 둘이 같이 건너뛰면 출발한다.
+            var start = onStart;
+            var intro = gameObject.AddComponent<StoryIntro>();
+            Destroy(this);
+            intro.Begin(() =>
+            {
+                start?.Invoke();
+                GameAudio.PlaySfx("RunStart", 0.8f);
+                ScreenFlash.StartFade();
+            });
         }
 
         // 출발: 밝은 "따-링!"(Tools/AudioGen RunStart) + 월드를 만든 뒤 어두운 덮개에서 0.5초 동안 밝아지며 시작 (ScreenFlash.StartFade).
