@@ -327,7 +327,7 @@ namespace IBlameYou.Systems
             int p2a = Math.Min(TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1));
             int p2b = Math.Max(TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1));
             // 무너지는 탑 (CrumbleStairsMinDifficulty 이상): P2가 무너지는 발판이라 내려앉으면 0.55초 안에 맨 위 판으로 뛰어야 한다.
-            // 떨어져도 P1 위 버섯(M2) 열과 겹쳐 다시 튕겨 오를 수 있다. 검증기는 무너지는 발판을 발판으로 보므로 길은 같다
+            // P1과 겹치는 열에서 떨어지면 P1 위 버섯(M2)으로 다시 오른다 (안쪽 2칸에서 떨어지면 바닥부터 다시). 검증기는 무너지는 발판을 발판으로 보므로 길은 같다
             if (TowerCrumbles(room)) chunk.AddFeature(FeatureKind.Crumble, p2a, stand2 - 1, p2b - p2a + 1);
             else chunk.SetRow(p2a, p2b, stand2 - 1, StageTile.Platform);
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom1X), g, 1, 1);
@@ -353,7 +353,7 @@ namespace IBlameYou.Systems
             int a = Math.Min(TowerCol(left, TowerSniperX0), TowerCol(left, TowerSniperX1));
             int b = Math.Max(TowerCol(left, TowerSniperX0), TowerCol(left, TowerSniperX1));
             chunk.SetRow(a, b, row, StageTile.Platform);
-            // 벽 쪽 끝에 서서 선반 가장자리에서 떨어지지 않게
+            // 탑 반대쪽 벽에 가까운 끝에 세운다 (오르는 길과 멀리)
             chunk.AddEnemy(StageEnemy.GoblinArcher, left ? b : a, row + 1);
         }
 
