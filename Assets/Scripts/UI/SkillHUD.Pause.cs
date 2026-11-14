@@ -295,6 +295,24 @@ namespace IBlameYou.UI
             return rooms + coins + villageText;
         }
 
+        // 결과 창 방 이벤트 줄 (2026-11-14 자동 실행): 이번 판에 만난 방 이벤트만 "매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f". 다 해낸 것은 금색. 하나도 안 만났으면 "".
+        private string RoomEventText()
+        {
+            if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
+            var streamer = pauseMap != null ? pauseMap.Streamer : null;
+            if (streamer == null || !streamer.IsRoomMode) return "";
+            var tally = streamer.EventTally();
+            if (!tally.Any) return "";
+            var parts = new System.Collections.Generic.List<string>();
+            if (tally.AmbushMet > 0) parts.Add(EventPart("매복 돌파", tally.AmbushCleared, tally.AmbushMet));
+            if (tally.CursedMet > 0) parts.Add(EventPart("저주 상자 해제", tally.CursedSolved, tally.CursedMet));
+            if (tally.GoblinMet > 0) parts.Add(EventPart("보물 고블린", tally.GoblinCaught, tally.GoblinMet));
+            return string.Join(" · ", parts);
+        }
+
+        private static string EventPart(string name, int done, int met) =>
+            done >= met ? $"<color=#ffd84d>{name} {done}/{met}</color>" : $"{name} {done}/{met}";
+
         private float PauseVolumeSlider(Rect rect, string name, float value)
         {
             GUI.Label(new Rect(rect.x, rect.y, 120f, rect.height), $"{name} {value * 100f:0}%", label);
