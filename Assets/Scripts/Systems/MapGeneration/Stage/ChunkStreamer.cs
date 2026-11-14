@@ -964,7 +964,7 @@ namespace IBlameYou.Systems
         private void PlaceCursedChest(Transform root, int index)
         {
             if (takenRelics.Contains(index)) return;
-            var spot = FindStandSpot(index, RoomCols(index) / 2);
+            var spot = FindStandSpot(index, RoomCols(index) / 2, true); // 세로 방 바닥 적과 겹쳐 서지 않게 (2026-11-14 리뷰 LOW)
             if (!spot.HasValue) return;
             var position = spot.Value;
             if (cursedBroken.Contains(index))
@@ -1058,7 +1058,8 @@ namespace IBlameYou.Systems
 
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
         // 반환: 그 칸 바닥 가운데의 월드 좌표 (발밑). 못 찾으면 null.
-        private Vector2? FindStandSpot(int index, int center)
+        // avoidEnemies: 찾은 바닥 칸 ±1열·±1행에 청크 적이 서 있으면 그 열을 건너뛴다 (저주 상자 — 세로 방은 바닥에 적이 서 있다).
+        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false)
         {
             var chunk = stage.Chunks[index];
             var origin = Origin(index);
@@ -1071,6 +1072,7 @@ namespace IBlameYou.Systems
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {
                         if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
+                        if (avoidEnemies && HasEnemyNear(chunk, x, y)) break; // 이 열 바닥엔 적이 선다 → 다음 열
                         return new Vector2(origin.x + x + 0.5f, origin.y + y);
                     }
                 }
@@ -1086,6 +1088,13 @@ namespace IBlameYou.Systems
                 if (f.Kind == FeatureKind.Enemy || f.Kind == FeatureKind.PlayerStart) continue;
                 if (x >= f.X - 1 && x <= f.X + Math.Max(1, f.Width)) return true;
             }
+            return false;
+        }
+
+        private static bool HasEnemyNear(ChunkData chunk, int x, int y)
+        {
+            foreach (var f in chunk.Features)
+                if (f.Kind == FeatureKind.Enemy && x >= f.X - 1 && x <= f.X + 1 && Math.Abs(f.Y - y) <= 1) return true;
             return false;
         }
 
