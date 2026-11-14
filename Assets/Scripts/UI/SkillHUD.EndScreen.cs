@@ -95,11 +95,19 @@ namespace IBlameYou.UI
             return (1f - Mathf.SmoothStep(0f, 1f, k)) * EndRowLift;
         }
 
+        // 결과 창 방 이벤트 줄 끝에 이번 판 마음 가루 (도시 화폐, 쓰러져도 남는다 — Docs/CityDesign.md). 얻은 게 없으면 그대로.
+        private static string WithHeartDust(string events)
+        {
+            if (RunStats.HeartDust <= 0) return events;
+            string dust = $"<color=#f0b8ff>마음 가루 +{RunStats.HeartDust}</color>";
+            return string.IsNullOrEmpty(events) ? dust : events + " · " + dust;
+        }
+
         private void DrawEndPanel(bool clear, float width)
         {
             bool compare = !clear && HasDefeatCompare;
             string explore = ExploreText(true);           // 방 N/M 탐험 · 동전 무더기 a/b · 마을 (SkillHUD.Pause.cs)
-            string events = RoomEventText();              // 매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f (만난 것만)
+            string events = WithHeartDust(RoomEventText()); // 매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f · 퍼즐 g/h (만난 것만) · 마음 가루 +N
             bool favorite = !string.IsNullOrEmpty(FavoriteLine());
             const float top = 60f, line = 26f, summary = 28f, small22 = 22f, relics = 30f;
             float height = top + line * 2f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f) + (events.Length > 0 ? small22 : 0f)
