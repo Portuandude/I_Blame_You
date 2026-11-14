@@ -268,8 +268,8 @@ namespace IBlameYou.Core
                     down = true;
                     if (AnyAlive(spawned) || broken || chest == null) return;
                     broken = true;
-                    chest.Break();
-                    RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
+                    int offer = chest.Break();
+                    RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, offer);
                 };
             }
             if (spawned.Count == 0) return;
@@ -294,8 +294,8 @@ namespace IBlameYou.Core
             {
                 if (current > 0f || broken || chest == null) return;
                 broken = true;
-                chest.Break();
-                RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
+                int offer = chest.Break();
+                RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, offer);
             };
         }
 
