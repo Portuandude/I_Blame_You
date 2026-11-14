@@ -83,5 +83,29 @@ namespace IBlameYou.Tests
             Assert.IsTrue(stage.Chunks[0].IsSolid(0, ChunkData.Height - 1), "왼쪽 벽");
             Assert.IsTrue(last.IsSolid(ChunkData.Width - 1, ChunkData.Height - 1), "오른쪽 벽");
         }
+    
+        // 버섯 탑 방: 길 버섯 둘(바닥·P1 위) + P1 발판 + 무너지는 P2 + P2 동전 + 저격 선반, 적 없음 (2026-11-14)
+        [Test]
+        public void TowerAreaHasMushroomTower()
+        {
+            var chunk = FeatureTestStage.Build().Chunks[FeatureTestStage.TowerArea];
+            var mushrooms = chunk.Features.Where(f => f.Kind == FeatureKind.BounceMushroom).OrderBy(f => f.Y).ToList();
+            Assert.AreEqual(2, mushrooms.Count);
+            Assert.IsTrue(mushrooms.All(m => m.Direction == 1), "길 버섯");
+            int g = mushrooms[0].Y;
+            int stand1 = g + RoomShaper.TowerStep;
+            Assert.AreEqual(RoomShaper.TowerMushroom1X, mushrooms[0].X);
+            Assert.AreEqual(stand1, mushrooms[1].Y);
+            Assert.AreEqual(StageTile.Platform, chunk.Get(RoomShaper.TowerMushroom2X, stand1 - 1), "P1");
+            Assert.AreEqual(StageTile.Platform, chunk.Get(RoomShaper.TowerSniperX0, stand1 - 1), "저격 선반");
+            var crumble = chunk.Features.Single(f => f.Kind == FeatureKind.Crumble);
+            Assert.AreEqual(stand1 + RoomShaper.TowerStep - 1, crumble.Y);
+            Assert.IsTrue(crumble.X <= RoomShaper.TowerMushroom2X && RoomShaper.TowerMushroom2X < crumble.X + crumble.Width, "P2가 M2 위");
+            Assert.IsTrue(chunk.Features.Any(f => f.Kind == FeatureKind.CoinPile && f.Y == crumble.Y + 1));
+            Assert.IsFalse(chunk.Features.Any(f => f.Kind == FeatureKind.Enemy));
+            for (int y = g; y < ChunkData.Height; y++) chunk.Tiles[ChunkData.Width - 1, y] = StageTile.Empty; // 끝 벽을 걷어 내고 길 검사
+            Assert.IsTrue(StageValidator.Validate(chunk, out string reason), reason);
+            Assert.AreEqual("버섯 탑 방", FeatureTestStage.Names[FeatureTestStage.TowerArea]);
+        }
     }
 }
