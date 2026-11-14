@@ -14,6 +14,13 @@ namespace IBlameYou.Core
     {
         private static readonly StageEnemy[] Monsters = (StageEnemy[])Enum.GetValues(typeof(StageEnemy));
 
+        // F7 목록에서 몬스터 뒤에 오는 방 이벤트 시험 (2026-11-14): 시험 맵은 방 격자가 아니라서 매복·저주받은 상자·궁수 탑이 저절로 나오지 않는다.
+        private enum TestEvent { Ambush, CursedChest, ArcherTower }
+        private static readonly TestEvent[] Events = (TestEvent[])Enum.GetValues(typeof(TestEvent));
+        private static int PickCount => Monsters.Length + Events.Length;
+        private ArenaZone ambushZone;
+        private int cursedCount;
+
         // 유물 해제는 효과를 되돌리는 대신 시험 맵을 다시 만들고 남은 유물만 다시 단다 (유물 효과는 얻을 때 한 번 적용되므로).
         // 다시 만드는 동안 고른 유물·몬스터·미니게임 설정을 들고 있으려고 static으로 둔다.
         private static readonly List<RelicId> keptRelics = new List<RelicId>();
@@ -78,8 +85,12 @@ namespace IBlameYou.Core
             if (Input.GetKeyDown(KeyCode.F5)) ToggleMinigames();
             var control = player.GetComponent<PlayerControlState>();
             if (Input.GetKeyDown(KeyCode.BackQuote) && (control == null || !control.ChantActive)) CycleFocus(); // 영창 입력 칸에 글자를 치는 중이면 바꾸지 않는다
-            if (Input.GetKeyDown(KeyCode.F7)) monsterIndex = (monsterIndex + 1) % Monsters.Length;
-            if (Input.GetKeyDown(KeyCode.F8)) SpawnMonster();
+            if (Input.GetKeyDown(KeyCode.F7)) monsterIndex = (monsterIndex + 1) % PickCount;
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                if (monsterIndex < Monsters.Length) SpawnMonster();
+                else RunEvent(Events[monsterIndex - Monsters.Length]);
+            }
             if (Input.GetKeyDown(KeyCode.F9)) relicWindowOpen = !relicWindowOpen;
             if (Input.GetKeyDown(KeyCode.F10)) JumpToArea((area + 1) % FeatureTestStage.Order.Length);
             if (Input.GetKeyDown(KeyCode.F12)) equipWindowOpen = !equipWindowOpen;
@@ -118,6 +129,146 @@ namespace IBlameYou.Core
             var position = player.transform.position + new Vector3(facing * (big ? 6f : 4f), big ? 2.5f : 1f, 0f);
             var health = spawner(kind, position, enemyRoot);
             StageEvents.PostNotice(health != null ? $"소환: {MonsterName(kind)}" : $"소환 실패: {MonsterName(kind)}");
+        }
+
+        private void RunEvent(TestEvent kind)
+        {
+            switch (kind)
+            {
+                case TestEvent.Ambush: StartAmbush(); break;
+                case TestEvent.CursedChest: PlaceCursedChest(); break;
+                case TestEvent.ArcherTower: StartArcherTower(); break;
+            }
+        }
+
+        private static string EventName(TestEvent kind) =>
+            kind == TestEvent.Ambush ? "이벤트: 매복 (지금 구역)"
+            : kind == TestEvent.CursedChest ? "이벤트: 저주받은 상자 (앞에)" : "이벤트: 궁수 탑 (버섯 탑 방)";
+
+        private string PickName() =>
+            monsterIndex < Monsters.Length ? MonsterName(Monsters[monsterIndex]) : EventName(Events[monsterIndex - Monsters.Length]);
+
+        // 외길 모드: 청크 i의 원점 = (i × Width, 0). 월드 x가 있는 청크 번호 (맵 밖이면 -1).
+        private int ChunkAt(float x)
+        {
+            int index = Mathf.FloorToInt(x / ChunkData.Width);
+            return index >= 0 && index < stage.Chunks.Count ? index : -1;
+        }
+
+        // 월드 x 열의 바닥 높이(서는 칸 y). 맵 밖이면 null.
+        private float? GroundAt(float x)
+        {
+            int index = ChunkAt(x);
+            if (index < 0) return null;
+            int column = Mathf.Clamp(Mathf.FloorToInt(x) - index * ChunkData.Width, 0, ChunkData.Width - 1);
+            return stage.Chunks[index].SurfaceAt(column);
+        }
+
+        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다).
+        // 구역 안에 서 있으니 바로 문이 닫힌다. 다 쓰러뜨리면 문이 열리고, 다시 누르면 새로 연다.
+        private static readonly StageEnemy[] AmbushEnemies = { StageEnemy.Slime, StageEnemy.Goblin, StageEnemy.GoblinArcher };
+        private static readonly int[] AmbushColumns = { 9, 16, 23 };
+
+        private void StartAmbush()
+        {
+            if (ambushZone != null && ambushZone.IsLocked)
+            {
+                StageEvents.PostNotice("매복 싸움 중 (F3으로 적 처치)");
+                return;
+            }
+
+            int index = ChunkAt(player.transform.position.x);
+            float left = index * ChunkData.Width;
+            float local = player.transform.position.x - left;
+            if (index < 0 || local < 2f || local > ChunkData.Width - 2f)
+            {
+                StageEvents.PostNotice("매복 시험: 구역 가운데 쪽에서 눌러 주세요");
+                return;
+            }
+
+            if (ambushZone != null) Destroy(ambushZone.gameObject);
+            var chunk = stage.Chunks[index];
+            int ground = ChunkData.Height;
+            for (int x = 0; x < ChunkData.Width; x++) ground = Mathf.Min(ground, chunk.SurfaceAt(x));
+            var spawns = new List<ArenaZone.Spawn>();
+            for (int i = 0; i < AmbushEnemies.Length; i++)
+            {
+                int column = AmbushColumns[i];
+                spawns.Add(new ArenaZone.Spawn
+                {
+                    Kind = AmbushEnemies[i],
+                    Position = new Vector3(left + column + 0.5f, chunk.SurfaceAt(column) + ChunkStreamer.SpawnLift, 0f)
+                });
+            }
+
+            ambushZone = ArenaZone.Create(enemyRoot, left, left + ChunkData.Width, ground, spawns, false, spawner,
+                () => StageEvents.PostNotice("매복 시험 끝 — F8로 다시"));
+            ambushZone.Ambush = true;
+        }
+
+        // 저주받은 상자 시험: 바라보는 쪽 4칸 앞 바닥에 상자. 닿으면 정예(엄마 슬라임·고블린 전사 번갈아)가 깨어나고, 쓰러뜨리면 유물 2개 중 고르기 상자.
+        private void PlaceCursedChest()
+        {
+            var movement = player.GetComponent<PlayerMovement>();
+            float facing = movement != null ? movement.Facing : 1f;
+            float x = Mathf.Floor(player.transform.position.x + facing * 4f) + 0.5f;
+            var ground = GroundAt(x);
+            if (!ground.HasValue)
+            {
+                StageEvents.PostNotice("저주받은 상자: 놓을 자리가 없다");
+                return;
+            }
+
+            var position = new Vector2(x, ground.Value);
+            var elite = cursedCount % 2 == 0 ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
+            int offerIndex = 1000 + cursedCount; // 유물 후보가 매번 달라지게
+            cursedCount++;
+            CursedChest chest = null;
+            chest = CursedChest.Create(enemyRoot, position, () => AwakenCursedElite(chest, position, elite, offerIndex));
+            StageEvents.PostNotice($"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
+        }
+
+        private void AwakenCursedElite(CursedChest chest, Vector2 chestPosition, StageEnemy elite, int offerIndex)
+        {
+            if (chest == null) return;
+            float side = player.transform.position.x < chestPosition.x ? 1f : -1f;
+            float x = chestPosition.x + side * 4f;
+            var ground = GroundAt(x) ?? chestPosition.y;
+            var position = new Vector3(x, ground + ChunkStreamer.SpawnLift, 0f);
+            EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
+            GameAudio.PlaySfx("Summon", 0.7f);
+            var health = spawner(elite, position, enemyRoot);
+            if (health == null) return;
+            chest.Watch(health);
+            bool broken = false;
+            health.HealthChanged += (current, max) =>
+            {
+                if (current > 0f || broken || chest == null) return;
+                broken = true;
+                chest.Break();
+                RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
+            };
+        }
+
+        // 궁수 탑 시험: 버섯 탑 방으로 옮겨 P1 선반과 반대쪽 저격 선반에 고블린 궁수를 하나씩 세운다 (세로 방 궁수 탑처럼 위에서 둘이 쏜다. 가시는 없음).
+        private void StartArcherTower()
+        {
+            int index = FeatureTestStage.TowerArea;
+            var chunk = stage.Chunks[index];
+            int stand1 = chunk.SurfaceAt(RoomShaper.TowerShelf1X0) + RoomShaper.TowerStep;
+            if (chunk.Get(RoomShaper.TowerShelf1X0, stand1 - 1) != StageTile.Platform)
+            {
+                StageEvents.PostNotice("궁수 탑: 버섯 탑 선반이 없다");
+                return;
+            }
+
+            JumpToArea(index);
+            float left = index * ChunkData.Width;
+            float sniper = (RoomShaper.TowerSniperX0 + RoomShaper.TowerSniperX1 + 1) / 2f;
+            float shelf = (RoomShaper.TowerShelf1X0 + RoomShaper.TowerShelf1X1 + 1) / 2f;
+            spawner(StageEnemy.GoblinArcher, new Vector3(left + sniper, stand1 + ChunkStreamer.SpawnLift, 0f), enemyRoot);
+            spawner(StageEnemy.GoblinArcher, new Vector3(left + shelf, stand1 + ChunkStreamer.SpawnLift, 0f), enemyRoot);
+            StageEvents.PostNotice("궁수 탑 시험: 선반 위 궁수 둘");
         }
 
         // 구역 i의 왼쪽(입구) 바닥 위로 옮긴다. 떨어지는 속도는 지운다.
@@ -192,7 +343,7 @@ namespace IBlameYou.Core
             string mode = GameSession.DevMode ? "개발자 모드 (숫자키 즉시)" : "일반 모드 (영창·순서 입력)";
             string text =
                 "<b>기능 테스트</b>  (F6 접기)\n" +
-                $"F7 몬스터 고르기: <color=#ffd84d>{MonsterName(Monsters[monsterIndex])}</color>   F8 앞에 소환\n" +
+                $"F7 몬스터·이벤트: <color=#ffd84d>{PickName()}</color>   F8 부르기\n" +
                 $"F9 유물 장착·해제 ({PlayerRelics.For(player).Owned.Count}개)\n" +
                 $"F10 다음 구역: {FeatureTestStage.Names[(area + 1) % FeatureTestStage.Order.Length]}\n" +
                 $"F5 미니게임 전환: {mode}\n" +
