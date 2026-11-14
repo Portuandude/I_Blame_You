@@ -31,6 +31,8 @@ namespace IBlameYou.UI
         private static readonly Color RestColor = new Color(0.5f, 0.97f, 1f);       // aqua
         private static readonly Color StartColor = new Color(0.6f, 1f, 0.45f);
         private static readonly Color CoinColor = new Color(1f, 0.82f, 0.25f);      // 동전 무더기 점 (금색)
+        private static readonly Color CurseColor = new Color(0.66f, 0.4f, 0.98f);   // 저주받은 상자 점 (보라, CursedChest와 같은 색)
+        private static readonly Color GoblinColor = new Color(1f, 0.93f, 0.55f);    // 보물 고블린 점 (밝은 금색, 깜빡임)
         private static readonly Color VillageColor = new Color(1f, 0.63f, 0.48f);   // 살구색 (NPC 마을, #ffa07a)
 
         private ChunkStreamer streamer;
@@ -533,6 +535,32 @@ namespace IBlameYou.UI
                     }
                 }
 
+                // 방 이벤트 점 (2026-11-14): 방 칸 왼쪽 아래 (오른쪽 아래는 체크·자물쇠, 위는 룬·동전). 들어가 본 방만.
+                // 저주받은 상자(유물을 아직 안 골랐으면 보라) · 보물 고블린(살아 있는 동안 밝은 금색으로 깜빡임)
+                if (streamer.HasVisited(room.Index))
+                {
+                    Color? eventColor = null;
+                    if (streamer.HasTreasureGoblin(room.Index))
+                        eventColor = new Color(GoblinColor.r, GoblinColor.g, GoblinColor.b, 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)));
+                    else if (streamer.HasCursedChestLeft(room.Index)) eventColor = CurseColor;
+                    if (eventColor.HasValue)
+                    {
+                        float d = Mathf.Max(4f, body.width * 0.26f);
+                        float o = Mathf.Max(1f, d * 0.2f);
+                        var dot = new Rect(body.x + 1f, body.yMax - 1f - d, d, d);
+                        if (art.Tile != null)
+                        {
+                            DrawTile(new Rect(dot.x - o, dot.y - o, dot.width + o * 2f, dot.height + o * 2f), Frame);
+                            DrawTile(dot, eventColor.Value);
+                        }
+                        else
+                        {
+                            Fill(new Rect(dot.x - 1f, dot.y - 1f, dot.width + 2f, dot.height + 2f), Frame);
+                            Fill(dot, eventColor.Value);
+                        }
+                    }
+                }
+
                 // 새 방 발견 직후 흰 반짝임 한 번
                 float shine = RevealShineAlpha(room.Index);
                 if (shine > 0f)
@@ -629,7 +657,7 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자", legend);
                 return;
             }
 
@@ -638,7 +666,7 @@ namespace IBlameYou.UI
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
                 (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Village, "마을"), (art.Check, "돌파")
             };
-            int count = items.Length + 1; // 마지막 칸은 동전 점 (그림이 아니라 금색 점)
+            int count = items.Length + 2; // 마지막 두 칸은 동전 점·저주 상자 점 (그림이 아니라 색 점)
             float itemWidth = Mathf.Min(92f, rect.width / count); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * count / 2f;
             foreach (var (icon, name) in items)
@@ -655,6 +683,15 @@ namespace IBlameYou.UI
             }
             else Fill(coinDot, CoinColor);
             GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "동전", legendLeft);
+            x += itemWidth;
+            var curseDot = new Rect(x + 5f, rect.y + 7f, 10f, 10f);
+            if (art.Tile != null)
+            {
+                DrawTile(new Rect(curseDot.x - 2f, curseDot.y - 2f, 14f, 14f), Frame);
+                DrawTile(curseDot, CurseColor);
+            }
+            else Fill(curseDot, CurseColor);
+            GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "저주", legendLeft);
         }
 
         private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;

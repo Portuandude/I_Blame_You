@@ -339,6 +339,47 @@ namespace IBlameYou.Tests
             Assert.Greater(towers, 0, "궁수 탑이 한 번도 안 나옴");
         }
 
+        // 매복 변형 "벽 위 궁수": 난이도 문턱 이상 매복 전투 방은 구역 양쪽 끝 높은 선반 위에 궁수 둘, 구역 적 수는 그대로. 다른 전투 방에는 선반 궁수 없음.
+        [Test]
+        public void WallArcherAmbushPutsArchersOnLedgesKeepingEnemyCount()
+        {
+            int found = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (room.IsVertical || room.Kind != RoomKind.Combat) continue;
+                    var geometry = RoomShaper.Build(seed, room);
+                    var chunk = geometry.Chunk;
+                    string tag = $"seed {seed} room {room.Index}";
+                    var arena = chunk.Features.Find(f => f.Kind == FeatureKind.Arena);
+                    var deferred = chunk.Features.FindAll(f => f.Kind == FeatureKind.Enemy && f.Deferred);
+                    var ledge = deferred.FindAll(f => f.Y == arena.Y + RoomShaper.WallLedgeRise);
+                    if (!RoomShaper.IsWallArcherAmbush(seed, room))
+                    {
+                        Assert.AreEqual(0, ledge.Count, tag);
+                        continue;
+                    }
+
+                    Assert.IsTrue(AmbushRule.IsAmbush(seed, room.Index, room.Difficulty, true), tag);
+                    if (ledge.Count == 0) continue; // 선반 자리가 막혀 두지 않은 방
+                    found++;
+                    Assert.IsTrue(geometry.Valid, tag);
+                    Assert.AreEqual(2, ledge.Count, tag);
+                    int expected = 3 + (int)System.Math.Round(3 * room.Difficulty); // ChunkGenerator.BuildArena 적 수
+                    Assert.AreEqual(expected, deferred.Count, tag + ": 적 수는 그대로");
+                    foreach (var a in ledge)
+                    {
+                        Assert.AreEqual(StageEnemy.GoblinArcher, a.Enemy, tag);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(a.X, a.Y - 1), tag + ": 궁수는 선반 위");
+                        Assert.IsTrue(a.X > arena.X && a.X < arena.X + arena.Width - 1, tag + ": 구역 안");
+                    }
+                }
+            }
+
+            Assert.Greater(found, 0, "벽 위 궁수가 한 번도 안 나옴");
+        }
+
         // 바람 지름길: 위 문이 있는 이동 방(계단 모양)에서 문이 없는 벽 쪽에만. 환풍구는 바닥 위, 기둥 안은 바닥부터 꼭대기까지 비어 있고,
         // 기둥 꼭대기가 선반 서는 칸보다 높고, 선반 위에 동전, 선반은 계단 판에서 5칸 떨어져 있고, 환풍구 위에 함정이 없다.
         [Test]

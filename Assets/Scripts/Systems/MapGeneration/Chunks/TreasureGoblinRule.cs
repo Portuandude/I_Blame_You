@@ -25,6 +25,10 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 맞을 때마다 흘리는 금화 (2026-11-14): HitGold씩, 한 마리에서 MaxHitDrops번까지 (잡았을 때 Gold와 따로)
+        public const int HitGold = 2;
+        public const int MaxHitDrops = 5;
+
         // roll: 0 이상 1 미만 난수. MinGold~MaxGold (양 끝 포함).
         public static int Gold(float roll)
         {

@@ -7,6 +7,7 @@ namespace IBlameYou.Systems
     {
         public const float MinDifficulty = 0.2f; // 시작 방 근처 첫 전투는 보통 등장으로 (처음 보는 사람이 놀라지 않게)
         public const int ChancePercent = 50;     // 조건에 맞는 전투 방의 절반
+        public const int ClearGold = 8;          // 매복 방을 돌파하면 받는 골드 (2026-11-14, 일반 적 1~4 몇 마리 몫)
 
         public static bool IsAmbush(int seed, int roomIndex, float difficulty, bool plainArena)
         {

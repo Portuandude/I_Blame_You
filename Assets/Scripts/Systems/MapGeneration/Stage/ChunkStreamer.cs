@@ -98,6 +98,16 @@ namespace IBlameYou.Systems
             return switchElements[index];
         }
 
+        // 미니맵 방 이벤트 점 (2026-11-14): 저주받은 상자 방에서 아직 유물을 안 골랐는지 (상자가 잠들어 있거나, 정예를 잡고 유물 상자만 남았거나).
+        public bool HasCursedChestLeft(int index) =>
+            rooms != null && stage != null && index >= 0 && index < rooms.Rooms.Count && IsCursedChestRoom(index) && !takenRelics.Contains(index);
+
+        // 미니맵 방 이벤트 점: 그 방에 보물 고블린이 아직 살아 있는지 (잡거나 10초가 지나 도망치면 false)
+        private HealthSystem treasureGoblin;
+        private int treasureGoblinRoom = -1;
+        public bool HasTreasureGoblin(int index) =>
+            index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
+
         // 미니맵 동전 점: 그 방에 아직 안 주운 동전 무더기가 남았는지 (방 격자 모드, 청크 번호 = 방 번호).
         // 무더기 수는 청크 Features에서 처음 물을 때 방마다 한 번 센다. 주운 기록은 CoinPileKey(방, 순번) — 놓는 순서와 같은 순번
         private int[] coinPileCounts;
@@ -405,6 +415,7 @@ namespace IBlameYou.Systems
                                 if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
                         arenaZone.Ambush = ambush;
+                        arenaZone.WallArchers = ambush && RoomShaper.IsWallArcherAmbush(stage.Seed, rooms.Rooms[index]);
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
                         if (midBoss && clearedArenas.Contains(index))
                             SpawnRelicChest(root, index, rewardPosition, false); // 회복은 처치 순간에 이미 받았다
@@ -872,6 +883,8 @@ namespace IBlameYou.Systems
             var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(spot.Value.x, spot.Value.y + SpawnLift, 0f), transform);
             if (health == null) return;
             RegisterEnemy(health);
+            treasureGoblin = health;
+            treasureGoblinRoom = index;
             StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
             GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
         }

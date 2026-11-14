@@ -156,7 +156,7 @@ namespace IBlameYou.UI
             var text = new System.Text.StringBuilder();
             foreach (var s in stats)
             {
-                text.Append(EquipmentBook.Describe(s));
+                text.Append(StatLineText(s));
                 if (compare != null)
                 {
                     float diff = s.Value - ValueOf(compare, s.Stat);
@@ -173,6 +173,16 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(card.x + 10f, card.y + 62f, card.width - 20f, card.height - 70f), text.ToString(), small);
             GUI.matrix = previousMatrix;
+        }
+
+        // 능력치 한 줄 글. 수식어가 주는 마법 공격·마나 소모(EquipmentModifier, 장비 기본 능력치에는 없음)는 좋으면 초록, 나쁘면 빨강으로 (2026-11-14).
+        // 상점 진열·비교 카드·일시정지 장비 줄이 같이 쓴다.
+        private static string StatLineText(StatValue s)
+        {
+            string text = EquipmentBook.Describe(s);
+            if (s.Stat != EquipStat.MagicPower && s.Stat != EquipStat.ManaCost) return text;
+            bool good = (s.Value > 0f) != EquipmentBook.LowerIsBetter(s.Stat);
+            return $"<color={(good ? "#7dff8a" : "#ff6b6b")}>{text}</color>";
         }
 
         private static float ValueOf(List<StatValue> stats, EquipStat stat)

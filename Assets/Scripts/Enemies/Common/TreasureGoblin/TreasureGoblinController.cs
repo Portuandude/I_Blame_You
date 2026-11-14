@@ -28,6 +28,24 @@ namespace IBlameYou.Enemies
 
         protected override bool ContactDamageActive => false;
 
+        // 맞을 때마다 자루에서 금화가 흘러나온다 (2026-11-14 ① 컨텐츠, 놓쳐도 맞힌 만큼은 남게). 골드는 RunGold가 준다 (SkillHUD가 이 이벤트를 듣는다).
+        // 한 마리에서 TreasureGoblinRule.MaxHitDrops번까지.
+        public static event System.Action<TreasureGoblinController> Hit;
+        private int hitDrops;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            Health.Damaged += OnHitDropCoins;
+        }
+
+        private void OnHitDropCoins(float amount)
+        {
+            if (amount <= 0f || escaped || Health.IsDead || hitDrops >= TreasureGoblinRule.MaxHitDrops) return;
+            hitDrops++;
+            Hit?.Invoke(this);
+        }
+
         public void Configure(LayerMask groundLayer) => ground = groundLayer;
 
         private void Start()
@@ -111,7 +129,10 @@ namespace IBlameYou.Enemies
             escaped = true;
             EffectLibrary.PlayOneShot(transform.position + Vector3.up * 0.5f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.85f, 0.4f, 0.7f), 1.2f);
             GameAudio.PlaySfx("BlinkVanish", 0.7f);
-            StageEvents.PostNotice("보물 고블린이 도망쳤다...");
+            // 맞혀서 흘린 금화가 있으면 같이 알려 준다 (놓쳐도 헛걸음은 아니었다는 느낌)
+            StageEvents.PostNotice(hitDrops > 0
+                ? $"보물 고블린이 도망쳤다... (흘린 금화 +{hitDrops * TreasureGoblinRule.HitGold})"
+                : "보물 고블린이 도망쳤다...");
             Destroy(gameObject);
         }
     }
