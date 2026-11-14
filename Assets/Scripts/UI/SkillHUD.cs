@@ -309,8 +309,8 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
             GUILayout.BeginArea(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f));
             DrawVitalBars(GUILayoutUtility.GetRect(rect.width - 20f, BarIconSize + 2f)); // 체력·마나 바 (SkillHUD.Bars.cs)
-            GUILayout.Label($"<color=#73d9ff>A</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
-            GUILayout.Label($"<color=#ffa659>B</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
+            GUILayout.Label($"<color=#73d9ff>{(GameSession.DevMode ? "A" : "P1·A")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
+            GUILayout.Label($"<color=#ffa659>{(GameSession.DevMode ? "B" : "P2·B")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
             string shieldText = shield != null && shield.Active
                 ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
                 : "방어막: 없음";
