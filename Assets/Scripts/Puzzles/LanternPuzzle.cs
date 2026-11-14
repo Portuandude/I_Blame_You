@@ -110,7 +110,7 @@ namespace IBlameYou.Puzzles
 
         // 거울: 바닥 위 MirrorRise 높이에 은빛 틀의 가로 판. 순번 순서대로 작은 등불 그림을 두되, 가로 자리는 실제 등불 자리를
         // 거울 가운데 기준으로 좌우 뒤집은 곳(줄여서). 그림은 모두 같은 높이·색 없음. 안 풀린 동안 순번대로 하얗게 깜빡이고 쉬기를 되풀이한다.
-        private const float MirrorRise = 6.5f;
+        private const float MirrorRise = 4.2f; // 카메라 위 끝(바닥 + 약 8) 안에 그림이 넉넉히 들어오게
         private const float MirrorWidth = 4.6f;
         private const float MirrorPanelHeight = 1.7f;
         private const float MirrorSpread = 0.16f;  // 실제 가로 거리 → 거울 속 가로 거리
