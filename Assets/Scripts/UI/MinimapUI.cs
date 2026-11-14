@@ -543,6 +543,7 @@ namespace IBlameYou.UI
                     Color? eventColor = null;
                     if (streamer.HasTreasureGoblin(room.Index))
                         eventColor = new Color(GoblinColor.r, GoblinColor.g, GoblinColor.b, 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)));
+                    else if (streamer.HasWaitingTreasureGoblin(room.Index)) eventColor = new Color(GoblinColor.r, GoblinColor.g, GoblinColor.b, 0.5f); // 세로 방 바닥 가까이 내려가면 나타남 (깜빡이지 않음)
                     else if (streamer.HasCursedChestLeft(room.Index)) eventColor = CurseColor;
                     else if (streamer.HasGoblinEquipmentLeft(room.Index)) eventColor = GearColor; // 보물 고블린이 떨군 장비가 남음 (주우면 사라짐)
                     if (eventColor.HasValue)
