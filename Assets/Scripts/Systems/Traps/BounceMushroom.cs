@@ -1,5 +1,6 @@
 using IBlameYou.Enemies;
 using IBlameYou.Player;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace IBlameYou.Systems
@@ -33,8 +34,9 @@ namespace IBlameYou.Systems
         private static float lastPlayerBounce = -10f;
         private static int chain;
 
-        // feet: 버섯이 선 바닥 윗면의 가운데 (월드).
-        public static BounceMushroom Create(Transform parent, Vector2 feet)
+        // feet: 버섯이 선 바닥 윗면의 가운데 (월드). pathHint: 버섯 탑의 "길 버섯"(FeatureKind.BounceMushroom, Direction 1)이면
+        // 플레이어가 같은 높이 가까이에 오면 갓 위에 위쪽 꺾쇠(^) 두 개가 통통 떠서 "밟고 오르는 길"임을 알려 준다.
+        public static BounceMushroom Create(Transform parent, Vector2 feet, bool pathHint = false)
         {
             var go = new GameObject("BounceMushroom");
             go.transform.SetParent(parent, false);
@@ -57,6 +59,7 @@ namespace IBlameYou.Systems
             Part(mushroom.visual, "SpotL", circle, new Vector2(-0.28f, 0.72f), new Vector2(0.18f, 0.14f), Color.white, 4);
             Part(mushroom.visual, "SpotR", circle, new Vector2(0.24f, 0.78f), new Vector2(0.22f, 0.17f), Color.white, 4);
             Part(mushroom.visual, "SpotT", circle, new Vector2(-0.02f, 0.88f), new Vector2(0.13f, 0.1f), Color.white, 4);
+            if (pathHint) mushroom.BuildHint(square);
             return mushroom;
         }
 
@@ -70,6 +73,70 @@ namespace IBlameYou.Systems
             renderer.sprite = sprite;
             renderer.color = color;
             renderer.sortingOrder = order;
+        }
+
+        // ------------------------------------------------------------------ 길 버섯 꺾쇠 표시 (2026-11-14 버섯 탑)
+        private const float HintNear = 3.5f;       // 가로로 이 칸 안이고
+        private const float HintLevel = 1.2f;      // 발 높이 차가 이 안이면 (같은 바닥·선반에 섰을 때) 보인다
+        private const float HintFade = 4f;         // 초당 알파 변화
+        private const float HintBob = 0.12f;
+        private static readonly Color HintColor = new Color(1f, 0.92f, 0.97f);
+        private Transform hint;
+        private SpriteRenderer[] hintParts;
+        private float hintAlpha;
+        private static PlayerMovement hintPlayer;
+        private static float nextHintFind;
+
+        private void BuildHint(Sprite square)
+        {
+            hint = new GameObject("PathHint").transform;
+            hint.SetParent(transform, false);
+            hint.localPosition = new Vector3(0f, CapTop + 0.7f, 0f);
+            var parts = new List<SpriteRenderer>();
+            for (int k = 0; k < 2; k++) // 꺾쇠 두 개를 위아래로 (^^ 겹쳐 "위로")
+            {
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    var go = new GameObject("Chevron");
+                    go.transform.SetParent(hint, false);
+                    go.transform.localPosition = new Vector3(side * 0.11f, k * 0.24f, 0f);
+                    go.transform.localRotation = Quaternion.Euler(0f, 0f, side * -45f);
+                    go.transform.localScale = new Vector3(0.3f, 0.07f, 1f);
+                    var renderer = go.AddComponent<SpriteRenderer>();
+                    renderer.sprite = square;
+                    renderer.color = new Color(HintColor.r, HintColor.g, HintColor.b, 0f);
+                    renderer.sortingOrder = 6;
+                    parts.Add(renderer);
+                }
+            }
+            hintParts = parts.ToArray();
+        }
+
+        private void UpdateHint()
+        {
+            if (hint == null) return;
+            if (hintPlayer == null && Time.time >= nextHintFind)
+            {
+                nextHintFind = Time.time + 1f;
+                hintPlayer = FindFirstObjectByType<PlayerMovement>();
+            }
+
+            bool show = false;
+            if (hintPlayer != null)
+            {
+                Vector2 d = (Vector2)hintPlayer.transform.position - (Vector2)transform.position;
+                show = Mathf.Abs(d.x) <= HintNear && Mathf.Abs(d.y) <= HintLevel;
+            }
+            hintAlpha = Mathf.MoveTowards(hintAlpha, show ? 0.9f : 0f, HintFade * Time.deltaTime);
+            hint.localPosition = new Vector3(0f, CapTop + 0.7f + Mathf.Abs(Mathf.Sin(Time.time * 4f)) * HintBob, 0f);
+            for (int i = 0; i < hintParts.Length; i++)
+            {
+                // 아래 꺾쇠가 먼저, 위 꺾쇠가 조금 늦게 밝아지는 물결 (위로 흐르는 느낌)
+                float wave = 0.65f + 0.35f * Mathf.Sin(Time.time * 5f - (i / 2) * 1.2f);
+                var c = hintParts[i].color;
+                c.a = hintAlpha * wave;
+                hintParts[i].color = c;
+            }
         }
 
         private void OnTriggerStay2D(Collider2D other)
@@ -146,6 +213,7 @@ namespace IBlameYou.Systems
 
         private void Update()
         {
+            UpdateHint();
             if (visual == null) return;
             if (squashAge < SquashTime)
             {
