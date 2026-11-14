@@ -339,6 +339,35 @@ namespace IBlameYou.Tests
             Assert.Greater(towers, 0, "궁수 탑이 한 번도 안 나옴");
         }
 
+        // 깊은 궁수 탑: 난이도 문턱 이상이면 바닥에 고블린 파수꾼 하나 (가시·구멍 위가 아닌 바닥 칸), 아니면 없다.
+        [Test]
+        public void DeepArcherTowersAddOneGroundGuard()
+        {
+            int guarded = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    if (!RoomShaper.IsArcherTower(room, style)) continue;
+                    var chunk = RoomShaper.BuildShaft(seed, room, style).Chunk;
+                    string tag = $"seed {seed} room {room.Index}";
+                    var guards = chunk.Features.FindAll(f => f.Kind == FeatureKind.Enemy && f.Enemy == StageEnemy.Goblin && f.Y == RoomShaper.ShaftGround);
+                    var spikes = chunk.Features.FindAll(f => f.Kind == FeatureKind.Spikes);
+                    if (!RoomShaper.HasArcherTowerGuard(room, style)) continue;
+                    guarded++;
+                    Assert.GreaterOrEqual(guards.Count, 1, tag);
+                    foreach (var gd in guards)
+                    {
+                        Assert.IsTrue(chunk.IsSolid(gd.X, gd.Y - 1), tag + ": 파수꾼 밑은 바닥");
+                        foreach (var sp in spikes) Assert.IsFalse(gd.X >= sp.X - 1 && gd.X <= sp.X + sp.Width, tag + ": 가시 위·바로 옆 아님");
+                    }
+                }
+            }
+            Assert.Greater(guarded, 0, "깊은 궁수 탑이 한 번도 안 나옴");
+        }
+
         // 매복 변형 "벽 위 궁수": 난이도 문턱 이상 매복 전투 방은 구역 양쪽 끝 높은 선반 위에 궁수 둘, 구역 적 수는 그대로. 다른 전투 방에는 선반 궁수 없음.
         [Test]
         public void WallArcherAmbushPutsArchersOnLedgesKeepingEnemyCount()
