@@ -15,6 +15,7 @@ namespace IBlameYou.Core
         public static int GoldSpent { get; private set; }  // 이번 판에 마을에서 쓴 골드 합계 (식당·상점, 결과 창 "씀")
         public static event System.Action<int> GoldSpentNow; // 골드를 썼다 (쓴 양). HUD 골드 알약 아래 빨간 "-N" (SkillHUD.Gold)
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
+        public static int HeartDust { get; private set; } // 이번 판에 얻은 마음 가루 (도시 화폐, 얻는 순간 SaveData에 쌓인다 — Docs/CityDesign.md)
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
         public static readonly int[] ShieldCasts = new int[5];
@@ -31,6 +32,7 @@ namespace IBlameYou.Core
             Gold = 0;
             GoldEarned = 0;
             GoldSpent = 0;
+            HeartDust = 0;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
             System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
@@ -53,6 +55,14 @@ namespace IBlameYou.Core
             GoldSpent += amount;
             if (amount > 0) GoldSpentNow?.Invoke(amount);
             return true;
+        }
+
+        // 마음 가루: 이번 판 집계 + 저장된 누적에 바로 더한다 (쓰러져도 남는다). 보스 처치·클리어는 판이 끝나는 순간과 겹쳐서 Ended여도 받는다.
+        public static void AddHeartDust(int amount)
+        {
+            if (amount <= 0) return;
+            HeartDust += amount;
+            SaveData.AddHeartDust(amount);
         }
 
         public static void AddArenaCleared()

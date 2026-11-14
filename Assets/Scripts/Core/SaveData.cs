@@ -17,6 +17,7 @@ namespace IBlameYou.Core
         private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
         private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
+        private const string KeyHeartDust = "City.HeartDust";     // 마음 가루 누적 (도시 화폐, Docs/CityDesign.md)
 
         private static bool settingsLoaded;
 
@@ -54,6 +55,16 @@ namespace IBlameYou.Core
 
         // 지금까지 도달한 가장 높은 레벨. 기록이 없으면 0.
         public static int BestLevel(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestLevel, devMode), 0);
+
+        // 마음 가루 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
+        public static int HeartDust(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyHeartDust, devMode), 0);
+
+        public static void AddHeartDust(int amount)
+        {
+            if (amount <= 0 || GameSession.FeatureTest) return;
+            bool dev = GameSession.DevMode;
+            PlayerPrefs.SetInt(ModeKey(KeyHeartDust, dev), HeartDust(dev) + amount);
+        }
 
         // 한 판에 모은 골드(쓴 것 포함, RunStats.GoldEarned) 최고. 기록이 없으면 0.
         public static int BestGold(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestGold, devMode), 0);
