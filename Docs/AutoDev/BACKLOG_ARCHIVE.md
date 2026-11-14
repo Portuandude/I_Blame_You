@@ -2,6 +2,16 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+## 다음 (2026-11-14 00:15 자동 실행이 추가 — 레벨 재설계: 통통 버섯 덤 길)
+
+DIRECTION ① "방 종류 늘리기" 중 사람 선택이 필요 없는 지형 변형 (플레이테스트 "길이는 괜찮은데 심심하다"). 지나가는 길은 그대로 두고 덤 길만 더한다. 난수를 쓰지 않아 기존 시드 지형·적 그대로.
+
+- DONE (claude/project-thread-gim36q): 통통 버섯 (새 `Systems/Traps/BounceMushroom`) — 위에서 내려앉으면 7.5칸 튕김, 걸어서는 그냥 지나감, 대시 중엔 안 튕김
+- DONE (claude/project-thread-gim36q): 배치 — 난이도 10%+ 평지 가운데 쪽 평평한 5칸 위, 바닥 + 6에 5칸 발판 선반 + 선반 위 동전 무더기 (`ChunkGenerator.PlaceBounceLedge`, `FeatureKind.BounceMushroom`)
+- DONE (claude/project-thread-gim36q): 효과음 `MushroomBoing` ("보잉")
+- DONE (claude/project-thread-gim36q): 연출 — 튕길 때 납작 눌렸다 길쭉하게 흔들림 + 분홍·흰 포자 + 먼지, 가만히 있을 때 숨 쉬듯 부풂
+- DONE (claude/project-thread-gim36q): 테스트 `PlainsBounceMushroomLiftsToCoinLedge` (선반 높이·평평함·천장·동전·적 없음·검증 통과)
+
 ## 다음 (2026-11-14 00:10 자동 실행이 추가 — 무너지는 발판 무너짐·복귀 연출)
 
 DIRECTION ① "플레이 감각 다듬기". 무너지는 발판이 곧 무너진다·곧 다시 생긴다를 눈과 귀로 읽히게. 흔들림·사라짐·다시 생기는 시간과 판정 그대로 (그림·소리만, `Systems/Effects/CrumblePlatformFx`).
