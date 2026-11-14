@@ -345,7 +345,7 @@ namespace IBlameYou.Systems
             // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
             if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
             if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
-            if (up && IsArcherTower(room, style)) AddArcherTower(geometry);
+            if (up && IsArcherTower(room, style)) AddArcherTower(geometry, HasArcherTowerGuard(room, style));
             return Check(geometry);
         }
 
@@ -521,14 +521,21 @@ namespace IBlameYou.Systems
         // 적 배치 변형 "궁수 탑" (2026-11-14 사람 결정, ContentIdeas 적 3): 난이도 ArcherTowerMinDifficulty 이상인 선반 세로 이동 방은
         // 낮은 선반에도 고블린 궁수가 서서(높은 선반 궁수와 합쳐 둘) 위아래에서 쏘고, 두 선반 아래 바닥에 가시 줄(2칸)을 깐다.
         // 난수를 쓰지 않아 방 모양·다른 적·함정 자리는 그대로다. 가시는 SafeTrapColumns(문·첫 발판 밑·적 자리 피함)와 기존 함정 ±2칸을 피한다.
-        public const float ArcherTowerMinDifficulty = 0.5f;
+        public const float ArcherTowerMinDifficulty = 0.35f; // 2026-11-14 0.5 → 0.35(높은 선반 궁수 문턱): 0.5는 60시드 중 2판에만 나와 거의 못 봄 (위 문 선반 세로 방은 깊은 곳에 드묾)
         public const int ArcherTowerSpikeWidth = 2;
+
+        // 깊은 궁수 탑 (2026-11-14 자동 실행): 난이도 ArcherTowerGuardDifficulty 이상 궁수 탑은 바닥에 고블린 파수꾼 하나가 더 선다.
+        // 위에서 쏘는 동안 바닥을 서성여 가시 사이로 내려앉기 어렵게 한다. 가시·문 앞·구멍·첫 발판 밑을 피해 가운데에서 가까운 칸 (난수 안 씀).
+        public const float ArcherTowerGuardDifficulty = 0.45f;
+
+        public static bool HasArcherTowerGuard(RoomData room, ShaftStyle style) =>
+            IsArcherTower(room, style) && room.Difficulty >= ArcherTowerGuardDifficulty;
 
         public static bool IsArcherTower(RoomData room, ShaftStyle style) =>
             style == ShaftStyle.Shelves && room.Kind == RoomKind.Travel && room.Difficulty >= ArcherTowerMinDifficulty
             && (room.Doors & DoorDir.Up) != 0;
 
-        private static void AddArcherTower(RoomGeometry geometry)
+        private static void AddArcherTower(RoomGeometry geometry, bool guard)
         {
             var chunk = geometry.Chunk;
             int g = ShaftGround;
@@ -552,6 +559,41 @@ namespace IBlameYou.Systems
                     break;
                 }
             }
+
+            if (guard) AddTowerGuard(geometry);
+        }
+
+        // 파수꾼 자리: 바닥 위 두 칸이 비고, 문 앞 두 칸·구멍(±1)·가시와 불기둥(±1)·바닥에 선 다른 적(±1)이 아닌 열 중 가운데에서 가까운 곳.
+        // 함정 자리 검사(SafeTrapColumns)보다 느슨하다: 적은 걸어 다니므로 첫 발판 밑이어도 된다.
+        private static void AddTowerGuard(RoomGeometry geometry)
+        {
+            var chunk = geometry.Chunk;
+            int g = ShaftGround;
+            var ok = new bool[W];
+            for (int x = 0; x < W; x++) ok[x] = chunk.IsSolid(x, g - 1) && !chunk.IsSolid(x, g) && !chunk.IsSolid(x, g + 1);
+            Clear(ok, 0, 2);
+            Clear(ok, W - 3, W - 1);
+            Clear(ok, HoleX0 - 1, HoleX1 + 1);
+            foreach (var spot in geometry.Arrivals.Values) if (spot.y == g) Clear(ok, spot.x - 1, spot.x + 1);
+            foreach (var spot in geometry.Exits.Values) if (spot.y == g) Clear(ok, spot.x - 1, spot.x + 1);
+            foreach (var f in chunk.Features)
+            {
+                if (f.Y != g) continue;
+                if (f.Kind == FeatureKind.Spikes || f.Kind == FeatureKind.FlameJet) Clear(ok, f.X - 1, f.X + Math.Max(1, f.Width));
+                else if (f.Kind == FeatureKind.Enemy) Clear(ok, f.X - 1, f.X + 1);
+            }
+            for (int offset = 0; offset < W / 2; offset++)
+                foreach (int x in new[] { W / 2 - 1 - offset, W / 2 + offset })
+                {
+                    if (x < 0 || x >= W || !ok[x]) continue;
+                    chunk.AddEnemy(StageEnemy.Goblin, x, g);
+                    return;
+                }
+        }
+
+        private static void Clear(bool[] ok, int x0, int x1)
+        {
+            for (int x = Math.Max(0, x0); x <= Math.Min(W - 1, x1); x++) ok[x] = false;
         }
 
         // 바람 지름길 (2026-11-14 레벨 재설계 2차 "세로 방 다양화"): 위 문이 있는 이동 방에서 문이 없는 쪽 벽 가까이
