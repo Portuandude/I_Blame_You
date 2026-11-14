@@ -9,6 +9,12 @@ namespace IBlameYou.Systems
         public const int ChancePercent = 25;
         public const int OfferSize = 2; // 유물 2개 중 하나 (네잎 클로버면 +1)
 
+        // 빠른 해제 보너스 (2026-11-14 자동 실행): 깨어난 뒤 QuickTime초 안에 저주를 풀면 유물 QuickOfferSize개 중 고르기.
+        public const float QuickTime = 25f;
+        public const int QuickOfferSize = 3;
+
+        public static int OfferFor(float secondsSinceAwaken) => secondsSinceAwaken <= QuickTime ? QuickOfferSize : OfferSize;
+
         public static bool IsCursedChestRoom(int seed, int roomIndex, float difficulty, bool travelRoom)
         {
             if (!travelRoom || difficulty < MinDifficulty) return false;
