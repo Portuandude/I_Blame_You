@@ -72,5 +72,39 @@ namespace IBlameYou.Tests
             Assert.AreEqual(ChunkGenerator.LanternCount, chunk.Features.Count(f => f.Kind == FeatureKind.Lantern));
             Assert.AreEqual("등불 순서 방", FeatureTestStage.Names[FeatureTestStage.LanternArea]);
         }
+    
+        // 거울 룬: 바닥 등불 셋(왼쪽·가운데·오른쪽, 속성·순번 모두 다름) + 거울 + 상자 자리. 방은 지나갈 수 있다.
+        [Test]
+        public void MirrorPuzzleHasFloorLanternsAndMirror()
+        {
+            for (int seed = 0; seed < 60; seed++)
+            {
+                var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.MirrorPuzzle, 0.5f, 7, 0);
+                string at = $"seed {seed}";
+                var lanterns = chunk.Features.Where(f => f.Kind == FeatureKind.Lantern).ToList();
+                Assert.AreEqual(ChunkGenerator.LanternCount, lanterns.Count, at);
+                Assert.IsTrue(lanterns.All(l => l.Y == 7), at);
+                CollectionAssert.AreEquivalent(new[] { ChunkGenerator.MirrorLeftX, ChunkGenerator.MirrorCenterX, ChunkGenerator.MirrorRightX }, lanterns.Select(l => l.X), at);
+                CollectionAssert.AreEquivalent(new[] { 0, 1, 2 }, lanterns.Select(l => l.ElementIndex), at);
+                CollectionAssert.AreEquivalent(new[] { 0, 1, 2 }, lanterns.Select(l => l.Direction), at);
+                Assert.AreEqual(1, chunk.Features.Count(f => f.Kind == FeatureKind.MirrorMural), at);
+                Assert.AreEqual(1, chunk.Features.Count(f => f.Kind == FeatureKind.PuzzleChest), at);
+                Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"{at}: {reason}");
+            }
+            var fallback = ChunkGenerator.Fallback(3, ChunkKind.MirrorPuzzle, 0.5f, 7);
+            Assert.AreEqual(ChunkGenerator.LanternCount, fallback.Features.Count(f => f.Kind == FeatureKind.Lantern));
+        }
+
+        // 둘째 퍼즐 방은 시드에 따라 등불 순서·거울 룬이 번갈아 나온다.
+        [Test]
+        public void BothDeductionPuzzlesAppearAcrossSeeds()
+        {
+            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(0));
+            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(1));
+            Assert.AreEqual(RoomKind.Puzzle, RoomLayout.KindOf(ChunkKind.MirrorPuzzle));
+            var stage = FeatureTestStage.Build();
+            Assert.AreEqual(ChunkKind.MirrorPuzzle, stage.Chunks[FeatureTestStage.MirrorArea].Kind);
+            Assert.AreEqual("거울 룬 방", FeatureTestStage.Names[FeatureTestStage.MirrorArea]);
+        }
     }
 }

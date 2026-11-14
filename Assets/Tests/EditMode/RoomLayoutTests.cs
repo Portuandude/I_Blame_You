@@ -308,7 +308,7 @@ namespace IBlameYou.Tests
                     Assert.GreaterOrEqual(puzzles.Count, RoomLayout.MinPuzzleRooms, at);
                     foreach (var p in puzzles) Assert.IsFalse(p.IsVertical, at);
                     Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Chunk == ChunkKind.SwitchBridge).Count, at);
-                    Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Chunk == ChunkKind.LanternPuzzle).Count, 1, $"{at}: 등불 순서 방");
+                    Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Chunk == RoomLayout.DeductionPuzzle(seed)).Count, 1, $"{at}: 추리 퍼즐 방");
                     Assert.AreEqual(0, layout.Rooms.FindAll(r => r.Kind == RoomKind.Travel || r.Kind == RoomKind.Rest).Count, $"{at}: 이동·휴식 방 없음");
                 }
         }
@@ -326,7 +326,7 @@ namespace IBlameYou.Tests
                     if (room.Kind == RoomKind.Puzzle)
                     {
                         Assert.IsFalse(chunk.Features.Exists(f => f.Kind == FeatureKind.Enemy), at);
-                        if (room.Chunk == ChunkKind.LanternPuzzle)
+                        if (room.Chunk == ChunkKind.LanternPuzzle || room.Chunk == ChunkKind.MirrorPuzzle)
                             Assert.AreEqual(ChunkGenerator.LanternCount, chunk.Features.FindAll(f => f.Kind == FeatureKind.Lantern).Count, at);
                         continue;
                     }
