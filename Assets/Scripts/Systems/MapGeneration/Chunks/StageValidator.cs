@@ -134,8 +134,24 @@ namespace IBlameYou.Systems
                 }
             }
 
+            // 길 버섯 (BounceMushroom, Direction = 1, 2026-11-14 버섯 탑): 버섯이 선 칸에서 같은 열 위로 TowerMushroomReach칸 안의
+            // 설 수 있는 칸으로 오른다 (발판은 아래에서 뚫고 오른다, 땅 타일이 가로막으면 거기서 멈춤). 덤 버섯(Direction 0)은 무시
+            foreach (var f in chunk.Features)
+            {
+                if (f.Kind != FeatureKind.BounceMushroom || f.Direction != 1) continue;
+                if (!Standable(chunk, support, f.X, f.Y) || edges[Id(f.X, f.Y)] == null) continue;
+                for (int ty = f.Y + 1; ty <= f.Y + TowerMushroomReach && ty < H; ty++)
+                {
+                    if (!Free(chunk, f.X, ty + 1)) break;
+                    if (Standable(chunk, support, f.X, ty)) edges[Id(f.X, f.Y)].Add(Id(f.X, ty));
+                }
+            }
+
             return edges;
         }
+
+        // 길 버섯으로 오르는 최대 높이 (BounceMushroom.LaunchHeight 7.5 + 갓 0.95 ≈ 8.45 → 몸 여유를 두고 7)
+        public const int TowerMushroomReach = 7;
 
         private static List<int>[] Reverse(List<int>[] edges)
         {

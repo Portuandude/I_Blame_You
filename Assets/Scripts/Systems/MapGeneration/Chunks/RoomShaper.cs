@@ -37,7 +37,8 @@ namespace IBlameYou.Systems
 
         // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
         // / 무너지는 계단(난이도 CrumbleStairsMinDifficulty 이상) / 깜빡 계단(BlinkStairsMinDifficulty 이상)
-        public enum ShaftStyle { Zigzag, TwinStairs, Shelves, CrumbleStairs, BlinkStairs }
+        // / 버섯 탑(MushroomTowerMinDifficulty 이상 이동 방에서 지그재그 대신 절반 확률, 2026-11-14)
+        public enum ShaftStyle { Zigzag, TwinStairs, Shelves, CrumbleStairs, BlinkStairs, MushroomTower }
 
         public const float CrumbleStairsMinDifficulty = 0.3f;
         public const float BlinkStairsMinDifficulty = 0.45f;
@@ -217,7 +218,14 @@ namespace IBlameYou.Systems
             if ((room.Doors & DoorDir.Up) == 0 || room.Difficulty < 0.15f) return ShaftStyle.Zigzag;
             var rng = new Random(unchecked(seed * 31 + room.Index * 7919 + 11)); // 지형 난수열과 따로 (지그재그 방 모양이 그대로 남게)
             int count = room.Difficulty >= BlinkStairsMinDifficulty ? 5 : room.Difficulty >= CrumbleStairsMinDifficulty ? 4 : 3;
-            return (ShaftStyle)rng.Next(count);
+            var style = (ShaftStyle)rng.Next(count);
+            // 버섯 탑은 지그재그로 뽑힌 이동 방 일부만 바꾼다 (다른 모양을 고르는 난수는 그대로). 따로 굴리는 난수
+            if (style == ShaftStyle.Zigzag && room.Kind == RoomKind.Travel && room.Difficulty >= MushroomTowerMinDifficulty)
+            {
+                var towerRng = new Random(unchecked(seed * 73 + room.Index * 104729 + 41));
+                if (towerRng.NextDouble() < MushroomTowerChance) style = ShaftStyle.MushroomTower;
+            }
+            return style;
         }
 
         internal static RoomGeometry BuildShaft(int seed, RoomData room, ShaftStyle style)
@@ -250,11 +258,12 @@ namespace IBlameYou.Systems
             if (up)
             {
                 if (style == ShaftStyle.TwinStairs) AddTwinStairs(chunk, g);
+                else if (style == ShaftStyle.MushroomTower) AddMushroomTower(room, chunk, g, rng);
                 else AddStairs(chunk, g, rng);
                 if (style == ShaftStyle.Shelves) AddShelves(chunk, room, rng);
                 if (style == ShaftStyle.CrumbleStairs || style == ShaftStyle.BlinkStairs)
                     MakeStairsUnsteady(chunk, g, style == ShaftStyle.BlinkStairs);
-                if (style != ShaftStyle.TwinStairs && style != ShaftStyle.Shelves) AddWindShortcut(room, chunk);
+                if (style != ShaftStyle.TwinStairs && style != ShaftStyle.Shelves && style != ShaftStyle.MushroomTower) AddWindShortcut(room, chunk);
             }
 
             var geometry = new RoomGeometry { Chunk = chunk };
@@ -290,6 +299,38 @@ namespace IBlameYou.Systems
                 left = !left;
             }
         }
+
+        // 버섯 탑 (2026-11-14 "세로 방 다양화"): 계단 대신 통통 버섯 두 개로 오른다. 바닥 버섯(M1) → 튕겨 바닥 + 7 선반(P1)에 서고,
+        // P1 위 버섯(M2) → 튕겨 다시 7칸 위 선반(P2)에 서고, P2에서 점프(위로 2칸)로 위 문 아래 맨 위 판에 오른다.
+        // 버섯은 "길 버섯"(Direction = 1)이라 검증기가 버섯 열 위로 TowerMushroomReach칸까지 오르는 길로 본다.
+        // 방 번호 짝·홀로 왼쪽/오른쪽 탑 (지형 난수 하나를 지그재그 계단처럼 써서 적 자리 난수열 위치가 같게).
+        public const float MushroomTowerMinDifficulty = 0.25f;
+        public const float MushroomTowerChance = 0.5f;
+        public const int TowerStep = 7;             // 버섯 하나로 오르는 높이 (튕김 7.5 + 갓 0.95 ≈ 8.45 아래로 넉넉히)
+        public const int TowerMushroom1X = 6;       // 바닥 버섯 열 (왼쪽 탑 기준, 오른쪽이면 W-1-x)
+        public const int TowerMushroom2X = 8;       // P1 위 버섯 열
+        public const int TowerShelf1X0 = 4, TowerShelf1X1 = 9;   // P1 (행 = 바닥 + TowerStep - 1)
+        public const int TowerShelf2X0 = 6, TowerShelf2X1 = 11;  // P2 (행 = P1 서는 칸 + TowerStep - 1)
+
+        public static bool MushroomTowerOnLeft(RoomData room) => (room.Index & 1) == 0;
+
+        private static void AddMushroomTower(RoomData room, ChunkData chunk, int g, Random rng)
+        {
+            rng.Next(2); // 지그재그 AddStairs와 같은 수만큼 난수를 써서 뒤의 적 자리 난수열을 맞춘다
+            bool left = MushroomTowerOnLeft(room);
+            int stand1 = g + TowerStep;
+            int stand2 = stand1 + TowerStep;
+            chunk.SetRow(HoleX0 - 1, HoleX1 + 1, TopPlatformRow, StageTile.Platform);
+            SetRowEither(chunk, TowerCol(left, TowerShelf1X0), TowerCol(left, TowerShelf1X1), stand1 - 1);
+            SetRowEither(chunk, TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1), stand2 - 1);
+            chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom1X), g, 1, 1);
+            chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom2X), stand1, 1, 1);
+        }
+
+        public static int TowerCol(bool left, int x) => left ? x : W - 1 - x;
+
+        private static void SetRowEither(ChunkData chunk, int a, int b, int row) =>
+            chunk.SetRow(Math.Min(a, b), Math.Max(a, b), row, StageTile.Platform);
 
         // 무너지는/깜빡 계단: 지그재그 계단에서 맨 위 판(위 문 아래)과 맨 아래 판(바닥에서 뛰어오르는 첫 판)을 뺀 판들을
         // 타일 대신 무너지는 발판(Crumble) 또는 깜빡 발판(BlinkPlatform)으로 바꾼다. 둘 다 아래에서 뚫고 오르는 한쪽 발판이고
