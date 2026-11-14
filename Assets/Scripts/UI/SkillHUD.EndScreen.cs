@@ -99,9 +99,10 @@ namespace IBlameYou.UI
         {
             bool compare = !clear && HasDefeatCompare;
             string explore = ExploreText(true);           // 방 N/M 탐험 · 동전 무더기 a/b · 마을 (SkillHUD.Pause.cs)
+            string events = RoomEventText();              // 매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f (만난 것만)
             bool favorite = !string.IsNullOrEmpty(FavoriteLine());
             const float top = 60f, line = 26f, summary = 28f, small22 = 22f, relics = 30f;
-            float height = top + line * 2f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f)
+            float height = top + line * 2f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f) + (events.Length > 0 ? small22 : 0f)
                            + (favorite ? small22 : 0f) + relics + EndButtonHeight + 16f;
             float y0 = Mathf.Max(8f, Mathf.Min(Screen.height * 0.35f, Screen.height - height - 12f));
             var rect = new Rect((Screen.width - width) / 2f, y0, width, height);
@@ -157,6 +158,16 @@ namespace IBlameYou.UI
                 var exploreStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
                 exploreStyle.normal.textColor = OutlinedLabel.Cream;
                 GUI.Label(new Rect(rect.x, y + lift, rect.width, small22), explore, exploreStyle);
+                GUI.color = previous;
+                y += small22; row++;
+            }
+
+            if (events.Length > 0)
+            {
+                lift = BeginRow(row, out previous);
+                var eventStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
+                eventStyle.normal.textColor = OutlinedLabel.Cream;
+                GUI.Label(new Rect(rect.x, y + lift, rect.width, small22), events, eventStyle);
                 GUI.color = previous;
                 y += small22; row++;
             }

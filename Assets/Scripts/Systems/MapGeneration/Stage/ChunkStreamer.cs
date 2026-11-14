@@ -64,6 +64,40 @@ namespace IBlameYou.Systems
         public bool HasVisited(int index) => visitedRooms.Contains(index);
         public int VisitedCount => visitedRooms.Count; // 일시정지 창 "방 N/M 탐험"
 
+        // 결과 창 방 이벤트 줄 (2026-11-14 자동 실행): 이번 판에 만난(들어가 본) 방 이벤트와 해낸 수.
+        // 매복 = 가 본 매복 전투 방 / 돌파한 것, 저주 상자 = 가 본 저주 상자 방 / 저주를 푼 것, 보물 고블린 = 나타난 것 / 잡은 것.
+        public struct RoomEventTally
+        {
+            public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
+            public bool Any => AmbushMet + CursedMet + GoblinMet > 0;
+        }
+
+        private readonly HashSet<int> goblinsMet = new HashSet<int>();
+        private readonly HashSet<int> goblinsCaught = new HashSet<int>();
+
+        public RoomEventTally EventTally()
+        {
+            var tally = new RoomEventTally { GoblinMet = goblinsMet.Count, GoblinCaught = goblinsCaught.Count };
+            if (rooms == null || stage == null) return tally;
+            foreach (int index in visitedRooms)
+            {
+                if (index < 0 || index >= rooms.Rooms.Count || index >= stage.Chunks.Count) continue;
+                var chunk = stage.Chunks[index];
+                if (chunk.Kind == ChunkKind.Arena && !RoomShaper.IsMidBossArena(chunk)
+                    && AmbushRule.IsAmbush(stage.Seed, index, RoomDepth(index), true))
+                {
+                    tally.AmbushMet++;
+                    if (clearedArenas.Contains(index)) tally.AmbushCleared++;
+                }
+                if (IsCursedChestRoom(index))
+                {
+                    tally.CursedMet++;
+                    if (cursedBroken.Contains(index)) tally.CursedSolved++;
+                }
+            }
+            return tally;
+        }
+
         // 이 스테이지에 마을 방이 있으면 가 봤는지, 없으면(기능 테스트 빈 방 등) null.
         public bool? VillageFound
         {
@@ -874,9 +908,8 @@ namespace IBlameYou.Systems
                 GameAudio.PlaySfx("StarShard", 0.7f, 0f);
                 GameAudio.PlaySfxDelayed("StarShard", 0.14f, 0.6f);
             }
-            // 방 이벤트 보물 고블린 (2026-11-14 사람 결정): 가로 이동 방에 처음 들어가면 금화 자루를 멘 고블린이 나타나 도망친다 (Chunks/TreasureGoblinRule, 난수 안 씀)
-            if (firstVisit && entered.Kind == RoomKind.Travel && !entered.IsVertical
-                && TreasureGoblinRule.IsTreasureGoblinRoom(stage.Seed, index, RoomDepth(index), true))
+            // 방 이벤트 보물 고블린 (2026-11-14 사람 결정): 이동 방(세로 방 포함 — Chunks/RoomEventRule)에 처음 들어가면 금화 자루를 멘 고블린이 나타나 도망친다 (난수 안 씀)
+            if (firstVisit && RoomEventRule.IsTreasureGoblinRoom(stage.Seed, entered))
                 SpawnTreasureGoblin(index);
             RoomEntered?.Invoke(index);
         }
@@ -895,6 +928,8 @@ namespace IBlameYou.Systems
             RegisterEnemy(health);
             treasureGoblin = health;
             treasureGoblinRoom = index;
+            goblinsMet.Add(index);
+            health.HealthChanged += (current, max) => { if (current <= 0f) goblinsCaught.Add(index); }; // 결과 창 방 이벤트 줄 (도망치면 HealthChanged 없이 사라진다)
             if (TreasureGoblinRule.DropsEquipment(stage.Seed, index))
             {
                 bool dropped = false;
@@ -923,20 +958,13 @@ namespace IBlameYou.Systems
             StageEvents.PostNotice("자루에서 장비가 떨어졌다!");
         }
 
-        // 방 이벤트 저주받은 상자 (2026-11-14 사람 결정, Chunks/CursedChestRule): 가로 이동 방 가운데. 보물 고블린 방에는 놓지 않는다.
-        private bool IsCursedChestRoom(int index)
-        {
-            var room = rooms.Rooms[index];
-            if (room.Kind != RoomKind.Travel || room.IsVertical) return false;
-            float depth = RoomDepth(index);
-            return CursedChestRule.IsCursedChestRoom(stage.Seed, index, depth, true)
-                && !TreasureGoblinRule.IsTreasureGoblinRoom(stage.Seed, index, depth, true);
-        }
+        // 방 이벤트 저주받은 상자 (2026-11-14 사람 결정, Chunks/CursedChestRule): 이동 방 가운데. 세로 방은 바닥이 막힌 방만, 궁수 탑·보물 고블린 방은 빼고 (Chunks/RoomEventRule).
+        private bool IsCursedChestRoom(int index) => RoomEventRule.IsCursedChestRoom(stage.Seed, rooms.Rooms[index]);
 
         private void PlaceCursedChest(Transform root, int index)
         {
             if (takenRelics.Contains(index)) return;
-            var spot = FindStandSpot(index, RoomCols(index) / 2);
+            var spot = FindStandSpot(index, RoomCols(index) / 2, true); // 세로 방 바닥 적과 겹쳐 서지 않게 (2026-11-14 리뷰 LOW)
             if (!spot.HasValue) return;
             var position = spot.Value;
             if (cursedBroken.Contains(index))
@@ -1030,7 +1058,8 @@ namespace IBlameYou.Systems
 
         // 방 이벤트가 설 자리: center 열에서 좌우로 넓혀 가며, 바닥(가장 낮은 땅) 위 두 칸이 비고 함정·발판 같은 지형 요소가 없는 열.
         // 반환: 그 칸 바닥 가운데의 월드 좌표 (발밑). 못 찾으면 null.
-        private Vector2? FindStandSpot(int index, int center)
+        // avoidEnemies: 찾은 바닥 칸 ±1열·±1행에 청크 적이 서 있으면 그 열을 건너뛴다 (저주 상자 — 세로 방은 바닥에 적이 서 있다).
+        private Vector2? FindStandSpot(int index, int center, bool avoidEnemies = false)
         {
             var chunk = stage.Chunks[index];
             var origin = Origin(index);
@@ -1043,6 +1072,7 @@ namespace IBlameYou.Systems
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {
                         if (!chunk.IsSolid(x, y - 1) || chunk.IsSolid(x, y) || chunk.IsSolid(x, y + 1)) continue;
+                        if (avoidEnemies && HasEnemyNear(chunk, x, y)) break; // 이 열 바닥엔 적이 선다 → 다음 열
                         return new Vector2(origin.x + x + 0.5f, origin.y + y);
                     }
                 }
@@ -1058,6 +1088,13 @@ namespace IBlameYou.Systems
                 if (f.Kind == FeatureKind.Enemy || f.Kind == FeatureKind.PlayerStart) continue;
                 if (x >= f.X - 1 && x <= f.X + Math.Max(1, f.Width)) return true;
             }
+            return false;
+        }
+
+        private static bool HasEnemyNear(ChunkData chunk, int x, int y)
+        {
+            foreach (var f in chunk.Features)
+                if (f.Kind == FeatureKind.Enemy && x >= f.X - 1 && x <= f.X + 1 && Math.Abs(f.Y - y) <= 1) return true;
             return false;
         }
 
