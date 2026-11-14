@@ -221,12 +221,52 @@ namespace IBlameYou.Core
             }
 
             var position = new Vector2(x, ground.Value);
-            var elite = cursedCount % 2 == 0 ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
+            // 세 번째마다 변형 "쫄몹 무리" (엄마 슬라임 → 고블린 전사 → 무리 → ...)
+            bool swarm = cursedCount % 3 == 2;
+            var elite = cursedCount % 3 == 0 ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
             int offerIndex = 1000 + cursedCount; // 유물 후보가 매번 달라지게
             cursedCount++;
             CursedChest chest = null;
-            chest = CursedChest.Create(enemyRoot, position, () => AwakenCursedElite(chest, position, elite, offerIndex));
-            StageEvents.PostNotice($"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
+            chest = CursedChest.Create(enemyRoot, position, () =>
+            {
+                if (swarm) AwakenCursedSwarm(chest, position, offerIndex);
+                else AwakenCursedElite(chest, position, elite, offerIndex);
+            }, swarm);
+            StageEvents.PostNotice(swarm ? "저주받은 상자를 놓았다 (닿으면 쫄몹 무리)" : $"저주받은 상자를 놓았다 (닿으면 {MonsterName(elite)})");
+        }
+
+        private void AwakenCursedSwarm(CursedChest chest, Vector2 chestPosition, int offerIndex)
+        {
+            if (chest == null) return;
+            var kinds = CursedChestRule.SwarmFor(stage.Seed, offerIndex);
+            var spawned = new List<HealthSystem>();
+            int alive = 0;
+            bool broken = false;
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                float x = chestPosition.x + CursedChestRule.SwarmOffsets[i];
+                var ground = GroundAt(x) ?? chestPosition.y;
+                var position = new Vector3(x, ground + ChunkStreamer.SpawnLift, 0f);
+                EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
+                var health = spawner(kinds[i], position, enemyRoot);
+                if (health == null) continue;
+                spawned.Add(health);
+                alive++;
+                bool down = false;
+                health.HealthChanged += (current, max) =>
+                {
+                    if (current > 0f || down) return;
+                    down = true;
+                    alive--;
+                    if (alive > 0 || broken || chest == null) return;
+                    broken = true;
+                    chest.Break();
+                    RelicChest.Create(enemyRoot, chestPosition, stage.Seed, offerIndex, true, null, CursedChestRule.OfferSize);
+                };
+            }
+            if (spawned.Count == 0) return;
+            GameAudio.PlaySfx("Summon", 0.7f);
+            chest.Watch(spawned.ToArray());
         }
 
         private void AwakenCursedElite(CursedChest chest, Vector2 chestPosition, StageEnemy elite, int offerIndex)
