@@ -919,6 +919,12 @@ namespace IBlameYou.Systems
                 if (entered.IsVertical) goblinWaiting.Add(index); // 바닥 가까이 내려오면 (WakeWaitingGoblin)
                 else SpawnTreasureGoblin(index);
             }
+            // 기다리는 보물 고블린이 있는 세로 방에 위쪽으로 들어오면 아래에서 금화 소리 (2026-11-14 자동 실행): 내려가 보라는 힌트
+            if (goblinWaiting.Contains(index) && player != null && player.position.y - Origin(index).y > GoblinWakeHeight)
+            {
+                StageEvents.PostNotice("아래에서 금화 짤랑이는 소리가 들린다...");
+                GameAudio.PlaySfx("CoinPile", 0.35f, 0f);
+            }
             RoomEntered?.Invoke(index);
         }
 
