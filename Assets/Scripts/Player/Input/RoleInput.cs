@@ -69,6 +69,10 @@ namespace IBlameYou.Player
             return !state.AKeyboardBlocked && !state.MovementFrozen && (tap || Input.GetKeyDown(KeyCode.UpArrow));
         }
 
+        // 바람 구멍 기둥 안에서 S를 누르고 있으면 천천히 내려간다 (WindVent). 순간이동은 Enter를 눌러야 하므로 겹치지 않는다.
+        public static bool DescendHeld(PlayerControlState state) =>
+            !state.AKeyboardBlocked && !state.MovementFrozen && Input.GetKey(KeyCode.S);
+
         // 순간이동 방향: 누르고 있는 W/A/S/D (대각선 가능, 네 방향 고르기는 TeleportRules.Cardinal). 아무것도 안 누르면 zero.
         public static Vector2 TeleportDirection()
         {

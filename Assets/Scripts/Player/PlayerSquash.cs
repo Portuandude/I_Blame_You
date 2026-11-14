@@ -27,6 +27,10 @@ namespace IBlameYou.Player
         private float amount;    // 양수: 늘어남, 음수: 납작
         private float duration;
         private float remaining;
+        private const float FlutterWidth = 0.05f;  // 바람 속 펄럭임: 가로 ±5%
+        private const float FlutterSpeed = 17f;    // 흔들림 빠르기 (라디안/초)
+        private float flutterUntil = -1f;
+        private float flutter;                     // 0 ~ 1, 들어가고 나올 때 부드럽게
 
         private void Awake()
         {
@@ -77,6 +81,12 @@ namespace IBlameYou.Player
             Begin(strength, time);
         }
 
+        // 바람 구멍 기둥 안에 있는 동안 물리 단계마다 부른다 (WindVent). 0.12초 동안 안 불리면 잦아든다.
+        public void Flutter()
+        {
+            flutterUntil = Time.time + 0.12f;
+        }
+
         private void Begin(float strength, float time)
         {
             amount = strength;
@@ -96,6 +106,13 @@ namespace IBlameYou.Player
 
             float sy = 1f + k;
             float sx = 1f - k * 0.6f; // 부피가 대략 유지되게 가로는 반대로 덜 바뀐다
+            flutter = Mathf.MoveTowards(flutter, Time.time < flutterUntil ? 1f : 0f, Time.deltaTime * 6f);
+            if (flutter > 0f)
+            {
+                float wave = Mathf.Sin(Time.time * FlutterSpeed) * FlutterWidth * flutter;
+                sx += wave;
+                sy -= wave * 0.5f;
+            }
             visual.localScale = new Vector3(baseScale.x * sx, baseScale.y * sy, baseScale.z);
             // 발(그림 원점에서 feet만큼 아래)이 제자리에 남도록: 원점 = 원래 원점 + feet × (1 - sy)
             float feet = movement.FeetLocalY - basePosition.y;
