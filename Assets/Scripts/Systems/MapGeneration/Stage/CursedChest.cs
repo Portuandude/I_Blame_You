@@ -115,15 +115,16 @@ namespace IBlameYou.Systems
 
         // 정예(또는 무리 전부)를 쓰러뜨림: 저주가 풀리며 상자가 터진다 (그 자리에 유물 상자는 ChunkStreamer가 놓는다).
         // 반환: 유물 후보 수 (CursedChestRule.OfferFor — 빨리 풀었으면 3개)
-        public int Break()
+        // swarmGold: 쫄몹 무리를 풀고 받은 골드 (CursedChestRule.SwarmClearGold, 0이면 알림에 안 붙음)
+        public int Break(int swarmGold = 0)
         {
             int offer = CursedChestRule.OfferFor(Time.time - awakenedAt);
             var center = transform.position + Vector3.up * VisualHeight;
             if (!VfxPlayer.ChestOpen(center, VisualScale)) EffectLibrary.PlayHit(Element.Neutral, center, 1.4f);
             GameAudio.PlaySfx("GateOpen", 0.6f);
-            StageEvents.PostNotice(offer > CursedChestRule.OfferSize
+            StageEvents.PostNotice((offer > CursedChestRule.OfferSize
                 ? $"빠르게 풀었다! 유물 {offer}개 중 하나를 고르자"
-                : $"저주가 풀렸다! 유물 {offer}개 중 하나를 고르자");
+                : $"저주가 풀렸다! 유물 {offer}개 중 하나를 고르자") + (swarmGold > 0 ? $" · 무리 처치 골드 +{swarmGold}" : ""));
             Destroy(gameObject);
             return offer;
         }

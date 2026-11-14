@@ -982,7 +982,9 @@ namespace IBlameYou.Systems
                     down = true;
                     if (AnyAlive(spawned) || cursedBroken.Contains(index)) return;
                     cursedBroken.Add(index);
-                    if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
+                    // 무리 처치 보너스 (2026-11-14 자동 실행): 깨어난 무리 수 × SwarmGoldPerEnemy 골드가 상자 자리에서 튄다
+                    int gold = IBlameYou.Core.RunGold.OnCoinPile(player, new Vector3(chestPosition.x, chestPosition.y + 1f, 0f), CursedChestRule.SwarmClearGold(spawned.Count));
+                    if (chest != null && chest.Break(gold) > CursedChestRule.OfferSize) cursedQuick.Add(index);
                     if (root != null) SpawnCursedReward(root, index, chestPosition, true);
                 };
             }
