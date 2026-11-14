@@ -1007,7 +1007,6 @@ namespace IBlameYou.Systems
             bool swarm = CursedChestRule.IsSwarm(stage.Seed, index);
             chest = CursedChest.Create(root, position, () =>
             {
-                cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 위 알림 (풀면 아래에서 지운다)
                 if (swarm) AwakenCursedSwarm(root, index, position, chest);
                 else AwakenCursedElite(root, index, position, chest);
             }, swarm);
@@ -1052,6 +1051,7 @@ namespace IBlameYou.Systems
                 };
             }
             if (spawned.Count == 0) return;
+            cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             GameAudio.PlaySfx("Summon", 0.7f);
             if (chest != null) chest.Watch(spawned.ToArray());
         }
@@ -1069,6 +1069,7 @@ namespace IBlameYou.Systems
             GameAudio.PlaySfx("Summon", 0.7f);
             var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
             if (health == null) return;
+            cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             RegisterEnemy(health);
             if (chest != null) chest.Watch(health);
             // 어미 슬라임이 분열해 나온 슬라임은 SplitOnDeath가 이 스트리머(IEnemyGroup)에 넣어 방을 떠나면 함께 치워진다. 보상은 어미가 쓰러진 순간
