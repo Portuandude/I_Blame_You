@@ -9,7 +9,7 @@ namespace IBlameYou.Core
     // PlayerPrefs 한 칸에 JSON으로 넣는다. 형식이 바뀌면 Version을 올리고, 버전이 다른 저장은 버린다.
     public static class RunSave
     {
-        public const int Version = 3; // 3: 넓은 방(2026-11-12)으로 같은 시드의 방 배치·원점 간격이 바뀌어 예전 저장은 읽지 않는다
+        public const int Version = 4; // 4: 방 구성 변경(2026-11-14, 5×4 격자·이동 방 삭제). 3: 넓은 방(2026-11-12)으로 같은 시드의 방 배치·원점 간격이 바뀌어 예전 저장은 읽지 않는다
         private const string Key = "Run.Save";
 
         [Serializable]
