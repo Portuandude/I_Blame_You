@@ -234,9 +234,13 @@ namespace IBlameYou.Systems
             // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 깊이 절반을 넘긴 구역을 돌파하면 바꾼다
             if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Depth) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Depth));
             // 매복 돌파 보너스 (2026-11-14 ① 컨텐츠): 경고를 보고 버틴 보상으로 골드 조금 (복주머니 안 붙음, 동전 무더기와 같은 연출)
+            // 빠른 돌파(AmbushRule.FastClearTime초 안)면 골드를 조금 더 (2026-11-14 자동 실행)
+            float clearTime = Time.time - lockedAt;
             int bonus = Ambush && enteredPlayer != null
-                ? IBlameYou.Core.RunGold.OnCoinPile(enteredPlayer, new Vector3(area.center.x, area.yMin + 2f, 0f), AmbushRule.ClearGold) : 0;
-            StageEvents.PostNotice(bonus > 0 ? $"{ClearNotice(Time.time - lockedAt)} 매복 돌파 골드 +{bonus}" : ClearNotice(Time.time - lockedAt));
+                ? IBlameYou.Core.RunGold.OnCoinPile(enteredPlayer, new Vector3(area.center.x, area.yMin + 2f, 0f), AmbushRule.ClearGoldFor(clearTime)) : 0;
+            StageEvents.PostNotice(bonus > 0
+                ? $"{ClearNotice(clearTime)} 매복 돌파 골드 +{bonus}{(AmbushRule.IsFastClear(clearTime) ? " (빠른 돌파!)" : "")}"
+                : ClearNotice(clearTime));
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
         }

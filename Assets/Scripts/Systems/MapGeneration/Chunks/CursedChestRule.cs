@@ -30,6 +30,11 @@ namespace IBlameYou.Systems
         public const int SwarmSize = 4;
         public static readonly int[] SwarmOffsets = { -5, -3, 3, 5 }; // 상자 열에서 떨어진 칸 (양옆 둘씩)
 
+        // 무리 처치 보너스 (2026-11-14 자동 실행): 무리를 모두 쓰러뜨려 저주를 풀면 깨어난 수 × SwarmGoldPerEnemy 골드
+        public const int SwarmGoldPerEnemy = 2;
+
+        public static int SwarmClearGold(int awakened) => awakened > 0 ? awakened * SwarmGoldPerEnemy : 0;
+
         public static bool IsSwarm(int seed, int roomIndex) => (Hash(seed, roomIndex) >> 16) % 3u == 0u;
 
         // 무리 구성: 슬라임·고블린 둘씩, 난이도 높은 방이 아니어도 견딜 만하게 궁수는 하나만 (짝수 해시면 고블린 하나를 궁수로)

@@ -92,5 +92,12 @@ namespace IBlameYou.Tests
                     Assert.AreEqual(CursedChestRule.EliteFor(s, room), deep[deep.Length - 1]);
                 }
         }
+
+        [Test]
+        public void SwarmClearGoldScalesWithAwakened()
+        {
+            Assert.AreEqual(CursedChestRule.SwarmSize * CursedChestRule.SwarmGoldPerEnemy, CursedChestRule.SwarmClearGold(CursedChestRule.SwarmSize));
+            Assert.AreEqual(0, CursedChestRule.SwarmClearGold(0));
+        }
     }
 }

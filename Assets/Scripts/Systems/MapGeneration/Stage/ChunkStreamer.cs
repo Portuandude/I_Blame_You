@@ -110,6 +110,10 @@ namespace IBlameYou.Systems
         public bool HasTreasureGoblin(int index) =>
             index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
 
+        // 미니맵 장비 점 (2026-11-14 자동 실행): 보물 고블린이 떨군 장비가 그 방 바닥에 아직 남았는지 (주우면 false, 바꿔 낀 옛 장비가 놓이면 그대로 true)
+        public bool HasGoblinEquipmentLeft(int index) =>
+            goblinEquipmentSpots.ContainsKey(index) && groundEquipment.ContainsKey(index);
+
         // 미니맵 동전 점: 그 방에 아직 안 주운 동전 무더기가 남았는지 (방 격자 모드, 청크 번호 = 방 번호).
         // 무더기 수는 청크 Features에서 처음 물을 때 방마다 한 번 센다. 주운 기록은 CoinPileKey(방, 순번) — 놓는 순서와 같은 순번
         private int[] coinPileCounts;
@@ -982,7 +986,9 @@ namespace IBlameYou.Systems
                     down = true;
                     if (AnyAlive(spawned) || cursedBroken.Contains(index)) return;
                     cursedBroken.Add(index);
-                    if (chest != null && chest.Break() > CursedChestRule.OfferSize) cursedQuick.Add(index);
+                    // 무리 처치 보너스 (2026-11-14 자동 실행): 깨어난 무리 수 × SwarmGoldPerEnemy 골드가 상자 자리에서 튄다
+                    int gold = IBlameYou.Core.RunGold.OnCoinPile(player, new Vector3(chestPosition.x, chestPosition.y + 1f, 0f), CursedChestRule.SwarmClearGold(spawned.Count));
+                    if (chest != null && chest.Break(gold) > CursedChestRule.OfferSize) cursedQuick.Add(index);
                     if (root != null) SpawnCursedReward(root, index, chestPosition, true);
                 };
             }

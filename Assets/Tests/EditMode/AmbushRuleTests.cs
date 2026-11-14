@@ -78,5 +78,14 @@ namespace IBlameYou.Tests
             }
             Assert.AreEqual(3, burrow);
         }
+
+        [Test]
+        public void FastClearAddsGold()
+        {
+            Assert.AreEqual(AmbushRule.ClearGold + AmbushRule.FastClearGold, AmbushRule.ClearGoldFor(AmbushRule.FastClearTime));
+            Assert.AreEqual(AmbushRule.ClearGold + AmbushRule.FastClearGold, AmbushRule.ClearGoldFor(5f));
+            Assert.AreEqual(AmbushRule.ClearGold, AmbushRule.ClearGoldFor(AmbushRule.FastClearTime + 0.1f));
+            Assert.IsFalse(AmbushRule.IsFastClear(60f));
+        }
     }
 }
