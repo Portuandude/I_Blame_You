@@ -492,6 +492,37 @@ namespace IBlameYou.Tests
 
         // 두 갈래 길 (레벨 재설계 2차): 아래 길은 평평하고 가시·적이 계단 밑에 없다. 위 길은 2칸씩 오르는 계단 → 바닥 + 6 발판 줄,
         // 첫 발판은 단단하고 틈은 1~2칸, 출구 앞 4칸은 비어 내려설 수 있다. 무너지는 발판은 위 길 줄에만.
+        // 두 갈래 길 아래 길 통통 버섯 (2026-11-14): 문턱 위에서는 거의 늘 하나, 위 길 아래 범위 안 평평한 바닥 위, 가시·적과 붙지 않음.
+        // 튕김 높이(BounceMushroom.LaunchHeight 7.5 + 갓 0.95)가 위 길 윗면(바닥 + 6)보다 높아 떨어져도 다시 오를 수 있다.
+        [Test]
+        public void TwinPathLowerPathMushroomReachesWalkway()
+        {
+            int found = 0, total = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                foreach (float difficulty in new[] { 0.05f, 0.3f, 0.8f })
+                {
+                    foreach (int entry in new[] { 3, 8 })
+                    {
+                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.TwinPath, difficulty, entry, 0);
+                        var mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom);
+                        if (difficulty < ChunkGenerator.BounceMinDifficulty) { Assert.AreEqual(0, mushrooms.Count, tag); continue; }
+                        total++;
+                        Assert.LessOrEqual(mushrooms.Count, 1, tag);
+                        if (mushrooms.Count == 0) continue; // 가시·적이 아래 길을 다 차지하면 없을 수 있다
+                        found++;
+                        var m = mushrooms[0];
+                        Assert.That(m.X, Is.InRange(ChunkGenerator.TwinPathMushroomMinX, ChunkGenerator.TwinPathMushroomMaxX), tag);
+                        Assert.AreEqual(m.Y, Surface(chunk, m.X), tag + ": 바닥 위");
+                        Assert.IsFalse(chunk.Features.Exists(f => ((f.Kind == FeatureKind.Enemy && System.Math.Abs(f.X - m.X) <= 1)
+                            || (f.Kind == FeatureKind.Spikes && m.X >= f.X - 1 && m.X <= f.X + f.Width))), tag + ": 가시·적 곁");
+                    }
+                }
+            }
+            Assert.Greater(found, total * 9 / 10, $"아래 길 버섯이 너무 적음 ({found}/{total})");
+        }
+
         [Test]
         public void TwinPathHasSafeStairsAndJumpableWalkway()
         {
