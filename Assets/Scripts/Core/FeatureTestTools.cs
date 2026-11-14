@@ -165,7 +165,7 @@ namespace IBlameYou.Core
             return stage.Chunks[index].SurfaceAt(column);
         }
 
-        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다. 두 번째마다 땅속 매복).
+        // 매복 시험: 지금 구역 전체를 전투 구역으로 만들고 매복으로 연다 (ArenaZone.Ambush — 경고음·붉은 가장자리·천장 먼지 뒤 적 셋이 위에서 떨어진다. 두 번째는 땅속, 세 번째는 섞인 매복).
         // 구역 안에 서 있으니 바로 문이 닫힌다. 다 쓰러뜨리면 문이 열리고, 다시 누르면 새로 연다.
         private static readonly StageEnemy[] AmbushEnemies = { StageEnemy.Slime, StageEnemy.Goblin, StageEnemy.GoblinArcher };
         private static readonly int[] AmbushColumns = { 9, 16, 23 };
@@ -206,7 +206,8 @@ namespace IBlameYou.Core
             ambushZone = ArenaZone.Create(enemyRoot, left, left + ChunkData.Width, ground, spawns, false, spawner,
                 () => StageEvents.PostNotice("매복 시험 끝 — F8로 다시"));
             ambushZone.Ambush = true;
-            ambushZone.Burrow = ambushCount % 2 == 1; // 번갈아: 천장에서 떨어짐 → 땅속에서 튀어나옴
+            ambushZone.Burrow = ambushCount % 3 != 0; // 차례로: 천장에서 떨어짐 → 땅속에서 튀어나옴 → 섞임(땅속·천장 번갈아)
+            ambushZone.Mixed = ambushCount % 3 == 2;
             ambushCount++;
         }
 

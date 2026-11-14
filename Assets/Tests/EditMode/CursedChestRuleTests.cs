@@ -74,5 +74,23 @@ namespace IBlameYou.Tests
                 }
             Assert.AreEqual(1 / 3.0, swarm / (double)total, 0.06);
         }
+
+        [Test]
+        public void DeepSwarmMixesInOneElite()
+        {
+            for (int s = 0; s < 100; s++)
+                for (int room = 0; room < 12; room++)
+                {
+                    var shallow = CursedChestRule.SwarmFor(s, room, CursedChestRule.SwarmEliteDifficulty - 0.01f);
+                    CollectionAssert.AreEqual(CursedChestRule.SwarmFor(s, room), shallow, "얕은 방은 쫄몹만");
+                    var deep = CursedChestRule.SwarmFor(s, room, CursedChestRule.SwarmEliteDifficulty);
+                    Assert.AreEqual(CursedChestRule.SwarmSize, deep.Length);
+                    int elites = 0;
+                    foreach (var e in deep)
+                        if (e == StageEnemy.MotherSlime || e == StageEnemy.GoblinWarrior) elites++;
+                    Assert.AreEqual(1, elites, "깊은 방 무리엔 정예 하나");
+                    Assert.AreEqual(CursedChestRule.EliteFor(s, room), deep[deep.Length - 1]);
+                }
+        }
     }
 }

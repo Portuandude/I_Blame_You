@@ -54,6 +54,8 @@ namespace IBlameYou.Systems
         private Transform enteredPlayer; // 문을 닫게 한 플레이어 (매복 돌파 골드가 날아갈 곳)
         public bool WallArchers { get; set; } // 매복 변형 "벽 위 궁수" 방 (RoomShaper.IsWallArcherAmbush): 선반 위 적은 떨어지지 않고 그 자리에 나타난다
         public bool Burrow { get; set; } // 매복 변형 "땅속 매복" (AmbushRule.IsBurrow): 바닥 적이 천장 대신 땅속에서 튀어나온다
+        public bool Mixed { get; set; }  // 섞인 매복 (AmbushRule.IsMixed, Burrow일 때만): 적이 번갈아 땅속·천장에서 나온다
+        private bool BurrowsAt(int i) => AmbushRule.BurrowsAt(Burrow, Mixed, i);
         private const float AmbushWarnTime = 0.9f;
         private const float BurrowPopSpeed = 7f; // 땅에서 튀어나올 때 위로 솟는 속도
         private const float AmbushDropHeight = 6f;   // 떨어지기 시작하는 높이 (천장·발판이 낮으면 그 아래)
@@ -139,7 +141,8 @@ namespace IBlameYou.Systems
                 // 매복 경고: 경고음 + 화면 가장자리 붉은 깜빡임 + 안내. 적은 아래 AmbushWarnTime 뒤 위에서 떨어진다
                 GameAudio.PlaySfx("TrapWarn", 0.9f, 0f);
                 ScreenFlash.EdgeWarn(AmbushWarnColor, 0.5f);
-                StageEvents.PostNotice(Burrow ? "매복이다! 발밑을 조심해!"
+                StageEvents.PostNotice(Burrow && Mixed ? "매복이다! 위와 발밑을 조심해!"
+                    : Burrow ? "매복이다! 발밑을 조심해!"
                     : spawns.Exists(OnLedge) ? "매복이다! 위와 벽 위 궁수를 조심해!" : "매복이다! 위를 조심해!");
             }
             else
@@ -154,19 +157,19 @@ namespace IBlameYou.Systems
 
             // 매복: 떨어질 자리 위 천장에서 먼지가 부슬부슬 떨어지며 잠깐 기다린다
             var drops = new float[spawns.Count];
-            if (Ambush && Burrow)
+            if (Ambush)
             {
-                // 땅속 매복: 바닥이 우르르 흔들리고 나올 자리마다 흙이 튄다
-                CameraFollow.ShakeMain(AmbushWarnTime, 0.06f);
-                for (int i = 0; i < spawns.Count; i++)
-                    if (!IsBoss(spawns[i]) && !OnLedge(spawns[i])) StartCoroutine(GroundRumble(spawns[i].Position));
-                yield return new WaitForSeconds(AmbushWarnTime);
-            }
-            else if (Ambush)
-            {
+                // 땅속 매복: 바닥이 우르르 흔들리고 나올 자리마다 흙이 튄다. 섞인 매복이면 나머지는 천장 먼지 뒤 떨어진다
+                if (Burrow) CameraFollow.ShakeMain(AmbushWarnTime, 0.06f);
                 for (int i = 0; i < spawns.Count; i++)
                 {
-                    drops[i] = IsBoss(spawns[i]) || OnLedge(spawns[i]) ? 0f : AmbushDrop(spawns[i].Position); // 벽 위 궁수(선반 위 적)는 그 자리에 나타난다
+                    if (IsBoss(spawns[i]) || OnLedge(spawns[i])) continue; // 벽 위 궁수(선반 위 적)는 그 자리에 나타난다
+                    if (BurrowsAt(i))
+                    {
+                        StartCoroutine(GroundRumble(spawns[i].Position));
+                        continue;
+                    }
+                    drops[i] = AmbushDrop(spawns[i].Position);
                     if (drops[i] > 0f) StartCoroutine(CeilingDust(spawns[i].Position + Vector3.up * (drops[i] + 0.6f)));
                 }
                 yield return new WaitForSeconds(AmbushWarnTime);
@@ -178,7 +181,7 @@ namespace IBlameYou.Systems
                 bool falls = drops[i] > 0f; // 매복: 표시 타원은 남겨 두고 떨어지는 적이 땅에 닿을 때까지 보이게 (WatchLanding이 지운다)
                 if (marks[i] != null && !falls) Destroy(marks[i].gameObject);
                 bool dropsIn = IsBoss(spawn); // 보스·중간보스는 위에서 떨어진다 (BossEntrance)
-                bool burrows = Ambush && Burrow && !dropsIn && !OnLedge(spawn);
+                bool burrows = Ambush && BurrowsAt(i) && !dropsIn && !OnLedge(spawn);
                 if (burrows)
                 {
                     // 땅에서 흙을 튀기며 "퍽" 솟아오른다

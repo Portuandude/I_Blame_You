@@ -39,6 +39,16 @@ namespace IBlameYou.Systems
             return new[] { StageEnemy.Slime, StageEnemy.Goblin, archer ? StageEnemy.GoblinArcher : StageEnemy.Goblin, StageEnemy.Slime };
         }
 
+        // 깊은 방 무리 (2026-11-14 자동 실행): 난이도 SwarmEliteDifficulty 이상 방의 무리는 맨 끝 슬라임(상자 +5칸) 대신 그 방 정예(EliteFor) 하나가 섞인다.
+        public const float SwarmEliteDifficulty = 0.7f;
+
+        public static StageEnemy[] SwarmFor(int seed, int roomIndex, float difficulty)
+        {
+            var group = SwarmFor(seed, roomIndex);
+            if (difficulty >= SwarmEliteDifficulty) group[group.Length - 1] = EliteFor(seed, roomIndex);
+            return group;
+        }
+
         private static uint Hash(int seed, int roomIndex)
         {
             unchecked

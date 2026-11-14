@@ -61,5 +61,22 @@ namespace IBlameYou.Tests
                 Assert.That(g, Is.InRange(TreasureGoblinRule.MinGold, TreasureGoblinRule.MaxGold));
             }
         }
+
+        [Test]
+        public void EquipmentDropIsRareAndIndependent()
+        {
+            int goblin = 0, drops = 0;
+            for (int seed = 1; seed <= 400; seed++)
+                for (int room = 0; room < 12; room++)
+                {
+                    Assert.AreEqual(TreasureGoblinRule.DropsEquipment(seed, room), TreasureGoblinRule.DropsEquipment(seed, room), "같은 시드·방이면 같아야 한다");
+                    if (!TreasureGoblinRule.IsTreasureGoblinRoom(seed, room, 0.5f, true)) continue;
+                    goblin++;
+                    if (TreasureGoblinRule.DropsEquipment(seed, room)) drops++;
+                }
+
+            double rate = drops / (double)goblin;
+            Assert.That(rate, Is.InRange(0.05, 0.16), "보물 고블린 방의 약 10%");
+        }
     }
 }

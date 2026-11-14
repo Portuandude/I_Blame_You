@@ -29,6 +29,22 @@ namespace IBlameYou.Systems
         public const int HitGold = 2;
         public const int MaxHitDrops = 5;
 
+        // 장비 떨굼 (2026-11-14 자동 실행): 잡으면 EquipmentPercent% 방에서 자루에서 장비 하나가 떨어진다 (골드와 따로).
+        // 어느 방인지는 IsTreasureGoblinRoom과 다른 해시라 보물 고블린 방 비율은 그대로다.
+        public const int EquipmentPercent = 10;
+
+        public static bool DropsEquipment(int seed, int roomIndex)
+        {
+            unchecked
+            {
+                uint h = (uint)seed * 668265263u ^ (uint)(roomIndex + 11) * 374761393u;
+                h ^= h >> 15;
+                h *= 2654435761u;
+                h ^= h >> 13;
+                return h % 100u < (uint)EquipmentPercent;
+            }
+        }
+
         // roll: 0 이상 1 미만 난수. MinGold~MaxGold (양 끝 포함).
         public static int Gold(float roll)
         {

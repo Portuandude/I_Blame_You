@@ -25,6 +25,15 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 섞인 매복 (2026-11-14 자동 실행): 난이도 MixedDifficulty 이상 방의 땅속 매복은 적이 번갈아(짝수 순번 땅속, 홀수 순번 천장) 나온다.
+        public const float MixedDifficulty = 0.7f;
+
+        public static bool IsMixed(int seed, int roomIndex, float difficulty) =>
+            difficulty >= MixedDifficulty && IsBurrow(seed, roomIndex);
+
+        // 섞인 매복에서 spawnIndex번째 적이 땅속에서 나오는지 (아니면 천장에서 떨어진다). 섞이지 않은 땅속 매복이면 모두 땅속.
+        public static bool BurrowsAt(bool burrow, bool mixed, int spawnIndex) => burrow && (!mixed || spawnIndex % 2 == 0);
+
         public static bool IsAmbush(int seed, int roomIndex, float difficulty, bool plainArena)
         {
             if (!plainArena || difficulty < MinDifficulty) return false;
