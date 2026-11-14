@@ -19,6 +19,20 @@ namespace IBlameYou.Systems
         public static StageEnemy EliteFor(int seed, int roomIndex) =>
             (Hash(seed, roomIndex) >> 8) % 2u == 0u ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
 
+        // 변형 "쫄몹 무리" (2026-11-14 자동 실행): 저주 상자의 1/3은 정예 대신 쫄몹 SwarmSize마리가 상자 양옆에서 깨어난다.
+        // 모두 쓰러뜨려야 저주가 풀린다. 정예 종류와 다른 해시 비트를 써서 정예 비율은 그대로 반반.
+        public const int SwarmSize = 4;
+        public static readonly int[] SwarmOffsets = { -5, -3, 3, 5 }; // 상자 열에서 떨어진 칸 (양옆 둘씩)
+
+        public static bool IsSwarm(int seed, int roomIndex) => (Hash(seed, roomIndex) >> 16) % 3u == 0u;
+
+        // 무리 구성: 슬라임·고블린 둘씩, 난이도 높은 방이 아니어도 견딜 만하게 궁수는 하나만 (짝수 해시면 고블린 하나를 궁수로)
+        public static StageEnemy[] SwarmFor(int seed, int roomIndex)
+        {
+            bool archer = (Hash(seed, roomIndex) >> 20) % 2u == 0u;
+            return new[] { StageEnemy.Slime, StageEnemy.Goblin, archer ? StageEnemy.GoblinArcher : StageEnemy.Goblin, StageEnemy.Slime };
+        }
+
         private static uint Hash(int seed, int roomIndex)
         {
             unchecked
