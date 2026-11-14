@@ -105,6 +105,7 @@ namespace IBlameYou.Player
         public static bool MinigameArrowDown(out char key)
         {
             key = '\0';
+            if (Focus == ControlFocus.B) return false; // B만 조작 중이면 A의 방패 미니게임 입력도 막는다
             if (Input.GetKeyDown(KeyCode.W)) key = 'W';
             else if (Input.GetKeyDown(KeyCode.A)) key = 'A';
             else if (Input.GetKeyDown(KeyCode.S)) key = 'S';
