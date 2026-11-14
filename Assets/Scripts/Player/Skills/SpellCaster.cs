@@ -5,7 +5,7 @@ using UnityEngine;
 namespace IBlameYou.Player
 {
     // 플레이어 B의 공격 스킬 (기획서 2.5).
-    // 상단 숫자키 1~5로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
+    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, RoleInput.MouseSpell)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
     // 오타가 있는 채로 Enter를 누르면 마나만 날아간다. Esc는 마나 소모 없이 취소.
     // 개발자 모드에서는 상단 6~9·0으로 영창 없이 바로 발동한다.
     // 영창 입력창 자체는 UI(SkillHUD)가 그리고, 입력이 끝나면 SubmitChant/CancelChant를 부른다.

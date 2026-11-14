@@ -46,6 +46,7 @@ namespace IBlameYou.UI
         private GUIStyle panel;
         private GUIStyle label;
         private GUIStyle small;
+        private GUIStyle smallCenter; // 미니게임·영창 아래 두 사람 안내 줄
         private GUIStyle big;
         private GUIStyle keyBox;
         private GUIStyle input;
@@ -243,6 +244,7 @@ namespace IBlameYou.UI
             label = new GUIStyle(GUI.skin.label) { fontSize = 16, richText = true };
             label.normal.textColor = Color.white;
             small = new GUIStyle(label) { fontSize = 13, wordWrap = true };
+            smallCenter = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
             big = new GUIStyle(label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             keyBox = new GUIStyle(GUI.skin.box) { fontSize = 34, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             if (panelTexture != null)
@@ -288,6 +290,7 @@ namespace IBlameYou.UI
             DrawShieldMinigame();
             DrawChantInput();
             DrawHelp();
+            DrawMouseSpellTag(); // P2 휠로 고른 공격 스킬을 커서 옆에 (SkillHUD.MouseSpell.cs)
             DrawTraitWindow();
             DrawRelicWindow();
             DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)
@@ -306,8 +309,8 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
             GUILayout.BeginArea(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f));
             DrawVitalBars(GUILayoutUtility.GetRect(rect.width - 20f, BarIconSize + 2f)); // 체력·마나 바 (SkillHUD.Bars.cs)
-            GUILayout.Label($"<color=#73d9ff>A</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
-            GUILayout.Label($"<color=#ffa659>B</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
+            GUILayout.Label($"<color=#73d9ff>{(GameSession.DevMode ? "A" : "P1·A")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
+            GUILayout.Label($"<color=#ffa659>{(GameSession.DevMode ? "B" : "P2·B")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
             string shieldText = shield != null && shield.Active
                 ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
                 : "방어막: 없음";
@@ -344,6 +347,11 @@ namespace IBlameYou.UI
             float ratio = Mathf.Clamp01(shieldSkill.TimeLeft / shieldSkill.TimeLimit);
             var timeColor = Color.Lerp(KeyBerry, KeyLeaf, ratio);
             DrawCapsuleBar(new Rect(x + BarGlow, y + keySize + 12f, totalWidth - 2f * BarGlow, BarHeight), ratio, 0f, timeColor, timeColor, null);
+
+            // 한 키보드 2인: P1이 W/A/S/D를 치는 동안 P2의 숫자줄 공격 스킬은 막힌다(RoleInput.SpellDown). 막힌 이유를 P2가 알게 한 줄.
+            if (!GameSession.DevMode && GameSession.SharedKeyboard)
+                GUI.Label(new Rect(0f, y + keySize + 12f + BarHeight + 6f, Screen.width, 22f),
+                    "<color=#ffa659>P2</color> 공격 스킬은 방어막이 끝난 뒤에 · 좌클릭 평타는 그대로", smallCenter);
         }
 
         private void DrawChantInput()
@@ -385,7 +393,8 @@ namespace IBlameYou.UI
             const float width = 620f;
             float x = (Screen.width - width) / 2f;
             float y = Screen.height * 0.62f;
-            GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, 150f), GUIContent.none, panel);
+            bool sharedKeyboard = GameSession.SharedKeyboard;
+            GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, sharedKeyboard ? 172f : 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
                 $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
             GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
@@ -411,6 +420,9 @@ namespace IBlameYou.UI
             if (Time.frameCount <= caster.ChantOpenedFrame) chantText = "";
 
             GUI.Label(new Rect(x, y + 54f, width, 24f), "똑같이 입력하고 Enter (오타면 마나만 소모) · Esc 취소", small);
+            // 한 키보드 2인: 영창 중에는 P1(A)의 키가 모두 막힌다(PlayerControlState.AKeyboardBlocked). P1이 왜 안 움직이는지 보이게.
+            if (sharedKeyboard)
+                GUI.Label(new Rect(x, y + 76f, width, 22f), "<color=#73d9ff>P1</color> 키보드 잠김 — P2가 영창하는 동안 캐릭터 조작이 멈춰요", small);
         }
 
         // DrawHelp: 아래 조작 도움말 줄 (SkillHUD.Help.cs)

@@ -167,7 +167,7 @@ namespace IBlameYou.UI
             void Add(string tag, Color tagColor, string keys, string desc) =>
                 items.Add(new HelpItem { Tag = tag, TagColor = tagColor, Keys = SplitKeys(keys), Desc = desc });
 
-            Add("A", HelpColorA, "A/D", "이동");
+            Add(dev ? "A" : "P1·A", HelpColorA, "A/D", "이동");
             Add(null, default, "Space", "점프");
             Add(null, default, "Shift", "달리기");
             Add(null, default, "L.Ctrl", "대쉬");
@@ -175,9 +175,13 @@ namespace IBlameYou.UI
             if (dev) Add(null, default, "1~5", "방어막");
             else Add(null, default, "넘패드 1~5", "방어막(→W/A/S/D)");
 
-            Add("B", HelpColorB, "좌클릭", "마력탄(마나 5)");
+            Add(dev ? "B" : "P2·B", HelpColorB, "좌클릭", "마력탄(마나 5)");
             if (dev) Add(null, default, "6~9", "공격 스킬");
-            else Add(null, default, "1~4", "공격 스킬(→영창 타이핑+Enter)");
+            else
+            {
+                Add(null, default, "1~4", "공격 스킬(→영창 타이핑+Enter)");
+                Add(null, default, "휠+우클릭", "마우스로 공격 스킬");
+            }
 
             if (dev)
             {
