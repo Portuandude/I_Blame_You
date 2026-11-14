@@ -67,6 +67,7 @@ namespace IBlameYou.Core
         {
             if (rebuilding) return;
             if (menuDevMode.HasValue) GameSession.DevMode = menuDevMode.Value; // 시작 화면 설정을 시험 중 바꾼 값으로 덮지 않는다
+            RoleInput.Focus = ControlFocus.Both; // A/B 전환은 시험 맵 안에서만
             menuDevMode = null;
         }
 
@@ -75,6 +76,7 @@ namespace IBlameYou.Core
             if (player == null) return;
             if (Input.GetKeyDown(KeyCode.F6)) helpOpen = !helpOpen;
             if (Input.GetKeyDown(KeyCode.F5)) ToggleMinigames();
+            if (Input.GetKeyDown(KeyCode.BackQuote) && GUIUtility.keyboardControl == 0) CycleFocus(); // 영창 입력 칸에 글자를 치는 중이면 바꾸지 않는다
             if (Input.GetKeyDown(KeyCode.F7)) monsterIndex = (monsterIndex + 1) % Monsters.Length;
             if (Input.GetKeyDown(KeyCode.F8)) SpawnMonster();
             if (Input.GetKeyDown(KeyCode.F9)) relicWindowOpen = !relicWindowOpen;
@@ -84,6 +86,19 @@ namespace IBlameYou.Core
             if (relicWindowOpen && Input.GetKeyDown(KeyCode.Escape)) relicWindowOpen = false;
             if (equipWindowOpen && Input.GetKeyDown(KeyCode.Escape)) equipWindowOpen = false;
         }
+
+        // A/B 전환 (2026-11-14 사람 결정 ④): 둘 다 → A만 → B만 → 둘 다. 한 역할만 조작해 보며 그 사람이 할 일을 시험한다 (RoleInput.Focus).
+        private static void CycleFocus()
+        {
+            RoleInput.Focus = RoleInput.Focus == ControlFocus.Both ? ControlFocus.A
+                : RoleInput.Focus == ControlFocus.A ? ControlFocus.B : ControlFocus.Both;
+            StageEvents.PostNotice("조작: " + FocusName(RoleInput.Focus));
+            GameAudio.PlaySfx("UiClick", 0.6f, 0f);
+        }
+
+        private static string FocusName(ControlFocus focus) =>
+            focus == ControlFocus.A ? "A만 (이동·점프·대쉬·순간이동·방어막)"
+            : focus == ControlFocus.B ? "B만 (마우스 공격·공격 마법)" : "A·B 둘 다";
 
         // 개발자 모드(숫자키 즉시 발동) ↔ 일반 모드(B 영창 타이핑, A 방어막 W/A/S/D 순서 입력). 모두 GameSession.DevMode를 매번 읽는다.
         private void ToggleMinigames()
@@ -166,6 +181,7 @@ namespace IBlameYou.Core
             if (player == null) return;
             EnsureStyles();
             if (helpOpen) DrawHelp();
+            if (RoleInput.Focus != ControlFocus.Both) DrawFocusBadge();
             if (relicWindowOpen) DrawRelicWindow();
             if (equipWindowOpen && !relicWindowOpen) DrawEquipWindow();
         }
@@ -179,12 +195,24 @@ namespace IBlameYou.Core
                 $"F9 유물 장착·해제 ({PlayerRelics.For(player).Owned.Count}개)\n" +
                 $"F10 다음 구역: {FeatureTestStage.Names[(area + 1) % FeatureTestStage.Order.Length]}\n" +
                 $"F5 미니게임 전환: {mode}\n" +
+                $"` A/B 전환: {FocusName(RoleInput.Focus)}\n" +
                 "F11 결과 창\n" +
                 "F12 장비 끼기·빼기 · 골드 +100 · 식당·상점 창\n" +
                 "F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복";
-            var rect = new Rect(Screen.width - 330f, 64f, 316f, 204f);
+            var rect = new Rect(Screen.width - 330f, 64f, 316f, 226f);
             GUI.Box(rect, GUIContent.none, box);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, rect.height - 12f), text, line);
+        }
+
+        // 한 역할만 조작 중일 때 화면 위 가운데 아래쪽에 "A 조작 중"/"B 조작 중" 알약 (역할 색: A 하늘색, B 주황)
+        private void DrawFocusBadge()
+        {
+            bool a = RoleInput.Focus == ControlFocus.A;
+            string text = a ? "<b><color=#73d9ff>A 조작 중</color></b>  (` 전환)" : "<b><color=#ffa659>B 조작 중</color></b>  (` 전환)";
+            var rect = new Rect(Screen.width / 2f - 110f, Screen.height - 74f, 220f, 28f);
+            GUI.Box(rect, GUIContent.none, box);
+            var style = new GUIStyle(line) { alignment = TextAnchor.MiddleCenter };
+            GUI.Label(rect, text, style);
         }
 
         private void DrawRelicWindow()
