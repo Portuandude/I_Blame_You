@@ -60,7 +60,8 @@ namespace IBlameYou.Systems
             if (body.linearVelocity.y <= ApexSpeed)
             {
                 rising = false;
-                if (apexBurst) Apex();
+                var health = GetComponent<HealthSystem>();
+                if (apexBurst && (health == null || !health.IsDead)) Apex(); // 오르다 쓰러지면 반짝이지 않는다
                 return;
             }
             if (age >= MaxTime)
