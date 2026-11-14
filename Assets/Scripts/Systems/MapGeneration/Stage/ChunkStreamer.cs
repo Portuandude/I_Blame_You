@@ -558,6 +558,7 @@ namespace IBlameYou.Systems
             IBlameYou.Puzzles.LanternPuzzle.Create(root, specs, mural, solved, () =>
             {
                 solvedPuzzles.Add(index);
+                IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle); // 퍼즐을 풀면 마음 가루
                 if (root != null) SpawnRelicChest(root, index, chestAt, true);
             }, mirror);
             if (solved) SpawnRelicChest(root, index, chestAt, false);
@@ -663,7 +664,14 @@ namespace IBlameYou.Systems
         private void SpawnCoinPile(Transform root, int key, Vector2 position, float difficulty)
         {
             if (collectedCoins.Contains(key)) return;
-            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () => collectedCoins.Add(key));
+            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () =>
+            {
+                collectedCoins.Add(key);
+                // 방어막 다리: 끝의 동전 무더기를 모두 주우면 퍼즐을 푼 것 → 마음 가루
+                int room = key / 16; // CoinPileKey의 청크 번호
+                if (room < stage.Chunks.Count && stage.Chunks[room].Kind == ChunkKind.ShieldBridge && !HasCoinsLeft(room))
+                    IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle);
+            });
         }
 
         // 즉시 회복 (최대 체력 비율, 중간보스 처치·용사의 훈장). 쓰러진 뒤면 아무 일도 하지 않고 false. notice가 null이면 알림 없이.
