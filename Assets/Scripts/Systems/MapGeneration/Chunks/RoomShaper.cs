@@ -60,6 +60,7 @@ namespace IBlameYou.Systems
             if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
             if (IsWallArcherAmbush(seed, room)) AddWallArchers(geometry.Chunk);
             if (HasPairGate(room)) AddPairGate(seed, room, geometry.Chunk);
+            if (room.Kind == RoomKind.Puzzle) geometry.Chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy); // 퍼즐 방에는 몹이 없다 (2026-11-14 사람 결정)
             return geometry;
         }
 
@@ -283,7 +284,7 @@ namespace IBlameYou.Systems
             int count = room.Difficulty >= BlinkStairsMinDifficulty ? 5 : room.Difficulty >= CrumbleStairsMinDifficulty ? 4 : 3;
             var style = (ShaftStyle)rng.Next(count);
             // 버섯 탑은 지그재그로 뽑힌 이동 방 일부만 바꾼다 (다른 모양을 고르는 난수는 그대로). 따로 굴리는 난수
-            if (style == ShaftStyle.Zigzag && room.Kind == RoomKind.Travel && room.Difficulty >= MushroomTowerMinDifficulty)
+            if (style == ShaftStyle.Zigzag && IsShaftFightRoom(room) && room.Difficulty >= MushroomTowerMinDifficulty)
             {
                 var towerRng = new Random(unchecked(seed * 73 + room.Index * 104729 + 41));
                 if (towerRng.NextDouble() < MushroomTowerChance) style = ShaftStyle.MushroomTower;
@@ -341,14 +342,16 @@ namespace IBlameYou.Systems
                 geometry.Exits[DoorDir.Down] = (HoleX0 - 1, g);    // 구멍 바로 옆에서 걸어 들어가 떨어진다
             }
 
-            if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
+            if (room.Kind == RoomKind.Combat) PlaceShaftArenaEnemies(chunk, g, rng);
+            else if (IsShaftFightRoom(room)) PlaceShaftEnemies(chunk, g, rng);
             if (up && style == ShaftStyle.MushroomTower) ClearTowerFloor(room, chunk, g);
             if (up && style == ShaftStyle.MushroomTower && TowerHasSniper(room)) AddTowerSniper(room, chunk, g);
             // 위 문 없는 굴: 순간이동 선반이 없으면 통통 버섯 선반. 버섯 열을 함정이 피하도록 함정보다 먼저 둔다
             // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
-            if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
-            if (room.Kind == RoomKind.Travel && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
+            if (!up && IsShaftFightRoom(room) && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
+            if (IsShaftFightRoom(room) && room.Difficulty >= TrapMinDifficulty) PlaceShaftTraps(seed, room, geometry);
             if (up && IsArcherTower(room, style)) AddArcherTower(geometry, HasArcherTowerGuard(room, style));
+            if (room.Kind == RoomKind.Combat) MakeShaftArena(chunk);
             return Check(geometry);
         }
 
@@ -512,10 +515,10 @@ namespace IBlameYou.Systems
             int leftX0 = HasPairGate(room) ? 4 : 5; // 협동 봉인문(8열)과 겹치지 않게
             chunk.SetRow(leftX0, leftX0 + 3, leftHigh ? ShelfRowHigh : ShelfRowLow, StageTile.Platform);
             chunk.SetRow(23, 26, leftHigh ? ShelfRowLow : ShelfRowHigh, StageTile.Platform);
-            if (room.Kind == RoomKind.Travel && room.Difficulty >= 0.35f)
+            if (IsShaftFightRoom(room) && room.Difficulty >= 0.35f)
                 chunk.AddEnemy(StageEnemy.GoblinArcher, leftHigh ? 6 : 25, ShelfRowHigh + 1);
             // 높은 선반 안쪽 끝에 동전 무더기 (궁수가 지키는 자리, 위험한 길 보상). 난수를 쓰지 않아 방 모양은 그대로다
-            if (room.Kind == RoomKind.Travel && room.Difficulty >= ShelfCoinMinDifficulty)
+            if (IsShaftFightRoom(room) && room.Difficulty >= ShelfCoinMinDifficulty)
                 chunk.AddFeature(FeatureKind.CoinPile, leftHigh ? leftX0 + 3 : 23, ShelfRowHigh + 1);
         }
 
@@ -531,11 +534,12 @@ namespace IBlameYou.Systems
         // 위에서 쏘는 동안 바닥을 서성여 가시 사이로 내려앉기 어렵게 한다. 가시·문 앞·구멍·첫 발판 밑을 피해 가운데에서 가까운 칸 (난수 안 씀).
         public const float ArcherTowerGuardDifficulty = 0.45f;
 
+        // 세로 전투 방(2026-11-14)은 바닥에 전투 구역 적이 이미 여럿이라 파수꾼을 따로 두지 않는다 (옛 이동 방만).
         public static bool HasArcherTowerGuard(RoomData room, ShaftStyle style) =>
-            IsArcherTower(room, style) && room.Difficulty >= ArcherTowerGuardDifficulty;
+            IsArcherTower(room, style) && room.Kind == RoomKind.Travel && room.Difficulty >= ArcherTowerGuardDifficulty;
 
         public static bool IsArcherTower(RoomData room, ShaftStyle style) =>
-            style == ShaftStyle.Shelves && room.Kind == RoomKind.Travel && room.Difficulty >= ArcherTowerMinDifficulty
+            style == ShaftStyle.Shelves && IsShaftFightRoom(room) && room.Difficulty >= ArcherTowerMinDifficulty
             && (room.Doors & DoorDir.Up) != 0;
 
         private static void AddArcherTower(RoomGeometry geometry, bool guard)
@@ -611,7 +615,7 @@ namespace IBlameYou.Systems
         public const int WindTopRise = 3;         // 기둥 꼭대기 = 선반 서는 칸 + 3 (몸이 선반 위로 넉넉히 떠오르게)
 
         public static bool WantsWindShortcut(RoomData room) =>
-            room.Kind == RoomKind.Travel && room.Difficulty >= WindMinDifficulty && !HasPairGate(room) &&
+            IsShaftFightRoom(room) && room.Difficulty >= WindMinDifficulty && !HasPairGate(room) &&
             (room.Doors & DoorDir.Up) != 0 && ((room.Doors & DoorDir.Left) == 0 || (room.Doors & DoorDir.Right) == 0);
 
         private static void AddWindShortcut(RoomData room, ChunkData chunk)
@@ -680,6 +684,39 @@ namespace IBlameYou.Systems
         }
 
         // 세로 방의 쫄몹: 구멍과 문에서 떨어진 바닥에 1~3마리.
+        // 세로 전투 방 (2026-11-14 사람 결정 "기믹만 있는 방은 지운다"): 옛 세로 이동 방의 계단·선반·버섯·바람·함정은 그대로 두고,
+        // 바닥 전체를 전투 구역으로 삼는다. 바닥에 내려서면 좌우 문과 천장·바닥 구멍이 닫히고(ArenaZone.SealHoles) 방 안 적이 모두 그때 나온다.
+        // 위 문으로 들어와 계단을 내려오거나, 아래 문으로 올라오거나, 좌우 문으로 들어오면 모두 바닥을 지나므로 피해 갈 수 없다.
+        public static bool IsShaftFightRoom(RoomData room) => room.Kind == RoomKind.Travel || (room.Kind == RoomKind.Combat && room.IsVertical);
+
+        // 바닥 적 자리: 구멍(14~16)·아래 문 도착 칸(11)·구멍 앞(13), 벽 쪽 버섯 선반(5·26 ±2)·함정 자리(벽 쪽)를 피한 열
+        private static readonly int[] ShaftArenaSpots = { 8, 9, 19, 20, 21, 22 };
+
+        private static void PlaceShaftArenaEnemies(ChunkData chunk, int g, Random rng)
+        {
+            int count = 3 + (int)Math.Round(2 * chunk.Difficulty);
+            var spots = new List<int>(ShaftArenaSpots);
+            for (int i = 0; i < count && spots.Count > 0; i++)
+            {
+                int pick = rng.Next(spots.Count);
+                chunk.AddEnemy(ChunkGenerator.PickEnemy(rng, chunk.Difficulty), spots[pick], g, true);
+                spots.RemoveAt(pick);
+            }
+        }
+
+        // 선반 위 궁수 등 방 안 모든 적을 전투 구역 적(문이 닫히면 나옴)으로 바꾸고, 바닥 전체(벽까지)를 전투 구역으로.
+        private static void MakeShaftArena(ChunkData chunk)
+        {
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || f.Deferred) continue;
+                f.Deferred = true;
+                chunk.Features[i] = f;
+            }
+            chunk.AddFeature(FeatureKind.Arena, 0, ShaftGround, W);
+        }
+
         private static void PlaceShaftEnemies(ChunkData chunk, int g, Random rng)
         {
             int count = 1 + (rng.NextDouble() < chunk.Difficulty ? 1 : 0) + (chunk.Difficulty > 0.6f && rng.NextDouble() < 0.5 ? 1 : 0);

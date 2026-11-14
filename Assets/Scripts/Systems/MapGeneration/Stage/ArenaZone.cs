@@ -140,6 +140,7 @@ namespace IBlameYou.Systems
             if (bossFight) GameAudio.PlayMusic(fightMusic = spawns.Exists(IsKing) ? BossMusic : MidBossMusic);
             CreateGate(area.xMin + 0.5f);
             CreateGate(area.xMax - 0.5f);
+            foreach (var hole in holes) CreateHoleSeal(hole);
             LockCamera();
             GameAudio.PlaySfx("ArenaLock", 0.8f);
             if (!bossFight && spawns.Exists(IsElite))
@@ -356,6 +357,25 @@ namespace IBlameYou.Systems
             else visual.transform.localScale = new Vector3(1f, GateHeight / 3f, 1f); // 그림은 1 × 3유닛
             ArenaGate.Attach(go, visual, area.yMin); // 위에서 쿵 떨어지고, 닫힌 동안 숨쉬고, 돌파하면 위로 걷힌다
             gates.Add(go);
+        }
+
+        // 세로 전투 방 (2026-11-14): 문이 닫히는 동안 천장·바닥 구멍(위·아래 문)도 가로 장벽으로 막는다. 월드 좌표 사각형.
+        private readonly List<Rect> holes = new List<Rect>();
+
+        public void SealHoles(IEnumerable<Rect> rects) => holes.AddRange(rects);
+
+        private void CreateHoleSeal(Rect hole)
+        {
+            var go = new GameObject("ArenaHoleSeal");
+            go.transform.SetParent(transform, true);
+            go.transform.position = new Vector3(hole.center.x, hole.center.y, 0f);
+            go.layer = TrapCommon.GroundLayer;
+            go.AddComponent<BoxCollider2D>().size = hole.size;
+            var frames = TrapCommon.Frames("Gate");
+            var visual = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(1f, 0.35f, 0.4f, 0.55f), 1f, 2);
+            visual.transform.localRotation = Quaternion.Euler(0f, 0f, 90f); // 세로 문 그림을 눕힌다
+            visual.transform.localScale = frames == null ? new Vector3(0.8f, hole.width, 1f) : new Vector3(1f, hole.width / 3f, 1f);
+            gates.Add(go); // 돌파하면 다른 문과 함께 치운다
         }
 
         private void LockCamera()

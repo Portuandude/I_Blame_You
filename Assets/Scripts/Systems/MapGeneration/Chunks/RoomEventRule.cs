@@ -18,15 +18,19 @@ namespace IBlameYou.Systems
         public static bool HasClosedFloor(RoomData room) => (room.Doors & DoorDir.Down) == 0;
 
         public static bool IsTreasureGoblinRoom(int seed, RoomData room) =>
-            room != null && room.Kind == RoomKind.Travel && TreasureGoblinRule.IsTreasureGoblinRoom(seed, room.Index, Depth(room), true);
+            room != null && IsEventRoom(room) && TreasureGoblinRule.IsTreasureGoblinRoom(seed, room.Index, Depth(room), true);
 
         public static bool IsCursedChestRoom(int seed, RoomData room)
         {
-            if (room == null || room.Kind != RoomKind.Travel || IsTreasureGoblinRoom(seed, room)) return false;
+            if (room == null || !IsEventRoom(room) || IsTreasureGoblinRoom(seed, room)) return false;
             float depth = Depth(room);
             if (!room.IsVertical) return CursedChestRule.IsCursedChestRoom(seed, room.Index, depth, true);
             if (!HasClosedFloor(room) || RoomShaper.IsArcherTower(room, RoomShaper.PickShaftStyle(seed, room))) return false;
             return CursedChestRule.IsCursedChestShaft(seed, room.Index, depth);
         }
+
+        // 2026-11-14 사람 결정으로 방 격자에 이동 방이 없어져, 방 이벤트는 일반 전투 방에 나온다 (옛 이동 방과 같은 규칙).
+        // 좌우 전투 방: 저주 상자는 방 가운데(앞 구간) 바닥이라 전투 구역 밖. 세로 전투 방: 바닥이 전투 구역이라 먼저 전투가 끝난 뒤 상자를 연다.
+        public static bool IsEventRoom(RoomData room) => room.Kind == RoomKind.Travel || room.Kind == RoomKind.Combat;
     }
 }

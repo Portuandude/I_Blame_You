@@ -442,7 +442,11 @@ namespace IBlameYou.Systems
                         bool elite = chunk.Kind == ChunkKind.EliteArena;
                         bool midBoss = RoomShaper.IsMidBossArena(chunk); // 보상: 체력 50% 즉시 회복 + 유물 상자 확정 (회복 구슬 없음, 2026-11-10 사람 결정)
                         var arenaRoot = root;
-                        var rewardPosition = new Vector2(ox + f.X + f.Width / 2f, oy + f.Y);
+                        var arenaRoom = rooms != null ? rooms.Rooms[index] : null;
+                        bool shaftArena = arenaRoom != null && arenaRoom.IsVertical; // 세로 전투 방: 보상은 바닥 구멍(14~16열)을 피해 바닥 칸 옆
+                        var rewardPosition = shaftArena && geometries[index].Floor.HasValue
+                            ? new Vector2(ox + geometries[index].Floor.Value.x + 2.5f, oy + geometries[index].Floor.Value.y)
+                            : new Vector2(ox + f.X + f.Width / 2f, oy + f.Y);
                         var relicPosition = rewardPosition + Vector2.left * RelicChestOffset; // 구역 가운데 발판(7~11, 20~24칸) 사이 바닥
                         // 매복 (2026-11-14 사람 결정): 방 격자 모드의 일반 전투 방 절반은 적이 천장 쪽에서 떨어진다 (Chunks/AmbushRule, 난수 안 씀)
                         bool ambush = rooms != null && AmbushRule.IsAmbush(stage.Seed, index, RoomDepth(index), chunk.Kind == ChunkKind.Arena && !midBoss);
@@ -463,6 +467,7 @@ namespace IBlameYou.Systems
                                 SpawnReward(arenaRoot, arenaChunk, rewardPosition, true);
                                 if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
+                        if (shaftArena) arenaZone.SealHoles(ShaftHoles(arenaRoom, ox, oy));
                         arenaZone.Ambush = ambush;
                         arenaZone.WallArchers = ambush && RoomShaper.IsWallArcherAmbush(stage.Seed, rooms.Rooms[index]);
                         arenaZone.Burrow = ambush && !arenaZone.WallArchers && AmbushRule.IsBurrow(stage.Seed, index);
@@ -491,6 +496,17 @@ namespace IBlameYou.Systems
             }
 
             if (rooms != null) LoadRoomExtras(index, root, origin);
+        }
+
+        // 세로 전투 방의 천장 구멍(위 문)·바닥 구멍(아래 문) 자리 (Chunks/RoomShaper.HoleX0~HoleX1)
+        private static List<Rect> ShaftHoles(RoomData room, float ox, float oy)
+        {
+            var list = new List<Rect>();
+            float x = ox + RoomShaper.HoleX0;
+            float w = RoomShaper.HoleX1 - RoomShaper.HoleX0 + 1;
+            if ((room.Doors & DoorDir.Up) != 0) list.Add(new Rect(x, oy + ChunkData.Height - 1, w, 1f));
+            if ((room.Doors & DoorDir.Down) != 0) list.Add(new Rect(x, oy + RoomShaper.ShaftGround - 1, w, 1f));
+            return list;
         }
 
         // 방 격자 모드의 곁방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
