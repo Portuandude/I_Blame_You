@@ -51,6 +51,7 @@ namespace IBlameYou.Systems
 
         // 매복 구역 (Chunks/AmbushRule): 문이 닫히면 적이 바닥 소환 대신 위에서 떨어진다. 먼저 경고(바닥 타원 + 천장 먼지 + 알림) 뒤 AmbushWarnTime 만큼 기다린다.
         public bool Ambush { get; set; }
+        private Transform enteredPlayer; // 문을 닫게 한 플레이어 (매복 돌파 골드가 날아갈 곳)
         public bool WallArchers { get; set; } // 매복 변형 "벽 위 궁수" 방 (RoomShaper.IsWallArcherAmbush): 선반 위 적은 떨어지지 않고 그 자리에 나타난다
         private const float AmbushWarnTime = 0.9f;
         private const float AmbushDropHeight = 6f;   // 떨어지기 시작하는 높이 (천장·발판이 낮으면 그 아래)
@@ -105,7 +106,9 @@ namespace IBlameYou.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (active || cleared || TrapCommon.PlayerFrom(other) == null) return;
+            var player = TrapCommon.PlayerFrom(other);
+            if (active || cleared || player == null) return;
+            enteredPlayer = player.transform;
             StartCoroutine(Begin());
         }
 
@@ -202,7 +205,10 @@ namespace IBlameYou.Systems
             LeaveBossMusic();
             // 중간보스가 없는 외길 모드도 후반에는 후반 곡으로: 전반 곡이 나오는 중에 깊이 절반을 넘긴 구역을 돌파하면 바꾼다
             if (GameAudio.CurrentMusic == "Dungeon" && StageMusicFor(StageEvents.Depth) != "Dungeon") GameAudio.PlayMusic(StageMusicFor(StageEvents.Depth));
-            StageEvents.PostNotice(ClearNotice(Time.time - lockedAt));
+            // 매복 돌파 보너스 (2026-11-14 ① 컨텐츠): 경고를 보고 버틴 보상으로 골드 조금 (복주머니 안 붙음, 동전 무더기와 같은 연출)
+            int bonus = Ambush && enteredPlayer != null
+                ? IBlameYou.Core.RunGold.OnCoinPile(enteredPlayer, new Vector3(area.center.x, area.yMin + 2f, 0f), AmbushRule.ClearGold) : 0;
+            StageEvents.PostNotice(bonus > 0 ? $"{ClearNotice(Time.time - lockedAt)} 매복 돌파 골드 +{bonus}" : ClearNotice(Time.time - lockedAt));
             VfxPlayer.ClearBurst(new Vector3(area.center.x, area.yMin + 3f, 0f)); // 구역 가운데에서 별·하트 축하
             onCleared?.Invoke();
         }
