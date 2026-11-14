@@ -96,7 +96,7 @@ namespace IBlameYou.Systems
             var enemy = other.GetComponentInParent<EnemyController>();
             if (enemy == null) return;
             var body = enemy.GetComponent<Rigidbody2D>();
-            if (body == null || body.bodyType != RigidbodyType2D.Dynamic || body.linearVelocity.y > 0.5f) return;
+            if (body == null || body.bodyType != RigidbodyType2D.Dynamic || body.gravityScale <= 0.01f || body.linearVelocity.y > 0.5f) return; // 나는 적·중력 끈 보스 패턴은 제외
             var health = enemy.GetComponent<HealthSystem>();
             if (health != null && health.IsDead) return;
             float capTop = transform.position.y + CapTop;
