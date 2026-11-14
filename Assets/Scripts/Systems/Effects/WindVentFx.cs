@@ -5,6 +5,7 @@ namespace IBlameYou.Systems
 {
     // 바람 구멍 연출 (2026-11-14): 기둥 안을 위로 흐르는 흰·연초록 바람 줄과 가끔 나뭇잎,
     // 플레이어가 들어갈 때 "휘잉" WindGust + 발밑 먼지 + 바람 줄 한 묶음. 화면 안일 때만 그린다.
+    // 꼭대기에서는 작은 바람 덩이 셋이 납작한 고리를 그리며 맴돌아 어디까지 오르는지 보인다 (2026-11-14).
     // WindVent.Create가 붙인다. 바람 줄은 그림만 있는 오브젝트라 판정과 상관없다.
     public class WindVentFx : MonoBehaviour
     {
@@ -18,7 +19,12 @@ namespace IBlameYou.Systems
 
         private static float lastGustSound = -10f;
 
+        private const int CurlPuffs = 3;             // 꼭대기 바람 고리: 맴도는 작은 바람 덩이 수
+        private const float CurlSpin = 3.2f;         // 라디안/초
+        private static readonly Color CurlColor = new Color(0.9f, 1f, 0.94f, 0.6f);
+
         private WindVent vent;
+        private SpriteRenderer[] curl;
         private float nextStreak;
         private float nextLeaf = -1f;
 
@@ -51,6 +57,7 @@ namespace IBlameYou.Systems
             var bottom = transform.position + new Vector3(vent.Width * 0.5f, 0.3f, 0f);
             var top = transform.position + new Vector3(vent.Width * 0.5f, vent.Height - 0.3f, 0f);
             if (!SlimeSplitFx.OnScreen(middle) && !SlimeSplitFx.OnScreen(bottom) && !SlimeSplitFx.OnScreen(top)) return;
+            SpinCurl();
 
             if (Time.time >= nextStreak)
             {
@@ -64,6 +71,35 @@ namespace IBlameYou.Systems
                 nextLeaf = Time.time + Random.Range(LeafMinGap, LeafMaxGap);
                 var start = transform.position + new Vector3(Random.Range(0.2f, vent.Width - 0.2f), 0.3f, 0f);
                 WindParticle.Leaf(start, vent.Top, LeafColor);
+            }
+        }
+
+        // 꼭대기 바람 고리: 기둥 폭만큼 납작한 타원을 돈다. 뒤쪽(위)을 지날 때는 옅고 작게, 앞쪽(아래)은 진하게.
+        private void SpinCurl()
+        {
+            if (curl == null)
+            {
+                curl = new SpriteRenderer[CurlPuffs];
+                var circle = SolidSpriteFactory.CreateCircle();
+                for (int i = 0; i < CurlPuffs; i++)
+                {
+                    var go = new GameObject("WindCurl");
+                    go.transform.SetParent(transform, false);
+                    curl[i] = go.AddComponent<SpriteRenderer>();
+                    curl[i].sprite = circle;
+                    curl[i].sortingOrder = 4;
+                }
+            }
+
+            float radius = vent.Width * 0.45f;
+            for (int i = 0; i < CurlPuffs; i++)
+            {
+                float a = Time.time * CurlSpin + i * Mathf.PI * 2f / CurlPuffs;
+                float depth = (1f - Mathf.Sin(a)) * 0.5f; // 1 = 앞(아래), 0 = 뒤(위)
+                curl[i].transform.localPosition = new Vector3(vent.Width * 0.5f + Mathf.Cos(a) * radius, vent.Height - 0.45f + Mathf.Sin(a) * 0.16f, 0f);
+                float size = Mathf.Lerp(0.1f, 0.18f, depth);
+                curl[i].transform.localScale = new Vector3(size * 1.6f, size, 1f);
+                curl[i].color = new Color(CurlColor.r, CurlColor.g, CurlColor.b, CurlColor.a * Mathf.Lerp(0.35f, 1f, depth));
             }
         }
 

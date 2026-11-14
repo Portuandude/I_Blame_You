@@ -2,6 +2,11 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-14 00:20 UTC
+- 브랜치/PR: `claude/project-thread-7ql488` → #90 (develop 대상, 자동 머지 켬, #89 head 위에 쌓음 — 시작할 때 #89 CI 진행 중). 백로그가 사람 판단뿐이라 00:10 인수인계 후보로 "통통 버섯 넓히기" 추가
+- 완료 (4개, 적대적 리뷰 APPROVE, LOW 2개 고침): ① 언덕 청크에도 버섯 덤 길 (근처 언덕이 바닥 + 3보다 높으면 안 놓음, `BounceReachGuard`) ② 위에서 내려앉은 적도 약 4.5칸 튕김 (`BounceMushroom.TryBounceEnemy`) ③ 기능 테스트 맵 2구역 "통통 버섯 방" (`ChunkGenerator.AddBounceLedge`) ④ 두 갈래 길 아래 길 버섯 (`PlaceTwinPathMushroom`, 떨어져도 위 길로). 난수 안 씀, 로컬 175/175
+- 실패/보류: 기능 테스트 도구 창(F9·F12) 키보드 조작은 BLOCKED — 창이 게임을 멈추지 않아 Enter(순간이동)·↑(상호작용)과 겹침
+- 다음 실행 메모: 플레이테스트 필요 — 언덕 버섯 선반에 점프로 닿지 않는지, 두 갈래 길 버섯 튕김 때 머리 걸림, 슬라임 튕김이 어색하지 않은지
 ## 2026-11-14 00:10 UTC
 - 브랜치/PR: `claude/project-thread-gim36q` (develop 대상). 시작할 때 열린 PR 없음 (#88까지 머지됨). 백로그가 사람 판단(숨 고르기 방)뿐이라 DIRECTION ① "무너지는 발판 무너짐·복귀 연출" 5개 추가
 - 완료 (5개, 적대적 리뷰 APPROVE, LOW만). 새 `Systems/Effects/CrumblePlatformFx`: ① 무너질 때 나무 조각 ② 흔들림 중 어두워짐 + 부스러기 ③ 복귀 전 나무 조각 모여듦 ④ 복귀 판자 차례로 톡 커짐 + 양 끝 반짝 ⑤ 복귀 소리 0.15초 간격·소리 거리 2D

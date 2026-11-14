@@ -5,6 +5,7 @@ namespace IBlameYou.Systems
 {
     // 날아가며 겹친 대상에게 피해를 주는 투사체 (B의 공격 스킬, 고블린 궁수의 화살).
     // Rigidbody 없이 매 물리 프레임 위치를 옮기고 겹침 조회로 판정한다. 벽/바닥에 닿으면 사라진다.
+    // 적이 쏜 투사체는 바람 구멍 기둥을 지나며 위로 휜다 (WindVent.LiftAt).
     // SetHoming을 부르면 가장 가까운 대상 쪽으로 초당 turnRate도까지 방향을 꺾는다 (유도성). 플레이어 투사체만.
     public class Projectile : MonoBehaviour
     {
@@ -64,6 +65,18 @@ namespace IBlameYou.Systems
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
+        // 적이 쏜 화살이 바람 구멍 기둥 안을 지나면 위로 휜다 (2026-11-14). 빠르기는 그대로 두고 방향만 꺾는다.
+        private void BendInWind(Vector2 position)
+        {
+            float lift = WindVent.LiftAt(position);
+            if (lift <= 0f) return;
+            float speed = velocity.magnitude;
+            if (speed <= 0f) return;
+            velocity = (velocity + Vector2.up * lift * Time.fixedDeltaTime).normalized * speed;
+            float angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
         private void FixedUpdate()
         {
             Vector2 position = transform.position;
@@ -73,6 +86,7 @@ namespace IBlameYou.Systems
                 launchKnown = true;
             }
             if (homingTurnRate > 0f) Steer(position);
+            if (!hitsEnemies) BendInWind(position);
             Vector2 step = velocity * Time.fixedDeltaTime;
 
             var wall = groundMask != 0 ? Physics2D.Raycast(position, step.normalized, step.magnitude, groundMask) : default;

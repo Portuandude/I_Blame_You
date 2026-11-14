@@ -196,26 +196,40 @@ namespace IBlameYou.Systems
             for (int x = 0; x < W; x++) heights[x] = chunk.SurfaceAt(x);
             foreach (var f in chunk.Features) if (f.X >= 0 && f.X < W) Mark(occupied, f.X, 1);
             int before = chunk.Features.Count;
-            PlaceBounceLedge(chunk, heights, occupied);
+            PlaceBounceLedge(chunk, heights, occupied, false);
             return chunk.Features.Count > before;
         }
 
-        private static void PlaceBounceLedge(ChunkData chunk, int[] heights, bool[] occupied)
+        // 바람 선반 (2026-11-14): 청크 번호가 홀수면 버섯 대신 선반 오른쪽 바로 옆에 2칸 바람 구멍을 둔다.
+        // 바람 기둥 꼭대기 = 선반 서는 칸 + RoomShaper.WindTopRise. 기둥 아래 2칸과 그 오른쪽 한 칸도 평평한 같은 바닥이어야 한다.
+        // 자리가 없으면 버섯으로 놓는다. 번호만 보고 고르므로 난수열은 그대로다. 기능 테스트 맵(AddBounceLedge)은 늘 버섯.
+        public static bool WantsWindLedge(ChunkData chunk) => (chunk.Index & 1) == 1;
+
+        private static void PlaceBounceLedge(ChunkData chunk, int[] heights, bool[] occupied, bool allowWind = true)
         {
             if (chunk.Difficulty < BounceMinDifficulty) return;
+            if (allowWind && WantsWindLedge(chunk) && TryPlaceLedge(chunk, heights, occupied, true)) return;
+            TryPlaceLedge(chunk, heights, occupied, false);
+        }
+
+        private static bool TryPlaceLedge(ChunkData chunk, int[] heights, bool[] occupied, bool wind)
+        {
             int center = W / 2;
             for (int k = 0; k < W; k++)
             {
                 int x = center + ((k & 1) == 0 ? k / 2 : -(k / 2 + 1));
-                if (x - BounceLedgeHalf - 1 < 4 || x + BounceLedgeHalf + 1 > W - 5) continue;
+                int flatLo = x - BounceLedgeHalf;
+                int flatHi = x + BounceLedgeHalf + (wind ? RoomShaper.WindVentWidth : 0); // 바람이면 선반 오른쪽 기둥 2칸까지
+                if (flatLo - 1 < 4 || flatHi + 1 > W - 5) continue;
                 int g = heights[x];
                 int stand = g + BounceLedgeRise;
                 if (stand + 2 > ChunkData.Height - 2) continue; // 선반 위로 몸이 들어갈 자리 (천장 줄 아래)
+                if (wind && stand + RoomShaper.WindTopRise > ChunkData.Height - 2) continue;
                 bool ok = true;
-                for (int c = x - BounceLedgeHalf - 1; c <= x + BounceLedgeHalf + 1 && ok; c++)
+                for (int c = flatLo - 1; c <= flatHi + 1 && ok; c++)
                 {
-                    // 선반 아래는 평평한 같은 바닥, 양옆 한 칸도 바닥보다 높지 않게 (언덕에서 걸어 올라 닿지 않게)
-                    if (c >= x - BounceLedgeHalf && c <= x + BounceLedgeHalf ? heights[c] != g : heights[c] > g) ok = false;
+                    // 선반(과 바람 기둥) 아래는 평평한 같은 바닥, 양옆 한 칸도 바닥보다 높지 않게 (언덕에서 걸어 올라 닿지 않게)
+                    if (c >= flatLo && c <= flatHi ? heights[c] != g : heights[c] > g) ok = false;
                     if (occupied[c]) ok = false; // 가시·적이 있는 곳은 피한다
                 }
                 // 근처 높은 언덕 위에서 보통 점프(약 2.4칸)로 선반에 닿지 않게 (언덕 청크용. 평지는 한 칸씩만 오르내려 늘 통과)
@@ -224,11 +238,22 @@ namespace IBlameYou.Systems
                 if (!ok) continue;
 
                 for (int c = x - BounceLedgeHalf; c <= x + BounceLedgeHalf; c++) chunk.Tiles[c, stand - 1] = StageTile.Platform;
-                chunk.AddFeature(FeatureKind.BounceMushroom, x, g);
-                chunk.AddFeature(FeatureKind.CoinPile, x + 1, stand);
+                if (wind)
+                {
+                    int ventX = x + BounceLedgeHalf + 1;
+                    chunk.AddFeature(FeatureKind.WindVent, ventX, g, RoomShaper.WindVentWidth, stand + RoomShaper.WindTopRise - g);
+                    chunk.AddFeature(FeatureKind.CoinPile, x - 1, stand);
+                    Mark(occupied, ventX, RoomShaper.WindVentWidth);
+                }
+                else
+                {
+                    chunk.AddFeature(FeatureKind.BounceMushroom, x, g);
+                    chunk.AddFeature(FeatureKind.CoinPile, x + 1, stand);
+                }
                 Mark(occupied, x, BounceLedgeHalf);
-                return;
+                return true;
             }
+            return false;
         }
 
         // 높낮이 차가 1~2칸인 언덕. 높은 계단 벽에 화살 발사대가 박혀 낮은 쪽(플레이어가 오는 왼쪽)을 쏜다.
