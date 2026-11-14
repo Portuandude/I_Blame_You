@@ -279,6 +279,7 @@ namespace IBlameYou.Systems
             }
 
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
+            if (up && style == ShaftStyle.MushroomTower) ClearTowerFloor(room, chunk, g);
             // 위 문 없는 굴: 순간이동 선반이 없으면 통통 버섯 선반. 버섯 열을 함정이 피하도록 함정보다 먼저 둔다
             // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
             if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
@@ -307,7 +308,7 @@ namespace IBlameYou.Systems
         public const float MushroomTowerMinDifficulty = 0.25f;
         public const float MushroomTowerChance = 0.5f;
         public const int TowerStep = 7;             // 버섯 하나로 오르는 높이 (튕김 7.5 + 갓 0.95 ≈ 8.45 아래로 넉넉히)
-        public const int TowerMushroom1X = 6;       // 바닥 버섯 열 (왼쪽 탑 기준, 오른쪽이면 W-1-x)
+        public const int TowerMushroom1X = 6;       // 바닥 버섯 열 (왼쪽 탑 기준, 오른쪽이면 TowerCol 거울 자리)
         public const int TowerMushroom2X = 8;       // P1 위 버섯 열
         public const int TowerShelf1X0 = 4, TowerShelf1X1 = 9;   // P1 (행 = 바닥 + TowerStep - 1)
         public const int TowerShelf2X0 = 6, TowerShelf2X1 = 11;  // P2 (행 = P1 서는 칸 + TowerStep - 1)
@@ -327,7 +328,25 @@ namespace IBlameYou.Systems
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom2X), stand1, 1, 1);
         }
 
-        public static int TowerCol(bool left, int x) => left ? x : W - 1 - x;
+        // 오른쪽 탑은 위 구멍 가운데(15열) 기준 거울 자리라 P2 → 맨 위 판 간격이 왼쪽과 같은 1칸이다
+        public static int TowerCol(bool left, int x) => left ? x : (HoleX0 + HoleX1) - x;
+
+        // 버섯 탑 바닥 버섯 ±2칸에 선 쫄몹은 방 안쪽, 버섯 열 + 3칸부터 빈 열로 옮긴다 (적 난수는 그대로. 내려앉아 튕길 자리를 비움)
+        private static void ClearTowerFloor(RoomData room, ChunkData chunk, int g)
+        {
+            bool left = MushroomTowerOnLeft(room);
+            int m = TowerCol(left, TowerMushroom1X);
+            int inward = left ? 1 : -1;
+            for (int i = 0; i < chunk.Features.Count; i++)
+            {
+                var f = chunk.Features[i];
+                if (f.Kind != FeatureKind.Enemy || f.Y != g || Math.Abs(f.X - m) > 2) continue;
+                int to = m + inward * 3;
+                while (chunk.Features.Exists(o => o.Kind == FeatureKind.Enemy && o.Y == g && o.X == to)) to += inward;
+                f.X = to;
+                chunk.Features[i] = f;
+            }
+        }
 
         private static void SetRowEither(ChunkData chunk, int a, int b, int row) =>
             chunk.SetRow(Math.Min(a, b), Math.Max(a, b), row, StageTile.Platform);
