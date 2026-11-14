@@ -34,6 +34,7 @@ namespace IBlameYou.UI
         private static readonly Color CurseColor = new Color(0.66f, 0.4f, 0.98f);   // 저주받은 상자 점 (보라, CursedChest와 같은 색)
         private static readonly Color GoblinColor = new Color(1f, 0.93f, 0.55f);    // 보물 고블린 점 (밝은 금색, 깜빡임)
         private static readonly Color GearColor = new Color(0.55f, 0.85f, 1f);      // 바닥에 남은 장비 점 (하늘색, 보물 고블린이 떨군 것)
+        private static readonly Color PuzzleColor = new Color(1f, 0.6f, 0.25f);     // 안 푼 추리 퍼즐 방 점 (등불 주황, 풀고 상자를 열면 사라짐)
         private static readonly Color VillageColor = new Color(1f, 0.63f, 0.48f);   // 살구색 (NPC 마을, #ffa07a)
 
         private ChunkStreamer streamer;
@@ -537,7 +538,7 @@ namespace IBlameYou.UI
                 }
 
                 // 방 이벤트 점 (2026-11-14): 방 칸 왼쪽 아래 (오른쪽 아래는 체크·자물쇠, 위는 룬·동전). 들어가 본 방만.
-                // 저주받은 상자(유물을 아직 안 골랐으면 보라) · 보물 고블린(살아 있는 동안 밝은 금색으로 깜빡임) · 고블린이 떨군 장비(하늘색)
+                // 저주받은 상자(유물을 아직 안 골랐으면 보라) · 보물 고블린(살아 있는 동안 밝은 금색으로 깜빡임) · 고블린이 떨군 장비(하늘색) · 안 푼 퍼즐(주황)
                 if (streamer.HasVisited(room.Index))
                 {
                     Color? eventColor = null;
@@ -546,6 +547,7 @@ namespace IBlameYou.UI
                     else if (streamer.HasWaitingTreasureGoblin(room.Index)) eventColor = new Color(GoblinColor.r, GoblinColor.g, GoblinColor.b, 0.5f); // 세로 방 바닥 가까이 내려가면 나타남 (깜빡이지 않음)
                     else if (streamer.HasCursedChestLeft(room.Index)) eventColor = CurseColor;
                     else if (streamer.HasGoblinEquipmentLeft(room.Index)) eventColor = GearColor; // 보물 고블린이 떨군 장비가 남음 (주우면 사라짐)
+                    else if (streamer.HasPuzzleLeft(room.Index)) eventColor = PuzzleColor; // 안 푼 퍼즐 방 또는 푼 뒤 안 연 상자
                     if (eventColor.HasValue)
                     {
                         float d = Mathf.Max(4f, body.width * 0.26f);
@@ -660,7 +662,7 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비  <color=#ff9940>●</color> 퍼즐", legend);
                 return;
             }
 
@@ -669,7 +671,7 @@ namespace IBlameYou.UI
                 (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
                 (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Village, "마을"), (art.Check, "돌파")
             };
-            int count = items.Length + 3; // 마지막 세 칸은 동전 점·저주 상자 점·장비 점 (그림이 아니라 색 점)
+            int count = items.Length + 4; // 마지막 네 칸은 동전 점·저주 상자 점·장비 점·퍼즐 점 (그림이 아니라 색 점)
             float itemWidth = Mathf.Min(92f, rect.width / count); // 좁은 지도에서도 패널 안에
             float x = rect.center.x - itemWidth * count / 2f;
             foreach (var (icon, name) in items)
@@ -704,6 +706,15 @@ namespace IBlameYou.UI
             }
             else Fill(gearDot, GearColor);
             GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "장비", legendLeft);
+            x += itemWidth;
+            var puzzleDot = new Rect(x + 5f, rect.y + 7f, 10f, 10f);
+            if (art.Tile != null)
+            {
+                DrawTile(new Rect(puzzleDot.x - 2f, puzzleDot.y - 2f, 14f, 14f), Frame);
+                DrawTile(puzzleDot, PuzzleColor);
+            }
+            else Fill(puzzleDot, PuzzleColor);
+            GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), "퍼즐", legendLeft);
         }
 
         private bool IsShown(int index, RoomData current) => LookOf(index, current) != RoomLook.Hidden;
