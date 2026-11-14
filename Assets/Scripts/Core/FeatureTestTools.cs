@@ -8,7 +8,7 @@ namespace IBlameYou.Core
 {
     // 기능 테스트 모드 도구 (2026-11-12 플레이테스트 피드백: 7·8·11·19번이 일반 판에서는 "테스트 불가").
     // 맵은 적 없는 시험용 외길(FeatureTestStage). F키로 몬스터를 골라 부르고, 유물을 골라 장착·해제하고,
-    // 협동 기능(B 영창·A 방어막 순서 입력, 협동 봉인문, 스위치 발판, "누구 탓?" 도장)을 바로 시험한다.
+    // 협동 기능(B 영창·A 방어막 순서 입력, 협동 봉인문, 스위치 발판, 결과 창)을 바로 시험한다.
     // F1~F4 치트(DevCheats)는 이 모드에서 개발자 모드가 꺼져 있어도 쓴다.
     public class FeatureTestTools : MonoBehaviour
     {
@@ -80,7 +80,7 @@ namespace IBlameYou.Core
             if (Input.GetKeyDown(KeyCode.F9)) relicWindowOpen = !relicWindowOpen;
             if (Input.GetKeyDown(KeyCode.F10)) JumpToArea((area + 1) % FeatureTestStage.Order.Length);
             if (Input.GetKeyDown(KeyCode.F12)) equipWindowOpen = !equipWindowOpen;
-            if (Input.GetKeyDown(KeyCode.F11)) StageEvents.RaiseCleared(); // 결과 창 + "누구 탓?" 도장 (판이 끝남, R로 다시)
+            if (Input.GetKeyDown(KeyCode.F11)) StageEvents.RaiseCleared(); // 결과 창 (판이 끝남, R로 다시)
             if (relicWindowOpen && Input.GetKeyDown(KeyCode.Escape)) relicWindowOpen = false;
             if (equipWindowOpen && Input.GetKeyDown(KeyCode.Escape)) equipWindowOpen = false;
         }
@@ -178,7 +178,7 @@ namespace IBlameYou.Core
                 $"F9 유물 장착·해제 ({PlayerRelics.For(player).Owned.Count}개)\n" +
                 $"F10 다음 구역: {FeatureTestStage.Names[(area + 1) % FeatureTestStage.Order.Length]}\n" +
                 $"F5 미니게임 전환: {mode}\n" +
-                "F11 결과 창 (누구 탓? 도장)\n" +
+                "F11 결과 창\n" +
                 "F12 장비 끼기·빼기 · 골드 +100 · 식당·상점 창\n" +
                 "F1 무적 · F2 마나 무한 · F3 적 처치 · F4 회복";
             var rect = new Rect(Screen.width - 330f, 64f, 316f, 204f);

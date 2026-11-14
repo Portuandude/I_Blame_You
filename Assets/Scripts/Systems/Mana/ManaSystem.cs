@@ -32,7 +32,7 @@ namespace IBlameYou.Systems
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
         public event Action<float, float> ManaChanged;
 
-        // (누가, 얼마나, 헛되이 날렸는지) — 서로 탓하기 로그/HUD용.
+        // (누가, 얼마나, 헛되이 날렸는지) — 결과 창 A/B 날린 마나용.
         public event Action<ManaUser, float, bool> ManaSpent;
 
         public float SpentBy(ManaUser user) => spentByUser[(int)user];
