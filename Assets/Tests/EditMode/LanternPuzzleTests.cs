@@ -106,5 +106,45 @@ namespace IBlameYou.Tests
             Assert.AreEqual(ChunkKind.MirrorPuzzle, stage.Chunks[FeatureTestStage.MirrorArea].Kind);
             Assert.AreEqual("거울 룬 방", FeatureTestStage.Names[FeatureTestStage.MirrorArea]);
         }
+    
+        // 방어막 다리: 단단한 선반 위 서로 다른 속성 분출 둘(입구 열로 튕김), 끝에 동전 셋, 마력 안개. 선반 끝까지 걸어서 갈 수 있고 방은 지나간다.
+        [Test]
+        public void ShieldBridgeHasTwoDifferentJetsAndCoinsAtTheEnd()
+        {
+            foreach (int entry in new[] { ChunkGenerator.MinGround, 7, ChunkGenerator.MaxGround })
+                for (int seed = 0; seed < 30; seed++)
+                {
+                    var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.ShieldBridge, 0.5f, entry, 0);
+                    string at = $"seed {seed} entry {entry}";
+                    int stand = entry + ChunkGenerator.ShieldLedgeRise;
+                    var jets = chunk.Features.Where(f => f.Kind == FeatureKind.ElementJet).ToList();
+                    Assert.AreEqual(2, jets.Count, at);
+                    Assert.AreNotEqual(jets[0].ElementIndex, jets[1].ElementIndex, at);
+                    Assert.IsTrue(jets.All(j => j.Y == stand && j.Direction == ChunkGenerator.ShieldReturnX && j.ElementIndex < ChunkGenerator.GateElementCount), at);
+                    var coins = chunk.Features.Where(f => f.Kind == FeatureKind.CoinPile).ToList();
+                    Assert.AreEqual(ChunkGenerator.ShieldCoinCount, coins.Count, at);
+                    Assert.IsTrue(coins.All(c => c.Y == stand && c.X > jets.Max(j => j.X + j.Width - 1)), at);
+                    for (int x = ChunkGenerator.ShieldLedgeX0; x <= ChunkGenerator.ShieldLedgeX1; x++)
+                        Assert.IsTrue(chunk.IsSolid(x, stand - 1), $"{at}: 선반 {x}");
+                    Assert.AreEqual(StageTile.Empty, chunk.Get(ChunkGenerator.ShieldReturnX, stand), at);
+                    Assert.IsTrue(chunk.Features.Any(f => f.Kind == FeatureKind.BlinkWard), at);
+                    Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"{at}: {reason}");
+                    // 선반 끝(동전)까지 가는 길이 있다: 동전 칸을 출구로 삼아 검사
+                    var probe = ChunkGenerator.Generate(seed, 3, ChunkKind.ShieldBridge, 0.5f, entry, 0);
+                    probe.Features.Add(new ChunkFeature { Kind = FeatureKind.Exit, X = coins[0].X, Y = stand, Width = 1 });
+                    Assert.IsTrue(StageValidator.Validate(probe, out reason), $"{at}: 동전까지 {reason}");
+                }
+        }
+
+        [Test]
+        public void SecondPuzzleCyclesThroughThreeKinds()
+        {
+            Assert.AreEqual(ChunkKind.ShieldBridge, RoomLayout.DeductionPuzzle(2));
+            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(3));
+            Assert.AreEqual(RoomKind.Puzzle, RoomLayout.KindOf(ChunkKind.ShieldBridge));
+            var stage = FeatureTestStage.Build();
+            Assert.AreEqual(ChunkKind.ShieldBridge, stage.Chunks[FeatureTestStage.ShieldArea].Kind);
+            Assert.AreEqual("방어막 다리 방", FeatureTestStage.Names[FeatureTestStage.ShieldArea]);
+        }
     }
 }
