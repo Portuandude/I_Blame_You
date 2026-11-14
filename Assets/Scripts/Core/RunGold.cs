@@ -87,6 +87,15 @@ namespace IBlameYou.Core
             return interest;
         }
 
+        // 보물 고블린을 맞혔을 때 (TreasureGoblinController.Hit → SkillHUD): 자루에서 금화 TreasureGoblinRule.HitGold가 흘러 플레이어에게 온다. 복주머니는 안 붙는다.
+        public static void OnTreasureGoblinHit(TreasureGoblinController goblin, Transform target)
+        {
+            if (goblin == null || target == null || RunStats.Ended) return;
+            RunStats.AddGold(TreasureGoblinRule.HitGold);
+            LaunchCoins(goblin.transform.position + Vector3.up * 0.7f, target, TreasureGoblinRule.HitGold);
+            GameAudio.PlaySfx("CoinPile", 0.35f);
+        }
+
         // 동전 무더기를 주웠을 때 (Stage/CoinPile). 몬스터 골드가 아니라 복주머니는 붙지 않는다. 받은 골드를 돌려준다 (판이 끝났으면 0).
         public static int OnCoinPile(Transform player, Vector3 from, int amount)
         {
