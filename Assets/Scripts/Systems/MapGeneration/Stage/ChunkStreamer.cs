@@ -415,6 +415,7 @@ namespace IBlameYou.Systems
                                 if (elite) SpawnRelicChest(arenaRoot, arenaChunk, relicPosition, true);
                             });
                         arenaZone.Ambush = ambush;
+                        arenaZone.WallArchers = ambush && RoomShaper.IsWallArcherAmbush(stage.Seed, rooms.Rooms[index]);
                         // 돌파했지만 보상을 줍지 않고 떠났던 구역이면 다시 왔을 때 보상을 그대로 둔다.
                         if (midBoss && clearedArenas.Contains(index))
                             SpawnRelicChest(root, index, rewardPosition, false); // 회복은 처치 순간에 이미 받았다

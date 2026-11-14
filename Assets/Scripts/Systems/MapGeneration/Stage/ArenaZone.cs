@@ -51,6 +51,7 @@ namespace IBlameYou.Systems
 
         // 매복 구역 (Chunks/AmbushRule): 문이 닫히면 적이 바닥 소환 대신 위에서 떨어진다. 먼저 경고(바닥 타원 + 천장 먼지 + 알림) 뒤 AmbushWarnTime 만큼 기다린다.
         public bool Ambush { get; set; }
+        public bool WallArchers { get; set; } // 매복 변형 "벽 위 궁수" 방 (RoomShaper.IsWallArcherAmbush): 선반 위 적은 떨어지지 않고 그 자리에 나타난다
         private const float AmbushWarnTime = 0.9f;
         private const float AmbushDropHeight = 6f;   // 떨어지기 시작하는 높이 (천장·발판이 낮으면 그 아래)
         private const float AmbushCeilingMargin = 1.2f;
@@ -245,7 +246,7 @@ namespace IBlameYou.Systems
         }
 
         // 바닥보다 높은 선반 위에 놓인 구역 적인지 (RoomShaper 매복 변형 "벽 위 궁수"). 바닥 적은 area.yMin + SpawnLift에 만들어진다.
-        private bool OnLedge(Spawn spawn) => spawn.Position.y > area.yMin + ChunkStreamer.SpawnLift + 1.5f;
+        private bool OnLedge(Spawn spawn) => WallArchers && spawn.Position.y > area.yMin + ChunkStreamer.SpawnLift + 1.5f;
 
         // 매복 적이 떨어질 높이: 자리 위로 천장·발판이 있으면 그 아래까지. 너무 낮으면 0 (제자리 소환).
         private static float AmbushDrop(Vector3 position)
