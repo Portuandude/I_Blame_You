@@ -553,7 +553,7 @@ namespace IBlameYou.Tests
         [Test]
         public void MushroomTowersClimbOnlyByMushrooms()
         {
-            int towers = 0;
+            int towers = 0, sniperRooms = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
                 foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
@@ -580,7 +580,8 @@ namespace IBlameYou.Tests
                     {
                         Assert.IsTrue(chunk.Get(m.X, m.Y - 1) != StageTile.Empty, where + ": 버섯 밑 발판");
                         int stand = m.Y + RoomShaper.TowerStep;
-                        Assert.AreEqual(StageTile.Platform, chunk.Get(m.X, stand - 1), where + ": 버섯 위 선반");
+                        bool crumbleShelf = chunk.Features.Exists(f => f.Kind == FeatureKind.Crumble && f.Y == stand - 1 && m.X >= f.X && m.X < f.X + f.Width);
+                        Assert.IsTrue(chunk.Get(m.X, stand - 1) == StageTile.Platform || crumbleShelf, where + ": 버섯 위 선반");
                         for (int y = m.Y; y < stand - 1; y++) Assert.IsFalse(chunk.IsSolid(m.X, y), where + $": 버섯 위 길 ({y})");
                         foreach (var f in chunk.Features)
                         {
@@ -598,8 +599,37 @@ namespace IBlameYou.Tests
                     foreach (var c in coins)
                     {
                         Assert.AreEqual(stand2, c.Y, where);
-                        Assert.AreEqual(StageTile.Platform, chunk.Get(c.X, c.Y - 1), where + ": P2 위 동전");
+                        bool onCrumble = chunk.Features.Exists(f => f.Kind == FeatureKind.Crumble && f.Y == c.Y - 1 && c.X >= f.X && c.X < f.X + f.Width);
+                        Assert.IsTrue(chunk.Get(c.X, c.Y - 1) == StageTile.Platform || onCrumble, where + ": P2 위 동전");
                     }
+
+                    // 무너지는 탑: P2만 무너지는 발판 (타일은 비고, 같은 열·폭), 아니면 무너지는 발판 없음
+                    var crumbles = chunk.Features.FindAll(f => f.Kind == FeatureKind.Crumble);
+                    int p2a = System.Math.Min(RoomShaper.TowerCol(RoomShaper.MushroomTowerOnLeft(room), RoomShaper.TowerShelf2X0),
+                        RoomShaper.TowerCol(RoomShaper.MushroomTowerOnLeft(room), RoomShaper.TowerShelf2X1));
+                    if (RoomShaper.TowerCrumbles(room))
+                    {
+                        Assert.AreEqual(1, crumbles.Count, where);
+                        Assert.AreEqual(stand2 - 1, crumbles[0].Y, where);
+                        Assert.AreEqual(p2a, crumbles[0].X, where);
+                        Assert.AreEqual(RoomShaper.TowerShelf2X1 - RoomShaper.TowerShelf2X0 + 1, crumbles[0].Width, where);
+                        for (int x = p2a; x < p2a + crumbles[0].Width; x++)
+                            Assert.AreEqual(StageTile.Empty, chunk.Get(x, stand2 - 1), where + ": 무너지는 P2 자리 타일");
+                    }
+                    else Assert.AreEqual(0, crumbles.Count, where);
+
+                    // 저격 선반: 문턱 이상이면 탑 반대쪽 P1 높이 발판 위 궁수 하나, 오르는 버섯 열과 떨어져 있다
+                    int stand1 = RoomShaper.ShaftGround + RoomShaper.TowerStep;
+                    var snipers = chunk.Features.FindAll(f => f.Kind == FeatureKind.Enemy && f.Y == stand1);
+                    if (RoomShaper.TowerHasSniper(room))
+                    {
+                        sniperRooms++;
+                        Assert.AreEqual(1, snipers.Count, where);
+                        Assert.AreEqual(StageEnemy.GoblinArcher, snipers[0].Enemy, where);
+                        Assert.AreEqual(StageTile.Platform, chunk.Get(snipers[0].X, stand1 - 1), where + ": 궁수 발판");
+                        foreach (var m in path) Assert.Greater(System.Math.Abs(snipers[0].X - m.X), 10, where + ": 궁수와 버섯 거리");
+                    }
+                    else Assert.AreEqual(0, snipers.Count, where);
 
                     // P2 → 맨 위 판 사이 빈 칸은 좌우 모두 1칸
                     int p2Edge = RoomShaper.MushroomTowerOnLeft(room) ? RoomShaper.TowerShelf2X1 : RoomShaper.TowerCol(false, RoomShaper.TowerShelf2X1);
@@ -618,6 +648,7 @@ namespace IBlameYou.Tests
             }
 
             Assert.Greater(towers, 0, "버섯 탑이 한 번도 안 나옴");
+            Assert.Greater(sniperRooms, 0, "저격 선반이 한 번도 안 나옴");
         }
 
         // BounceMushroom.LaunchHeight(7.5) + 갓 높이(0.95). 테스트 어셈블리가 MonoBehaviour 쪽을 참조하지 않아 값을 옮겨 둔다

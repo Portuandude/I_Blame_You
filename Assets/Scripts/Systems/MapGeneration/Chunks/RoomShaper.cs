@@ -280,6 +280,7 @@ namespace IBlameYou.Systems
 
             if (room.Kind == RoomKind.Travel) PlaceShaftEnemies(chunk, g, rng);
             if (up && style == ShaftStyle.MushroomTower) ClearTowerFloor(room, chunk, g);
+            if (up && style == ShaftStyle.MushroomTower && TowerHasSniper(room)) AddTowerSniper(room, chunk, g);
             // 위 문 없는 굴: 순간이동 선반이 없으면 통통 버섯 선반. 버섯 열을 함정이 피하도록 함정보다 먼저 둔다
             // (순간이동 선반은 따로 굴리는 난수라 순서를 앞당겨도 결과가 같고, 바닥 + 4행이라 함정 자리 검사와 무관하다)
             if (!up && room.Kind == RoomKind.Travel && !AddTeleportShelf(seed, room, chunk)) AddMushroomShelf(room, chunk);
@@ -323,12 +324,37 @@ namespace IBlameYou.Systems
             int stand2 = stand1 + TowerStep;
             chunk.SetRow(HoleX0 - 1, HoleX1 + 1, TopPlatformRow, StageTile.Platform);
             SetRowEither(chunk, TowerCol(left, TowerShelf1X0), TowerCol(left, TowerShelf1X1), stand1 - 1);
-            SetRowEither(chunk, TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1), stand2 - 1);
+            int p2a = Math.Min(TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1));
+            int p2b = Math.Max(TowerCol(left, TowerShelf2X0), TowerCol(left, TowerShelf2X1));
+            // 무너지는 탑 (CrumbleStairsMinDifficulty 이상): P2가 무너지는 발판이라 내려앉으면 0.55초 안에 맨 위 판으로 뛰어야 한다.
+            // P1과 겹치는 열에서 떨어지면 P1 위 버섯(M2)으로 다시 오른다 (안쪽 2칸에서 떨어지면 바닥부터 다시). 검증기는 무너지는 발판을 발판으로 보므로 길은 같다
+            if (TowerCrumbles(room)) chunk.AddFeature(FeatureKind.Crumble, p2a, stand2 - 1, p2b - p2a + 1);
+            else chunk.SetRow(p2a, p2b, stand2 - 1, StageTile.Platform);
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom1X), g, 1, 1);
             chunk.AddFeature(FeatureKind.BounceMushroom, TowerCol(left, TowerMushroom2X), stand1, 1, 1);
             // 두 번 튕겨 오른 P2 벽 쪽 끝에 동전 무더기 (선반 세로 방과 같은 문턱). 위 문으로 가는 길(안쪽 끝)은 비워 둔다
             if (room.Difficulty >= ShelfCoinMinDifficulty)
                 chunk.AddFeature(FeatureKind.CoinPile, TowerCol(left, TowerShelf2X0), stand2);
+        }
+
+        public static bool TowerCrumbles(RoomData room) => room.Difficulty >= CrumbleStairsMinDifficulty;
+
+        // 버섯 탑 저격 선반 (TowerSniperMinDifficulty 이상): 탑 반대쪽 벽에 P1 높이 4칸 발판 + 고블린 궁수 하나가
+        // 버섯을 타고 오르는 플레이어를 쏜다. 지형 난수를 쓰지 않아 다른 적 자리·함정은 그대로다. 오르는 길(버섯 열·선반)과 겹치지 않는다
+        public const float TowerSniperMinDifficulty = 0.45f;
+        public const int TowerSniperX0 = 19, TowerSniperX1 = 22; // 왼쪽 탑 기준 (오른쪽 탑이면 TowerCol 거울 자리 8~11). 궁수 감지 14칸 안에 P2가 들도록 가운데 가까이
+
+        public static bool TowerHasSniper(RoomData room) => room.Difficulty >= TowerSniperMinDifficulty;
+
+        private static void AddTowerSniper(RoomData room, ChunkData chunk, int g)
+        {
+            bool left = MushroomTowerOnLeft(room);
+            int row = g + TowerStep - 1;
+            int a = Math.Min(TowerCol(left, TowerSniperX0), TowerCol(left, TowerSniperX1));
+            int b = Math.Max(TowerCol(left, TowerSniperX0), TowerCol(left, TowerSniperX1));
+            chunk.SetRow(a, b, row, StageTile.Platform);
+            // 탑 반대쪽 벽에 가까운 끝에 세운다 (오르는 길과 멀리)
+            chunk.AddEnemy(StageEnemy.GoblinArcher, left ? b : a, row + 1);
         }
 
         // 오른쪽 탑은 위 구멍 가운데(15열) 기준 거울 자리라 P2 → 맨 위 판 간격이 왼쪽과 같은 1칸이다
