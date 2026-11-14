@@ -106,6 +106,7 @@ namespace IBlameYou.Systems
         // 미니맵 방 이벤트 점: 그 방에 보물 고블린이 아직 살아 있는지 (잡거나 10초가 지나 도망치면 false)
         private HealthSystem treasureGoblin;
         private int treasureGoblinRoom = -1;
+        private readonly Dictionary<int, Vector2> goblinEquipmentSpots = new Dictionary<int, Vector2>(); // 보물 고블린이 떨군 장비 자리 (방 → 발밑)
         public bool HasTreasureGoblin(int index) =>
             index == treasureGoblinRoom && treasureGoblin != null && !treasureGoblin.IsDead;
 
@@ -458,6 +459,8 @@ namespace IBlameYou.Systems
             if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (IsCursedChestRoom(index)) PlaceCursedChest(root, index);
+            if (goblinEquipmentSpots.TryGetValue(index, out var goblinSpot) && groundEquipment.TryGetValue(index, out var goblinLeft))
+                SpawnEquipment(root, index, goblinSpot, goblinLeft, false); // 보물 고블린이 떨군 장비를 두고 갔다가 다시 온 경우
             if (room.Kind == RoomKind.Treasure) SpawnRelicChest(root, index, floor, false);
             else if (room.Kind == RoomKind.Spring) SpawnReward(root, index, floor, false);
             else if (room.Kind == RoomKind.Village)
@@ -887,8 +890,33 @@ namespace IBlameYou.Systems
             RegisterEnemy(health);
             treasureGoblin = health;
             treasureGoblinRoom = index;
+            if (TreasureGoblinRule.DropsEquipment(stage.Seed, index))
+            {
+                bool dropped = false;
+                health.HealthChanged += (current, max) =>
+                {
+                    if (current > 0f || dropped || health == null) return;
+                    dropped = true;
+                    DropGoblinEquipment(index, health.transform.position);
+                };
+            }
             StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
             GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
+        }
+
+        // 보물 고블린 장비 떨굼 (Chunks/TreasureGoblinRule.DropsEquipment): 잡힌 자리 근처 바닥에 장비 하나가 튀어나온다.
+        // 유물 상자 장비와 같은 groundEquipment 기록을 써서, 두고 가면 다시 왔을 때 그 자리에 남아 있다 (보물 고블린 방에는 유물 상자가 없다).
+        private void DropGoblinEquipment(int index, Vector3 at)
+        {
+            if (!loaded.TryGetValue(index, out var root) || root == null) return;
+            int column = Mathf.FloorToInt(at.x - Origin(index).x);
+            var spot = FindStandSpot(index, column);
+            if (!spot.HasValue) return;
+            var item = IBlameYou.Player.EquipmentOffer.Roll(stage.Seed, index);
+            groundEquipment[index] = item;
+            goblinEquipmentSpots[index] = spot.Value;
+            SpawnEquipment(root, index, spot.Value, item, true);
+            StageEvents.PostNotice("자루에서 장비가 떨어졌다!");
         }
 
         // 방 이벤트 저주받은 상자 (2026-11-14 사람 결정, Chunks/CursedChestRule): 가로 이동 방 가운데. 보물 고블린 방에는 놓지 않는다.
