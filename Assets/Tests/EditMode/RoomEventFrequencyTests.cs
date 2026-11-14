@@ -14,7 +14,7 @@ namespace IBlameYou.Tests
 
         private struct Counts
         {
-            public int Ambush, WallArchers, Burrow, Cursed, CursedSwarm, Goblin, Tower, TowerGuard;
+            public int Ambush, WallArchers, Burrow, Mixed, Cursed, CursedSwarm, DeepSwarm, Goblin, Tower, TowerGuard;
             public int RunsWithGoblin, RunsWithCursed, RunsWithAnyEvent;
         }
 
@@ -32,7 +32,11 @@ namespace IBlameYou.Tests
                         c.Ambush++;
                         any = true;
                         if (RoomShaper.IsWallArcherAmbush(seed, room)) c.WallArchers++;
-                        else if (AmbushRule.IsBurrow(seed, room.Index)) c.Burrow++;
+                        else if (AmbushRule.IsBurrow(seed, room.Index))
+                        {
+                            c.Burrow++;
+                            if (AmbushRule.IsMixed(seed, room.Index, depth)) c.Mixed++;
+                        }
                     }
                     if (RoomEventRule.IsTreasureGoblinRoom(seed, room)) { c.Goblin++; goblin = any = true; }
                     if (RoomEventRule.IsCursedChestRoom(seed, room))
@@ -40,6 +44,7 @@ namespace IBlameYou.Tests
                         c.Cursed++;
                         cursed = any = true;
                         if (CursedChestRule.IsSwarm(seed, room.Index)) c.CursedSwarm++;
+                        if (CursedChestRule.IsSwarm(seed, room.Index) && depth >= CursedChestRule.SwarmEliteDifficulty) c.DeepSwarm++;
                     }
                     if (room.IsVertical && room.Kind == RoomKind.Travel)
                     {
@@ -59,7 +64,7 @@ namespace IBlameYou.Tests
         public void EveryRoomEventShowsUpAcrossSeeds()
         {
             var c = Count();
-            string tag = $"매복 {c.Ambush}(벽 위 궁수 {c.WallArchers}·땅속 {c.Burrow}) 저주 상자 {c.Cursed}(무리 {c.CursedSwarm}) 보물 고블린 {c.Goblin} 궁수 탑 {c.Tower}(파수꾼 {c.TowerGuard})";
+            string tag = $"매복 {c.Ambush}(벽 위 궁수 {c.WallArchers}·땅속 {c.Burrow}·섞임 {c.Mixed}) 저주 상자 {c.Cursed}(무리 {c.CursedSwarm}·정예 섞인 무리 {c.DeepSwarm}) 보물 고블린 {c.Goblin} 궁수 탑 {c.Tower}(파수꾼 {c.TowerGuard})";
             Console.WriteLine(tag);
             Assert.GreaterOrEqual(c.Goblin, SeedCount / 2, tag + ": 보물 고블린은 두 판에 한 번 넘게");
             Assert.GreaterOrEqual(c.Cursed, SeedCount / 4, tag + ": 저주받은 상자는 네 판에 한 번 넘게");
@@ -68,6 +73,8 @@ namespace IBlameYou.Tests
             Assert.GreaterOrEqual(c.Ambush, SeedCount / 4, tag + ": 매복");
             Assert.Greater(c.WallArchers, 0, tag + ": 벽 위 궁수");
             Assert.Greater(c.Burrow, 0, tag + ": 땅속 매복");
+            Assert.Greater(c.Mixed, 0, tag + ": 섞인 매복");
+            Assert.Greater(c.DeepSwarm, 0, tag + ": 정예 섞인 무리");
             Assert.Greater(c.Tower, 0, tag + ": 궁수 탑");
             Assert.Greater(c.TowerGuard, 0, tag + ": 깊은 궁수 탑");
         }
