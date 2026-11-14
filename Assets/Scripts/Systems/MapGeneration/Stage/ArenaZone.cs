@@ -200,7 +200,7 @@ namespace IBlameYou.Systems
                 if (burrows && spawned != null)
                 {
                     var rb = spawned.GetComponent<Rigidbody2D>();
-                    if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, BurrowPopSpeed);
+                    if (rb != null && rb.gravityScale > 0f) rb.linearVelocity = new Vector2(rb.linearVelocity.x, BurrowPopSpeed); // 나는 적은 튀기지 않는다
                 }
                 if (falls) StartCoroutine(WatchLanding(spawned, marks[i], spawn.Position.y));
                 yield return new WaitForSeconds(SpawnInterval);
