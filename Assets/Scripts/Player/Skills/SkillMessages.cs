@@ -26,8 +26,9 @@ namespace IBlameYou.Player
         {
             switch (who)
             {
-                case ManaUser.PlayerA: return "A";
-                case ManaUser.PlayerB: return "B";
+                // 일반 모드(2인 베타)는 시작 화면·도움말과 같은 P1·A / P2·B (2026-11-15)
+                case ManaUser.PlayerA: return IBlameYou.Core.GameSession.DevMode ? "A" : "P1·A";
+                case ManaUser.PlayerB: return IBlameYou.Core.GameSession.DevMode ? "B" : "P2·B";
                 default: return "-";
             }
         }
