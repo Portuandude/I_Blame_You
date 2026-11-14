@@ -964,7 +964,7 @@ namespace IBlameYou.Systems
         {
             if (spawnEnemy == null) return;
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
-            var kinds = CursedChestRule.SwarmFor(stage.Seed, index);
+            var kinds = CursedChestRule.SwarmFor(stage.Seed, index, RoomDepth(index)); // 깊은 방 무리엔 정예 하나
             var spawned = new List<HealthSystem>();
             for (int i = 0; i < kinds.Length; i++)
             {
