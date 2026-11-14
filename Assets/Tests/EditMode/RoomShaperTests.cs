@@ -292,6 +292,53 @@ namespace IBlameYou.Tests
             Assert.Greater(piles, 0, "선반 동전이 한 번도 안 나옴");
         }
 
+        // 궁수 탑: 난이도 문턱 이상 선반 세로 이동 방은 두 선반 위에 궁수 둘, 선반 아래 바닥에 가시. 가시는 함정 금지 칸·다른 함정과 겹치지 않는다.
+        [Test]
+        public void ArcherTowersPutArchersOnBothShelvesAndSpikesBelow()
+        {
+            int towers = 0;
+            for (int seed = 0; seed < SeedCount; seed++)
+            {
+                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                {
+                    if (!room.IsVertical) continue;
+                    var style = RoomShaper.PickShaftStyle(seed, room);
+                    var geometry = RoomShaper.BuildShaft(seed, room, style);
+                    var chunk = geometry.Chunk;
+                    string tag = $"seed {seed} room {room.Index} {style}";
+                    var shelfArchers = chunk.Features.FindAll(f => f.Kind == FeatureKind.Enemy && f.Enemy == StageEnemy.GoblinArcher
+                        && (f.Y == RoomShaper.ShelfRowLow + 1 || f.Y == RoomShaper.ShelfRowHigh + 1) && style == RoomShaper.ShaftStyle.Shelves);
+                    if (!RoomShaper.IsArcherTower(room, style))
+                    {
+                        Assert.LessOrEqual(shelfArchers.Count, 1, tag);
+                        continue;
+                    }
+
+                    towers++;
+                    Assert.IsTrue(geometry.Valid, tag);
+                    Assert.AreEqual(2, shelfArchers.Count, tag);
+                    foreach (var a in shelfArchers) Assert.AreEqual(StageTile.Platform, chunk.Get(a.X, a.Y - 1), tag + ": 궁수는 선반 위");
+
+                    var spikes = chunk.Features.FindAll(f => f.Kind == FeatureKind.Spikes);
+                    for (int i = 0; i < spikes.Count; i++)
+                        for (int j = i + 1; j < spikes.Count; j++)
+                            Assert.IsTrue(spikes[i].X + spikes[i].Width + 1 < spikes[j].X || spikes[j].X + spikes[j].Width + 1 < spikes[i].X, tag + ": 가시끼리 떨어짐");
+                    foreach (var f in spikes)
+                    {
+                        Assert.AreEqual(RoomShaper.ShaftGround, f.Y, tag);
+                        for (int x = f.X; x < f.X + f.Width; x++)
+                        {
+                            Assert.IsTrue(chunk.IsSolid(x, f.Y - 1), tag + ": 가시 밑은 바닥");
+                            Assert.AreNotEqual(StageTile.Platform, chunk.Get(x, f.Y + 1), tag + ": 첫 발판 밑 아님");
+                            Assert.AreNotEqual(StageTile.Platform, chunk.Get(x, f.Y + 2), tag + ": 첫 발판 밑 아님");
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(towers, 0, "궁수 탑이 한 번도 안 나옴");
+        }
+
         // 바람 지름길: 위 문이 있는 이동 방(계단 모양)에서 문이 없는 벽 쪽에만. 환풍구는 바닥 위, 기둥 안은 바닥부터 꼭대기까지 비어 있고,
         // 기둥 꼭대기가 선반 서는 칸보다 높고, 선반 위에 동전, 선반은 계단 판에서 5칸 떨어져 있고, 환풍구 위에 함정이 없다.
         [Test]
