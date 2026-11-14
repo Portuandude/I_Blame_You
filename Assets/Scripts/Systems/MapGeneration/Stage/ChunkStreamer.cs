@@ -920,6 +920,14 @@ namespace IBlameYou.Systems
             }, swarm);
         }
 
+        // 무리 중 아직 살아 있는 것이 있나 (쓰러지지 않고 치워진 것 — 낭떠러지 등 — 은 셈하지 않는다)
+        private static bool AnyAlive(List<HealthSystem> group)
+        {
+            foreach (var g in group)
+                if (g != null && !g.IsDead) return true;
+            return false;
+        }
+
         // 변형 "쫄몹 무리" (CursedChestRule.IsSwarm): 상자 양옆(SwarmOffsets 칸)에 쫄몹 4마리. 모두 쓰러뜨리면 저주가 풀린다.
         // 남은 채 방을 떠나면 무리는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다 (정예와 같음).
         private void AwakenCursedSwarm(Transform root, int index, Vector2 chestPosition, CursedChest chest)
@@ -928,7 +936,6 @@ namespace IBlameYou.Systems
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
             var kinds = CursedChestRule.SwarmFor(stage.Seed, index);
             var spawned = new List<HealthSystem>();
-            int alive = 0;
             for (int i = 0; i < kinds.Length; i++)
             {
                 var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i]) ?? chestPosition;
@@ -938,14 +945,12 @@ namespace IBlameYou.Systems
                 if (health == null) continue;
                 RegisterEnemy(health);
                 spawned.Add(health);
-                alive++;
                 bool down = false;
                 health.HealthChanged += (current, max) =>
                 {
                     if (current > 0f || down) return;
                     down = true;
-                    alive--;
-                    if (alive > 0 || cursedBroken.Contains(index)) return;
+                    if (AnyAlive(spawned) || cursedBroken.Contains(index)) return;
                     cursedBroken.Add(index);
                     if (chest != null) chest.Break();
                     if (root != null) SpawnCursedReward(root, index, chestPosition, true);
