@@ -21,6 +21,15 @@ namespace IBlameYou.Systems
             return Hash(seed, roomIndex) % 100u < (uint)ChancePercent;
         }
 
+        // 바닥이 막힌 세로 이동 방 (RoomEventRule): 판마다 한두 개뿐이라 확률을 올린다. 같은 해시라 가로 방 판정과 겹쳐도 어긋나지 않는다.
+        public const int ShaftChancePercent = 60;
+
+        public static bool IsCursedChestShaft(int seed, int roomIndex, float difficulty)
+        {
+            if (difficulty < MinDifficulty) return false;
+            return Hash(seed, roomIndex) % 100u < (uint)ShaftChancePercent;
+        }
+
         // 깨어나는 정예: 짝수면 어미 슬라임, 홀수면 고블린 대전사
         public static StageEnemy EliteFor(int seed, int roomIndex) =>
             (Hash(seed, roomIndex) >> 8) % 2u == 0u ? StageEnemy.MotherSlime : StageEnemy.GoblinWarrior;
