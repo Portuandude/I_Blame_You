@@ -21,6 +21,7 @@ namespace IBlameYou.Core
         private ArenaZone ambushZone;
         private int ambushCount;
         private int cursedCount;
+        private int towerCount;
 
         // 유물 해제는 효과를 되돌리는 대신 시험 맵을 다시 만들고 남은 유물만 다시 단다 (유물 효과는 얻을 때 한 번 적용되므로).
         // 다시 만드는 동안 고른 유물·몬스터·미니게임 설정을 들고 있으려고 static으로 둔다.
@@ -301,6 +302,8 @@ namespace IBlameYou.Core
         }
 
         // 궁수 탑 시험: 버섯 탑 방으로 옮겨 P1 선반과 반대쪽 저격 선반에 고블린 궁수를 하나씩 세운다 (세로 방 궁수 탑처럼 위에서 둘이 쏜다. 가시는 없음).
+        // 차례로: 궁수 둘 → 궁수 둘 + 바닥 고블린 파수꾼 (깊은 궁수 탑, RoomShaper.ArcherTowerGuardDifficulty 이상).
+        private const int TowerGuardColumn = 14; // P1 선반(4~9열)과 저격 선반(19~22열) 사이 바닥 (버섯은 6·8열)
         private void StartArcherTower()
         {
             int index = FeatureTestStage.TowerArea;
@@ -318,7 +321,14 @@ namespace IBlameYou.Core
             float shelf = (RoomShaper.TowerShelf1X0 + RoomShaper.TowerShelf1X1 + 1) / 2f;
             spawner(StageEnemy.GoblinArcher, new Vector3(left + sniper, stand1 + ChunkStreamer.SpawnLift, 0f), enemyRoot);
             spawner(StageEnemy.GoblinArcher, new Vector3(left + shelf, stand1 + ChunkStreamer.SpawnLift, 0f), enemyRoot);
-            StageEvents.PostNotice("궁수 탑 시험: 선반 위 궁수 둘");
+            bool guard = towerCount % 2 == 1;
+            towerCount++;
+            if (guard)
+            {
+                float floor = chunk.SurfaceAt(TowerGuardColumn);
+                spawner(StageEnemy.Goblin, new Vector3(left + TowerGuardColumn + 0.5f, floor + ChunkStreamer.SpawnLift, 0f), enemyRoot);
+            }
+            StageEvents.PostNotice(guard ? "깊은 궁수 탑 시험: 선반 위 궁수 둘 + 바닥 파수꾼" : "궁수 탑 시험: 선반 위 궁수 둘 (다시 누르면 파수꾼도)");
         }
 
         // 구역 i의 왼쪽(입구) 바닥 위로 옮긴다. 떨어지는 속도는 지운다.
