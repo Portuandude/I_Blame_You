@@ -358,6 +358,8 @@ namespace IBlameYou.Tests
                     if (!RoomShaper.HasArcherTowerGuard(room, style)) continue;
                     guarded++;
                     Assert.GreaterOrEqual(guards.Count, 1, tag);
+                    Assert.IsTrue(guards.Exists(gd => gd.X >= 9 && gd.X <= 22 && (gd.X < RoomShaper.HoleX0 - 1 || gd.X > RoomShaper.HoleX1 + 1)),
+                        tag + ": 가운데 가까이(보통 쫄몹 자리 5·8·23·26 아님), 구멍 옆 아닌 파수꾼");
                     foreach (var gd in guards)
                     {
                         Assert.IsTrue(chunk.IsSolid(gd.X, gd.Y - 1), tag + ": 파수꾼 밑은 바닥");
