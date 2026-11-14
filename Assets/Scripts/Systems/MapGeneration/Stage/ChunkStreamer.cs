@@ -36,6 +36,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> collectedCoins = new HashSet<int>(); // 주운 동전 무더기 (CoinPileKey: 청크 번호 × 16 + 청크 안 순번)
         private readonly HashSet<int> takenRelics = new HashSet<int>(); // 정예 구역 유물 상자에서 유물을 고른 청크
         private readonly HashSet<int> cursedQuick = new HashSet<int>(); // 그중 빠른 해제(CursedChestRule.QuickTime 안)로 유물 3개 중 고르기인 방
+        private readonly HashSet<int> cursedLeftAwake = new HashSet<int>(); // 깨웠지만 아직 못 푼 저주 상자 방 (떠났다 오면 "다시 잠들었다")
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
@@ -999,10 +1000,14 @@ namespace IBlameYou.Systems
                 return;
             }
 
+            // 깨운 채 떠났다가 돌아오면 상자가 처음 상태로 돌아갔다고 알려 준다 (2026-11-14 자동 실행)
+            if (cursedLeftAwake.Remove(index)) StageEvents.PostNotice("상자의 저주가 다시 잠들었다...");
+
             CursedChest chest = null;
             bool swarm = CursedChestRule.IsSwarm(stage.Seed, index);
             chest = CursedChest.Create(root, position, () =>
             {
+                cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 위 알림 (풀면 아래에서 지운다)
                 if (swarm) AwakenCursedSwarm(root, index, position, chest);
                 else AwakenCursedElite(root, index, position, chest);
             }, swarm);
@@ -1078,6 +1083,7 @@ namespace IBlameYou.Systems
 
         private void SpawnCursedReward(Transform root, int index, Vector2 position, bool dropped)
         {
+            cursedLeftAwake.Remove(index);
             int offer = cursedQuick.Contains(index) ? CursedChestRule.QuickOfferSize : CursedChestRule.OfferSize;
             RelicChest.Create(root, position, stage.Seed, index, dropped, () => takenRelics.Add(index), offer);
         }
