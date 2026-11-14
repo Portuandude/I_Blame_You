@@ -54,5 +54,29 @@ namespace IBlameYou.Tests
                 }
             Assert.AreEqual(AmbushRule.BurrowPercent / 100.0, yes / (double)total, 0.06);
         }
+
+        [Test]
+        public void MixedOnlyInDeepBurrowRooms()
+        {
+            for (int s = 0; s < 200; s++)
+                for (int room = 0; room < 12; room++)
+                {
+                    Assert.IsFalse(AmbushRule.IsMixed(s, room, AmbushRule.MixedDifficulty - 0.01f), "얕은 방은 섞이지 않는다");
+                    Assert.AreEqual(AmbushRule.IsBurrow(s, room), AmbushRule.IsMixed(s, room, AmbushRule.MixedDifficulty), "깊은 땅속 매복 방만 섞인다");
+                }
+        }
+
+        [Test]
+        public void MixedSplitsSpawnsHalfAndHalf()
+        {
+            int burrow = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                Assert.IsTrue(AmbushRule.BurrowsAt(true, false, i), "섞이지 않은 땅속 매복은 모두 땅속");
+                Assert.IsFalse(AmbushRule.BurrowsAt(false, true, i), "땅속 매복이 아니면 땅속 없음");
+                if (AmbushRule.BurrowsAt(true, true, i)) burrow++;
+            }
+            Assert.AreEqual(3, burrow);
+        }
     }
 }
