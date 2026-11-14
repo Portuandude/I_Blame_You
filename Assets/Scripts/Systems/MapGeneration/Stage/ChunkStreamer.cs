@@ -911,12 +911,11 @@ namespace IBlameYou.Systems
         {
             if (!loaded.TryGetValue(index, out var root) || root == null) return;
             int column = Mathf.FloorToInt(at.x - Origin(index).x);
-            var spot = FindStandSpot(index, column);
-            if (!spot.HasValue) return;
+            var spot = FindStandSpot(index, column) ?? (Vector2)at; // 설 자리를 못 찾으면 쓰러진 자리 그대로
             var item = IBlameYou.Player.EquipmentOffer.Roll(stage.Seed, index);
             groundEquipment[index] = item;
-            goblinEquipmentSpots[index] = spot.Value;
-            SpawnEquipment(root, index, spot.Value, item, true);
+            goblinEquipmentSpots[index] = spot;
+            SpawnEquipment(root, index, spot, item, true);
             StageEvents.PostNotice("자루에서 장비가 떨어졌다!");
         }
 
