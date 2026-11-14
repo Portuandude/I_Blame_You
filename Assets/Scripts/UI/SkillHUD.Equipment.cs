@@ -32,15 +32,14 @@ namespace IBlameYou.UI
             return icon;
         }
 
-        // 수식어 등급 색: 부서진·낡은 회색, 보통 흰색, 튼튼한 초록, 빛나는 하늘색, 전설의 금색
+        // 수식어 등급 색: 비틀린 회색, 흔한 흰색, 숙련자의 초록, 영웅의 금색
         public static string GradeColor(int grade)
         {
             if (grade < 0) return "#9a9a9a";
             switch (grade)
             {
                 case 1: return "#7dff8a";
-                case 2: return "#7fd8ff";
-                case 3: return "#ffd84d";
+                case 2: return "#ffd84d";
                 default: return "#fff4dc";
             }
         }

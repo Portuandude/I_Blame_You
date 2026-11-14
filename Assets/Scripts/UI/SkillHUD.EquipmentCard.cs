@@ -135,7 +135,8 @@ namespace IBlameYou.UI
             else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton)) CloseEquipCard(false);
         }
 
-        // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에 빨강으로).
+        // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에).
+        // 좋아지면 초록, 나빠지면 빨강 (마나 소모처럼 낮을수록 좋은 능력치는 거꾸로).
         private void DrawEquipCardSide(Rect card, string title, EquipmentItem item, List<StatValue> stats, List<StatValue> compare, int index)
         {
             var previousMatrix = BeginCardPop(card, equipCardOpenedAt, index);
@@ -160,7 +161,7 @@ namespace IBlameYou.UI
                 {
                     float diff = s.Value - ValueOf(compare, s.Stat);
                     if (Mathf.Abs(diff) > 0.0001f)
-                        text.Append($"  <color={(diff > 0f ? "#7dff8a" : "#ff6b6b")}>({EquipmentBook.Describe(new StatValue(s.Stat, diff)).Substring(EquipmentBook.StatName(s.Stat).Length + 1)})</color>");
+                        text.Append($"  <color={((diff > 0f) != EquipmentBook.LowerIsBetter(s.Stat) ? "#7dff8a" : "#ff6b6b")}>({EquipmentBook.Describe(new StatValue(s.Stat, diff)).Substring(EquipmentBook.StatName(s.Stat).Length + 1)})</color>");
                 }
                 text.Append('\n');
             }
@@ -168,7 +169,7 @@ namespace IBlameYou.UI
             if (compare != null)
                 foreach (var s in compare)
                     if (!Has(stats, s.Stat))
-                        text.Append($"<color=#ff6b6b>{EquipmentBook.Describe(new StatValue(s.Stat, -s.Value))}</color>\n");
+                        text.Append($"<color={((-s.Value > 0f) != EquipmentBook.LowerIsBetter(s.Stat) ? "#7dff8a" : "#ff6b6b")}>{EquipmentBook.Describe(new StatValue(s.Stat, -s.Value))}</color>\n");
 
             GUI.Label(new Rect(card.x + 10f, card.y + 62f, card.width - 20f, card.height - 70f), text.ToString(), small);
             GUI.matrix = previousMatrix;
