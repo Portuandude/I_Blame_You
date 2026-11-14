@@ -28,6 +28,24 @@ namespace IBlameYou.Enemies
 
         protected override bool ContactDamageActive => false;
 
+        // 맞을 때마다 자루에서 금화가 흘러나온다 (2026-11-14 ① 컨텐츠, 놓쳐도 맞힌 만큼은 남게). 골드는 RunGold가 준다 (SkillHUD가 이 이벤트를 듣는다).
+        // 한 마리에서 TreasureGoblinRule.MaxHitDrops번까지.
+        public static event System.Action<TreasureGoblinController> Hit;
+        private int hitDrops;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            Health.Damaged += OnHitDropCoins;
+        }
+
+        private void OnHitDropCoins(float amount)
+        {
+            if (amount <= 0f || escaped || Health.IsDead || hitDrops >= TreasureGoblinRule.MaxHitDrops) return;
+            hitDrops++;
+            Hit?.Invoke(this);
+        }
+
         public void Configure(LayerMask groundLayer) => ground = groundLayer;
 
         private void Start()
