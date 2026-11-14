@@ -104,8 +104,21 @@ namespace IBlameYou.Systems
         // 쓰러지지 않고 사라진 적(보스에게 흡수된 슬라임 등)은 목록에서 빼고 클리어 여부를 다시 본다.
         private void Update()
         {
+            if (active && !cleared && Ambush) ShowFastClearCountdown();
             if (!active || alive.Count == 0) return;
             if (alive.RemoveWhere(enemy => enemy == null) > 0) CheckCleared();
+        }
+
+        // 매복 빠른 돌파 남은 시간 (2026-11-14 자동 실행): 구역 위쪽 가운데에 10·5·3·2·1초를 금색으로 (AmbushRule.FastClearTime 안에 돌파하면 골드 더)
+        private int lastFastCount = -1;
+
+        private void ShowFastClearCountdown()
+        {
+            int left = Mathf.CeilToInt(AmbushRule.FastClearTime - (Time.time - lockedAt));
+            if (left == lastFastCount || left <= 0) return;
+            lastFastCount = left;
+            if (left != 10 && left != 5 && left > 3) return;
+            DamageNumbers.ShowText(new Vector3(area.center.x, area.yMax - 1.5f, 0f), left.ToString(), new Color(1f, 0.85f, 0.3f), 1.1f);
         }
 
         private void OnTriggerEnter2D(Collider2D other)
