@@ -603,6 +603,18 @@ namespace IBlameYou.Tests
         [Test]
         public void PlainsBounceMushroomLiftsToCoinLedge()
         {
+            Assert.Greater(CheckBounceLedges(ChunkKind.Plains), 500, "통통 버섯이 거의 안 나옴");
+        }
+
+        // 언덕에도 같은 덤 길 (2026-11-14). 평평한 골짜기에만 놓이고, 근처 언덕 위에서 보통 점프로 닿지 않는다.
+        [Test]
+        public void HillsBounceMushroomLiftsToCoinLedge()
+        {
+            Assert.Greater(CheckBounceLedges(ChunkKind.Hills), 30, "언덕에 통통 버섯이 거의 안 나옴");
+        }
+
+        private static int CheckBounceLedges(ChunkKind kind)
+        {
             int found = 0;
             for (int seed = 0; seed < 200; seed++)
             {
@@ -610,8 +622,8 @@ namespace IBlameYou.Tests
                 {
                     foreach (int entry in new[] { 3, 8, 13 })
                     {
-                        string tag = $"seed {seed} diff {difficulty} entry {entry}";
-                        var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.Plains, difficulty, entry, 0);
+                        string tag = $"{kind} seed {seed} diff {difficulty} entry {entry}";
+                        var chunk = ChunkGenerator.Generate(seed, 3, kind, difficulty, entry, 0);
                         var mushrooms = chunk.Features.FindAll(f => f.Kind == FeatureKind.BounceMushroom);
                         Assert.LessOrEqual(mushrooms.Count, 1, tag);
                         if (difficulty < ChunkGenerator.BounceMinDifficulty) Assert.AreEqual(0, mushrooms.Count, tag + ": 문턱 아래");
@@ -627,6 +639,8 @@ namespace IBlameYou.Tests
                             for (int dx = -ChunkGenerator.BounceLedgeHalf - 1; dx <= ChunkGenerator.BounceLedgeHalf + 1; dx += 2 * ChunkGenerator.BounceLedgeHalf + 2)
                                 Assert.LessOrEqual(Surface(chunk, m.X + dx), m.Y, tag + ": 양옆이 높아 걸어서 닿으면 안 됨");
                             Assert.Greater(stand - m.Y, 2, tag + ": 보통 점프로 닿으면 안 됨");
+                            for (int x = m.X - ChunkGenerator.BounceLedgeHalf - ChunkGenerator.BounceReachGuard; x <= m.X + ChunkGenerator.BounceLedgeHalf + ChunkGenerator.BounceReachGuard; x++)
+                                if (x >= 0 && x < ChunkData.Width) Assert.LessOrEqual(Surface(chunk, x), m.Y + 3, tag + $": 근처 언덕({x})에서 점프로 닿음");
                             Assert.LessOrEqual(stand + 2, ChunkData.Height - 2, tag + ": 천장 아래");
                             Assert.IsTrue(chunk.Features.Exists(f => f.Kind == FeatureKind.CoinPile && f.Y == stand
                                 && f.X >= m.X - ChunkGenerator.BounceLedgeHalf && f.X <= m.X + ChunkGenerator.BounceLedgeHalf), tag + ": 선반 위 동전");
@@ -638,7 +652,7 @@ namespace IBlameYou.Tests
                 }
             }
 
-            Assert.Greater(found, 500, "통통 버섯이 거의 안 나옴");
+            return found;
         }
 
         // 동전 무더기 (섬·절벽 오르기): 문턱 아래에서는 없고, 섬은 마지막 단단한 섬 위, 절벽 오르기는 절벽 위 평지(지키는 적보다 뒤).
