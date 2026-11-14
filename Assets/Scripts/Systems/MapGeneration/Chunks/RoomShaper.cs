@@ -254,6 +254,7 @@ namespace IBlameYou.Systems
                 if (style == ShaftStyle.Shelves) AddShelves(chunk, room, rng);
                 if (style == ShaftStyle.CrumbleStairs || style == ShaftStyle.BlinkStairs)
                     MakeStairsUnsteady(chunk, g, style == ShaftStyle.BlinkStairs);
+                if (style != ShaftStyle.TwinStairs && style != ShaftStyle.Shelves) AddWindShortcut(room, chunk);
             }
 
             var geometry = new RoomGeometry { Chunk = chunk };
@@ -365,6 +366,33 @@ namespace IBlameYou.Systems
 
         public const float ShelfCoinMinDifficulty = 0.3f;
 
+        // 바람 지름길 (2026-11-14 레벨 재설계 2차 "세로 방 다양화"): 위 문이 있는 이동 방에서 문이 없는 쪽 벽 가까이
+        // 바닥 환풍구(WindVent, 2칸 폭)가 바람 기둥을 올리고, 기둥 꼭대기 옆 높은 선반에 동전 무더기를 둔다.
+        // 바람을 타고 오르다 벽 쪽으로 붙으면 선반에 내려앉는다. 선반은 계단 판에서 5칸 떨어져 걷기 점프로는 닿지 않는다.
+        // 양 갈래 계단(벽 쪽 판)·옆 선반 모양, 협동 봉인문 방, 양쪽 다 문인 방에는 두지 않는다. 난수를 쓰지 않아 방 모양은 그대로다.
+        // 검증기는 바람을 모르므로 덤 길이다 (계단으로 오르는 길은 그대로).
+        public const float WindMinDifficulty = 0.2f;
+        public const int WindLedgeRow = 17;       // 선반 발판 행 (서는 칸 18, 계단 판이 없는 홀수 행). 지그재그 계단 판(10~15, 16~21)과 5칸 떨어진 벽 쪽
+        public const int WindLedgeWidth = 4;      // 벽 바로 옆 1~4열 (오른쪽이면 W-5 ~ W-2)
+        public const int WindVentWidth = 2;       // 선반 바로 안쪽 5~6열 (오른쪽이면 W-7 ~ W-6)
+        public const int WindTopRise = 3;         // 기둥 꼭대기 = 선반 서는 칸 + 3 (몸이 선반 위로 넉넉히 떠오르게)
+
+        public static bool WantsWindShortcut(RoomData room) =>
+            room.Kind == RoomKind.Travel && room.Difficulty >= WindMinDifficulty && !HasPairGate(room) &&
+            (room.Doors & DoorDir.Up) != 0 && ((room.Doors & DoorDir.Left) == 0 || (room.Doors & DoorDir.Right) == 0);
+
+        private static void AddWindShortcut(RoomData room, ChunkData chunk)
+        {
+            if (!WantsWindShortcut(room)) return;
+            bool left = (room.Doors & DoorDir.Left) == 0;
+            int g = ShaftGround;
+            int ledgeX0 = left ? 1 : W - 1 - WindLedgeWidth;
+            int ventX0 = left ? ledgeX0 + WindLedgeWidth : ledgeX0 - WindVentWidth;
+            chunk.SetRow(ledgeX0, ledgeX0 + WindLedgeWidth - 1, WindLedgeRow, StageTile.Platform);
+            chunk.AddFeature(FeatureKind.WindVent, ventX0, g, WindVentWidth, WindLedgeRow + 1 + WindTopRise - g);
+            chunk.AddFeature(FeatureKind.CoinPile, left ? ledgeX0 + 1 : ledgeX0 + WindLedgeWidth - 2, WindLedgeRow + 1);
+        }
+
         // 순간이동 지름길 선반 (Docs/LevelDesign.md "순간이동은 지름길"): 위 문이 없는 세로 방(바닥만 있는 굴) 벽 쪽 높은 곳에
         // 회복 구슬을 올린 선반. 바닥에서 서는 칸 기준 5칸 위라 점프(약 2.5칸)만으로는 못 오르고, 점프 + 위 순간이동(4칸)으로 오른다.
         // 선반 바로 아래에서 위로 순간이동하면 발판 아래면에 막히므로 옆(문 쪽 안쪽)에서 솟아 옆으로 내려앉는다.
@@ -461,7 +489,10 @@ namespace IBlameYou.Systems
             }
 
             foreach (var f in chunk.Features)
+            {
                 if (f.Kind == FeatureKind.Enemy && f.Y == g) Block(safe, f.X, f.X);
+                if (f.Kind == FeatureKind.WindVent && f.Y == g) Block(safe, f.X, f.X + f.Width - 1); // 바람에 실려 가시·불기둥 위로 떨어지지 않게
+            }
             return safe;
         }
 
