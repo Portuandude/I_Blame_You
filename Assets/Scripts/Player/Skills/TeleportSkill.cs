@@ -6,7 +6,7 @@ namespace IBlameYou.Player
 {
     // 플레이어 A의 순간이동 (기획서 2.5). W/A/S/D로 상/하/좌/우 중 하나를 잡고 Enter. 미니게임 없이 바로 발동하고 마나를 쓴다.
     // 아무 방향도 안 누르고 있으면 바라보는 방향으로. 벽 점프가 없으므로 세로 이동 수단을 겸한다.
-    // 좌/우/위는 땅·발판 앞에서 멈추고, 아래는 발판(한쪽 발판·움직이는/스위치 발판·무너지는 발판)을 뚫되 낙사하지 않는 지점까지만 간다 (규칙: TeleportRules).
+    // 좌/우는 땅·발판 앞에서 멈추고, 위는 발판을 아래에서 뚫고 올라가되 땅(천장)에서 멈추며, 아래는 발판(한쪽 발판·움직이는/스위치 발판·무너지는 발판)을 뚫되 낙사하지 않는 지점까지만 간다 (규칙: TeleportRules).
     [RequireComponent(typeof(PlayerControlState))]
     [RequireComponent(typeof(ManaSystem))]
     [RequireComponent(typeof(Rigidbody2D))]
@@ -96,6 +96,7 @@ namespace IBlameYou.Player
         {
             if (body == null) return distance;
             if (direction.y < 0f) return PlanDown();
+            if (direction.y > 0f) return PlanUp();
             return TeleportRules.Blocked(distance, CastDistance(direction, includePlatforms: true));
         }
 
@@ -109,6 +110,36 @@ namespace IBlameYou.Player
                 if (Vector2.Dot(hit.normal, direction) > -0.5f) continue;
                 if (!includePlatforms && hit.collider.usedByEffector) continue; // 위에서만 밟히는 발판
                 nearest = Mathf.Min(nearest, hit.distance);
+            }
+
+            return nearest;
+        }
+
+        // 위: 발판은 뚫고 천장(땅)에서만 멈춘다. 도착 자리가 발판과 겹치면 겹치지 않는 가장 먼 자리로.
+        private float PlanUp()
+        {
+            var bounds = body.bounds;
+            var size = (Vector2)bounds.size * 0.95f;
+            Vector2 center = bounds.center;
+            float headY = bounds.max.y;
+
+            // 머리 위 좁은 상자를 위로 밀어 처음 막는 땅까지 (발판 제외). 몸 Cast는 합쳐진 땅에서 옆 벽 hit만 줄 수 있어 따로 민다.
+            float solidHit = HeadCast(new Vector2(center.x, headY - 0.05f), size.x * 0.9f, distance + 0.1f);
+
+            return TeleportRules.PlanUp(distance, solidHit,
+                t => Physics2D.OverlapBox(center + Vector2.up * t, size, 0f, groundFilter, overlapResults) > 0);
+        }
+
+        // 머리 위 얇은 상자를 위로 밀어 처음 닿는 땅(발판 제외)까지의 거리 (없으면 PositiveInfinity).
+        private float HeadCast(Vector2 origin, float width, float maxDistance)
+        {
+            int count = Physics2D.BoxCast(origin, new Vector2(width, 0.05f), 0f, Vector2.up, groundFilter, castResults, maxDistance);
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = castResults[i];
+                if (IsPlatform(hit.collider)) continue;
+                nearest = Mathf.Min(nearest, Mathf.Max(hit.distance - 0.05f, 0f));
             }
 
             return nearest;

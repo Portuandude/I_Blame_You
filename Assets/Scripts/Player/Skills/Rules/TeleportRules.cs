@@ -4,7 +4,9 @@ namespace IBlameYou.Player
 {
     // 순간이동의 방향·거리 규칙 (순수 C#, EditMode 테스트 대상). 물리 조회는 TeleportSkill이 하고 그 결과만 여기로 넘긴다.
     // - 방향은 상/하/좌/우 넷뿐: W/A/S/D 입력에서 가장 큰 축 하나만 쓴다 (같으면 세로 우선). 입력이 없으면 바라보는 쪽.
-    // - 좌/우/위: 땅·발판에 막히면 그 앞에서 멈춘다 (위로 갈 때는 발판 아래면도 막는다).
+    // - 좌/우: 땅·발판에 막히면 그 앞에서 멈춘다.
+    // - 위: 발판 역할 오브젝트(한쪽 발판·움직이는/스위치 발판·무너지는 발판)는 아래에서 뚫고 올라가고, 땅(천장)에서만 멈춘다 (2026-11-14 플레이테스트).
+    //   도착 자리에서 몸이 발판과 겹치면 Step씩 줄여 겹치지 않는 가장 먼 자리로 간다.
     // - 아래: 발판 역할 오브젝트(한쪽 발판·움직이는/스위치 발판·무너지는 발판)는 뚫고 내려가지만 땅은 뚫지 않는다. 낙사 방지로, 도착 지점 바로 아래(MaxSafeDrop 안)에 디딜 곳이 있고
     //   그곳이 낙사 높이보다 위인 지점까지만 간다. 그런 지점이 MinTravel 이상 떨어진 곳에 하나도 없으면 발동하지 않는다.
     public static class TeleportRules
@@ -42,6 +44,25 @@ namespace IBlameYou.Player
         {
             if (float.IsNaN(hitDistance) || float.IsInfinity(hitDistance)) return distance;
             return Math.Min(distance, Math.Max(hitDistance - Skin, 0f));
+        }
+
+        // 위 방향 거리. 실패면 -1.
+        // solidHit: 위로 땅(발판 제외)까지의 거리, 없으면 PositiveInfinity.
+        // overlapsAt(t): t만큼 올라간 자리에서 몸이 땅·발판과 겹치는지.
+        public static float PlanUp(float distance, float solidHit, Func<float, bool> overlapsAt)
+        {
+            float max = Blocked(distance, solidHit);
+            if (max < MinTravel) return -1f;
+
+            int steps = (int)Math.Floor((max - MinTravel) / Step + 1e-4);
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = i == 0 ? max : max - i * Step;
+                if (t < MinTravel) break;
+                if (!overlapsAt(t)) return t;
+            }
+
+            return -1f;
         }
 
         // 아래 방향 거리. 실패면 -1.
