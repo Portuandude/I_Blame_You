@@ -15,7 +15,8 @@ namespace IBlameYou.Systems
     //   디버프 저항도 7.5 이하는 100%, 15는 50%, 30은 25%.
     // - 화상: 맞을 때마다 한 중첩씩 쌓인다. 1초마다 중첩 수 × (공격자 불 속성 데미지 / 10)의 고정 피해를 5초 동안.
     //   새 중첩이 쌓이면 늘어난 중첩 수로 5초를 처음부터 다시 센다.
-    // - 젖음: 3초 동안 이동속도 40% 감소. 다시 맞으면 시간만 갱신.
+    // - 젖음: 3초 동안 이동속도 40% 감소. 다시 맞으면 시간을 갱신하고 둔화는 둘 중 센 쪽.
+    //   얼음 족쇄는 정예·보스에게 20%만 (TryApply의 wetSlow, ShackleRules).
     // - 화상과 젖음은 함께 걸리지 않는다. 새로 걸린 쪽이 다른 쪽을 지운다.
     // - 경직: 1초 동안 이동/공격 정지.
     public class StatusEffects : MonoBehaviour
@@ -41,6 +42,7 @@ namespace IBlameYou.Systems
         private CombatStats stats;
         private HitStun hitStun;
         private float wetRemaining;
+        private float wetSlow;         // 지금 걸린 젖음 둔화 (0~1)
         private float burnTickTimer;
 
         public int BurnStacks => burnStacks;
@@ -60,7 +62,8 @@ namespace IBlameYou.Systems
         }
 
         // 확률 판정 후 디버프를 건다. 걸렸으면 true.
-        public static bool TryApply(Component target, StatusDebuff debuff, CombatStats attacker, bool always = false)
+        // wetSlow: 젖음일 때 이동속도를 얼마나 줄일지 (기본 40%, 얼음 족쇄가 정예·보스에게는 20%).
+        public static bool TryApply(Component target, StatusDebuff debuff, CombatStats attacker, bool always = false, float wetSlow = WetSlow)
         {
             if (debuff == StatusDebuff.None || target == null) return false;
 
@@ -70,7 +73,7 @@ namespace IBlameYou.Systems
 
             var effects = health.GetComponent<StatusEffects>();
             if (effects == null) effects = health.gameObject.AddComponent<StatusEffects>();
-            effects.Apply(debuff, attacker);
+            effects.Apply(debuff, attacker, wetSlow);
             return true;
         }
 
@@ -82,7 +85,7 @@ namespace IBlameYou.Systems
             StatusIconBar.Attach(this);
         }
 
-        private void Apply(StatusDebuff debuff, CombatStats attacker)
+        private void Apply(StatusDebuff debuff, CombatStats attacker, float slow)
         {
             switch (debuff)
             {
@@ -99,8 +102,9 @@ namespace IBlameYou.Systems
 
                 case StatusDebuff.Wet:
                     ClearBurn();
+                    wetSlow = wetRemaining > 0f ? Mathf.Max(wetSlow, slow) : slow; // 이미 젖었으면 센 둔화를 남긴다
                     wetRemaining = WetDuration;
-                    if (stats != null) stats.SlowMultiplier = 1f - WetSlow;
+                    if (stats != null) stats.SlowMultiplier = 1f - wetSlow;
                     Announce("젖음", WetColor);
                     break;
 
@@ -158,6 +162,7 @@ namespace IBlameYou.Systems
         private void ClearWet()
         {
             wetRemaining = 0f;
+            wetSlow = 0f;
             if (stats != null) stats.SlowMultiplier = 1f;
         }
 

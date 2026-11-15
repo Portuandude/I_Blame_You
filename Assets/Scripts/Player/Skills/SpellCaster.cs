@@ -28,6 +28,9 @@ namespace IBlameYou.Player
         public float TailwindRemaining => Mathf.Max(0f, tailwindUntil - Time.time);
         public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
+        // 운석처럼 선딜이 있는 커서 자리 마법: 영창을 마친 순간의 자리를 묶어 둔다 (선딜 중 커서를 옮겨도 그 자리에 떨어짐, 미리보기도 그 자리)
+        public SpellDefinition WindupSpell { get; private set; }
+        public Vector2 WindupLanding { get; private set; }
         public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (영창 일치·개발자 모드 즉시 발동). 응원 리본 유물
         private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
@@ -148,7 +151,7 @@ namespace IBlameYou.Player
             if (spell.Shape == SpellShape.Mist)
             {
                 var mist = new GameObject("Spell_Mist");
-                mist.transform.position = CursorPoint(spell.Range);
+                mist.transform.position = CursorLanding(spell);
                 mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
                 return;
@@ -164,6 +167,12 @@ namespace IBlameYou.Player
             if (spell.Shape == SpellShape.GroundSpike)
             {
                 // 선딜: 시전 동작 뒤 Windup초가 지나야 가시가 예고된다. 그동안 다른 공격 스킬은 못 쓴다.
+                if (spell.AtCursor)
+                {
+                    WindupSpell = spell;
+                    WindupLanding = CursorLanding(spell);
+                }
+                else WindupSpell = null;
                 StartCoroutine(GroundSpikeAfterWindup(spell, facing));
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 시전 중...");
                 return;
@@ -211,9 +220,12 @@ namespace IBlameYou.Player
             if (charge != null) Destroy(charge.gameObject);
             charge = null;
             WindingUp = false;
+            bool locked = WindupSpell == spell;
+            Vector2 landing = WindupLanding;
+            WindupSpell = null;
             if (health.IsDead) yield break;
 
-            SpawnGroundSpike(spell, facing);
+            SpawnGroundSpike(spell, facing, locked ? landing : (Vector2?)null);
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
 
@@ -236,7 +248,10 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
                 ScreenFlash.Pulse();
                 GameAudio.PlaySfx($"Hit_{spell.Element}");
-                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways);
+                // 얼음 족쇄(반드시 거는 젖음): 정예·중간보스·보스는 둔화 20%, 일반 몹 40% (ShackleRules)
+                bool shackle = spell.DebuffAlways && spell.Debuff == StatusDebuff.Wet;
+                float wetSlow = shackle ? ShackleRules.Slow(IsStrong(target)) : StatusEffects.WetSlow;
+                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
             };
             projectile.Impact = point =>
             {
@@ -245,7 +260,7 @@ namespace IBlameYou.Player
             };
         }
 
-        private void SpawnGroundSpike(SpellDefinition spell, float facing)
+        private void SpawnGroundSpike(SpellDefinition spell, float facing, Vector2? lockedLanding = null)
         {
             // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
@@ -254,8 +269,13 @@ namespace IBlameYou.Player
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
-            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
-            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            Vector2 point;
+            if (spell.AtCursor) point = lockedLanding ?? CursorLanding(spell);
+            else
+            {
+                var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
+                point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            }
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Earth); // 봉인문 앞이면 문이 튕겨내며 번쩍임
 
@@ -291,6 +311,20 @@ namespace IBlameYou.Player
             return aim;
         }
 
+        // 커서 자리 마법이 실제로 놓일 자리. 발동과 영창 중 미리보기(CursorSpellPreview)가 같은 계산을 쓴다.
+        // 물안개는 커서 자리 그대로, 불꽃 비는 아래 12칸 안 땅 (없으면 커서 1칸 아래), 운석은 아래 30칸 안 땅 (없으면 캐릭터 발 높이).
+        public Vector2 CursorLanding(SpellDefinition spell)
+        {
+            Vector2 aim = CursorPoint(spell.Range);
+            if (spell.Shape == SpellShape.Mist) return aim;
+            int groundLayer = LayerMask.NameToLayer("Ground");
+            LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            bool rain = spell.Shape == SpellShape.FireWall;
+            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, rain ? 12f : 30f, groundMask);
+            if (hit.collider != null) return hit.point;
+            return rain ? new Vector2(aim.x, aim.y - 1f) : new Vector2(aim.x, transform.position.y - 0.6f);
+        }
+
         // 불꽃 장막: 바라보는 쪽 바로 앞 땅 위에 불벽 (가장 가까운 끝이 캐릭터 0.5칸 앞).
         private void SpawnFireWall(SpellDefinition spell, float facing)
         {
@@ -298,8 +332,13 @@ namespace IBlameYou.Player
             Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
-            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, spell.AtCursor ? 12f : 6f, groundMask);
-            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, spell.AtCursor ? aim.y - 1f : self.y - 0.6f);
+            Vector2 point;
+            if (spell.AtCursor) point = CursorLanding(spell);
+            else
+            {
+                var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 6f, groundMask);
+                point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            }
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Fire);
 
@@ -310,6 +349,13 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
                 if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
             }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight);
+        }
+
+        // 정예·중간보스·보스인지 (골드 표와 같은 등급, RunGold.RankOf)
+        private static bool IsStrong(HealthSystem target)
+        {
+            var enemy = target != null ? target.GetComponent<IBlameYou.Enemies.EnemyController>() : null;
+            return enemy != null && RunGold.RankOf(enemy) != EnemyRank.Normal;
         }
 
         // 적중 이펙트를 띄울 자리: 맞은 대상 몸통의 가운데.
@@ -345,6 +391,7 @@ namespace IBlameYou.Player
         private void OnDisable()
         {
             WindingUp = false;
+            WindupSpell = null;
             if (charge != null) Destroy(charge.gameObject);
             if (ChantOpen) CloseChant();
         }
