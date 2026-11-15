@@ -13,6 +13,7 @@ namespace IBlameYou.Core
     {
         private Action onStart;
         private Action onContinue;
+        private Action onCity; // 일반 판 시작은 스토리 소개 뒤 도시 메뉴로 (CityMenu, 2026-11-15 도시 2단계). 없으면 바로 판
         private RunSave.Data saved; // 이어 할 수 있는 런 (없으면 null)
         private bool confirmNewRun;  // 저장이 있을 때 "새로 시작"은 한 번 더 눌러야 한다
         private bool devMode;
@@ -46,9 +47,10 @@ namespace IBlameYou.Core
         private Vector4[] fireflies;   // 반딧불마다 (가로 자리 0~1, 처음 높이 0~1, 오르는 속도, 깜빡임 위상)
         private const int FireflyCount = 26;
 
-        public void Initialize(Action startCallback, Action continueCallback = null)
+        public void Initialize(Action startCallback, Action continueCallback = null, Action cityCallback = null)
         {
             onStart = startCallback;
+            onCity = cityCallback;
             onContinue = continueCallback;
             saved = continueCallback != null ? RunSave.Load() : null;
             SaveData.LoadSettings();
@@ -247,10 +249,16 @@ namespace IBlameYou.Core
             }
             // 일반 판은 먼저 웹툰식 스토리 소개 (2026-11-14 사람 지시). 끝나거나 둘이 같이 건너뛰면 출발한다.
             var start = onStart;
+            var city = onCity;
             var intro = gameObject.AddComponent<StoryIntro>();
             Destroy(this);
             intro.Begin(() =>
             {
+                if (city != null)
+                {
+                    city(); // 도시 메뉴의 "출발"이 판을 시작한다
+                    return;
+                }
                 start?.Invoke();
                 GameAudio.PlaySfx("RunStart", 0.8f);
                 ScreenFlash.StartFade();
@@ -528,7 +536,7 @@ namespace IBlameYou.Core
             "P1(A)  키보드: 이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
             "P1(A)  방어막 넘패드 1~5 → 화면에 뜬 순서대로 W/A/S/D (입력 중 캐릭터 정지, 틀리면 마나만 소모)\n" +
             "P2(B)  마우스: 평타 좌클릭\n" +
-            "P2(B)  공격 스킬 휠로 고르고 우클릭(또는 상단 1~4) → 영창문을 똑같이 타이핑 → Enter (오타면 마나만 소모, Esc 취소)\n" +
+            "P2(B)  공격 스킬 우클릭 꾹 → 다이얼에서 고르고 떼기(또는 휠+우클릭, 상단 1~4) → 영창문을 똑같이 타이핑 → Enter (오타면 마나만 소모, Esc 취소)\n" +
             "한 키보드를 같이 쓴다: P2가 영창을 치는 동안 P1의 키는 막히고, P1이 방어막을 치는 동안 P2의 공격 스킬은 막힌다.";
     }
 }

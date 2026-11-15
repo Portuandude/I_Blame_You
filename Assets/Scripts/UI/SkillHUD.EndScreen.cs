@@ -246,7 +246,7 @@ namespace IBlameYou.UI
             bool ready = EndButtonsReady;
             bool wasEnabled = GUI.enabled;
             GUI.enabled = ready;
-            if (CuteButton.Button(left, clear ? "새 맵으로 다시 (R)" : "다시 시작 (R)", endButton)) RequestRestart(false);
+            if (CuteButton.Button(left, !GameSession.FeatureTest ? "도시로 (R)" : clear ? "새 맵으로 다시 (R)" : "다시 시작 (R)", endButton)) RequestRestart(false);
             if (CuteButton.Button(right, "시작 화면 (M)", endButton)) RequestRestart(true);
             GUI.enabled = wasEnabled;
             if (ready) CuteButton.DrawSelection(endSelection == 0 ? left : right);

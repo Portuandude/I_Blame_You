@@ -139,7 +139,7 @@ namespace IBlameYou.UI
             switch (index)
             {
                 case 0: return "계속하기 (Esc)";
-                case 1: return "다시 시작 (새 맵)";
+                case 1: return GameSession.FeatureTest ? "다시 시작 (새 맵)" : "도시로 (이번 판 포기)";
                 case 2: return "시작 화면";
                 default: return "화면 설정";
             }

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace IBlameYou.Player
 {
     // 플레이어 B의 공격 스킬 (기획서 2.5).
-    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, RoleInput.MouseSpell)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
+    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, 우클릭을 누르고 있으면 속성 → 마법 2단계 다이얼, RoleInput.Dial)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
     // 오타가 있는 채로 Enter를 누르면 마나만 날아간다. Esc는 마나 소모 없이 취소.
     // 개발자 모드에서는 상단 6~9·0으로 영창 없이 바로 발동한다.
     // 영창 입력창 자체는 UI(SkillHUD)가 그리고, 입력이 끝나면 SubmitChant/CancelChant를 부른다.
@@ -22,6 +22,10 @@ namespace IBlameYou.Player
 
         public bool ChantOpen { get; private set; }
         public SpellDefinition PendingSpell { get; private set; }
+        public string PendingChant { get; private set; } // 이번에 쳐야 하는 문장 (순풍 동안 짧아짐, ChantRules)
+        private float tailwindUntil = -1f;
+        public bool TailwindActive => Time.time < tailwindUntil;
+        public float TailwindRemaining => Mathf.Max(0f, tailwindUntil - Time.time);
         public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
         public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (영창 일치·개발자 모드 즉시 발동). 응원 리본 유물
@@ -35,12 +39,14 @@ namespace IBlameYou.Player
             stats = GetComponent<CombatStats>();
             health = GetComponent<HealthSystem>();
             combat = GetComponent<PlayerCombat>();
+            RoleInput.CloseSpellDial(); // 다이얼 상태는 static이라 새 판·씬 다시 불러오기에 남지 않게 (리뷰 LOW)
         }
 
         private void Update()
         {
             if (health.IsDead)
             {
+                RoleInput.CloseSpellDial();
                 if (ChantOpen) CloseChant();
                 return;
             }
@@ -51,10 +57,14 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (WindingUp) return;
-            if (!RoleInput.SpellDown(control, out var element)) return;
+            if (WindingUp)
+            {
+                RoleInput.CloseSpellDial();
+                return;
+            }
+            if (!RoleInput.SpellDown(control, out var element, out int slot)) return;
 
-            var spell = SpellBook.Get(element);
+            var spell = SpellBook.Get(element, slot);
             if (spell == null)
             {
                 SkillMessages.Post(ManaUser.PlayerB, "무속성 마력탄은 평타(좌클릭)로 바뀌었어요", true);
@@ -73,6 +83,7 @@ namespace IBlameYou.Player
             }
 
             PendingSpell = spell;
+            PendingChant = ChantRules.For(spell.Chant, TailwindActive);
             ChantOpen = true;
             ChantOpenedFrame = Time.frameCount;
             control.ChantActive = true;
@@ -84,6 +95,7 @@ namespace IBlameYou.Player
             if (!ChantOpen) return;
 
             var spell = PendingSpell;
+            string chant = PendingChant ?? spell.Chant;
             CloseChant();
 
             if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
@@ -92,7 +104,7 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (typed != spell.Chant)
+            if (typed != chant)
             {
                 mana.MarkWasted(ManaUser.PlayerB, spell.ManaCost);
                 SkillMessages.Post(ManaUser.PlayerB, $"영창 실패 (오타) — 마나 {spell.ManaCost:0} 날림", true);
@@ -125,6 +137,30 @@ namespace IBlameYou.Player
             RunStats.AddSpell((int)spell.Element); // 결과 창 B 최애 마법
             Casted?.Invoke(spell.Element);
 
+            if (spell.Shape == SpellShape.Tailwind)
+            {
+                tailwindUntil = Time.time + spell.Duration;
+                EffectLibrary.PlayCast(Element.Wind, transform.position + new Vector3(0f, 0.6f, 0f), facing < 0f, 1.2f);
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} — {spell.Duration:0}초 동안 영창이 짧아진다");
+                return;
+            }
+
+            if (spell.Shape == SpellShape.Mist)
+            {
+                var mist = new GameObject("Spell_Mist");
+                mist.transform.position = CursorPoint(spell.Range);
+                mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+                return;
+            }
+
+            if (spell.Shape == SpellShape.FireWall)
+            {
+                SpawnFireWall(spell, facing);
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+                return;
+            }
+
             if (spell.Shape == SpellShape.GroundSpike)
             {
                 // 선딜: 시전 동작 뒤 Windup초가 지나야 가시가 예고된다. 그동안 다른 공격 스킬은 못 쓴다.
@@ -135,6 +171,7 @@ namespace IBlameYou.Player
 
             // 첫 발사각은 바라보는 방향으로 수평. 이후 방향은 유도가 꺾는다.
             SpawnProjectile(spell, origin, new Vector2(facing, 0f));
+            if (spell.Volley > 1) StartCoroutine(VolleyRest(spell, facing)); // 칼바람: 나머지 발을 0.12초 간격으로
 
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
@@ -199,7 +236,7 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
                 ScreenFlash.Pulse();
                 GameAudio.PlaySfx($"Hit_{spell.Element}");
-                StatusEffects.TryApply(target, spell.Debuff, stats);
+                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways);
             };
             projectile.Impact = point =>
             {
@@ -212,8 +249,8 @@ namespace IBlameYou.Player
         {
             // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
-            var target = FindSpikeTarget(self, facing, spell.Range);
-            Vector2 aim = target != null ? (Vector2)target.transform.position : self + new Vector2(facing * SpikeDefaultDistance, 0f);
+            var target = spell.AtCursor ? null : FindSpikeTarget(self, facing, spell.Range); // 운석은 커서 자리 (따라가지 않음)
+            Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : target != null ? (Vector2)target.transform.position : self + new Vector2(facing * SpikeDefaultDistance, 0f);
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
@@ -231,6 +268,48 @@ namespace IBlameYou.Player
                     ScreenFlash.Pulse();
                     StatusEffects.TryApply(health, spell.Debuff, stats);
                 });
+        }
+
+        private System.Collections.IEnumerator VolleyRest(SpellDefinition spell, float facing)
+        {
+            for (int i = 1; i < spell.Volley; i++)
+            {
+                yield return new WaitForSeconds(0.12f);
+                if (health.IsDead) yield break;
+                Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f + (i % 2 == 1 ? 0.25f : -0.2f));
+                SpawnProjectile(spell, origin, new Vector2(facing, 0f));
+            }
+        }
+
+        // 커서 자리 (사거리 안으로 줄임). 불꽃 비·물안개·운석.
+        private Vector2 CursorPoint(float range)
+        {
+            Vector2 self = transform.position;
+            Vector2 aim = RoleInput.AimWorldPoint(self);
+            Vector2 offset = aim - self;
+            if (offset.magnitude > range) aim = self + offset.normalized * range;
+            return aim;
+        }
+
+        // 불꽃 장막: 바라보는 쪽 바로 앞 땅 위에 불벽 (가장 가까운 끝이 캐릭터 0.5칸 앞).
+        private void SpawnFireWall(SpellDefinition spell, float facing)
+        {
+            Vector2 self = transform.position;
+            Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
+            int groundLayer = LayerMask.NameToLayer("Ground");
+            LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, spell.AtCursor ? 12f : 6f, groundMask);
+            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, spell.AtCursor ? aim.y - 1f : self.y - 0.6f);
+
+            IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Fire);
+
+            var go = new GameObject("Spell_FireWall");
+            go.transform.position = point;
+            go.AddComponent<FireWall>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.Duration, (health, first) =>
+            {
+                EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
+                if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
+            }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight);
         }
 
         // 적중 이펙트를 띄울 자리: 맞은 대상 몸통의 가운데.

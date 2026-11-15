@@ -291,6 +291,7 @@ namespace IBlameYou.UI
             DrawChantInput();
             DrawHelp();
             DrawMouseSpellTag(); // P2 휠로 고른 공격 스킬을 커서 옆에 (SkillHUD.MouseSpell.cs)
+            DrawSpellDial(); // P2 우클릭을 누르고 있는 동안 속성 → 마법 2단계 다이얼 (SkillHUD.SpellDial.cs)
             DrawTraitWindow();
             DrawRelicWindow();
             DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)
@@ -314,6 +315,12 @@ namespace IBlameYou.UI
             string shieldText = shield != null && shield.Active
                 ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
                 : "방어막: 없음";
+            if (caster != null && caster.TailwindActive) // 순풍 (아카데미 바람 마법): 남은 초, 끝나기 1초 전 깜빡임
+            {
+                float left = caster.TailwindRemaining;
+                bool blinkOff = left < 1f && Mathf.Repeat(Time.time * 6f, 1f) < 0.5f;
+                if (!blinkOff) shieldText += $"   <color=#8cffb3>순풍 {left:0.0}초</color>";
+            }
             GUILayout.Label(shieldText, label);
             string mode = GameSession.DevMode ? "<color=#ffd84d>개발자 모드</color>" : "일반 모드 (로컬)";
             if (cheats != null && cheats.GodMode) mode += "  <color=#ffd84d>무적</color>";
@@ -397,7 +404,7 @@ namespace IBlameYou.UI
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, sharedKeyboard ? 172f : 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
                 $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
-            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
+            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(caster.PendingChant ?? spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
 
             var field = new Rect(x, y + 8f, width, 40f);
             if (mistake) // 틀린 글자가 있으면 입력 칸 둘레를 berry로 (Enter 누르기 전에 알아채게)

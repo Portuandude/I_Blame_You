@@ -39,7 +39,15 @@ namespace IBlameYou.Core
         private void ShowMenu()
         {
             GameAudio.PlayMusic("Menu");
-            gameObject.AddComponent<StartMenu>().Initialize(() => BuildWorld(null), ContinueWorld);
+            gameObject.AddComponent<StartMenu>().Initialize(() => BuildWorld(null), ContinueWorld, ShowCity);
+        }
+
+        // 런 사이 도시 메뉴 (CityMenu): 출발 → 새 판, Esc → 시작 화면. 일반 판(개발자 모드 포함)만 거친다. 기능 테스트는 바로 시험 맵.
+        private void ShowCity() => ShowCity(CityArrival.FromStart);
+
+        private void ShowCity(CityArrival arrival)
+        {
+            gameObject.AddComponent<CityMenu>().Initialize(() => BuildWorld(null), () => Restart(true), arrival);
         }
 
         private void ContinueWorld()
@@ -120,6 +128,8 @@ namespace IBlameYou.Core
             player = movement.gameObject;
             if (player.GetComponent<FallRecovery>() == null) player.AddComponent<FallRecovery>(); // 프리팹을 다시 굽기 전 대비
             if (player.GetComponent<PlayerProgression>() == null) player.AddComponent<PlayerProgression>();
+            ApplyLearnedSpells(featureTest);
+            if (!featureTest) ApplyTowerBonuses(); // 수정 탑 영구 능력치 (기능 테스트 제외). 이어하기 체력 복원보다 먼저
             if (resume != null) RestorePlayer(resume, start); // HUD를 붙이기 전에 (특성 다시 찍기가 HUD 알림으로 쏟아지지 않게)
             streamer.SetPlayer(player.transform);
 
@@ -150,6 +160,29 @@ namespace IBlameYou.Core
             {
                 StageEvents.PostNotice($"스테이지 1 시작 (시드 {runSeed})");
             }
+        }
+
+        // 아카데미에서 배운 마법을 B의 마법 목록에 (SpellBook.Learn → 다이얼 2단계·숫자줄). 기능 테스트는 마법 다이얼을 시험하도록 모두 배운 채로.
+        private static void ApplyLearnedSpells(bool featureTest)
+        {
+            SpellBook.ResetLearned();
+            foreach (var spell in SpellBook.Academy)
+                if (featureTest || SaveData.SpellLearned(spell.Id, GameSession.DevMode)) SpellBook.Learn(spell);
+        }
+
+        // 수정 탑에서 산 영구 능력치를 새 플레이어에 더한다 (Docs/CityDesign.md 4절, CrystalTowerRule). 모드별 저장.
+        private void ApplyTowerBonuses()
+        {
+            bool dev = GameSession.DevMode;
+            var health = player.GetComponent<HealthSystem>();
+            var mana = player.GetComponent<ManaSystem>();
+            var shieldSkill = player.GetComponent<ElementShieldSkill>();
+            float hp = CrystalTowerRule.Bonus(TowerStat.MaxHealth, SaveData.TowerLevel(TowerStat.MaxHealth, dev));
+            float mp = CrystalTowerRule.Bonus(TowerStat.MaxMana, SaveData.TowerLevel(TowerStat.MaxMana, dev));
+            if (health != null && hp > 0f) health.AddMax(hp, true);
+            if (mana != null && mp > 0f) mana.AddMax(mp, true);
+            if (mana != null) mana.RegenMultiplier += CrystalTowerRule.Bonus(TowerStat.ManaRegen, SaveData.TowerLevel(TowerStat.ManaRegen, dev));
+            if (shieldSkill != null) shieldSkill.DurationBonus = CrystalTowerRule.Bonus(TowerStat.ShieldDuration, SaveData.TowerLevel(TowerStat.ShieldDuration, dev));
         }
 
         // 저장된 레벨·특성·유물·체력을 새로 만든 플레이어에 되살린다.
@@ -272,6 +305,11 @@ namespace IBlameYou.Core
             }
 
             if (backToMenu) ShowMenu();
+            else if (!GameSession.FeatureTest)
+            {
+                RunSave.Clear(); // 포기·끝난 판은 이어하기로 되살리지 않는다 (예전 다시 시작의 BuildWorld(null)와 같음, 리뷰 MEDIUM)
+                ShowCity(CityArrival.AfterRun); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
+            }
             else BuildWorld(null);
         }
 

@@ -19,6 +19,7 @@ namespace IBlameYou.Player
 
         [SerializeField] private float inputTimeLimit = 2f;
         [SerializeField] private float shieldDuration = 3f;
+        public float DurationBonus { get; set; } // 수정 탑 "방어막 지속" (판 시작 때 PlaytestBootstrap.ApplyTowerBonuses)
 
         private PlayerControlState control;
         private ManaSystem mana;
@@ -116,7 +117,7 @@ namespace IBlameYou.Player
 
         private void Activate(Element element)
         {
-            shield.Activate(element, shieldDuration);
+            shield.Activate(element, shieldDuration + DurationBonus);
             SkillMessages.Post(ManaUser.PlayerA, $"{ElementInfo.KoreanName(element)} 방어막 발동");
             Activated?.Invoke(element);
             RunStats.AddShield((int)element); // 결과 창 A 최애 방어막

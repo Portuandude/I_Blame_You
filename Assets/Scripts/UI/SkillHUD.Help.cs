@@ -180,7 +180,7 @@ namespace IBlameYou.UI
             else
             {
                 Add(null, default, "1~4", "공격 스킬(→영창 타이핑+Enter)");
-                Add(null, default, "휠+우클릭", "마우스로 공격 스킬");
+                Add(null, default, "우클릭 꾹", "다이얼로 공격 스킬");
             }
 
             if (dev)
