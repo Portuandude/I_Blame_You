@@ -9,7 +9,8 @@ namespace IBlameYou.Player
     public class FireWall : MonoBehaviour
     {
         public const float TickInterval = 0.4f;
-        private const float Height = 2.2f;
+        public const float WallHeight = 2.2f;
+        private float height = WallHeight;
 
         private CombatStats owner;
         private float halfWidth;
@@ -20,8 +21,11 @@ namespace IBlameYou.Player
         private readonly HashSet<HealthSystem> burned = new HashSet<HealthSystem>();
         private System.Action<HealthSystem, bool> onHit; // (맞은 적, 처음 닿았는지)
 
-        public void Begin(CombatStats attacker, float width, float damagePerTick, float lifetime, System.Action<HealthSystem, bool> hit)
+        // rain: 불꽃 비 — 높이 zoneHeight의 넓은 구역에 위에서 불똥이 떨어지는 그림 (판정은 같은 상자).
+        public void Begin(CombatStats attacker, float width, float damagePerTick, float lifetime, System.Action<HealthSystem, bool> hit,
+            bool rain = false, float zoneHeight = WallHeight)
         {
+            height = zoneHeight;
             owner = attacker;
             halfWidth = width;
             multiplier = damagePerTick;
@@ -35,6 +39,14 @@ namespace IBlameYou.Player
             {
                 float x = Mathf.Lerp(-halfWidth + 0.5f, halfWidth - 0.5f, count == 1 ? 0.5f : i / (float)(count - 1));
                 var flame = EffectLibrary.CreateVisual(transform, "Flame", frames, 12f + i % 3, true, ElementInfo.Color(Element.Fire), 1.1f, 6);
+                if (rain)
+                {
+                    // 불똥: 구역 위쪽 여기저기에서 아래로 (FireRainDrop이 떨어뜨리고 다시 위로)
+                    flame.transform.localPosition = new Vector3(x, Random.Range(0.5f, height), 0f);
+                    flame.transform.localRotation = Quaternion.Euler(0f, 0f, -90f);
+                    flame.gameObject.AddComponent<FireRainDrop>().Begin(height);
+                    continue;
+                }
                 flame.transform.localPosition = new Vector3(x, 0.7f + (i % 2) * 0.25f, 0f);
                 flame.transform.localScale *= 1.4f;
                 flame.transform.localRotation = Quaternion.Euler(0f, 0f, 90f); // 위로 타오르게
@@ -48,9 +60,9 @@ namespace IBlameYou.Player
             if (age >= nextTick)
             {
                 nextTick += TickInterval;
-                var center = (Vector2)transform.position + new Vector2(0f, Height / 2f);
+                var center = (Vector2)transform.position + new Vector2(0f, height / 2f);
                 var hitThisTick = new HashSet<HealthSystem>();
-                foreach (var col in Physics2D.OverlapBoxAll(center, new Vector2(halfWidth * 2f, Height), 0f))
+                foreach (var col in Physics2D.OverlapBoxAll(center, new Vector2(halfWidth * 2f, height), 0f))
                 {
                     var health = col.GetComponentInParent<HealthSystem>();
                     if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;

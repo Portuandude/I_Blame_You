@@ -145,6 +145,15 @@ namespace IBlameYou.Player
                 return;
             }
 
+            if (spell.Shape == SpellShape.Mist)
+            {
+                var mist = new GameObject("Spell_Mist");
+                mist.transform.position = CursorPoint(spell.Range);
+                mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+                return;
+            }
+
             if (spell.Shape == SpellShape.FireWall)
             {
                 SpawnFireWall(spell, facing);
@@ -162,6 +171,7 @@ namespace IBlameYou.Player
 
             // 첫 발사각은 바라보는 방향으로 수평. 이후 방향은 유도가 꺾는다.
             SpawnProjectile(spell, origin, new Vector2(facing, 0f));
+            if (spell.Volley > 1) StartCoroutine(VolleyRest(spell, facing)); // 칼바람: 나머지 발을 0.12초 간격으로
 
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
@@ -239,8 +249,8 @@ namespace IBlameYou.Player
         {
             // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
-            var target = FindSpikeTarget(self, facing, spell.Range);
-            Vector2 aim = target != null ? (Vector2)target.transform.position : self + new Vector2(facing * SpikeDefaultDistance, 0f);
+            var target = spell.AtCursor ? null : FindSpikeTarget(self, facing, spell.Range); // 운석은 커서 자리 (따라가지 않음)
+            Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : target != null ? (Vector2)target.transform.position : self + new Vector2(facing * SpikeDefaultDistance, 0f);
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
@@ -260,15 +270,36 @@ namespace IBlameYou.Player
                 });
         }
 
+        private System.Collections.IEnumerator VolleyRest(SpellDefinition spell, float facing)
+        {
+            for (int i = 1; i < spell.Volley; i++)
+            {
+                yield return new WaitForSeconds(0.12f);
+                if (health.IsDead) yield break;
+                Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f + (i % 2 == 1 ? 0.25f : -0.2f));
+                SpawnProjectile(spell, origin, new Vector2(facing, 0f));
+            }
+        }
+
+        // 커서 자리 (사거리 안으로 줄임). 불꽃 비·물안개·운석.
+        private Vector2 CursorPoint(float range)
+        {
+            Vector2 self = transform.position;
+            Vector2 aim = RoleInput.AimWorldPoint(self);
+            Vector2 offset = aim - self;
+            if (offset.magnitude > range) aim = self + offset.normalized * range;
+            return aim;
+        }
+
         // 불꽃 장막: 바라보는 쪽 바로 앞 땅 위에 불벽 (가장 가까운 끝이 캐릭터 0.5칸 앞).
         private void SpawnFireWall(SpellDefinition spell, float facing)
         {
             Vector2 self = transform.position;
-            Vector2 aim = self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
+            Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
-            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 6f, groundMask);
-            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, spell.AtCursor ? 12f : 6f, groundMask);
+            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, spell.AtCursor ? aim.y - 1f : self.y - 0.6f);
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Fire);
 
@@ -278,7 +309,7 @@ namespace IBlameYou.Player
             {
                 EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
                 if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
-            });
+            }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight);
         }
 
         // 적중 이펙트를 띄울 자리: 맞은 대상 몸통의 가운데.
