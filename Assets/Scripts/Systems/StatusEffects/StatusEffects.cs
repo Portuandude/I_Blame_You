@@ -60,13 +60,13 @@ namespace IBlameYou.Systems
         }
 
         // 확률 판정 후 디버프를 건다. 걸렸으면 true.
-        public static bool TryApply(Component target, StatusDebuff debuff, CombatStats attacker)
+        public static bool TryApply(Component target, StatusDebuff debuff, CombatStats attacker, bool always = false)
         {
             if (debuff == StatusDebuff.None || target == null) return false;
 
             var health = target.GetComponentInParent<HealthSystem>();
             if (health == null || health.IsDead) return false;
-            if (Random.value >= Chance(health.GetComponent<CombatStats>())) return false;
+            if (!always && Random.value >= Chance(health.GetComponent<CombatStats>())) return false;
 
             var effects = health.GetComponent<StatusEffects>();
             if (effects == null) effects = health.gameObject.AddComponent<StatusEffects>();
