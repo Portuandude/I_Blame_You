@@ -8,7 +8,7 @@ namespace IBlameYou.Player
     // 각 클라이언트가 자기 역할의 입력만 서버로 보내도록 이 클래스만 바꾸면 된다.
     //
     // 플레이어 A (이동·방어)                  플레이어 B (공격)
-    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 영창
+    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 영창 (누르고 있으면 다이얼)
     //   Shift 달리기, Left Ctrl 대쉬             상단 1~5: 공격 스킬 선택 → 영창 타이핑 → Enter
     //   W/A/S/D + Enter: 순간이동 (2026-11-12 방향키에서 바꿈)
     //   W(또는 ↑): 마을 건물 앞에서 들어가기
@@ -124,7 +124,7 @@ namespace IBlameYou.Player
 
         // ---- 플레이어 B ----
 
-        public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && Input.GetMouseButtonDown(0);
+        public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && !Dial.IsOpen && Time.frameCount != dialCancelFrame && Input.GetMouseButtonDown(0);
 
         public static Vector2 AimWorldPoint(Vector2 fallback)
         {
@@ -137,26 +137,75 @@ namespace IBlameYou.Player
 
         // P2가 마우스만으로 공격 스킬을 쓰는 길 (2026-11-15 2인 점검): 한 키보드에서 숫자줄 1~4는 P1 왼손(W/A/S/D) 바로 위라 두 사람 손이 겹친다.
         // 휠로 속성을 고르고(불 → 물 → 바람 → 땅 → 불) 우클릭하면 그 스킬의 영창이 열린다. 숫자줄 1~4도 그대로 된다.
+        // 2026-11-15 사람 결정: 우클릭을 누르고 있으면 2단계 원형 다이얼(속성 → 그 속성의 배운 마법)이 펼쳐지고, 떼면 고른 마법의 영창 (SpellDialRules).
+        //   짧게 톡 누르면 예전처럼 지금 고른 마법. 다이얼이 열린 동안 게임은 멈추지 않는다. 좌클릭은 다이얼 취소 (평타는 안 나감).
+        // 휠·숫자줄·다이얼은 같은 상태(MouseSpellIndex + 속성별 마지막 마법 칸)를 쓴다.
         // 영창 타이핑은 여전히 키보드라, 그때는 P2가 키보드를 잡는다 (P1 키는 막힘).
-        public const int MouseSpellCount = 4; // 불·물·바람·땅 (무속성은 평타)
+        public const int MouseSpellCount = SpellDialRules.ElementCount; // 불·물·바람·땅 (무속성은 평타)
         public static int MouseSpellIndex { get; private set; }
         public static Element MouseSpell => (Element)MouseSpellIndex;
+        public static SpellDialState Dial { get; } = new SpellDialState();
+        private static readonly int[] SpellSlotOf = new int[MouseSpellCount]; // 속성별 마지막으로 고른 마법 칸
+        private static readonly int[] DialCounts = new int[MouseSpellCount];
 
-        public static bool SpellDown(PlayerControlState state, out Element element)
+        public static int SelectedSlot(Element element)
+        {
+            int e = (int)element;
+            return e >= 0 && e < MouseSpellCount ? SpellSlotOf[e] : 0;
+        }
+
+        private static int dialCancelFrame = -1;
+
+        public static void CloseSpellDial() => Dial.Cancel();
+
+        public static bool SpellDown(PlayerControlState state, out Element element, out int slot)
         {
             element = Element.Neutral;
-            if (BBlocked || state.Locked || state.ChantActive) return false;
+            slot = 0;
+            if (BBlocked || state.Locked || state.ChantActive)
+            {
+                Dial.Cancel();
+                return false;
+            }
             if (GameSession.DevMode) return GetIndexedKeyDown(TopRowLastFive, out element);
+
             float wheel = Input.mouseScrollDelta.y;
+            Vector2 mouse = Input.mousePosition;
+            if (Dial.IsOpen)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    Dial.Cancel();
+                    dialCancelFrame = Time.frameCount; // 같은 프레임에 PlayerCombat이 나중에 돌아도 평타가 나가지 않게
+                    return false;
+                }
+                Dial.Update(mouse.x, mouse.y, wheel, Time.unscaledTime);
+                if (Input.GetMouseButton(1)) return false;
+                if (!Dial.Release(out int e, out int s)) return false;
+                MouseSpellIndex = e;
+                SpellSlotOf[e] = s;
+                if (state.ShieldMinigameActive && GameSession.SharedKeyboard) return false;
+                element = (Element)e;
+                slot = s;
+                return true;
+            }
+
             if (wheel != 0f) // 휠 위로 = 다음 속성. 한 프레임에 한 칸만
-                MouseSpellIndex = (MouseSpellIndex + (wheel > 0f ? 1 : MouseSpellCount - 1)) % MouseSpellCount;
+                MouseSpellIndex = SpellDialRules.Step(MouseSpellIndex, MouseSpellCount, wheel);
             if (state.ShieldMinigameActive && GameSession.SharedKeyboard) return false;
             if (Input.GetMouseButtonDown(1))
             {
-                element = MouseSpell;
-                return true;
+                for (int i = 0; i < MouseSpellCount; i++) DialCounts[i] = SpellBook.LearnedCount((Element)i);
+                Dial.Open(mouse.x, mouse.y, MouseSpellIndex, DialCounts, SpellSlotOf, Time.unscaledTime);
+                return false;
             }
-            return GetIndexedKeyDown(TopRowFirstFive, out element);
+            if (!GetIndexedKeyDown(TopRowFirstFive, out element)) return false;
+            if ((int)element < MouseSpellCount)
+            {
+                MouseSpellIndex = (int)element; // 숫자줄로 고른 속성도 휠·다이얼과 같은 상태로
+                slot = SpellSlotOf[(int)element];
+            }
+            return true;
         }
 
         private static bool GetIndexedKeyDown(KeyCode[] keys, out Element element)

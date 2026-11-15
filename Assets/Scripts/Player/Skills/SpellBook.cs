@@ -65,5 +65,36 @@ namespace IBlameYou.Player
 
         // 영창으로 쓰는 공격 스킬. 무속성은 없다(null).
         public static SpellDefinition Get(Element element) => Spells[(int)element];
+
+        // 속성별 배운 마법 (P2 마법 다이얼의 2단계, SpellDialRules). 칸 0은 처음부터 아는 기본 마법(위 표),
+        // 그 뒤는 도시 아카데미에서 배우는 새 마법이 Learn으로 붙는다 (CityDesign.md 5절, 도시 4단계에서 연결).
+        private static readonly System.Collections.Generic.List<SpellDefinition>[] Extra =
+        {
+            new System.Collections.Generic.List<SpellDefinition>(), new System.Collections.Generic.List<SpellDefinition>(),
+            new System.Collections.Generic.List<SpellDefinition>(), new System.Collections.Generic.List<SpellDefinition>(),
+        };
+
+        public static int LearnedCount(Element element)
+        {
+            int e = (int)element;
+            if (e < 0 || e >= Extra.Length || Spells[e] == null) return 0;
+            return 1 + Extra[e].Count;
+        }
+
+        // 속성의 slot번째 배운 마법. 범위 밖이면 기본 마법.
+        public static SpellDefinition Get(Element element, int slot)
+        {
+            int e = (int)element;
+            if (e < 0 || e >= Extra.Length) return Get(element);
+            if (slot <= 0 || slot > Extra[e].Count) return Spells[e];
+            return Extra[e][slot - 1];
+        }
+
+        public static void Learn(SpellDefinition spell)
+        {
+            int e = (int)spell.Element;
+            if (e < 0 || e >= Extra.Length || Extra[e].Contains(spell)) return;
+            Extra[e].Add(spell);
+        }
     }
 }

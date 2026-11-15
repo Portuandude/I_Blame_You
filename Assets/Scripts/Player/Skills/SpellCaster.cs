@@ -5,7 +5,7 @@ using UnityEngine;
 namespace IBlameYou.Player
 {
     // 플레이어 B의 공격 스킬 (기획서 2.5).
-    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, RoleInput.MouseSpell)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
+    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, 우클릭을 누르고 있으면 속성 → 마법 2단계 다이얼, RoleInput.Dial)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
     // 오타가 있는 채로 Enter를 누르면 마나만 날아간다. Esc는 마나 소모 없이 취소.
     // 개발자 모드에서는 상단 6~9·0으로 영창 없이 바로 발동한다.
     // 영창 입력창 자체는 UI(SkillHUD)가 그리고, 입력이 끝나면 SubmitChant/CancelChant를 부른다.
@@ -41,6 +41,7 @@ namespace IBlameYou.Player
         {
             if (health.IsDead)
             {
+                RoleInput.CloseSpellDial();
                 if (ChantOpen) CloseChant();
                 return;
             }
@@ -51,10 +52,14 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (WindingUp) return;
-            if (!RoleInput.SpellDown(control, out var element)) return;
+            if (WindingUp)
+            {
+                RoleInput.CloseSpellDial();
+                return;
+            }
+            if (!RoleInput.SpellDown(control, out var element, out int slot)) return;
 
-            var spell = SpellBook.Get(element);
+            var spell = SpellBook.Get(element, slot);
             if (spell == null)
             {
                 SkillMessages.Post(ManaUser.PlayerB, "무속성 마력탄은 평타(좌클릭)로 바뀌었어요", true);
