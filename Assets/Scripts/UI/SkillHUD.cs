@@ -315,6 +315,12 @@ namespace IBlameYou.UI
             string shieldText = shield != null && shield.Active
                 ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
                 : "방어막: 없음";
+            if (caster != null && caster.TailwindActive) // 순풍 (아카데미 바람 마법): 남은 초, 끝나기 1초 전 깜빡임
+            {
+                float left = caster.TailwindRemaining;
+                bool blinkOff = left < 1f && Mathf.Repeat(Time.time * 6f, 1f) < 0.5f;
+                if (!blinkOff) shieldText += $"   <color=#8cffb3>순풍 {left:0.0}초</color>";
+            }
             GUILayout.Label(shieldText, label);
             string mode = GameSession.DevMode ? "<color=#ffd84d>개발자 모드</color>" : "일반 모드 (로컬)";
             if (cheats != null && cheats.GodMode) mode += "  <color=#ffd84d>무적</color>";
