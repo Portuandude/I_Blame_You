@@ -398,7 +398,7 @@ namespace IBlameYou.UI
             GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, sharedKeyboard ? 172f : 150f), GUIContent.none, panel);
             GUI.Label(new Rect(x, y - 58f, width, 30f),
                 $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
-            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
+            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(caster.PendingChant ?? spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
 
             var field = new Rect(x, y + 8f, width, 40f);
             if (mistake) // 틀린 글자가 있으면 입력 칸 둘레를 berry로 (Enter 누르기 전에 알아채게)
