@@ -109,7 +109,7 @@ namespace IBlameYou.Player
             new SpellDefinition { Id = "IceShackle", Element = Element.Water, Name = "얼음 족쇄", ManaCost = 20f, Chant = "얼음이여, 묶어라!",
                 Shape = SpellShape.Projectile, Speed = 9f, Radius = 0.35f, Range = 13f, DamageMultiplier = 0.4f,
                 HomingTurnRate = 220f, Debuff = StatusDebuff.Wet, DebuffAlways = true, DustCost = 60,
-                Description = "맞은 적을 반드시 젖게 해 3초 동안 40% 느리게 (피해는 약함)" },
+                Description = "맞은 적을 반드시 젖게 해 3초 동안 40% 느리게 (정예·보스는 20%, 피해는 약함)" },
             new SpellDefinition { Id = "StoneLance", Element = Element.Earth, Name = "바위 창", ManaCost = 30f, Chant = "대지여, 창이 되어 꿰뚫어라!",
                 Shape = SpellShape.GroundSpike, Radius = 0.8f, Range = 12f, DamageMultiplier = 1.75f,
                 Windup = 0.6f, CastDelay = 0.6f, Debuff = StatusDebuff.Stun, DustCost = 60,

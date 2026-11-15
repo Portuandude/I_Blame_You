@@ -236,7 +236,10 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
                 ScreenFlash.Pulse();
                 GameAudio.PlaySfx($"Hit_{spell.Element}");
-                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways);
+                // 얼음 족쇄(반드시 거는 젖음): 정예·중간보스·보스는 둔화 20%, 일반 몹 40% (ShackleRules)
+                bool shackle = spell.DebuffAlways && spell.Debuff == StatusDebuff.Wet;
+                float wetSlow = shackle ? ShackleRules.Slow(IsStrong(target)) : StatusEffects.WetSlow;
+                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
             };
             projectile.Impact = point =>
             {
@@ -334,6 +337,13 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
                 if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
             }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight);
+        }
+
+        // 정예·중간보스·보스인지 (골드 표와 같은 등급, RunGold.RankOf)
+        private static bool IsStrong(HealthSystem target)
+        {
+            var enemy = target != null ? target.GetComponent<IBlameYou.Enemies.EnemyController>() : null;
+            return enemy != null && RunGold.RankOf(enemy) != EnemyRank.Normal;
         }
 
         // 적중 이펙트를 띄울 자리: 맞은 대상 몸통의 가운데.
