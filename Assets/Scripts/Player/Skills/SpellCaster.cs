@@ -205,7 +205,7 @@ namespace IBlameYou.Player
                 EffectLibrary.PlayHit(spell.Element, HitPoint(target));
                 ScreenFlash.Pulse();
                 GameAudio.PlaySfx($"Hit_{spell.Element}");
-                StatusEffects.TryApply(target, spell.Debuff, stats);
+                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways);
             };
             projectile.Impact = point =>
             {

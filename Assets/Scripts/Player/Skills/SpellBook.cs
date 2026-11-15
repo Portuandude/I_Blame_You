@@ -24,6 +24,11 @@ namespace IBlameYou.Player
         public float Windup;              // 바위 가시: 시전 후 예고가 생기기까지의 선딜 (그동안 다른 공격 스킬 불가)
         public float CastDelay;           // 바위 가시: 예고가 생긴 뒤 솟아오르기까지의 시간
         public StatusDebuff Debuff;       // 맞은 적에게 거는 디버프 (확률은 StatusEffects.Chance)
+        public bool DebuffAlways;         // 확률 판정 없이 반드시 건다 (얼음 족쇄)
+        // 아카데미에서 배우는 마법만 (Docs/CityDesign.md 5절): 저장 키·가루·설명
+        public string Id;
+        public int DustCost;
+        public string Description;
     }
 
     // 플레이어 B의 공격 스킬 목록 (기획서 2.5). 영창문은 "불꽃이여, 작렬하라!"만 확정 예시이고 나머지는 가안.
@@ -88,6 +93,32 @@ namespace IBlameYou.Player
             if (e < 0 || e >= Extra.Length) return Get(element);
             if (slot <= 0 || slot > Extra[e].Count) return Spells[e];
             return Extra[e][slot - 1];
+        }
+
+        // 아카데미 마법 (도시 4단계, 2026-11-15 사람 결정 속성마다 2개 — 불 범위·물 디버프·바람 마법 속도·대지 데미지).
+        // 지금은 있는 모양(투사체·바위 가시)으로 만들 수 있는 것부터: 얼음 족쇄·바위 창. 나머지 6개는 새 모양이 필요해 다음 작업.
+        public static readonly SpellDefinition[] Academy =
+        {
+            new SpellDefinition { Id = "IceShackle", Element = Element.Water, Name = "얼음 족쇄", ManaCost = 20f, Chant = "얼음이여, 묶어라!",
+                Shape = SpellShape.Projectile, Speed = 9f, Radius = 0.35f, Range = 13f, DamageMultiplier = 0.4f,
+                HomingTurnRate = 220f, Debuff = StatusDebuff.Wet, DebuffAlways = true, DustCost = 60,
+                Description = "맞은 적을 반드시 젖게 해 3초 동안 40% 느리게 (피해는 약함)" },
+            new SpellDefinition { Id = "StoneLance", Element = Element.Earth, Name = "바위 창", ManaCost = 30f, Chant = "대지여, 창이 되어 꿰뚫어라!",
+                Shape = SpellShape.GroundSpike, Radius = 0.8f, Range = 12f, DamageMultiplier = 1.75f,
+                Windup = 0.6f, CastDelay = 0.6f, Debuff = StatusDebuff.Stun, DustCost = 60,
+                Description = "좁은 자리에 큰 창 하나: 바위 가시의 2.5배 피해 (선딜이 조금 더 김)" },
+        };
+
+        public static bool IsLearned(SpellDefinition spell)
+        {
+            int e = (int)spell.Element;
+            return e >= 0 && e < Extra.Length && Extra[e].Contains(spell);
+        }
+
+        // 판을 새로 만들 때 배운 마법을 비우고 저장에서 다시 채운다 (PlaytestBootstrap).
+        public static void ResetLearned()
+        {
+            foreach (var list in Extra) list.Clear();
         }
 
         public static void Learn(SpellDefinition spell)
