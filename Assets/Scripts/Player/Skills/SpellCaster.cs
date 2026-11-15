@@ -28,6 +28,9 @@ namespace IBlameYou.Player
         public float TailwindRemaining => Mathf.Max(0f, tailwindUntil - Time.time);
         public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
+        // 운석처럼 선딜이 있는 커서 자리 마법: 영창을 마친 순간의 자리를 묶어 둔다 (선딜 중 커서를 옮겨도 그 자리에 떨어짐, 미리보기도 그 자리)
+        public SpellDefinition WindupSpell { get; private set; }
+        public Vector2 WindupLanding { get; private set; }
         public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (영창 일치·개발자 모드 즉시 발동). 응원 리본 유물
         private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
@@ -164,6 +167,12 @@ namespace IBlameYou.Player
             if (spell.Shape == SpellShape.GroundSpike)
             {
                 // 선딜: 시전 동작 뒤 Windup초가 지나야 가시가 예고된다. 그동안 다른 공격 스킬은 못 쓴다.
+                if (spell.AtCursor)
+                {
+                    WindupSpell = spell;
+                    WindupLanding = CursorLanding(spell);
+                }
+                else WindupSpell = null;
                 StartCoroutine(GroundSpikeAfterWindup(spell, facing));
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 시전 중...");
                 return;
@@ -211,9 +220,12 @@ namespace IBlameYou.Player
             if (charge != null) Destroy(charge.gameObject);
             charge = null;
             WindingUp = false;
+            bool locked = WindupSpell == spell;
+            Vector2 landing = WindupLanding;
+            WindupSpell = null;
             if (health.IsDead) yield break;
 
-            SpawnGroundSpike(spell, facing);
+            SpawnGroundSpike(spell, facing, locked ? landing : (Vector2?)null);
             SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
         }
 
@@ -248,7 +260,7 @@ namespace IBlameYou.Player
             };
         }
 
-        private void SpawnGroundSpike(SpellDefinition spell, float facing)
+        private void SpawnGroundSpike(SpellDefinition spell, float facing, Vector2? lockedLanding = null)
         {
             // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
@@ -258,7 +270,7 @@ namespace IBlameYou.Player
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
             Vector2 point;
-            if (spell.AtCursor) point = CursorLanding(spell);
+            if (spell.AtCursor) point = lockedLanding ?? CursorLanding(spell);
             else
             {
                 var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
@@ -379,6 +391,7 @@ namespace IBlameYou.Player
         private void OnDisable()
         {
             WindingUp = false;
+            WindupSpell = null;
             if (charge != null) Destroy(charge.gameObject);
             if (ChantOpen) CloseChant();
         }

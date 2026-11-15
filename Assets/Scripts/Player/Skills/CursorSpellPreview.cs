@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.Player
 {
-    // 커서 자리 마법(불꽃 비·물안개·운석)을 영창하는 동안 떨어질 자리에 범위 테두리를 그린다.
+    // 커서 자리 마법(불꽃 비·물안개·운석)을 영창하는 동안(운석은 선딜 동안에도) 떨어질 자리에 범위 테두리를 그린다.
     // 자리는 SpellCaster.CursorLanding과 같은 계산 (사거리 밖이면 사거리 끝으로 줄인 자리, 불꽃 비·운석은 땅에 붙음).
     // 모양은 실제 판정과 같다: 물안개 = 원(MistZone), 불꽃 비 = 땅 위 상자(FireWall), 운석 = 땅 위 낮은 상자(GroundSpike).
     [RequireComponent(typeof(SpellCaster))]
@@ -37,14 +37,16 @@ namespace IBlameYou.Player
 
         private void LateUpdate()
         {
-            var spell = caster.ChantOpen ? caster.PendingSpell : null;
+            // 영창 중에는 커서를 따라가고, 운석 선딜 중에는 영창을 마친 순간 묶인 자리에 그대로 둔다
+            bool windup = caster.WindingUp && caster.WindupSpell != null;
+            var spell = windup ? caster.WindupSpell : caster.ChantOpen ? caster.PendingSpell : null;
             if (spell == null || !spell.AtCursor)
             {
                 if (line.enabled) line.enabled = false;
                 return;
             }
 
-            Vector2 point = caster.CursorLanding(spell);
+            Vector2 point = windup ? caster.WindupLanding : caster.CursorLanding(spell);
             if (spell.Shape == SpellShape.Mist) SetCircle(point, spell.Radius);
             else
             {
