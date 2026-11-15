@@ -25,7 +25,7 @@
 - TODO (사람 확인 필요 — 플레이테스트): 아카데미 8개 마법 수치(피해·마나·가루)와 커서 자리 마법(불꽃 비·물안개·운석)이 P2에게 편한지. 얼음 족쇄 정예·보스 20% 둔화는 지금 젖음과 같은 40%
 - DONE (claude/project-thread-12xw4m, 2026-11-15 자동 실행이 추가 — 도시 5단계 메뉴판): 도시 말풍선 한마디(처음 방문 선생님 세 줄·판 뒤 탑지기)·수정 탑 금 메우기 그림
 - DONE (claude/project-thread-12xw4m, 상태 창 방어막 줄 끝 "순풍 N초"): (2026-11-15 자동 실행이 추가 — 새 마법 다듬기) 순풍 버프 HUD 표시 — B 상태 줄에 바람 아이콘 + 남은 초 (`SpellCaster.TailwindRemaining`), 끝나기 1초 전 깜빡임
-- TODO (같은 묶음): 다이얼 칸에 마나 비용 작게 + 지금 마나로 못 쓰는 마법 칸은 흐리게 (`SkillHUD.SpellDial.cs`, `ManaSystem.TotalCostMultiplier`)
+- DONE (claude/project-thread-12xw4m): 다이얼 칸에 마나 비용 작게 + 지금 마나로 못 쓰는 마법 칸은 흐리게 (`SkillHUD.SpellDial.cs`, `ManaSystem.TotalCostMultiplier`)
 - TODO (같은 묶음): 커서 자리 마법(불꽃 비·물안개·운석) 영창 중 커서 자리에 범위 미리보기 원 (사거리 밖이면 줄인 자리)
 - TODO (같은 묶음): 얼음 족쇄 정예·보스는 둔화 20% (`StatusEffects` 젖음 세기를 대상 등급별로, EnemyRank)
 - DONE (claude/project-thread-12xw4m): 개발자 모드 도시 메뉴에서 F1 = 마음 가루 +100 (수정 탑·아카데미 시험용, 개발자 모드 저장에만)
