@@ -35,6 +35,7 @@ namespace IBlameYou.Core
         private int towerSelection;   // 0~3 항목 · 4 돌아가기
         private float towerFlashAt = -10f; // 바친 순간 (창 반짝)
         private int towerFlashRow = -1;
+        private Vector2 academyScroll; // 마법 8개가 창에 다 안 들어가서 줄 목록은 스크롤 (리뷰 LOW)
         private bool academyOpen;     // 아카데미 창 (도시 4단계). 칸 고르기는 towerSelection을 같이 쓴다
         private bool SubOpen => towerOpen || academyOpen;
         private int SubSlotCount => towerOpen ? CrystalTowerRule.StatCount + 1 : SpellBook.Academy.Length + 1;
@@ -77,7 +78,7 @@ namespace IBlameYou.Core
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
             const float width = 560f;
-            float height = Mathf.Min(520f, Screen.height - 20f);
+            float height = Mathf.Min(academyOpen ? 640f : 520f, Screen.height - 20f);
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
             var screenMatrix = GUI.matrix;
@@ -250,6 +251,10 @@ namespace IBlameYou.Core
         {
             var left = new GUIStyle(body) { alignment = TextAnchor.MiddleLeft };
             var note = new GUIStyle(small) { alignment = TextAnchor.UpperLeft };
+            const float rowHeight = 62f;
+            if (keyboardUsed && Event.current.type == EventType.Layout && towerSelection < SpellBook.Academy.Length) // 키보드로 고른 줄이 보이게
+                academyScroll.y = Mathf.Clamp(academyScroll.y, (towerSelection + 1) * rowHeight - 300f, towerSelection * rowHeight);
+            academyScroll = GUILayout.BeginScrollView(academyScroll, GUILayout.Height(Mathf.Max(140f, Mathf.Min(Screen.height - 20f, 640f) - 300f)));
             for (int i = 0; i < SpellBook.Academy.Length; i++)
             {
                 var spell = SpellBook.Academy[i];
@@ -272,7 +277,8 @@ namespace IBlameYou.Core
                 GUILayout.Space(6f);
                 if (buy || pressed == i) LearnSpell(spell, i, dev);
             }
-            GUILayout.Label("배운 마법은 P2 우클릭 다이얼에서 그 속성을 고르면 나온다 (나머지 마법은 곧).", small);
+            GUILayout.EndScrollView();
+            GUILayout.Label("배운 마법은 P2 우클릭 다이얼에서 그 속성을 고르면 나온다.", small);
             GUILayout.Space(6f);
             bool back = CuteButton.LayoutButton("돌아가기 (Esc)", button, GUILayout.Height(40f));
             if (keyboardUsed && towerSelection == SpellBook.Academy.Length) CuteButton.DrawSelection(GUILayoutUtility.GetLastRect());
