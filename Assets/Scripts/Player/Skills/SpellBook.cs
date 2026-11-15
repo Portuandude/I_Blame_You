@@ -126,7 +126,7 @@ namespace IBlameYou.Player
                 Debuff = StatusDebuff.Burn, DustCost = 90,
                 Description = "커서 둘레 넓은 자리(8칸)에 1.5초 불똥: 안의 적 모두 0.4초마다 데고 처음 맞으면 화상" },
             new SpellDefinition { Id = "WaterMist", Element = Element.Water, Name = "물안개", ManaCost = 30f, Chant = "물이여, 안개로 감싸라!",
-                Shape = SpellShape.Mist, AtCursor = true, Radius = 3f, Duration = 5f, DustCost = 90,
+                Shape = SpellShape.Mist, AtCursor = true, Radius = 3f, Range = 14f, Duration = 5f, DustCost = 90,
                 Description = "커서 자리에 5초 안개: 안의 적은 주는 피해 -30%, 받는 피해 +15%" },
             new SpellDefinition { Id = "GaleBlades", Element = Element.Wind, Name = "칼바람", ManaCost = 25f, Chant = "베어라!",
                 Shape = SpellShape.Projectile, Volley = 3, Speed = 24f, Radius = 0.35f, Range = 16f, DamageMultiplier = 0.45f,

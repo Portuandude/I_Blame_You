@@ -148,7 +148,7 @@ namespace IBlameYou.Player
             if (spell.Shape == SpellShape.Mist)
             {
                 var mist = new GameObject("Spell_Mist");
-                mist.transform.position = CursorPoint(spell.Range);
+                mist.transform.position = CursorLanding(spell);
                 mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
                 return;
@@ -254,8 +254,13 @@ namespace IBlameYou.Player
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
-            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
-            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            Vector2 point;
+            if (spell.AtCursor) point = CursorLanding(spell);
+            else
+            {
+                var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 30f, groundMask);
+                point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            }
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Earth); // 봉인문 앞이면 문이 튕겨내며 번쩍임
 
@@ -291,6 +296,20 @@ namespace IBlameYou.Player
             return aim;
         }
 
+        // 커서 자리 마법이 실제로 놓일 자리. 발동과 영창 중 미리보기(CursorSpellPreview)가 같은 계산을 쓴다.
+        // 물안개는 커서 자리 그대로, 불꽃 비는 아래 12칸 안 땅 (없으면 커서 1칸 아래), 운석은 아래 30칸 안 땅 (없으면 캐릭터 발 높이).
+        public Vector2 CursorLanding(SpellDefinition spell)
+        {
+            Vector2 aim = CursorPoint(spell.Range);
+            if (spell.Shape == SpellShape.Mist) return aim;
+            int groundLayer = LayerMask.NameToLayer("Ground");
+            LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            bool rain = spell.Shape == SpellShape.FireWall;
+            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, rain ? 12f : 30f, groundMask);
+            if (hit.collider != null) return hit.point;
+            return rain ? new Vector2(aim.x, aim.y - 1f) : new Vector2(aim.x, transform.position.y - 0.6f);
+        }
+
         // 불꽃 장막: 바라보는 쪽 바로 앞 땅 위에 불벽 (가장 가까운 끝이 캐릭터 0.5칸 앞).
         private void SpawnFireWall(SpellDefinition spell, float facing)
         {
@@ -298,8 +317,13 @@ namespace IBlameYou.Player
             Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
-            var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, spell.AtCursor ? 12f : 6f, groundMask);
-            Vector2 point = hit.collider != null ? hit.point : new Vector2(aim.x, spell.AtCursor ? aim.y - 1f : self.y - 0.6f);
+            Vector2 point;
+            if (spell.AtCursor) point = CursorLanding(spell);
+            else
+            {
+                var hit = Physics2D.Raycast(aim + Vector2.up * 0.5f, Vector2.down, 6f, groundMask);
+                point = hit.collider != null ? hit.point : new Vector2(aim.x, self.y - 0.6f);
+            }
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Fire);
 
