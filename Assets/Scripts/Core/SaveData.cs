@@ -18,6 +18,7 @@ namespace IBlameYou.Core
         private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
         private const string KeyHeartDust = "City.HeartDust";     // 마음 가루 누적 (도시 화폐, Docs/CityDesign.md)
+        private const string KeySpell = "City.Spell.";           // 아카데미에서 배운 마법 (뒤에 SpellDefinition.Id, 모드별)
         private const string KeyTower = "City.Tower.";           // 수정 탑 항목별 단계 (뒤에 TowerStat 이름, 모드별)
 
         private static bool settingsLoaded;
@@ -59,6 +60,20 @@ namespace IBlameYou.Core
 
         // 마음 가루 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
         public static int HeartDust(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyHeartDust, devMode), 0);
+
+        // 아카데미에서 배운 마법 (Docs/CityDesign.md 5절). 판 시작 때 SpellBook.Learn으로 다이얼·숫자줄에 나온다.
+        public static bool SpellLearned(string id, bool devMode) => PlayerPrefs.GetInt(ModeKey(KeySpell + id, devMode), 0) != 0;
+
+        // 가루를 내고 배운다. 이미 배웠거나 가루가 모자라면 false.
+        public static bool LearnSpell(string id, int cost, bool devMode)
+        {
+            int dust = HeartDust(devMode);
+            if (SpellLearned(id, devMode) || cost <= 0 || dust < cost) return false;
+            PlayerPrefs.SetInt(ModeKey(KeyHeartDust, devMode), dust - cost);
+            PlayerPrefs.SetInt(ModeKey(KeySpell + id, devMode), 1);
+            PlayerPrefs.Save();
+            return true;
+        }
 
         // 수정 탑 단계 (0~5, CrystalTowerRule). 도시 메뉴에서 사고, 판 시작 때 플레이어에 더한다.
         public static int TowerLevel(TowerStat stat, bool devMode) =>

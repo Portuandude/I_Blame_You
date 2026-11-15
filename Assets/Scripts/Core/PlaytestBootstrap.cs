@@ -126,6 +126,7 @@ namespace IBlameYou.Core
             player = movement.gameObject;
             if (player.GetComponent<FallRecovery>() == null) player.AddComponent<FallRecovery>(); // 프리팹을 다시 굽기 전 대비
             if (player.GetComponent<PlayerProgression>() == null) player.AddComponent<PlayerProgression>();
+            ApplyLearnedSpells(featureTest);
             if (!featureTest) ApplyTowerBonuses(); // 수정 탑 영구 능력치 (기능 테스트 제외). 이어하기 체력 복원보다 먼저
             if (resume != null) RestorePlayer(resume, start); // HUD를 붙이기 전에 (특성 다시 찍기가 HUD 알림으로 쏟아지지 않게)
             streamer.SetPlayer(player.transform);
@@ -157,6 +158,14 @@ namespace IBlameYou.Core
             {
                 StageEvents.PostNotice($"스테이지 1 시작 (시드 {runSeed})");
             }
+        }
+
+        // 아카데미에서 배운 마법을 B의 마법 목록에 (SpellBook.Learn → 다이얼 2단계·숫자줄). 기능 테스트는 마법 다이얼을 시험하도록 모두 배운 채로.
+        private static void ApplyLearnedSpells(bool featureTest)
+        {
+            SpellBook.ResetLearned();
+            foreach (var spell in SpellBook.Academy)
+                if (featureTest || SaveData.SpellLearned(spell.Id, GameSession.DevMode)) SpellBook.Learn(spell);
         }
 
         // 수정 탑에서 산 영구 능력치를 새 플레이어에 더한다 (Docs/CityDesign.md 4절, CrystalTowerRule). 모드별 저장.
