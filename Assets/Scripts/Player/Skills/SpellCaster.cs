@@ -35,6 +35,7 @@ namespace IBlameYou.Player
             stats = GetComponent<CombatStats>();
             health = GetComponent<HealthSystem>();
             combat = GetComponent<PlayerCombat>();
+            RoleInput.CloseSpellDial(); // 다이얼 상태는 static이라 새 판·씬 다시 불러오기에 남지 않게 (리뷰 LOW)
         }
 
         private void Update()
