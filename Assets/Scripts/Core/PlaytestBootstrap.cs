@@ -43,9 +43,11 @@ namespace IBlameYou.Core
         }
 
         // 런 사이 도시 메뉴 (CityMenu): 출발 → 새 판, Esc → 시작 화면. 일반 판(개발자 모드 포함)만 거친다. 기능 테스트는 바로 시험 맵.
-        private void ShowCity()
+        private void ShowCity() => ShowCity(CityArrival.FromStart);
+
+        private void ShowCity(CityArrival arrival)
         {
-            gameObject.AddComponent<CityMenu>().Initialize(() => BuildWorld(null), () => Restart(true));
+            gameObject.AddComponent<CityMenu>().Initialize(() => BuildWorld(null), () => Restart(true), arrival);
         }
 
         private void ContinueWorld()
@@ -306,7 +308,7 @@ namespace IBlameYou.Core
             else if (!GameSession.FeatureTest)
             {
                 RunSave.Clear(); // 포기·끝난 판은 이어하기로 되살리지 않는다 (예전 다시 시작의 BuildWorld(null)와 같음, 리뷰 MEDIUM)
-                ShowCity(); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
+                ShowCity(CityArrival.AfterRun); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
             }
             else BuildWorld(null);
         }

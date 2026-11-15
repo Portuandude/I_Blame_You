@@ -40,10 +40,20 @@ namespace IBlameYou.Core
         private bool SubOpen => towerOpen || academyOpen;
         private int SubSlotCount => towerOpen ? CrystalTowerRule.StatCount + 1 : SpellBook.Academy.Length + 1;
 
-        public void Initialize(Action departCallback, Action backCallback)
+        private CityArrival arrival;
+        private int talkIndex;        // 처음 방문은 선생님 세 줄을 말풍선을 눌러 넘긴다
+        private int talkSeed;
+        private int lastScrollSelection = -1;
+        private int runDust;          // 방금 끝난 판에 얻은 가루 (말풍선 아래)
+
+        public void Initialize(Action departCallback, Action backCallback, CityArrival cameFrom = CityArrival.FromStart)
         {
             onDepart = departCallback;
             onBack = backCallback;
+            arrival = SaveData.CityVisited() ? cameFrom : CityArrival.FirstVisit;
+            SaveData.MarkCityVisited();
+            talkSeed = UnityEngine.Random.Range(0, 1000);
+            runDust = cameFrom == CityArrival.AfterRun ? RunStats.HeartDust : 0;
             GameAudio.PlayMusic("Menu");
         }
 
@@ -98,7 +108,7 @@ namespace IBlameYou.Core
             GUILayout.Space(10f);
             string mode = dev ? "개발자 모드" : "일반 모드";
             GUILayout.Label($"<color=#f0b8ff><b>마음 가루 {SaveData.HeartDust(dev)}</b></color>  <size=12>({mode})</size>", body);
-            if (!SubOpen) GUILayout.Label("괴물을 물리치고 퍼즐을 풀면 쌓인다. 쓰러져도 남는다.", small);
+            if (!SubOpen) DrawTalk();
             GUILayout.Space(14f);
 
             bool depart = false, back = false;
@@ -188,6 +198,49 @@ namespace IBlameYou.Core
             academyOpen = false;
         }
 
+        // 탑지기·선생님 한마디 말풍선 (CityTalkRule). 처음 방문은 눌러서 세 줄을 넘긴다.
+        private void DrawTalk()
+        {
+            string speaker = CityTalkRule.Speaker(arrival);
+            string line = arrival == CityArrival.FirstVisit ? CityTalkRule.Line(arrival, talkIndex) : CityTalkRule.Line(arrival, talkSeed);
+            bool more = arrival == CityArrival.FirstVisit && talkIndex < CityTalkRule.FirstVisitLines.Length - 1;
+            string text = $"<color=#ffd98a><b>{speaker}</b></color>  {line}{(more ? "  <size=11>▶ 누르기</size>" : "")}";
+            if (GUILayout.Button(text, small, GUILayout.MinHeight(36f)) && more) talkIndex++;
+            if (runDust > 0) GUILayout.Label($"<color=#f0b8ff>이번 판 마음 가루 +{runDust}</color>", small);
+        }
+
+        // 수정 탑 그림: 가운데 수정에 남은 금(20 - 산 단계)이 실금으로, 단계가 오를수록 빛이 밝아진다.
+        private void DrawCrystal(Rect rect, int totalLevels)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            var previous = GUI.color;
+            var matrix = GUI.matrix;
+            float glow = Mathf.Lerp(0.35f, 1f, totalLevels / 20f) * (0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 2.5f));
+            var center = rect.center;
+            GUI.color = new Color(0.75f, 0.6f, 1f, 0.25f * glow); // 둘레 빛
+            GUI.DrawTexture(new Rect(center.x - rect.width * 0.7f, center.y - rect.height * 0.55f, rect.width * 1.4f, rect.height * 1.1f), Texture2D.whiteTexture);
+            GUIUtility.ScaleAroundPivot(new Vector2(0.62f, 1f), center); // 세로로 긴 마름모
+            GUIUtility.RotateAroundPivot(45f, center);
+            float side = rect.height * 0.7f;
+            GUI.color = new Color(0.62f + 0.3f * glow, 0.55f + 0.3f * glow, 1f, 1f);
+            GUI.DrawTexture(new Rect(center.x - side / 2f, center.y - side / 2f, side, side), Texture2D.whiteTexture);
+            GUI.matrix = matrix;
+            int cracks = CityTalkRule.Cracks(totalLevels);
+            var random = new System.Random(77); // 금 자리는 늘 같게
+            GUI.color = new Color(0.25f, 0.15f, 0.4f, 0.85f);
+            for (int i = 0; i < 20; i++)
+            {
+                float x = center.x + ((float)random.NextDouble() - 0.5f) * rect.width * 0.5f;
+                float y = center.y + ((float)random.NextDouble() - 0.5f) * rect.height * 0.6f;
+                float angle = (float)random.NextDouble() * 180f;
+                if (i >= cracks) continue; // 메워진 금
+                GUIUtility.RotateAroundPivot(angle, new Vector2(x, y));
+                GUI.DrawTexture(new Rect(x - 6f, y - 0.75f, 12f, 1.5f), Texture2D.whiteTexture);
+                GUI.matrix = matrix;
+            }
+            GUI.color = previous;
+        }
+
         private static string TowerSummary(bool dev)
         {
             int total = 0;
@@ -197,6 +250,10 @@ namespace IBlameYou.Core
 
         private void DrawTower(int pressed, bool dev)
         {
+            int total = 0;
+            for (int i = 0; i < CrystalTowerRule.StatCount; i++) total += SaveData.TowerLevel((TowerStat)i, dev);
+            var crystalRow = GUILayoutUtility.GetRect(10f, 70f, GUILayout.ExpandWidth(true));
+            DrawCrystal(new Rect(crystalRow.center.x - 30f, crystalRow.y, 60f, 70f), total);
             for (int i = 0; i < CrystalTowerRule.StatCount; i++)
             {
                 var stat = (TowerStat)i;
@@ -252,9 +309,12 @@ namespace IBlameYou.Core
             var left = new GUIStyle(body) { alignment = TextAnchor.MiddleLeft };
             var note = new GUIStyle(small) { alignment = TextAnchor.UpperLeft };
             const float rowHeight = 62f;
-            if (keyboardUsed && Event.current.type == EventType.Layout && towerSelection < SpellBook.Academy.Length) // 키보드로 고른 줄이 보이게
-                academyScroll.y = Mathf.Clamp(academyScroll.y, (towerSelection + 1) * rowHeight - 300f, towerSelection * rowHeight);
-            academyScroll = GUILayout.BeginScrollView(academyScroll, GUILayout.Height(Mathf.Max(140f, Mathf.Min(Screen.height - 20f, 640f) - 300f)));
+            float viewHeight = Mathf.Max(140f, Mathf.Min(Screen.height - 20f, 640f) - 300f);
+            // 키보드로 고른 줄이 바뀔 때만 그 줄이 보이게 스크롤 (마우스 휠과 다투지 않게, 리뷰 LOW)
+            if (keyboardUsed && towerSelection != lastScrollSelection && towerSelection < SpellBook.Academy.Length)
+                academyScroll.y = Mathf.Clamp(academyScroll.y, (towerSelection + 1) * rowHeight - viewHeight, towerSelection * rowHeight);
+            lastScrollSelection = towerSelection;
+            academyScroll = GUILayout.BeginScrollView(academyScroll, GUILayout.Height(viewHeight));
             for (int i = 0; i < SpellBook.Academy.Length; i++)
             {
                 var spell = SpellBook.Academy[i];
