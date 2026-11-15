@@ -18,6 +18,7 @@ namespace IBlameYou.Core
         private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
         private const string KeyHeartDust = "City.HeartDust";     // 마음 가루 누적 (도시 화폐, Docs/CityDesign.md)
+        private const string KeyTower = "City.Tower.";           // 수정 탑 항목별 단계 (뒤에 TowerStat 이름, 모드별)
 
         private static bool settingsLoaded;
 
@@ -58,6 +59,22 @@ namespace IBlameYou.Core
 
         // 마음 가루 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
         public static int HeartDust(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyHeartDust, devMode), 0);
+
+        // 수정 탑 단계 (0~5, CrystalTowerRule). 도시 메뉴에서 사고, 판 시작 때 플레이어에 더한다.
+        public static int TowerLevel(TowerStat stat, bool devMode) =>
+            Mathf.Clamp(PlayerPrefs.GetInt(ModeKey(KeyTower + stat, devMode), 0), 0, CrystalTowerRule.MaxLevel);
+
+        // 가루를 내고 한 단계 올린다. 가루가 모자라거나 최대면 false (아무것도 안 바뀜).
+        public static bool BuyTowerLevel(TowerStat stat, bool devMode)
+        {
+            int level = TowerLevel(stat, devMode);
+            int dust = HeartDust(devMode);
+            if (!CrystalTowerRule.CanBuy(stat, level, dust)) return false;
+            PlayerPrefs.SetInt(ModeKey(KeyHeartDust, devMode), dust - CrystalTowerRule.Cost(stat, level));
+            PlayerPrefs.SetInt(ModeKey(KeyTower + stat, devMode), level + 1);
+            PlayerPrefs.Save();
+            return true;
+        }
 
         public static void AddHeartDust(int amount)
         {
