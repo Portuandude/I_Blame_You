@@ -43,7 +43,9 @@ namespace IBlameYou.UI
                 SpellDialRules.SlotOffset(i, SpellDialRules.ElementCount, SpellDialRules.Radius, out float ox, out float oy);
                 var at = elementCenter + new Vector2(ox, -oy); // GUI 좌표는 위가 0
                 bool active = i == dial.ElementSlot;
-                bool empty = dial.Count(i) == 0;
+                // 속성 칸이 지금 고를 마법(고른 칸이면 다이얼 상태, 아니면 그 속성에서 마지막으로 쓴 마법)을 못 쓸 마나면 흐리게
+                var pick = SpellBook.Get(element, i == dial.ElementSlot ? dial.SpellSlot : RoleInput.SelectedSlot(element));
+                bool empty = dial.Count(i) == 0 || !Affordable(pick);
                 string extra = dial.Count(i) > 1 ? $"\n<size=10>마법 {dial.Count(i)}</size>" : "";
                 DrawBubble(at, element, ElementInfo.KoreanName(element) + extra, active && !spellStage, empty, elementAlpha);
             }
@@ -52,7 +54,7 @@ namespace IBlameYou.UI
             {
                 var chosen = SpellBook.Get((Element)dial.ElementSlot, dial.SpellSlot);
                 if (chosen != null)
-                    DrawShadowed(new Rect(elementCenter.x - 80f, elementCenter.y - 11f, 160f, 22f), chosen.Name, dialName, ElementInfo.Color(chosen.Element));
+                    DrawShadowed(new Rect(elementCenter.x - 80f, elementCenter.y - 11f, 160f, 22f), $"{chosen.Name} <size=10>마나 {Cost(chosen):0}</size>", dialName, ElementInfo.Color(chosen.Element));
             }
             else
             {
@@ -66,7 +68,8 @@ namespace IBlameYou.UI
                 {
                     SpellDialRules.SlotOffset(i, count, radius, out float ox, out float oy);
                     var spell = SpellBook.Get(element, i);
-                    DrawBubble(center + new Vector2(ox, -oy), element, spell != null ? spell.Name : "?", i == dial.SpellSlot, false, 1f);
+                    string text = spell != null ? $"{spell.Name}\n<size=10>마나 {Cost(spell):0}</size>" : "?";
+                    DrawBubble(center + new Vector2(ox, -oy), element, text, i == dial.SpellSlot, !Affordable(spell), 1f);
                 }
                 var chosen = SpellBook.Get(element, dial.SpellSlot);
                 if (chosen != null)
@@ -91,6 +94,12 @@ namespace IBlameYou.UI
             dialName.richText = true;
             DrawShadowed(label, text, dialName, new Color(1f, 1f, 1f, (empty ? 0.5f : 1f) * alpha));
         }
+
+        // 지금 마나로 쓸 수 있는 마법인지 (장비 수식어 마나 배율 포함, 개발자 모드 무한 마나 치트면 늘 됨)
+        private float Cost(SpellDefinition spell) => spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f);
+
+        private bool Affordable(SpellDefinition spell) =>
+            spell != null && (mana == null || mana.Infinite || mana.Current >= Cost(spell));
 
         private static void DrawShadowed(Rect rect, string text, GUIStyle style, Color color)
         {
