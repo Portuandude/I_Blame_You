@@ -19,16 +19,7 @@ namespace IBlameYou.Core
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
         private const string KeyHeartDust = "City.HeartDust";     // 마음 가루 누적 (도시 화폐, Docs/CityDesign.md)
         private const string KeyCityVisited = "City.Visited";       // 도시에 한 번이라도 왔는지 (처음만 선생님 긴 설명, 모드 상관없음)
-        private const string KeySpell = "City.Spell.";           public static bool CityVisited() => PlayerPrefs.GetInt(KeyCityVisited, 0) != 0;
-
-        public static void MarkCityVisited()
-        {
-            if (CityVisited()) return;
-            PlayerPrefs.SetInt(KeyCityVisited, 1);
-            PlayerPrefs.Save();
-        }
-
-        // 아카데미에서 배운 마법 (뒤에 SpellDefinition.Id, 모드별)
+        private const string KeySpell = "City.Spell.";           // 아카데미에서 배운 마법 (뒤에 SpellDefinition.Id, 모드별)
         private const string KeyTower = "City.Tower.";           // 수정 탑 항목별 단계 (뒤에 TowerStat 이름, 모드별)
 
         private static bool settingsLoaded;
@@ -70,6 +61,15 @@ namespace IBlameYou.Core
 
         // 마음 가루 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
         public static int HeartDust(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyHeartDust, devMode), 0);
+
+        public static bool CityVisited() => PlayerPrefs.GetInt(KeyCityVisited, 0) != 0;
+
+        public static void MarkCityVisited()
+        {
+            if (CityVisited()) return;
+            PlayerPrefs.SetInt(KeyCityVisited, 1);
+            PlayerPrefs.Save();
+        }
 
         // 아카데미에서 배운 마법 (Docs/CityDesign.md 5절). 판 시작 때 SpellBook.Learn으로 다이얼·숫자줄에 나온다.
         public static bool SpellLearned(string id, bool devMode) => PlayerPrefs.GetInt(ModeKey(KeySpell + id, devMode), 0) != 0;
