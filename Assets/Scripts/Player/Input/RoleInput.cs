@@ -167,7 +167,8 @@ namespace IBlameYou.Player
                 Dial.Cancel();
                 return false;
             }
-            if (GameSession.DevMode) return GetIndexedKeyDown(TopRowLastFive, out element);
+            // 개발자 모드: 상단 6~9·0은 기본 마법 즉시. 우클릭 다이얼도 똑같이 쓴다 (아카데미에서 배운 마법을 고르는 길, 리뷰 MEDIUM)
+            if (GameSession.DevMode && GetIndexedKeyDown(TopRowLastFive, out element)) return true;
 
             float wheel = Input.mouseScrollDelta.y;
             Vector2 mouse = Input.mousePosition;
@@ -199,6 +200,7 @@ namespace IBlameYou.Player
                 Dial.Open(mouse.x, mouse.y, MouseSpellIndex, DialCounts, SpellSlotOf, Time.unscaledTime);
                 return false;
             }
+            if (GameSession.DevMode) return false; // 개발자 모드 상단 1~5는 A 방어막
             if (!GetIndexedKeyDown(TopRowFirstFive, out element)) return false;
             if ((int)element < MouseSpellCount)
             {

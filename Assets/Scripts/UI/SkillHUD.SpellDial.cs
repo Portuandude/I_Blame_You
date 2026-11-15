@@ -21,7 +21,7 @@ namespace IBlameYou.UI
         {
             var dial = RoleInput.Dial;
             if (!dial.IsOpen) return;
-            if (GameSession.DevMode || caster == null || control == null) return;
+            if (caster == null || control == null) return; // 개발자 모드도 다이얼을 쓴다 (배운 마법 고르기)
             if (caster.ChantOpen || caster.WindingUp || control.Locked || health.IsDead || deathHandled || stageCleared) return;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return;
             if (dialName == null)
