@@ -39,7 +39,13 @@ namespace IBlameYou.Core
         private void ShowMenu()
         {
             GameAudio.PlayMusic("Menu");
-            gameObject.AddComponent<StartMenu>().Initialize(() => BuildWorld(null), ContinueWorld);
+            gameObject.AddComponent<StartMenu>().Initialize(() => BuildWorld(null), ContinueWorld, ShowCity);
+        }
+
+        // 런 사이 도시 메뉴 (CityMenu): 출발 → 새 판, Esc → 시작 화면. 일반 판(개발자 모드 포함)만 거친다. 기능 테스트는 바로 시험 맵.
+        private void ShowCity()
+        {
+            gameObject.AddComponent<CityMenu>().Initialize(() => BuildWorld(null), () => Restart(true));
         }
 
         private void ContinueWorld()
@@ -272,6 +278,7 @@ namespace IBlameYou.Core
             }
 
             if (backToMenu) ShowMenu();
+            else if (!GameSession.FeatureTest) ShowCity(); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
             else BuildWorld(null);
         }
 

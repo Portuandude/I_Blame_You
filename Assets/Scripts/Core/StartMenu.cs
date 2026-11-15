@@ -13,6 +13,7 @@ namespace IBlameYou.Core
     {
         private Action onStart;
         private Action onContinue;
+        private Action onCity; // 일반 판 시작은 스토리 소개 뒤 도시 메뉴로 (CityMenu, 2026-11-15 도시 2단계). 없으면 바로 판
         private RunSave.Data saved; // 이어 할 수 있는 런 (없으면 null)
         private bool confirmNewRun;  // 저장이 있을 때 "새로 시작"은 한 번 더 눌러야 한다
         private bool devMode;
@@ -46,9 +47,10 @@ namespace IBlameYou.Core
         private Vector4[] fireflies;   // 반딧불마다 (가로 자리 0~1, 처음 높이 0~1, 오르는 속도, 깜빡임 위상)
         private const int FireflyCount = 26;
 
-        public void Initialize(Action startCallback, Action continueCallback = null)
+        public void Initialize(Action startCallback, Action continueCallback = null, Action cityCallback = null)
         {
             onStart = startCallback;
+            onCity = cityCallback;
             onContinue = continueCallback;
             saved = continueCallback != null ? RunSave.Load() : null;
             SaveData.LoadSettings();
@@ -247,10 +249,16 @@ namespace IBlameYou.Core
             }
             // 일반 판은 먼저 웹툰식 스토리 소개 (2026-11-14 사람 지시). 끝나거나 둘이 같이 건너뛰면 출발한다.
             var start = onStart;
+            var city = onCity;
             var intro = gameObject.AddComponent<StoryIntro>();
             Destroy(this);
             intro.Begin(() =>
             {
+                if (city != null)
+                {
+                    city(); // 도시 메뉴의 "출발"이 판을 시작한다
+                    return;
+                }
                 start?.Invoke();
                 GameAudio.PlaySfx("RunStart", 0.8f);
                 ScreenFlash.StartFade();
