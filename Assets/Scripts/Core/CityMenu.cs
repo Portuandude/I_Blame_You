@@ -107,7 +107,7 @@ namespace IBlameYou.Core
                 : "금이 간 수정 탑 아래 광장. 성문 밖에는 괴물이 다가오고 있다.", small);
             GUILayout.Space(10f);
             string mode = dev ? "개발자 모드" : "일반 모드";
-            GUILayout.Label($"<color=#f0b8ff><b>마음 가루 {SaveData.HeartDust(dev)}</b></color>  <size=12>({mode})</size>", body);
+            GUILayout.Label($"<color=#f0b8ff><b>마음 가루 {SaveData.HeartDust(dev)}</b></color>  <size=12>({mode}{(dev ? " · F1 +100" : "")})</size>", body);
             if (!SubOpen) DrawTalk();
             GUILayout.Space(14f);
 
@@ -140,6 +140,14 @@ namespace IBlameYou.Core
             if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
                 activateKeyHeld = false;
             if (e.type != EventType.KeyDown) return -1;
+            if (e.keyCode == KeyCode.F1 && GameSession.DevMode) // 개발자 모드 치트: 수정 탑·아카데미 시험용 가루 (개발자 모드 저장에만)
+            {
+                e.Use();
+                SaveData.AddHeartDust(100);
+                PlayerPrefs.Save();
+                GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
+                return -1;
+            }
             if (e.keyCode == KeyCode.Escape)
             {
                 e.Use();
