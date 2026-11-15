@@ -291,6 +291,7 @@ namespace IBlameYou.UI
             DrawChantInput();
             DrawHelp();
             DrawMouseSpellTag(); // P2 휠로 고른 공격 스킬을 커서 옆에 (SkillHUD.MouseSpell.cs)
+            DrawSpellDial(); // P2 우클릭을 누르고 있는 동안 속성 → 마법 2단계 다이얼 (SkillHUD.SpellDial.cs)
             DrawTraitWindow();
             DrawRelicWindow();
             DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)

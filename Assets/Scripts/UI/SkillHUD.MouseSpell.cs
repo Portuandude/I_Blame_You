@@ -17,8 +17,9 @@ namespace IBlameYou.UI
             if (caster.ChantOpen || control.Locked || health.IsDead || deathHandled || stageCleared) return;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return; // 창 위에는 안 띄운다
             if (RoleInput.Focus == ControlFocus.A) return; // 기능 테스트 A만 조작 중이면 B 표시는 뺀다
+            if (RoleInput.Dial.IsOpen) return; // 다이얼이 열리면 다이얼이 대신 보여 준다 (SkillHUD.SpellDial.cs)
 
-            var spell = SpellBook.Get(RoleInput.MouseSpell);
+            var spell = SpellBook.Get(RoleInput.MouseSpell, RoleInput.SelectedSlot(RoleInput.MouseSpell));
             if (spell == null) return;
             if (mouseSpellStyle == null)
                 mouseSpellStyle = new GUIStyle(small) { wordWrap = false, fontStyle = FontStyle.Bold };
