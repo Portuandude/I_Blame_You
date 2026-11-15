@@ -6,7 +6,9 @@ namespace IBlameYou.Player
     {
         Projectile,  // 유도 투사체, 첫 대상에 맞으면 사라짐
         Piercing,    // 유도 관통 투사체
-        GroundSpike  // 조준점에서 가장 가까운 적을 노려 발밑에서 솟아오름
+        GroundSpike, // 조준점에서 가장 가까운 적을 노려 발밑에서 솟아오름
+        FireWall,    // 앞 땅 위에 잠깐 서는 불벽 (불꽃 장막, FireWall.cs)
+        Tailwind     // B 자신에게 거는 버프: Duration초 동안 영창 문장이 짧아짐 (순풍, ChantRules)
     }
 
     public class SpellDefinition
@@ -24,6 +26,7 @@ namespace IBlameYou.Player
         public float Windup;              // 바위 가시: 시전 후 예고가 생기기까지의 선딜 (그동안 다른 공격 스킬 불가)
         public float CastDelay;           // 바위 가시: 예고가 생긴 뒤 솟아오르기까지의 시간
         public StatusDebuff Debuff;       // 맞은 적에게 거는 디버프 (확률은 StatusEffects.Chance)
+        public float Duration;            // 불벽이 서 있는 시간 / 순풍이 이어지는 시간
         public bool DebuffAlways;         // 확률 판정 없이 반드시 건다 (얼음 족쇄)
         // 아카데미에서 배우는 마법만 (Docs/CityDesign.md 5절): 저장 키·가루·설명
         public string Id;
@@ -96,7 +99,7 @@ namespace IBlameYou.Player
         }
 
         // 아카데미 마법 (도시 4단계, 2026-11-15 사람 결정 속성마다 2개 — 불 범위·물 디버프·바람 마법 속도·대지 데미지).
-        // 지금은 있는 모양(투사체·바위 가시)으로 만들 수 있는 것부터: 얼음 족쇄·바위 창. 나머지 6개는 새 모양이 필요해 다음 작업.
+        // 싼 것 4개(얼음 족쇄·바위 창·불꽃 장막·순풍)부터. 비싼 것 4개(불꽃 비·물안개·칼바람·운석)는 다음 작업.
         public static readonly SpellDefinition[] Academy =
         {
             new SpellDefinition { Id = "IceShackle", Element = Element.Water, Name = "얼음 족쇄", ManaCost = 20f, Chant = "얼음이여, 묶어라!",
@@ -107,6 +110,13 @@ namespace IBlameYou.Player
                 Shape = SpellShape.GroundSpike, Radius = 0.8f, Range = 12f, DamageMultiplier = 1.75f,
                 Windup = 0.6f, CastDelay = 0.6f, Debuff = StatusDebuff.Stun, DustCost = 60,
                 Description = "좁은 자리에 큰 창 하나: 바위 가시의 2.5배 피해 (선딜이 조금 더 김)" },
+            new SpellDefinition { Id = "FlameCurtain", Element = Element.Fire, Name = "불꽃 장막", ManaCost = 25f, Chant = "불꽃이여, 벽이 되어라!",
+                Shape = SpellShape.FireWall, Radius = 2.5f, Range = 6f, DamageMultiplier = 0.3f, Duration = 2f,
+                Debuff = StatusDebuff.Burn, DustCost = 60,
+                Description = "앞 5칸에 2초 동안 불벽: 안의 적 모두 0.4초마다 데고, 처음 닿으면 반드시 화상" },
+            new SpellDefinition { Id = "Tailwind", Element = Element.Wind, Name = "순풍", ManaCost = 15f, Chant = "바람이여, 등을 밀어라!",
+                Shape = SpellShape.Tailwind, Duration = 6f, DustCost = 60,
+                Description = "6초 동안 모든 영창 문장이 짧아진다 (\"불꽃이여, 작렬하라!\" → \"불꽃이여!\")" },
         };
 
         public static bool IsLearned(SpellDefinition spell)
