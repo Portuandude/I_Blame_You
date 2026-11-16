@@ -31,7 +31,10 @@ namespace IBlameYou.Enemies
                 recolor = ElementRecolor.Attach(renderer, "Enemies/SlimeGray", Color.white);
 
             go.GetComponent<SlimeController>().ShowsOwnHealthBar = false; // 화면 위 보스 체력바를 쓴다
-            go.AddComponent<PrismJelly>().Configure(recolor, renderer);
+            var jelly = go.AddComponent<PrismJelly>();
+            jelly.Configure(recolor, renderer);
+            // 등장 낙하 대역(BossEntrance)은 몸이 꺼지기 전 renderer.color를 베낀다: ElementRecolor.Tint는 LateUpdate에서야 칠해지므로 첫 색을 미리 칠해 둔다
+            if (renderer != null) renderer.color = ElementInfo.Color(jelly.CurrentColor);
             return go;
         }
     }

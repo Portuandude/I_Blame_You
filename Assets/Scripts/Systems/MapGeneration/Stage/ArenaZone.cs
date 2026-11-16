@@ -35,7 +35,7 @@ namespace IBlameYou.Systems
         private bool bossFight; // 보스·중간보스가 나오는 구역: 문이 닫히는 동안 보스 곡 (Resources/Audio/Music/Boss)
 
         private const string BossMusic = "Boss";
-        private const string MidBossMusic = "MidBoss"; // 중간보스(쌍둥이 슬라임 기사) 전용 곡: 두 목소리가 주고받는 짧은 반복 (Tools/AudioGen)
+        private const string MidBossMusic = "MidBoss"; // 중간보스(쌍둥이 슬라임 기사·프리즘 젤리) 전용 곡: 두 목소리가 주고받는 짧은 반복 (Tools/AudioGen)
         public const float LateMusicDepth = 0.5f; // 방 깊이(시작 방 거리 / 보스 거리)가 이만큼 넘으면(대개 중간보스 뒤) 후반 던전 곡 Dungeon2
 
         // 깊이에 맞는 스테이지 곡: 전반 Dungeon, 후반(보스까지 거리의 절반 이후) 더 빠르고 화려한 Dungeon2 (Tools/AudioGen).
