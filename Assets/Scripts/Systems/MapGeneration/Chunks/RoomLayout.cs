@@ -113,6 +113,9 @@ namespace IBlameYou.Systems
         public const int StartX = 2;                 // 시작 방: 가운데 열, y 1 또는 2
         // 방 구성 하한 (2026-11-14 사람 결정)
         public const int MinCombatRooms = 5;         // 일반 전투 방 (정예·중간보스·보스 제외)
+        // 좌우 일반 전투 방 (앞 구간에 기믹 지형이 붙는 방) 최소 수 (2026-11-16 기본안: 세로 전투 방만 이어지면 단조롭다).
+        // 5×4 나무 모양에서는 퍼즐·마을·중간보스·보스가 좌우 자리를 먼저 차지해 판마다 1개 안팎이었다. 못 맞추면 다른 배치로 다시 뽑는다.
+        public const int MinSideCombatRooms = 2;
         public const int MinPuzzleRooms = 2;         // 퍼즐 방 (몹 없음)
         public const int Villages = 1;               // 마을 1개 고정 (2026-11-14 23:30)
         public const int MinRewardRooms = 1;         // 막다른 보상 방 (보물 상자 / 회복 샘) (2026-11-14 23:37 다시 넣음)
@@ -474,12 +477,16 @@ namespace IBlameYou.Systems
             }
 
             // 나머지는 모두 전투 방. 좌우 방 일부(깊이 0.3+, 1/3, 최대 2개)는 정예. 일반 전투 방이 MinCombatRooms개에 못 미치면 정예를 덜 둔다.
+            // 좌우 일반 전투 방이 MinSideCombatRooms개 아래로 내려가게 하는 정예도 두지 않는다. 좌우 자리가 모자라면 다시 뽑는다.
             int spare = rest.Count - MinCombatRooms;
             if (spare < 0) return false;
+            int sideSpare = -MinSideCombatRooms;
+            foreach (var r in rest) if (!r.IsVertical) sideSpare++;
+            if (sideSpare < 0) return false;
             int elites = 0;
             foreach (var r in rest)
             {
-                bool elite = !r.IsVertical && elites < Math.Min(MaxElites, spare) && r.Difficulty >= 0.3f && rng.Next(3) == 0;
+                bool elite = !r.IsVertical && elites < Math.Min(MaxElites, Math.Min(spare, sideSpare)) && r.Difficulty >= 0.3f && rng.Next(3) == 0;
                 r.Kind = elite ? RoomKind.Elite : RoomKind.Combat;
                 r.Chunk = elite ? ChunkKind.EliteArena : ChunkKind.Arena;
                 if (elite) elites++;
