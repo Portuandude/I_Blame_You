@@ -403,7 +403,7 @@ namespace IBlameYou.Systems
         private static bool IsKing(Spawn spawn) => spawn.Kind == StageEnemy.SlimeKing;
 
         private static bool IsBoss(Spawn spawn) =>
-            spawn.Kind == StageEnemy.SlimeKing || spawn.Kind == StageEnemy.SlimeKnightFire || spawn.Kind == StageEnemy.SlimeKnightWater;
+            spawn.Kind == StageEnemy.SlimeKing || RoomShaper.IsMidBossEnemy(spawn.Kind);
 
         // 보스 곡이 아직 나오고 있을 때만 스테이지 곡으로 (그사이 메뉴 곡 등으로 바뀌었으면 건드리지 않는다).
         private void LeaveBossMusic()
