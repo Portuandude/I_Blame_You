@@ -8,7 +8,7 @@ namespace IBlameYou.Core
 {
     // 기능 테스트 모드 도구 (2026-11-12 플레이테스트 피드백: 7·8·11·19번이 일반 판에서는 "테스트 불가").
     // 맵은 적 없는 시험용 외길(FeatureTestStage). F키로 몬스터를 골라 부르고, 유물을 골라 장착·해제하고,
-    // 협동 기능(B 영창·A 방어막 순서 입력, 협동 봉인문, 스위치 발판, 결과 창)을 바로 시험한다.
+    // 협동 기능(B 마법진 그리기, 두 속성 봉인문, 스위치 발판, 결과 창)을 바로 시험한다.
     // F1~F4 치트(DevCheats)는 이 모드에서 개발자 모드가 꺼져 있어도 쓴다.
     public class FeatureTestTools : MonoBehaviour
     {
@@ -86,7 +86,7 @@ namespace IBlameYou.Core
             if (Input.GetKeyDown(KeyCode.F6)) helpOpen = !helpOpen;
             if (Input.GetKeyDown(KeyCode.F5)) ToggleMinigames();
             var control = player.GetComponent<PlayerControlState>();
-            if (Input.GetKeyDown(KeyCode.BackQuote) && (control == null || !control.ChantActive)) CycleFocus(); // 영창 입력 칸에 글자를 치는 중이면 바꾸지 않는다
+            if (Input.GetKeyDown(KeyCode.BackQuote) && (control == null || !control.ChantActive)) CycleFocus(); // 마법진을 그리는 중이면 바꾸지 않는다
             if (Input.GetKeyDown(KeyCode.F7)) monsterIndex = (monsterIndex + 1) % PickCount;
             if (Input.GetKeyDown(KeyCode.F8))
             {
@@ -111,15 +111,15 @@ namespace IBlameYou.Core
         }
 
         private static string FocusName(ControlFocus focus) =>
-            focus == ControlFocus.A ? "A만 (이동·점프·대쉬·순간이동·방어막)"
+            focus == ControlFocus.A ? "A만 (이동·점프·대쉬·순간이동)"
             : focus == ControlFocus.B ? "B만 (마우스 공격·공격 마법)" : "A·B 둘 다";
 
-        // 개발자 모드(숫자키 즉시 발동) ↔ 일반 모드(B 영창 타이핑, A 방어막 W/A/S/D 순서 입력). 모두 GameSession.DevMode를 매번 읽는다.
+        // 개발자 모드(숫자키 즉시 발동) ↔ 일반 모드(B 마법진 그리기). 모두 GameSession.DevMode를 매번 읽는다.
         private void ToggleMinigames()
         {
             if (!menuDevMode.HasValue) menuDevMode = GameSession.DevMode;
             GameSession.DevMode = !GameSession.DevMode;
-            StageEvents.PostNotice(GameSession.DevMode ? "개발자 모드: 숫자키 즉시 발동" : "일반 모드: B 영창 타이핑 · A 방어막 W/A/S/D 순서");
+            StageEvents.PostNotice(GameSession.DevMode ? "개발자 모드: 숫자키 즉시 발동" : "일반 모드: B 마법진 그리기");
         }
 
         private void SpawnMonster()
@@ -402,7 +402,7 @@ namespace IBlameYou.Core
 
         private void DrawHelp()
         {
-            string mode = GameSession.DevMode ? "개발자 모드 (숫자키 즉시)" : "일반 모드 (영창·순서 입력)";
+            string mode = GameSession.DevMode ? "개발자 모드 (숫자키 즉시)" : "일반 모드 (마법진 그리기)";
             string text =
                 "<b>기능 테스트</b>  (F6 접기)\n" +
                 $"F7 몬스터·이벤트: <color=#ffd84d>{PickName()}</color>   F8 부르기\n" +

@@ -176,13 +176,13 @@ namespace IBlameYou.Core
             bool dev = GameSession.DevMode;
             var health = player.GetComponent<HealthSystem>();
             var mana = player.GetComponent<ManaSystem>();
-            var shieldSkill = player.GetComponent<ElementShieldSkill>();
+            var caster = player.GetComponent<SpellCaster>();
             float hp = CrystalTowerRule.Bonus(TowerStat.MaxHealth, SaveData.TowerLevel(TowerStat.MaxHealth, dev));
             float mp = CrystalTowerRule.Bonus(TowerStat.MaxMana, SaveData.TowerLevel(TowerStat.MaxMana, dev));
             if (health != null && hp > 0f) health.AddMax(hp, true);
             if (mana != null && mp > 0f) mana.AddMax(mp, true);
             if (mana != null) mana.RegenMultiplier += CrystalTowerRule.Bonus(TowerStat.ManaRegen, SaveData.TowerLevel(TowerStat.ManaRegen, dev));
-            if (shieldSkill != null) shieldSkill.DurationBonus = CrystalTowerRule.Bonus(TowerStat.ShieldDuration, SaveData.TowerLevel(TowerStat.ShieldDuration, dev));
+            if (caster != null) caster.CircleEase = CrystalTowerRule.Bonus(TowerStat.CircleEase, SaveData.TowerLevel(TowerStat.CircleEase, dev));
         }
 
         // 저장된 레벨·특성·유물·체력을 새로 만든 플레이어에 되살린다.
