@@ -40,10 +40,12 @@ namespace IBlameYou.Systems
     }
 
     // 중간보스 후보 (2026-11-14 23:30 사람 결정: "중간 보스는 둘 중 하나만 랜덤으로").
-    // 지금 구현된 것은 쌍둥이 슬라임 기사뿐이다. 두 번째 중간보스가 생기면 여기와 RoomLayout.MidBossPool에 더한다.
+    // 쌍둥이 슬라임 기사(후보 C)와 프리즘 젤리(후보 D, 2026-11-16 "종족은 슬라임으로 하나 더")가 시드로 반반.
+    // 후보를 더하면 여기와 RoomLayout.MidBossPool에 더한다. 0번(기사)이 기본값이라 직접 만든 RoomData는 기사 방이 된다.
     public enum MidBossKind
     {
-        SlimeKnights
+        SlimeKnights,
+        PrismJelly
     }
 
     public class RoomData
@@ -61,6 +63,7 @@ namespace IBlameYou.Systems
         public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (깊이·"쓰러진 곳" 기준)
         public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
         public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
+        public MidBossKind MidBoss;  // 중간보스 방일 때 나올 중간보스 (RoomLayoutData.MidBoss와 같음, RoomShaper가 본다)
         // 넓은 방 (2026-11-12 "큰 방"): 주 구간(Chunk) 앞, 들어오는 문 쪽에 이어 붙이는 이동 구간들. 비어 있으면 한 화면 방.
         public readonly List<ChunkKind> Leads = new List<ChunkKind>();
         public int Cols => (1 + Leads.Count) * ChunkData.Width; // 방 가로 칸 수
@@ -403,6 +406,7 @@ namespace IBlameYou.Systems
             mid.Chunk = ChunkKind.EliteArena;
             layout.MidBossPathIndex = mid.PathIndex;
             layout.MidBoss = MidBossFor(seed: layout.Seed);
+            mid.MidBoss = layout.MidBoss;
 
             // 막다른 방 (주 경로 밖, 문 하나)
             var leaves = new List<RoomData>();
@@ -485,7 +489,7 @@ namespace IBlameYou.Systems
         }
 
         // 중간보스 고르기: 시드로 후보 중 하나 (배치 난수열을 쓰지 않아 다른 방은 그대로).
-        public static readonly MidBossKind[] MidBossPool = { MidBossKind.SlimeKnights };
+        public static readonly MidBossKind[] MidBossPool = { MidBossKind.SlimeKnights, MidBossKind.PrismJelly };
         public static MidBossKind MidBossFor(int seed) => MidBossPool[(int)(unchecked((uint)seed * 2654435761u) % (uint)MidBossPool.Length)];
 
         // 둘째 퍼즐 방 종류: 시드를 3으로 나눈 나머지로 등불 순서 · 거울 룬 · 방어막 다리 (배치 난수열을 쓰지 않아 다른 방은 그대로).
