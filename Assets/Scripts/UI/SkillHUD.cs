@@ -11,7 +11,7 @@ namespace IBlameYou.UI
     // 테스트용 화면 UI (IMGUI). 정식 UI 아트가 생기기 전까지 이걸로 확인한다.
     // - 좌상단: 체력·마나 바 (SkillHUD.Bars.cs), A와 B가 쓴/날린 마나, 경험치, 모드
     // - 우상단: 스킬 알림 피드 (실패는 빨간색)
-    // - 중앙: A의 방어막 미니게임(W/A/S/D 순서), B의 영창 입력창
+    // - 중앙: B의 마법진 그리기 (SkillHUD.MagicCircle.cs)
     // - 좌상단 아래: 스테이지 이름 꼬리표·골드, 화면 위쪽 가운데: 스테이지 안내 문구
     // - 하단: 조작 안내, 사망/클리어 시 다시 시작 안내 (사망 연출: SkillHUD.Death.cs)
     // - Tab: 레벨업 특성 창 (SkillHUD.Traits.cs), 화면 위 가운데: 보스 체력바 (SkillHUD.Boss.cs)
@@ -26,13 +26,10 @@ namespace IBlameYou.UI
         private HealthSystem health;
         private ManaSystem mana;
         private PlayerControlState control;
-        private ElementShieldSkill shieldSkill;
-        private ElementShield shield;
         private SpellCaster caster;
         private DevCheats cheats;
         private Action<bool> restart; // (시작 화면으로 돌아갈지)
         private PlayerProgression progression;
-        private string chantText = "";
         private bool deathHandled;
         private bool stageCleared;
         private float runStartTime;
@@ -46,10 +43,8 @@ namespace IBlameYou.UI
         private GUIStyle panel;
         private GUIStyle label;
         private GUIStyle small;
-        private GUIStyle smallCenter; // 미니게임·영창 아래 두 사람 안내 줄
+        private GUIStyle smallCenter; // 마법진 아래 안내 줄
         private GUIStyle big;
-        private GUIStyle keyBox;
-        private GUIStyle input;
         private GUIStyle menuButton;  // 일시정지 메뉴 큰 버튼 (CuteButton.cs)
         private GUIStyle cardButton;  // 유물·특성 창 작은 버튼
 
@@ -63,8 +58,6 @@ namespace IBlameYou.UI
             health = player.GetComponent<HealthSystem>();
             mana = player.GetComponent<ManaSystem>();
             control = player.GetComponent<PlayerControlState>();
-            shieldSkill = player.GetComponent<ElementShieldSkill>();
-            shield = player.GetComponent<ElementShield>();
             caster = player.GetComponent<SpellCaster>();
             progression = player.GetComponent<PlayerProgression>();
             cheats = devCheats;
@@ -246,24 +239,6 @@ namespace IBlameYou.UI
             small = new GUIStyle(label) { fontSize = 13, wordWrap = true };
             smallCenter = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
             big = new GUIStyle(label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            keyBox = new GUIStyle(GUI.skin.box) { fontSize = 34, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            if (panelTexture != null)
-            {
-                keyBox.normal.background = panelTexture; // 방어막 미니게임 화살표 칸도 같은 둥근 패널
-                keyBox.border = new RectOffset(10, 10, 10, 10);
-            }
-            input = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleLeft };
-            if (panelTexture != null) // 영창 입력 칸도 둥근 패널 (글자는 크림)
-            {
-                input.normal.background = panelTexture;
-                input.focused.background = panelTexture;
-                input.hover.background = panelTexture;
-                input.border = new RectOffset(10, 10, 10, 10);
-                input.padding = new RectOffset(12, 12, 4, 4);
-                input.normal.textColor = OutlinedLabel.Cream;
-                input.focused.textColor = OutlinedLabel.Cream;
-                input.hover.textColor = OutlinedLabel.Cream;
-            }
             menuButton = CuteButton.Create(20);
             cardButton = CuteButton.Create(15);
         }
@@ -287,8 +262,7 @@ namespace IBlameYou.UI
             DrawArenaCount(); // 전투 구역 남은 적 수 (SkillHUD.Arena.cs)
             DrawNotice();
             DrawFeed();
-            DrawShieldMinigame();
-            DrawChantInput();
+            DrawMagicCircle(); // P2 마법진 그리기 (SkillHUD.MagicCircle.cs)
             DrawHelp();
             DrawMouseSpellTag(); // P2 휠로 고른 공격 스킬을 커서 옆에 (SkillHUD.MouseSpell.cs)
             DrawSpellDial(); // P2 우클릭을 누르고 있는 동안 속성 → 마법 2단계 다이얼 (SkillHUD.SpellDial.cs)
@@ -312,124 +286,18 @@ namespace IBlameYou.UI
             DrawVitalBars(GUILayoutUtility.GetRect(rect.width - 20f, BarIconSize + 2f)); // 체력·마나 바 (SkillHUD.Bars.cs)
             GUILayout.Label($"<color=#73d9ff>{(GameSession.DevMode ? "A" : "P1·A")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerA):0}  (날림 {mana.WastedBy(ManaUser.PlayerA):0})", label);
             GUILayout.Label($"<color=#ffa659>{(GameSession.DevMode ? "B" : "P2·B")}</color> 마나 사용 {mana.SpentBy(ManaUser.PlayerB):0}  (날림 {mana.WastedBy(ManaUser.PlayerB):0})", label);
-            string shieldText = shield != null && shield.Active
-                ? $"방어막: {ElementInfo.KoreanName(shield.ActiveElement)} {shield.Remaining:0.0}초"
-                : "방어막: 없음";
+            string buffText = "";
             if (caster != null && caster.TailwindActive) // 순풍 (아카데미 바람 마법): 남은 초, 끝나기 1초 전 깜빡임
             {
                 float left = caster.TailwindRemaining;
                 bool blinkOff = left < 1f && Mathf.Repeat(Time.time * 6f, 1f) < 0.5f;
-                if (!blinkOff) shieldText += $"   <color=#8cffb3>순풍 {left:0.0}초</color>";
+                buffText = blinkOff ? " " : $"<color=#8cffb3>순풍 {left:0.0}초 (마법진 한 단계 쉬움)</color>";
             }
-            GUILayout.Label(shieldText, label);
+            GUILayout.Label(buffText.Length > 0 ? buffText : " ", label);
             string mode = GameSession.DevMode ? "<color=#ffd84d>개발자 모드</color>" : "일반 모드 (로컬)";
             if (cheats != null && cheats.GodMode) mode += "  <color=#ffd84d>무적</color>";
             GUILayout.Label(mode, label);
             GUILayout.EndArea();
-        }
-
-        private void DrawShieldMinigame()
-        {
-            if (shieldSkill == null || !shieldSkill.MinigameActive)
-            {
-                keyLastProgress = -1; // 다음 미니게임에서 칸 기록을 새로 (SkillHUD.Minigame.cs)
-                return;
-            }
-
-            TrackShieldKeys(shieldSkill.Progress);
-            string sequence = shieldSkill.Sequence;
-            const float keySize = 70f;
-            const float gap = 12f;
-            float totalWidth = sequence.Length * keySize + (sequence.Length - 1) * gap;
-            float x = (Screen.width - totalWidth) / 2f;
-            float y = Screen.height * 0.28f;
-
-            GUI.Label(new Rect(0f, y - 50f, Screen.width, 40f),
-                $"<color=#73d9ff>A</color> {ElementInfo.KoreanName(shieldSkill.PendingElement)} 방어막 — 순서대로 입력!", big);
-
-            for (int i = 0; i < sequence.Length; i++)
-                DrawShieldKey(new Rect(x + i * (keySize + gap), y, keySize, keySize), sequence[i].ToString(), i, shieldSkill.Progress);
-
-            // 남은 시간: 캡슐 바 (초록 → berry, SkillHUD.Bars.cs)
-            float ratio = Mathf.Clamp01(shieldSkill.TimeLeft / shieldSkill.TimeLimit);
-            var timeColor = Color.Lerp(KeyBerry, KeyLeaf, ratio);
-            DrawCapsuleBar(new Rect(x + BarGlow, y + keySize + 12f, totalWidth - 2f * BarGlow, BarHeight), ratio, 0f, timeColor, timeColor, null);
-
-            // 한 키보드 2인: P1이 W/A/S/D를 치는 동안 P2의 숫자줄 공격 스킬은 막힌다(RoleInput.SpellDown). 막힌 이유를 P2가 알게 한 줄.
-            if (!GameSession.DevMode && GameSession.SharedKeyboard)
-                GUI.Label(new Rect(0f, y + keySize + 12f + BarHeight + 6f, Screen.width, 22f),
-                    "<color=#ffa659>P2</color> 공격 스킬은 방어막이 끝난 뒤에 · 좌클릭 평타는 그대로", smallCenter);
-        }
-
-        private void DrawChantInput()
-        {
-            if (caster == null) return;
-
-            if (!caster.ChantOpen)
-            {
-                if (chantText.Length > 0) chantText = "";
-                if (Input.imeCompositionMode != IMECompositionMode.Auto) Input.imeCompositionMode = IMECompositionMode.Auto;
-                return;
-            }
-
-            Input.imeCompositionMode = IMECompositionMode.On;
-            var spell = caster.PendingSpell;
-
-            // Enter/Esc는 입력창보다 먼저 가로챈다. 한글 조합 중인 글자가 남아 있으면 그 Enter는 조합 확정용으로 둔다.
-            var e = Event.current;
-            if (e.type == EventType.KeyDown)
-            {
-                if ((e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) && string.IsNullOrEmpty(Input.compositionString))
-                {
-                    string typed = chantText;
-                    chantText = "";
-                    e.Use();
-                    caster.SubmitChant(typed);
-                    return;
-                }
-
-                if (e.keyCode == KeyCode.Escape)
-                {
-                    chantText = "";
-                    e.Use();
-                    caster.CancelChant();
-                    return;
-                }
-            }
-
-            const float width = 620f;
-            float x = (Screen.width - width) / 2f;
-            float y = Screen.height * 0.62f;
-            bool sharedKeyboard = GameSession.SharedKeyboard;
-            GUI.Box(new Rect(x - 12f, y - 64f, width + 24f, sharedKeyboard ? 172f : 150f), GUIContent.none, panel);
-            GUI.Label(new Rect(x, y - 58f, width, 30f),
-                $"<color=#ffa659>B</color> {spell.Name} ({ElementInfo.KoreanName(spell.Element)}, 마나 {spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f):0}) — 영창하라:", label);
-            GUI.Label(new Rect(x, y - 30f, width, 30f), ChantProgressText(caster.PendingChant ?? spell.Chant, chantText, out bool mistake), big); // 맞게 친 부분 aqua
-
-            var field = new Rect(x, y + 8f, width, 40f);
-            if (mistake) // 틀린 글자가 있으면 입력 칸 둘레를 berry로 (Enter 누르기 전에 알아채게)
-            {
-                var previousColor = GUI.color;
-                GUI.color = KeyBerry;
-                // 테두리만 (입력 칸 배경이 반투명이라 통째로 깔면 칸 전체가 붉게 비친다 — 리뷰 MEDIUM)
-                GUI.DrawTexture(new Rect(field.x - 3f, field.y - 3f, field.width + 6f, 3f), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(field.x - 3f, field.yMax, field.width + 6f, 3f), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(field.x - 3f, field.y, 3f, field.height), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(field.xMax, field.y, 3f, field.height), Texture2D.whiteTexture);
-                GUI.color = previousColor;
-            }
-
-            GUI.SetNextControlName("ChantField");
-            chantText = GUI.TextField(field, chantText, 40, input);
-            GUI.FocusControl("ChantField");
-
-            // 스킬을 고른 숫자키가 그대로 입력창에 들어가지 않도록, 연 프레임에 들어온 글자는 버린다.
-            if (Time.frameCount <= caster.ChantOpenedFrame) chantText = "";
-
-            GUI.Label(new Rect(x, y + 54f, width, 24f), "똑같이 입력하고 Enter (오타면 마나만 소모) · Esc 취소", small);
-            // 한 키보드 2인: 영창 중에는 P1(A)의 키가 모두 막힌다(PlayerControlState.AKeyboardBlocked). P1이 왜 안 움직이는지 보이게.
-            if (sharedKeyboard)
-                GUI.Label(new Rect(x, y + 76f, width, 22f), "<color=#73d9ff>P1</color> 키보드 잠김 — P2가 영창하는 동안 캐릭터 조작이 멈춰요", small);
         }
 
         // DrawHelp: 아래 조작 도움말 줄 (SkillHUD.Help.cs)

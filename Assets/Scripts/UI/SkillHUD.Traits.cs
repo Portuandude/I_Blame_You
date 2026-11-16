@@ -44,7 +44,7 @@ namespace IBlameYou.UI
             }
 
             if (!Input.GetKeyDown(KeyCode.Tab) || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return;
-            if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return; // 영창/미니게임 중에는 열지 않는다
+            if (control.ChantActive || control.Locked) return; // 마법진을 그리는 중에는 열지 않는다
 
             traitWindowOpen = true;
             traitWindowOpenedAt = Time.unscaledTime; // 카드 팝 (SkillHUD.Cards.cs), 패널 팝·배경 페이드

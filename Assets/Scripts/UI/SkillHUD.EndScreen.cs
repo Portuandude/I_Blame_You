@@ -183,7 +183,7 @@ namespace IBlameYou.UI
             if (favorite)
             {
                 lift = BeginRow(row, out previous);
-                DrawFavoriteLine(rect.x, y + lift, rect.width); // B 최애 마법 · A 최애 방어막 · 새 유물
+                DrawFavoriteLine(rect.x, y + lift, rect.width); // B 최애 마법 · 새 유물
                 GUI.color = previous;
                 y += small22; row++;
             }
@@ -390,7 +390,7 @@ namespace IBlameYou.UI
             GUI.Label(rect, ClearPace.CompareDefeat(StageEvents.FarthestDistance, defeatUsualRooms), style);
         }
 
-        // 결과 창 "최애" 한 줄: B 공격 마법·A 방어막 중 가장 많이 쓴 속성 (Chunks/RunTally) + 이번 판 새 도감 유물 수. 없으면 빈 문자열.
+        // 결과 창 "최애" 한 줄: B 공격 마법 중 가장 많이 쓴 속성 (Chunks/RunTally) + 이번 판 새 도감 유물 수. 없으면 빈 문자열.
         private static string[] elementNames;
         private static string[] elementColors;   // 속성 이름만 그 속성 색으로 (rich text)
 
@@ -406,7 +406,7 @@ namespace IBlameYou.UI
                     elementColors[i] = ColorUtility.ToHtmlStringRGB(ElementInfo.Color((Element)i));
                 }
             }
-            string line = RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, IBlameYou.Core.RunStats.ShieldCasts, elementNames, elementColors);
+            string line = RunTally.Line(IBlameYou.Core.RunStats.SpellCasts, elementNames, elementColors);
             int fresh = IBlameYou.Core.RunStats.NewRelics; // 이번 판에 처음 도감에 오른 유물
             if (fresh <= 0) return line;
             // 이번 판에 도감을 다 채웠으면 "새 유물 N개" 대신 금색 완성 문구 (한 줄 폭을 아낀다)

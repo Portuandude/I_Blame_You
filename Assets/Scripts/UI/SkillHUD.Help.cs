@@ -172,14 +172,12 @@ namespace IBlameYou.UI
             Add(null, default, "Shift", "달리기");
             Add(null, default, "L.Ctrl", "대쉬");
             Add(null, default, "W/A/S/D+Enter", "순간이동");
-            if (dev) Add(null, default, "1~5", "방어막");
-            else Add(null, default, "넘패드 1~5", "방어막(→W/A/S/D)");
 
             Add(dev ? "B" : "P2·B", HelpColorB, "좌클릭", "마력탄(마나 5)");
-            if (dev) Add(null, default, "6~9", "공격 스킬");
+            if (dev) Add(null, default, "1~4", "공격 스킬");
             else
             {
-                Add(null, default, "1~4", "공격 스킬(→영창 타이핑+Enter)");
+                Add(null, default, "1~4", "공격 스킬(→마법진 그리기)");
                 Add(null, default, "우클릭 꾹", "다이얼로 공격 스킬");
             }
 

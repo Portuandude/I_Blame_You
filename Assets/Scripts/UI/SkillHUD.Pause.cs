@@ -6,7 +6,7 @@ namespace IBlameYou.UI
 {
     // Esc 일시정지 메뉴: 배경음악/효과음 볼륨 + 계속하기 / 다시 시작(새 맵) / 시작 화면. 볼륨은 닫을 때 SaveData에 저장한다.
     // 열려 있는 동안 Time.timeScale = 0이고 조작이 잠긴다 (마우스 클릭이 평타로 나가지 않음).
-    // Esc가 이미 다른 뜻으로 쓰이는 때(B의 영창 취소, Tab 특성 창 닫기, A의 방어막 미니게임 중)와
+    // Esc가 이미 다른 뜻으로 쓰이는 때(B의 마법진 취소, Tab 특성 창 닫기)와
     // 쓰러짐/클리어 화면, 다른 이유로 조작이 잠긴 때(출구 진입, 보스에게 붙잡힘)에는 열지 않는다.
     // 키보드: ↑↓·W/S로 버튼을 고르고(고른 버튼에 금색 테두리) Enter·Space로 누른다. 화살표를 누르기 전에도 Enter는 "계속하기".
     // 열 때 창이 PausePopTime(실제 시간) 동안 0.85 → 1.04 → 1로 톡 커지고 "또롱"(PauseOpen), 게임으로 돌아갈 때 "통"(PauseClose).
@@ -50,7 +50,7 @@ namespace IBlameYou.UI
                 pauseMap.SetExpanded(false); // 펼친 큰 지도가 있으면 Esc는 지도만 접는다
                 return;
             }
-            if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return;
+            if (control.ChantActive || control.Locked) return;
 
             paused = true;
             pauseOpenedAt = Time.unscaledTime;

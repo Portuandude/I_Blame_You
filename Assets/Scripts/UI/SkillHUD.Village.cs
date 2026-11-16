@@ -56,7 +56,7 @@ namespace IBlameYou.UI
 
         private bool OpenVillage(VillageService service)
         {
-            if (villageOpen || villageUnlockFrame >= 0 || !CanOpenRelicWindow()) return true; // 다른 창·영창 중: 열지 않고 알림도 띄우지 않는다
+            if (villageOpen || villageUnlockFrame >= 0 || !CanOpenRelicWindow()) return true; // 다른 창·마법진 중: 열지 않고 알림도 띄우지 않는다
             villageOpen = true;
             villageService = service;
             villageOpenedFrame = Time.frameCount;
