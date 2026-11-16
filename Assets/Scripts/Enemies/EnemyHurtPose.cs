@@ -54,7 +54,7 @@ namespace IBlameYou.Enemies
         // 슬라임 킹도 같은 그림 (회색판에 왕 색을 곱한다). 단 큰 피해일 때만 (BossMinDamageRatio).
         internal static string FolderFor(string objectName)
         {
-            if (objectName == "Slime" || objectName == "SlimeKing" || objectName.StartsWith("Slime_") || objectName == "MotherSlime" || objectName.StartsWith("SlimeKnight"))
+            if (objectName == "Slime" || objectName == "SlimeKing" || objectName.StartsWith("Slime_") || objectName == "MotherSlime" || objectName.StartsWith("SlimeKnight") || objectName == "PrismJelly")
                 return "Slime";
             if (objectName == "TreasureGoblin") return "Goblin"; // 보물 고블린은 고블린 그림을 금빛으로 물들여 쓴다
             return objectName;

@@ -273,7 +273,7 @@ namespace IBlameYou.Tests
         public void VillageIsOneDeadEndSideRoom()
         {
             foreach (float minutes in new[] { 15f, 20f, 30f })
-                for (int seed = 0; seed < 300; seed++)
+                for (int seed = -40; seed < 300; seed++)
                 {
                     var layout = RoomLayout.Generate(seed, minutes * 60f);
                     RoomData boss = layout.Rooms.Find(r => r.Kind == RoomKind.Boss);
@@ -357,6 +357,36 @@ namespace IBlameYou.Tests
             }
             Assert.AreEqual(RoomLayout.MidBossPool.Length, seen.Count, "후보가 모두 한 번 이상 나옴");
             Assert.AreEqual(RoomLayout.MidBossFor(7), RoomLayout.Generate(7, 20f * 60f).MidBoss);
+        }
+
+        // 좌우 일반 전투 방(앞 구간 기믹이 붙는 방)이 판마다 MinSideCombatRooms개 이상 (2026-11-16 기본안).
+        // 여러 시드·목표 시간 통계: 최소는 규칙대로, 평균도 남겨 둔다 (콘솔).
+        [Test]
+        public void EveryLayoutHasEnoughSideCombatRooms()
+        {
+            float[] targets = { 15f * 60f, 20f * 60f, 30f * 60f };
+            foreach (float target in targets)
+            {
+                int total = 0, min = int.MaxValue, max = 0, runs = 0;
+                for (int seed = -40; seed < 300; seed++)
+                {
+                    var layout = RoomLayout.Generate(seed, target);
+                    int side = 0, combat = 0;
+                    foreach (var room in layout.Rooms)
+                    {
+                        if (room.Kind != RoomKind.Combat) continue;
+                        combat++;
+                        if (!room.IsVertical) side++;
+                    }
+                    Assert.GreaterOrEqual(side, RoomLayout.MinSideCombatRooms, $"seed {seed} target {target}: 좌우 전투 방 {side}개");
+                    Assert.GreaterOrEqual(combat, RoomLayout.MinCombatRooms, $"seed {seed} target {target}");
+                    total += side;
+                    min = System.Math.Min(min, side);
+                    max = System.Math.Max(max, side);
+                    runs++;
+                }
+                System.Console.WriteLine($"목표 {target / 60f}분: 좌우 전투 방 평균 {total / (float)runs:0.00} · 최소 {min} · 최대 {max}");
+            }
         }
     }
 }

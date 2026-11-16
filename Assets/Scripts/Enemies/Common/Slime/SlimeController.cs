@@ -297,7 +297,7 @@ namespace IBlameYou.Enemies
             return new Vector3(bounds.center.x, bounds.min.y, 0f);
         }
 
-        // 어미 슬라임(정예)·슬라임 기사(중간보스)는 착지를 더 무겁게.
+        // 어미 슬라임(정예)·슬라임 기사·프리즘 젤리(중간보스)는 착지를 더 무겁게.
         private bool HeavyLanding => IBlameYou.Core.RunGold.RankOf(this) != EnemyRank.Normal;
 
         // BeginLeap과 같은 식: 지금 플레이어 위치로 뛰면 떨어질 x.

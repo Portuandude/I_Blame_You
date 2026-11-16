@@ -37,9 +37,14 @@ namespace IBlameYou.Core
         {
             if (enemy is SlimeKingController) return EnemyRank.Boss; // 2페이즈에 둘로 나뉜다: 한 마리당 표의 절반 (BossParts)
             if (enemy.GetComponent<SlimeKnight>() != null) return EnemyRank.MidBoss; // 쌍둥이 기사: 한 마리당 표의 절반
+            if (enemy.GetComponent<PrismJelly>() != null) return EnemyRank.MidBoss;  // 프리즘 젤리: 한 마리가 중간보스 몫 전부 (MidBossShares)
             if (enemy.GetComponent<EnrageAbility>() != null || enemy.GetComponent<SplitOnDeath>() != null) return EnemyRank.Elite;
             return EnemyRank.Normal;
         }
+
+        // 골드 표·마음 가루의 중간보스 몫은 쌍둥이 기사 한 마리 기준(절반)이다. 혼자 나오는 프리즘 젤리는 그 몫을 두 번 받는다.
+        public static int MidBossShares(EnemyController enemy) =>
+            enemy != null && enemy.GetComponent<PrismJelly>() != null ? 2 : 1;
 
         // 적이 죽었을 때 (SkillHUD.OnEnemyKilled). target: 동전이 날아갈 플레이어.
         public static void OnEnemyKilled(EnemyController enemy, Transform target)
@@ -48,8 +53,11 @@ namespace IBlameYou.Core
             if (enemy.GetComponent<BossSummon>() != null) return; // 보스가 되풀이해 소환하는 적은 골드 없음
             var rank = RankOf(enemy);
             bool treasure = enemy is TreasureGoblinController; // 보물 고블린: 10초 안에 잡으면 큰 골드 (Chunks/TreasureGoblinRule)
-            int amount = treasure ? TreasureGoblinRule.Gold(UnityEngine.Random.value)
-                : GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
+            int amount = 0;
+            if (treasure) amount = TreasureGoblinRule.Gold(UnityEngine.Random.value);
+            else
+                for (int share = MidBossShares(enemy); share > 0; share--) // 프리즘 젤리: 기사 둘 몫을 한 번에 (합이 50~100)
+                    amount += GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
             var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
             if (relics != null && relics.Has(RelicId.LuckyPouch))
             {

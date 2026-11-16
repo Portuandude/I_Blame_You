@@ -2,6 +2,12 @@
 
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
+
+## 2026-11-16 07:38 UTC 실행 (claude/project-thread-9yicp1, PR #119)
+
+- DONE (claude/project-thread-9yicp1): 두 번째 중간보스 프리즘 젤리 ① 몸·8초 색 바꾸기·같은 색 반감(`PrismJellyRules`)·시드로 기사와 반반 ② 출렁 착지 충격파·젤리 방울 웅덩이·프리즘 광선(`JellyPatterns`, `JellyHazards`) ③ 수정 젤리 그림 36장(`Tools/ArtGen/generate_prism_jelly.py`)
+- DONE (claude/project-thread-9yicp1): 좌우 일반 전투 방 판마다 2개 이상 보장 (`RoomLayout.MinSideCombatRooms`, 시드 통계 테스트)
+
 ## 최우선: 베타 테스트 준비 (2026-11-14 23:30·23:37 사람 결정) — 2026-11-15 보관
 
 - DONE (claude/project-thread-w6bgq6): 스토리 소개 F12 꾹 = P1 Space + P2 클릭 동시 (임시, `RoleInput.StorySkipBoth`)

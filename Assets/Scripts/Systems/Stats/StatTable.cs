@@ -91,6 +91,17 @@ namespace IBlameYou.Systems
             attackSpeed = 0.25f, physicalDamage = 30, experience = 300
         };
 
+        // 중간보스 프리즘 젤리 (스탯 문서에 없는 가안, Docs/MidBossDraft.md 후보 D: 체력 400 · 방어 20).
+        // 무속성 데미지는 PrismJelly가 지금 색 속성으로 옮긴다. 속성 방어는 고르게 두고 같은 색 반감(PrismJellyRules)으로 저항을 준다.
+        public static StatBlock PrismJelly => new StatBlock
+        {
+            maxHealth = 400, maxMana = 50, maxStamina = 50, moveSpeed = 0.55f,
+            debuffResistance = 20, defense = 20, critChance = 0f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 30 },
+            elementDefense = new float[] { 15, 15, 15, 15, 15 },
+            attackSpeed = 0.25f, physicalDamage = 30, experience = 600
+        };
+
         // 함정 (스탯 문서에 없는 가안). 플레이어 방어력 10 기준 가시 약 18, 화살 약 15, 불기둥 한 번 약 12 + 화상.
         public static StatBlock Trap => new StatBlock
         {

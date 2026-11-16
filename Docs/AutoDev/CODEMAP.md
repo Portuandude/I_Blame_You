@@ -20,12 +20,12 @@
 | --- | --- |
 | 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch), 저장 `Core/RunSave.cs`·`SaveData.cs`, 카메라 `Core/CameraFollow.cs` |
 | 스테이지 계획·청크 지형 (순수 C#, 테스트 가능) | `Systems/MapGeneration/Chunks/`: `StagePlanner`(청크 순서·시간), `ChunkGenerator`(청크 지형), `StageValidator`(갈 수 있는지), `ChunkData`(타일·적·기능 데이터) |
-| 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
+| 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+(좌우 2+)·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
 | 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환·보상), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |
 | 함정·발판 | `Systems/Traps/` |
 | 퍼즐 (봉인문) | `Puzzles/ElementGate.cs` |
 | 적 공통 | `Enemies/EnemyController.cs`(체력·경직·접촉 피해), `EnemySpawner.cs`(조립 헬퍼) |
-| 적 종류 | `Enemies/Common/{Slime,Goblin,GoblinArcher}`, `Enemies/Elite/{MotherSlime,GoblinWarrior}`, 보스 `Enemies/Bosses/SlimeKing`, 중간보스 `Enemies/Bosses/SlimeKnights` — 각 폴더의 `*Spawner`가 구성의 단일 출처 |
+| 적 종류 | `Enemies/Common/{Slime,Goblin,GoblinArcher}`, `Enemies/Elite/{MotherSlime,GoblinWarrior}`, 보스 `Enemies/Bosses/SlimeKing`, 중간보스 `Enemies/Bosses/SlimeKnights`·`Enemies/Bosses/PrismJelly`(패턴 `JellyPatterns`, 위험물 `JellyHazards`, 규칙 `Stats/Formula/PrismJellyRules`) — 각 폴더의 `*Spawner`가 구성의 단일 출처 |
 | 수치 | `Systems/Stats/StatTable.cs`(스탯 문서 값), `DamageCalculator.cs`(피해·`IDamageModifier`), `Formula/`(상성, 순수 C#) |
 | 상태이상 | `Systems/StatusEffects/` |
 | 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` |

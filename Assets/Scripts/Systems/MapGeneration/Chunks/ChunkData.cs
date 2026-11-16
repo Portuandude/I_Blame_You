@@ -81,7 +81,8 @@ namespace IBlameYou.Systems
         SlimeKing,   // 스테이지 1 보스
         SlimeKnightFire,  // 중간보스 쌍둥이 슬라임 기사 (불: 돌진)
         SlimeKnightWater, // 중간보스 쌍둥이 슬라임 기사 (물: 방패)
-        TreasureGoblin    // 방 이벤트 보물 고블린 (도망침, 2026-11-14). 청크 지형에는 놓지 않고 ChunkStreamer가 방에 처음 들어갈 때 부른다
+        TreasureGoblin,   // 방 이벤트 보물 고블린 (도망침, 2026-11-14). 청크 지형에는 놓지 않고 ChunkStreamer가 방에 처음 들어갈 때 부른다
+        PrismJelly        // 중간보스 프리즘 젤리 (색 = 속성이 8초마다 바뀌는 수정 젤리 슬라임, Docs/MidBossDraft.md 후보 D)
     }
 
     public struct ChunkFeature
