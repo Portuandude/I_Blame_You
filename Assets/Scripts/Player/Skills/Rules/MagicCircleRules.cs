@@ -194,7 +194,7 @@ namespace IBlameYou.Player
         // 꺾은선 위 거리 d 지점 (0 ~ Length)
         public static CirclePoint PointAt(IList<CirclePoint> path, float d)
         {
-            if (path.Count == 0) return default;
+            if (path.Count == 0) return new CirclePoint(0f, 0f);
             if (d <= 0f) return path[0];
             for (int i = 1; i < path.Count; i++)
             {
