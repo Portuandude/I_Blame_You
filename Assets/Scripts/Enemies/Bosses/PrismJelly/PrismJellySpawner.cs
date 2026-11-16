@@ -4,8 +4,8 @@ using UnityEngine;
 namespace IBlameYou.Enemies
 {
     // 중간보스 프리즘 젤리 구성의 단일 출처 (Docs/MidBossDraft.md 후보 D, 2026-11-16 "종족은 슬라임으로 하나 더").
-    // 쌍둥이 기사와 판마다 시드로 반반 (RoomLayout.MidBossPool). 슬라임 몸(도약 덮치기)에 회색 슬라임 그림(Resources/Enemies/SlimeGray)을
-    // 지금 색으로 물들이고, PrismJelly가 8초마다 색(= 몸 속성)을 바꾼다. 패턴은 JellyPatterns, 새 그림은 다음 단계.
+    // 쌍둥이 기사와 판마다 시드로 반반 (RoomLayout.MidBossPool). 슬라임 몸(도약 덮치기)에 수정 젤리 그림(Resources/Enemies/PrismJelly, 회색 슬라임판에서 생성)을
+    // 지금 색으로 물들이고, PrismJelly가 8초마다 색(= 몸 속성)을 바꾼다. 패턴은 JellyPatterns.
     public static class PrismJellySpawner
     {
         public const string ObjectName = "PrismJelly";
@@ -28,7 +28,7 @@ namespace IBlameYou.Enemies
             var renderer = visual != null ? visual.GetComponent<SpriteRenderer>() : null;
             ElementRecolor recolor = null;
             if (renderer != null && artConfig != null && artConfig.slimeDefaultSprite != null)
-                recolor = ElementRecolor.Attach(renderer, "Enemies/SlimeGray", Color.white);
+                recolor = ElementRecolor.Attach(renderer, "Enemies/PrismJelly", Color.white); // 수정 젤리 그림 (Tools/ArtGen/generate_prism_jelly.py)
 
             go.GetComponent<SlimeController>().ShowsOwnHealthBar = false; // 화면 위 보스 체력바를 쓴다
             var jelly = go.AddComponent<PrismJelly>();
