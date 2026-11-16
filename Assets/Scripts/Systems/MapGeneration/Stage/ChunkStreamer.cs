@@ -71,7 +71,7 @@ namespace IBlameYou.Systems
         public struct RoomEventTally
         {
             public int AmbushMet, AmbushCleared, CursedMet, CursedSolved, GoblinMet, GoblinCaught;
-            public int PuzzleMet, PuzzleSolved; // 퍼즐 방 (등불 순서·거울 룬·방어막 다리, 이중 스위치 제외): 가 본 것 / 푼 것
+            public int PuzzleMet, PuzzleSolved; // 퍼즐 방 (등불 순서·거울 룬, 이중 스위치 제외): 가 본 것 / 푼 것
             public bool Any => AmbushMet + CursedMet + GoblinMet + PuzzleMet > 0;
         }
 
@@ -101,11 +101,6 @@ namespace IBlameYou.Systems
                 {
                     tally.PuzzleMet++;
                     if (solvedPuzzles.Contains(index)) tally.PuzzleSolved++;
-                }
-                else if (chunk.Kind == ChunkKind.ShieldBridge)
-                {
-                    tally.PuzzleMet++;
-                    if (!HasCoinsLeft(index)) tally.PuzzleSolved++; // 방어막 다리: 끝의 동전 무더기를 모두 주우면 푼 것 (미니맵은 동전 점이 대신 알린다)
                 }
             }
             return tally;
@@ -399,11 +394,6 @@ namespace IBlameYou.Systems
                     case FeatureKind.FlameJet:
                         FlameJetTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), f.X * 0.37f + index * 0.61f);
                         break;
-                    case FeatureKind.ElementJet:
-                        // 방어막 다리: 그 속성 방어막만 지나가고, 아니면 통로 입구(Direction 열) 선 칸 위로 튕겨 돌아간다
-                        ElementJet.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width, (Element)f.ElementIndex,
-                            new Vector2(ox + f.Direction + 0.5f, oy + f.Y + 1f));
-                        break;
                     case FeatureKind.ArrowTrap:
                         ArrowTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f), f.Direction);
                         break;
@@ -458,7 +448,7 @@ namespace IBlameYou.Systems
                                 IBlameYou.Core.RunStats.AddGateOpened();
                             },
                             gateSteps.TryGetValue(index, out int gateStep) ? gateStep : 0,
-                            step => gateSteps[gateChunk] = step, f.ShieldFirst);
+                            step => gateSteps[gateChunk] = step);
                         break;
                     case FeatureKind.Arena:
                         int arenaChunk = index;
@@ -664,14 +654,7 @@ namespace IBlameYou.Systems
         private void SpawnCoinPile(Transform root, int key, Vector2 position, float difficulty)
         {
             if (collectedCoins.Contains(key)) return;
-            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () =>
-            {
-                collectedCoins.Add(key);
-                // 방어막 다리: 끝의 동전 무더기를 모두 주우면 퍼즐을 푼 것 → 마음 가루
-                int room = key / 16; // CoinPileKey의 청크 번호
-                if (rooms != null && room < stage.Chunks.Count && stage.Chunks[room].Kind == ChunkKind.ShieldBridge && !HasCoinsLeft(room)) // 기능 테스트(rooms 없음)는 세지 않음
-                    IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle);
-            });
+            CoinPile.Create(root, position, GoldDropTable.CoinPileGold(difficulty), () => collectedCoins.Add(key));
         }
 
         // 즉시 회복 (최대 체력 비율, 중간보스 처치·용사의 훈장). 쓰러진 뒤면 아무 일도 하지 않고 false. notice가 null이면 알림 없이.

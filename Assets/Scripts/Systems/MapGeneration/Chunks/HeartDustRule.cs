@@ -8,7 +8,7 @@ namespace IBlameYou.Systems
         public const int Elite = 5;
         public const int MidBossPart = 8;  // 기사 둘 = 16 (문서 15 안팎)
         public const int BossPart = 20;    // 반쪽 둘 = 40
-        public const int Puzzle = 5;       // 퍼즐 방 하나 풀기 (등불 순서·거울 룬·방어막 다리)
+        public const int Puzzle = 5;       // 퍼즐 방 하나 풀기 (등불 순서·거울 룬)
         public const int StageClear = 20;
 
         public static int ForKill(EnemyRank rank)

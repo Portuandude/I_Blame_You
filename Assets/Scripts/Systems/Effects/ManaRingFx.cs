@@ -3,7 +3,7 @@ using UnityEngine;
 namespace IBlameYou.Systems
 {
     // 마나 고리 (VfxPlayer.ManaRing): 플레이어 둘레에 색 빛 고리가 작게 나타나 퍼지며 옅어진다 (0.4초).
-    // 쌍둥이 반지(A 방어막 → A색)·응원 리본(B 마법 → B색) 마나 회복 표시. 그림 파일 없이 런타임에 고리 텍스처를 한 번 만든다.
+    // 쌍둥이 반지·응원 리본(B 마법 → B색) 마나 회복 표시. 그림 파일 없이 런타임에 고리 텍스처를 한 번 만든다.
     public class ManaRingFx : MonoBehaviour
     {
         private const float Lifetime = 0.4f;

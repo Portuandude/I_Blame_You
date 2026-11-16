@@ -8,7 +8,7 @@ namespace IBlameYou.Systems
         Magic
     }
 
-    // 피격자가 이 인터페이스를 가진 컴포넌트를 갖고 있으면 최종 피해 직전에 값을 바꿀 수 있다 (예: 속성 방어막).
+    // 피격자가 이 인터페이스를 가진 컴포넌트를 갖고 있으면 최종 피해 직전에 값을 바꿀 수 있다 (예: 물안개 표식).
     public interface IDamageModifier
     {
         float Modify(float damage, DamageKind kind, Element element);
