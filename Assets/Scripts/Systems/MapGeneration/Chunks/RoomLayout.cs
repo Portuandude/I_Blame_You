@@ -126,7 +126,7 @@ namespace IBlameYou.Systems
         public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
         public const float MaxSeconds = 30f * 60f;
         public const float BacktrackSeconds = 12f;   // 곁가지를 들어갔다 나오는 데 문 하나당 더 드는 시간 (어림)
-        private const int MaxAttempts = 400;
+        private const int MaxAttempts = 800; // 좌우 전투 방 2개 보장(2026-11-16)으로 다시 뽑기가 늘어 여유를 둔다 (시드 56000판 최대 365회)
         private const int MaxElites = 2;
         public const int MinFights = MinCombatRooms; // 중간보스·보스 말고 일반 전투 방 최소 수 (옛 이름)
 

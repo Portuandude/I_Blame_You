@@ -273,7 +273,7 @@ namespace IBlameYou.Tests
         public void VillageIsOneDeadEndSideRoom()
         {
             foreach (float minutes in new[] { 15f, 20f, 30f })
-                for (int seed = 0; seed < 300; seed++)
+                for (int seed = -40; seed < 300; seed++)
                 {
                     var layout = RoomLayout.Generate(seed, minutes * 60f);
                     RoomData boss = layout.Rooms.Find(r => r.Kind == RoomKind.Boss);
@@ -368,7 +368,7 @@ namespace IBlameYou.Tests
             foreach (float target in targets)
             {
                 int total = 0, min = int.MaxValue, max = 0, runs = 0;
-                for (int seed = 0; seed < 300; seed++)
+                for (int seed = -40; seed < 300; seed++)
                 {
                     var layout = RoomLayout.Generate(seed, target);
                     int side = 0, combat = 0;
