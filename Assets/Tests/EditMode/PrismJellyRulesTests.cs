@@ -53,5 +53,24 @@ namespace IBlameYou.Tests
             Assert.AreEqual(8f, PrismJellyRules.ShiftInterval);
             Assert.Less(PrismJellyRules.WarnSeconds, PrismJellyRules.ShiftInterval);
         }
+
+        [Test]
+        public void Patterns_AlternateAndBeamOpensAtHalfHealth()
+        {
+            Assert.AreEqual(PrismJellyRules.Pattern.Droplets, PrismJellyRules.NextPattern(PrismJellyRules.Pattern.Slam));
+            Assert.AreEqual(PrismJellyRules.Pattern.Slam, PrismJellyRules.NextPattern(PrismJellyRules.Pattern.Droplets));
+            for (int i = 0; i < 100; i++)
+            {
+                int n = PrismJellyRules.DropletCount(i / 100.0);
+                Assert.That(n, Is.InRange(4, 6));
+            }
+            Assert.AreEqual(4, PrismJellyRules.DropletCount(0));
+            Assert.AreEqual(6, PrismJellyRules.DropletCount(0.999));
+            Assert.IsFalse(PrismJellyRules.BeamUnlocked(201f, 400f));
+            Assert.IsTrue(PrismJellyRules.BeamUnlocked(200f, 400f));
+            Assert.IsFalse(PrismJellyRules.BeamUnlocked(0f, 0f));
+            Assert.Less(PrismJellyRules.BeamWarn, PrismJellyRules.BeamInterval);
+            Assert.Less(PrismJellyRules.ShockwaveHeight, 1f, "점프로 넘을 수 있는 높이");
+        }
     }
 }

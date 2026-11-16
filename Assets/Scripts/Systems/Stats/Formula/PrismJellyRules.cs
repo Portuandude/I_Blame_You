@@ -12,6 +12,33 @@ namespace IBlameYou.Systems
 
         public static readonly Element[] Colors = { Element.Fire, Element.Water, Element.Wind, Element.Earth };
 
+        // 패턴 (2단계, JellyPatterns). 출렁 착지와 젤리 방울을 번갈아, 체력 50% 이하에서는 프리즘 광선을 따로 12초마다.
+        public enum Pattern { Slam, Droplets }
+
+        public const float FirstPatternDelay = 2.5f;
+        public const float PatternInterval = 3.5f;    // 한 패턴이 끝나고 다음 패턴까지
+        public const float SlamWindup = 0.6f;
+        public const float SlamJumpSpeed = 13f;       // 높이 뛴다 (유닛/초)
+        public const float ShockwaveSpeed = 9f;       // 착지 충격파가 좌우로 바닥을 타고 가는 속도
+        public const float ShockwaveSeconds = 0.9f;   // 약 8유닛
+        public const float ShockwaveHeight = 0.7f;    // 바닥에서 이 높이까지만 맞는다 (점프·위로 순간이동으로 피함)
+        public const float DropletWindup = 0.5f;
+        public const int DropletMin = 4;
+        public const int DropletMax = 6;
+        public const float PuddleSeconds = 2f;
+        public const float PuddleTick = 0.5f;         // 웅덩이 위에 있으면 이 간격으로 상태이상 시도
+        public const float BeamHealthRatio = 0.5f;
+        public const float BeamInterval = 12f;
+        public const float BeamWarn = 1.2f;
+        public const float BeamSeconds = 0.35f;
+        public const float BeamHalfHeight = 0.45f;    // 광선 두께 절반 (층을 바꾸면 피한다)
+
+        public static Pattern NextPattern(Pattern previous) => previous == Pattern.Slam ? Pattern.Droplets : Pattern.Slam;
+
+        public static int DropletCount(double roll) => DropletMin + Pick(roll, DropletMax - DropletMin + 1);
+
+        public static bool BeamUnlocked(float health, float maxHealth) => maxHealth > 0f && health <= maxHealth * BeamHealthRatio;
+
         // 처음 색 (roll: 0 이상 1 미만 난수)
         public static Element FirstColor(double roll) => Colors[Pick(roll, Colors.Length)];
 
