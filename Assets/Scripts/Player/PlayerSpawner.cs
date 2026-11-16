@@ -99,8 +99,6 @@ namespace IBlameYou.Player
             go.AddComponent<PlayerCombat>();      // B: 평타
             go.AddComponent<SpellCaster>();       // B: 공격 스킬 (영창)
             go.AddComponent<CursorSpellPreview>(); // B: 커서 자리 마법 영창 중 범위 테두리
-            go.AddComponent<ElementShield>();
-            go.AddComponent<ElementShieldSkill>(); // A: 속성 방어막 (W/A/S/D 미니게임)
             go.AddComponent<TeleportSkill>();      // A: 순간이동
             go.AddComponent<DashAfterimage>();     // 대쉬 잔상 (Visual 자식을 찾으므로 Visual을 만든 뒤에)
             go.AddComponent<PlayerSquash>();       // 점프·착지 squash & stretch

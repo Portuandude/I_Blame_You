@@ -18,8 +18,6 @@ namespace IBlameYou.Player
 
         private bool listeningKills;
 
-        private bool listeningShield;
-
         private bool listeningSpells;
 
         private bool listeningLevels;
@@ -29,13 +27,11 @@ namespace IBlameYou.Player
             var progression = listeningLevels ? GetComponent<PlayerProgression>() : null;
             if (progression != null) progression.LeveledUp -= OnLeveledUp;
             if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
-            var shieldSkill = listeningShield ? GetComponent<ElementShieldSkill>() : null;
-            if (shieldSkill != null) shieldSkill.Activated -= OnShieldActivated;
             var caster = listeningSpells ? GetComponent<SpellCaster>() : null;
             if (caster != null) caster.Casted -= OnSpellCasted;
         }
 
-        // 응원 리본: B의 공격 마법이 발동하면 마나를 조금 돌려받는다 (쌍둥이 반지의 B 쪽 짝, 주황 글자).
+        // 응원 리본: B의 공격 마법이 발동하면 마나를 조금 돌려받는다 (주황 글자).
         private void OnSpellCasted(Element element)
         {
             var mana = GetComponent<ManaSystem>();
@@ -54,17 +50,6 @@ namespace IBlameYou.Player
         private static readonly Vector3 StarCandyGlintAsideOffset = new Vector3(-0.55f, 1.4f, 0f); // 도토리와 같이 튈 때 별사탕 자리 (왼쪽으로 비켜서)
 
         private static readonly Vector3 RingOffset = new Vector3(0f, 0.7f, 0f); // 마나 고리 가운데 (몸통 높이, 플레이어 로컬)
-
-        // 쌍둥이 반지: A의 방어막이 발동하면 마나를 조금 돌려받는다 (B가 바로 마법을 이어 쓸 수 있게).
-        private void OnShieldActivated(Element element)
-        {
-            var mana = GetComponent<ManaSystem>();
-            if (mana == null) return;
-            mana.Restore(RelicBook.TwinRingMana);
-            var color = new Color(0.37f, 0.82f, 1f);
-            VfxPlayer.ManaRing(transform, RingOffset, color); // A색 고리
-            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
-        }
 
         // 레벨이 오를 때: 도토리 주머니(체력)·별사탕(마나). 한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 회복하지 않는다.
         private void OnLeveledUp(int level)
@@ -251,14 +236,6 @@ namespace IBlameYou.Player
                 case RelicId.Hourglass:
                     var recovery = GetComponent<FallRecovery>();
                     if (recovery != null) recovery.FreeFalls += RelicBook.HourglassFreeFalls;
-                    break;
-                case RelicId.TwinRing:
-                    var shieldSkill = GetComponent<ElementShieldSkill>();
-                    if (shieldSkill != null && !listeningShield)
-                    {
-                        shieldSkill.Activated += OnShieldActivated;
-                        listeningShield = true;
-                    }
                     break;
                 case RelicId.AcornPouch:
                 case RelicId.StarCandy:
