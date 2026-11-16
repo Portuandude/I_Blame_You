@@ -30,6 +30,7 @@ namespace IBlameYou.Enemies
         private Phase phase;
         private float phaseEnd;
         private bool leftGround;
+        private bool falling; // 정점을 지나 내려오기 시작했다 (정점의 vy≈0을 착지로 잘못 보지 않게)
         private float nextPattern;
         private float nextBeam;
         private bool beamAnnounced;
@@ -80,6 +81,7 @@ namespace IBlameYou.Enemies
                         phase = Phase.SlamAir;
                         phaseEnd = Time.time + AirborneTimeout;
                         leftGround = false;
+                        falling = false;
                         rb.linearVelocity = new Vector2(0f, PrismJellyRules.SlamJumpSpeed);
                         EnemySquash.For(gameObject).Release();
                         GameAudio.PlaySfx("Jump", 0.6f);
@@ -87,7 +89,8 @@ namespace IBlameYou.Enemies
                     break;
                 case Phase.SlamAir:
                     if (!leftGround && rb.linearVelocity.y > 0.5f) leftGround = true;
-                    if (leftGround && Grounded()) Land();
+                    if (leftGround && rb.linearVelocity.y < -0.5f) falling = true;
+                    if (falling && rb.linearVelocity.y <= 0.1f && OnGround()) Land();
                     else if (Time.time >= phaseEnd) End();
                     break;
                 case Phase.DropletWindup:
@@ -196,6 +199,18 @@ namespace IBlameYou.Enemies
         }
 
         private bool Grounded() => Mathf.Abs(rb.linearVelocity.y) < 0.1f;
+
+        // 발밑 바로 아래에 땅이 있는지 (착지 판정)
+        private bool OnGround()
+        {
+            var b = body.bounds;
+            return Physics2D.Raycast(new Vector2(b.center.x, b.min.y + 0.05f), Vector2.down, 0.15f, EnemySpawner.GroundMask()).collider != null;
+        }
+
+        private void OnDisable()
+        {
+            if (phase != Phase.None) End();
+        }
 
         private void OnDestroy()
         {

@@ -49,6 +49,14 @@ namespace IBlameYou.Enemies
             }
         }
 
+        // 주인 젤리가 사라졌거나 쓰러졌으면 위험물도 사라진다 (죽은 보스가 때리지 않게, 방이 치워져도)
+        public static bool OwnerGone(GameObject owner)
+        {
+            if (owner == null) return true;
+            var health = owner.GetComponent<HealthSystem>();
+            return health != null && health.IsDead;
+        }
+
         public static StatusDebuff DebuffFor(Element color)
         {
             switch (color)
@@ -92,7 +100,7 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             age += Time.deltaTime;
-            if (owner == null || age >= PrismJellyRules.ShockwaveSeconds)
+            if (JellyHazards.OwnerGone(owner) || age >= PrismJellyRules.ShockwaveSeconds)
             {
                 Destroy(gameObject);
                 return;
@@ -157,7 +165,7 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             age += Time.deltaTime;
-            if (owner == null || age >= MaxLife)
+            if (JellyHazards.OwnerGone(owner) || age >= MaxLife)
             {
                 Destroy(gameObject);
                 return;
@@ -167,9 +175,11 @@ namespace IBlameYou.Enemies
             Vector2 pos = transform.position;
             Vector2 step = velocity * Time.deltaTime;
             var hit = Physics2D.Raycast(pos, step.normalized, step.magnitude + 0.05f, ground);
-            if (hit.collider != null && velocity.y < 0f)
+            if (hit.collider != null)
             {
-                JellyPuddle.Create(owner, hit.point, element);
+                // 내려오다 바닥(윗면)에 닿으면 웅덩이, 올라가다 천장·벽에 닿으면 그냥 터진다
+                if (velocity.y < 0f && hit.normal.y > 0.5f) JellyPuddle.Create(owner, hit.point, element);
+                else VfxPlayer.Dust(hit.point, 0.3f);
                 Destroy(gameObject);
                 return;
             }
@@ -221,7 +231,7 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             age += Time.deltaTime;
-            if (owner == null || age >= PrismJellyRules.PuddleSeconds)
+            if (JellyHazards.OwnerGone(owner) || age >= PrismJellyRules.PuddleSeconds)
             {
                 Destroy(gameObject);
                 return;
@@ -249,7 +259,7 @@ namespace IBlameYou.Enemies
 
         private void FixedUpdate()
         {
-            if (element != Element.Wind || owner == null) return;
+            if (element != Element.Wind || JellyHazards.OwnerGone(owner)) return;
             foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height)))
             {
                 var mover = target.GetComponent<PlayerMovement>();
@@ -308,7 +318,7 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             age += Time.deltaTime;
-            if (owner == null || Done)
+            if (JellyHazards.OwnerGone(owner) || Done)
             {
                 Destroy(gameObject);
                 return;
