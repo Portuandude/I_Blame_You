@@ -8,8 +8,8 @@ namespace IBlameYou.Player
     // 각 클라이언트가 자기 역할의 입력만 서버로 보내도록 이 클래스만 바꾸면 된다.
     //
     // 플레이어 A (이동)                       플레이어 B (공격)
-    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 영창 (누르고 있으면 다이얼)
-    //   Shift 달리기, Left Ctrl 대쉬             상단 1~5: 공격 스킬 선택 → 영창 타이핑 → Enter
+    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 마법 (누르고 있으면 다이얼)
+    //   Shift 달리기, Left Ctrl 대쉬             상단 1~4: 공격 스킬 선택 → 마법진을 좌클릭 꾹 한붓으로 따라 그리기 (우클릭·Esc 취소)
     //   W/A/S/D + Enter: 순간이동 (2026-11-12 방향키에서 바꿈)
     //   W(또는 ↑): 마을 건물 앞에서 들어가기
     //
@@ -115,11 +115,11 @@ namespace IBlameYou.Player
         }
 
         // P2가 마우스만으로 공격 스킬을 쓰는 길 (2026-11-15 2인 점검): 한 키보드에서 숫자줄 1~4는 P1 왼손(W/A/S/D) 바로 위라 두 사람 손이 겹친다.
-        // 휠로 속성을 고르고(불 → 물 → 바람 → 땅 → 불) 우클릭하면 그 스킬의 영창이 열린다. 숫자줄 1~4도 그대로 된다.
-        // 2026-11-15 사람 결정: 우클릭을 누르고 있으면 2단계 원형 다이얼(속성 → 그 속성의 배운 마법)이 펼쳐지고, 떼면 고른 마법의 영창 (SpellDialRules).
+        // 휠로 속성을 고르고(불 → 물 → 바람 → 땅 → 불) 우클릭하면 그 스킬의 마법진이 열린다. 숫자줄 1~4도 그대로 된다.
+        // 2026-11-15 사람 결정: 우클릭을 누르고 있으면 2단계 원형 다이얼(속성 → 그 속성의 배운 마법)이 펼쳐지고, 떼면 고른 마법의 마법진 (SpellDialRules).
         //   짧게 톡 누르면 예전처럼 지금 고른 마법. 다이얼이 열린 동안 게임은 멈추지 않는다. 좌클릭은 다이얼 취소 (평타는 안 나감).
         // 휠·숫자줄·다이얼은 같은 상태(MouseSpellIndex + 속성별 마지막 마법 칸)를 쓴다.
-        // 영창 타이핑은 여전히 키보드라, 그때는 P2가 키보드를 잡는다 (P1 키는 막힘).
+        // 마법진은 마우스로만 그리므로 그동안에도 P1 키보드는 막히지 않는다 (2026-11-16, 예전 영창 타이핑 때는 막혔다).
         public const int MouseSpellCount = SpellDialRules.ElementCount; // 불·물·바람·땅 (무속성은 평타)
         public static int MouseSpellIndex { get; private set; }
         public static Element MouseSpell => (Element)MouseSpellIndex;
@@ -185,6 +185,18 @@ namespace IBlameYou.Player
             }
             return true;
         }
+
+        // ---- 마법진 그리기 (SpellCaster) ----
+        // 마우스 자리 (GUI 좌표: 왼쪽 위가 0)
+        public static Vector2 CircleMouseGui()
+        {
+            var m = Input.mousePosition;
+            return new Vector2(m.x, Screen.height - m.y);
+        }
+
+        public static bool CircleDrawDown() => !BBlocked && Input.GetMouseButtonDown(0);
+        public static bool CircleDrawHeld() => !BBlocked && Input.GetMouseButton(0);
+        public static bool CircleCancelDown() => Input.GetKeyDown(KeyCode.Escape) || (!BBlocked && Input.GetMouseButtonDown(1));
 
         private static bool GetIndexedKeyDown(KeyCode[] keys, out Element element)
         {

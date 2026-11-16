@@ -22,10 +22,10 @@ namespace IBlameYou.Player
         BloodPact,   // 피의 계약: 마나가 모자라면 모자란 만큼 체력으로 대신 낸다 (40초에 한 번, 체력 1은 남긴다)
         PhoenixFeather, // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
         Hourglass,   // 되감기 모래시계: 낭떠러지에 떨어져도 2번은 피해 없이 돌아온다
-        TwinRing,    // 쌍둥이 반지: A의 방어막이 발동하면 마나 +5 (방어막 미니게임 성공 보상)
+        TwinRing,    // 쌍둥이 반지: B가 마법진을 PerfectAt(90%) 이상으로 그리면 마나 +5 (2026-11-16 방어막이 빠지며 바뀜. 예전: A 방어막 발동)
         Compass,     // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
         Clover,      // 네잎 클로버: 다음 유물 상자부터 후보가 OfferSize → CloverOfferSize개
-        CheerRibbon, // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana (쌍둥이 반지의 B 쪽 짝)
+        CheerRibbon, // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana
         StarShard,   // 별똥 조각: 적을 처치하면 StarShardChance 확률로 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
         HeroMedal,   // 용사의 훈장: 정예 구역(전투 구역)을 돌파하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
         AcornPouch,  // 도토리 주머니: 레벨이 오를 때마다 체력 +AcornPouchHeal (PlayerProgression.LeveledUp)
@@ -65,6 +65,7 @@ namespace IBlameYou.Player
         public const int PhoenixFeatherSaves = 1;
         public const int HourglassFreeFalls = 2;
         public const float TwinRingMana = 5f;
+        public const int TwinRingPercent = 90; // MagicCircleRules.PerfectAt과 같게 ("완벽!")
         public const float CheerRibbonMana = 4f;
         public const float StarShardChance = 0.15f;
         public const float StarShardMana = 6f;
@@ -148,7 +149,7 @@ namespace IBlameYou.Player
                 case RelicId.BloodPact: return $"마나가 모자라면 체력으로 대신 내기 ({BloodPactCooldown:0}초에 한 번)";
                 case RelicId.PhoenixFeather: return "쓰러질 피해를 한 번 버티고 체력 30%로";
                 case RelicId.Hourglass: return $"낭떠러지에 떨어져도 {HourglassFreeFalls}번은 피해 없이 복귀";
-                case RelicId.TwinRing: return $"A의 방어막이 발동하면 마나 +{TwinRingMana:0}";
+                case RelicId.TwinRing: return $"마법진을 {TwinRingPercent}% 이상으로 그리면 마나 +{TwinRingMana:0}";
                 case RelicId.Compass: return "미니맵에 안 가 본 방도 흐리게 보인다";
                 case RelicId.Clover: return $"유물 상자 후보 {OfferSize}개 → {CloverOfferSize}개";
                 case RelicId.CheerRibbon: return $"B의 공격 마법이 발동하면 마나 +{CheerRibbonMana:0}";
@@ -179,8 +180,8 @@ namespace IBlameYou.Player
                 case RelicId.Featherfall:
                 case RelicId.ShadowVeil:
                 case RelicId.Hourglass:
-                case RelicId.TwinRing:
                 case RelicId.PaperPlane: return "A";
+                case RelicId.TwinRing:
                 case RelicId.WrathCharm:
                 case RelicId.HawkEye:
                 case RelicId.VampireFang:

@@ -20,6 +20,8 @@ namespace IBlameYou.Player
 
         private bool listeningSpells;
 
+        private bool listeningCircles;
+
         private bool listeningLevels;
 
         private void OnDestroy()
@@ -29,6 +31,8 @@ namespace IBlameYou.Player
             if (listeningKills) EnemyController.Killed -= OnEnemyKilled;
             var caster = listeningSpells ? GetComponent<SpellCaster>() : null;
             if (caster != null) caster.Casted -= OnSpellCasted;
+            var circleCaster = listeningCircles ? GetComponent<SpellCaster>() : null;
+            if (circleCaster != null) circleCaster.CircleJudged -= OnCircleJudged;
         }
 
         // 응원 리본: B의 공격 마법이 발동하면 마나를 조금 돌려받는다 (주황 글자).
@@ -40,6 +44,18 @@ namespace IBlameYou.Player
             var color = new Color(1f, 0.65f, 0.35f);
             VfxPlayer.ManaRing(transform, RingOffset, color); // B색 고리
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.CheerRibbonMana:0}", color, 0.8f);
+        }
+
+        // 쌍둥이 반지: 마법진을 "완벽!"(90% 이상)으로 그리면 마나를 조금 돌려받는다 (하늘색 글자).
+        private void OnCircleJudged(int percent)
+        {
+            if (percent < RelicBook.TwinRingPercent) return;
+            var mana = GetComponent<ManaSystem>();
+            if (mana == null) return;
+            mana.Restore(RelicBook.TwinRingMana);
+            var color = new Color(0.37f, 0.82f, 1f);
+            VfxPlayer.ManaRing(transform, RingOffset, color);
+            DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
         }
 
         private int acornFrame = -1;
@@ -236,6 +252,14 @@ namespace IBlameYou.Player
                 case RelicId.Hourglass:
                     var recovery = GetComponent<FallRecovery>();
                     if (recovery != null) recovery.FreeFalls += RelicBook.HourglassFreeFalls;
+                    break;
+                case RelicId.TwinRing:
+                    var circleCaster = GetComponent<SpellCaster>();
+                    if (circleCaster != null && !listeningCircles)
+                    {
+                        circleCaster.CircleJudged += OnCircleJudged;
+                        listeningCircles = true;
+                    }
                     break;
                 case RelicId.AcornPouch:
                 case RelicId.StarCandy:
