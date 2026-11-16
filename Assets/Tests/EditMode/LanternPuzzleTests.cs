@@ -107,46 +107,19 @@ namespace IBlameYou.Tests
             Assert.AreEqual("거울 룬 방", FeatureTestStage.Names[FeatureTestStage.MirrorArea]);
         }
     
-        // 방어막 다리: 단단한 선반 위 서로 다른 속성 분출 둘(입구 열로 튕김), 끝에 동전 셋, 마력 안개. 선반 끝까지 걸어서 갈 수 있고 방은 지나간다.
         [Test]
-        public void ShieldBridgeHasTwoDifferentJetsAndCoinsAtTheEnd()
+        // 방어막 다리 방은 방어막과 함께 빠졌다 (2026-11-16): 둘째 퍼즐은 등불 순서 · 거울 룬 둘 중 하나
+        public void SecondPuzzleCyclesThroughTwoKinds()
         {
-            foreach (int entry in new[] { ChunkGenerator.MinGround, 7, ChunkGenerator.MaxGround })
-                for (int seed = 0; seed < 30; seed++)
-                {
-                    var chunk = ChunkGenerator.Generate(seed, 3, ChunkKind.ShieldBridge, 0.5f, entry, 0);
-                    string at = $"seed {seed} entry {entry}";
-                    int stand = entry + ChunkGenerator.ShieldLedgeRise;
-                    var jets = chunk.Features.Where(f => f.Kind == FeatureKind.ElementJet).ToList();
-                    Assert.AreEqual(2, jets.Count, at);
-                    Assert.AreNotEqual(jets[0].ElementIndex, jets[1].ElementIndex, at);
-                    Assert.IsTrue(jets.All(j => j.Y == stand && j.Direction == ChunkGenerator.ShieldReturnX && j.ElementIndex < ChunkGenerator.GateElementCount), at);
-                    var coins = chunk.Features.Where(f => f.Kind == FeatureKind.CoinPile).ToList();
-                    Assert.AreEqual(ChunkGenerator.ShieldCoinCount, coins.Count, at);
-                    Assert.IsTrue(coins.All(c => c.Y == stand && c.X > jets.Max(j => j.X + j.Width - 1)), at);
-                    for (int x = ChunkGenerator.ShieldLedgeX0; x <= ChunkGenerator.ShieldLedgeX1; x++)
-                        Assert.IsTrue(chunk.IsSolid(x, stand - 1), $"{at}: 선반 {x}");
-                    Assert.AreEqual(StageTile.Empty, chunk.Get(ChunkGenerator.ShieldReturnX, stand), at);
-                    var ward = chunk.Features.Single(f => f.Kind == FeatureKind.BlinkWard);
-                    Assert.LessOrEqual(ward.X, jets.Min(j => j.X), $"{at}: 안개가 첫 통로부터");
-                    Assert.AreEqual(ChunkData.Width, ward.X + ward.Width, $"{at}: 안개가 오른쪽 벽까지 (선반 오른쪽 바닥에서 순간이동 금지)");
-                    Assert.IsTrue(StageValidator.Validate(chunk, out string reason), $"{at}: {reason}");
-                    // 선반 끝(동전)까지 가는 길이 있다: 동전 칸을 출구로 삼아 검사
-                    var probe = ChunkGenerator.Generate(seed, 3, ChunkKind.ShieldBridge, 0.5f, entry, 0);
-                    probe.Features.Add(new ChunkFeature { Kind = FeatureKind.Exit, X = coins[0].X, Y = stand, Width = 1 });
-                    Assert.IsTrue(StageValidator.Validate(probe, out reason), $"{at}: 동전까지 {reason}");
-                }
-        }
-
-        [Test]
-        public void SecondPuzzleCyclesThroughThreeKinds()
-        {
-            Assert.AreEqual(ChunkKind.ShieldBridge, RoomLayout.DeductionPuzzle(2));
-            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(3));
-            Assert.AreEqual(RoomKind.Puzzle, RoomLayout.KindOf(ChunkKind.ShieldBridge));
+            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(2));
+            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(3));
+            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(-1));
+            for (int seed = 0; seed < 20; seed++)
+                Assert.That(RoomLayout.DeductionPuzzle(seed), Is.EqualTo(ChunkKind.LanternPuzzle).Or.EqualTo(ChunkKind.MirrorPuzzle));
             var stage = FeatureTestStage.Build();
-            Assert.AreEqual(ChunkKind.ShieldBridge, stage.Chunks[FeatureTestStage.ShieldArea].Kind);
-            Assert.AreEqual("방어막 다리 방", FeatureTestStage.Names[FeatureTestStage.ShieldArea]);
+            Assert.AreEqual(ChunkKind.Rest, stage.Chunks[FeatureTestStage.TowerArea].Kind);
+            Assert.AreEqual("버섯 탑 방", FeatureTestStage.Names[FeatureTestStage.TowerArea]);
+            Assert.AreEqual(FeatureTestStage.Order.Length, FeatureTestStage.Names.Length);
         }
     }
 }
