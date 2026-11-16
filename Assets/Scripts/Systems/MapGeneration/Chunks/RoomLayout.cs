@@ -565,7 +565,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.MovingBridge:
                 case ChunkKind.SwitchBridge:
                 case ChunkKind.LanternPuzzle:
-                case ChunkKind.MirrorPuzzle:
+                case ChunkKind.MirrorPuzzle: return RoomKind.Puzzle;
                 default: return RoomKind.Travel;
             }
         }
