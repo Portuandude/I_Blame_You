@@ -28,6 +28,7 @@ namespace IBlameYou.Tests
         public void TearDown()
         {
             HudRecorder.Recording = false;
+            HudRecorder.ForceRepaintForTests = false;
             HudRecorder.Assets = null;
             HudRecorder.ResetTables();
             receiver.Clear();
@@ -192,8 +193,7 @@ namespace IBlameYou.Tests
             HudRecorder.ResetTables();
             HudRecorder.Assets = sender;
             HudRecorder.Recording = true;
-            var savedEvent = Event.current;
-            Event.current = new Event { type = EventType.Repaint };
+            HudRecorder.ForceRepaintForTests = true;
             try
             {
                 HudRecorder.Content(HudOp.Label, new Rect(10, 20, 300, 40), new GUIContent("체력 100"), style, 0);
@@ -209,7 +209,7 @@ namespace IBlameYou.Tests
             }
             finally
             {
-                Event.current = savedEvent;
+                HudRecorder.ForceRepaintForTests = false;
             }
 
             var frames = new List<byte[]>();
@@ -242,15 +242,14 @@ namespace IBlameYou.Tests
             HudRecorder.ResetTables();
             HudRecorder.Assets = sender;
             HudRecorder.Recording = false;
-            var savedEvent = Event.current;
-            Event.current = new Event { type = EventType.Repaint };
+            HudRecorder.ForceRepaintForTests = true;
             try
             {
                 HudRecorder.Content(HudOp.Label, new Rect(0, 0, 1, 1), new GUIContent("x"), GUIStyle.none, 0);
             }
             finally
             {
-                Event.current = savedEvent;
+                HudRecorder.ForceRepaintForTests = false;
             }
             var frames = new List<byte[]>();
             HudRecorder.TakeCompleted(frames, true);
