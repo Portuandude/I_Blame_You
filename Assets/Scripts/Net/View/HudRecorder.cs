@@ -18,6 +18,7 @@ namespace IBlameYou.Net
     {
         public static bool Recording;          // NetHostStreamer가 프레임마다 정한다
         public static NetAssetSender Assets;
+        internal static bool ForceRepaintForTests; // EditMode 테스트는 OnGUI 밖이라 Repaint 이벤트가 없다
 
         private static readonly NetWriter frame = new NetWriter(32 * 1024);
         private static readonly NetWriter scratch = new NetWriter(256);
@@ -52,6 +53,7 @@ namespace IBlameYou.Net
             get
             {
                 if (!Recording || Assets == null) return false;
+                if (ForceRepaintForTests) return true;
                 var e = Event.current;
                 return e != null && e.type == EventType.Repaint;
             }
