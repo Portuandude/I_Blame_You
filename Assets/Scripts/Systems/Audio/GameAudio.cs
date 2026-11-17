@@ -55,11 +55,16 @@ namespace IBlameYou.Systems
         }
 
         // 배경음악을 바꾼다. 이미 같은 곡이 나오고 있으면 그대로 둔다.
-        public static void PlayMusic(string name) => Instance.SwitchMusic(name);
+        public static void PlayMusic(string name)
+        {
+            Net.NetAudio.RecordMusic(name); // 온라인 호스트면 친구 컴퓨터에서도 (NetAudio)
+            Instance.SwitchMusic(name);
+        }
 
         // 배경음악을 줄여서 끈다 (결과 징글 동안). 다음 PlayMusic이 다시 튼다.
         public static void StopMusic()
         {
+            Net.NetAudio.RecordStopMusic();
             if (instance == null) return;
             instance.currentMusic = null;
             instance.currentMusicName = null;
@@ -68,6 +73,7 @@ namespace IBlameYou.Systems
         // 지금 곡을 조금 빠르게/느리게 (예: 중간보스 짝이 쓰러져 남은 기사가 광폭화하면 1.08). 다음 곡으로 바뀌면 1로 돌아간다.
         public static void SetMusicPitch(float pitch)
         {
+            Net.NetAudio.Record(Net.AudioOp.MusicPitch, pitch);
             if (instance == null) return;
             instance.musicPitch = Mathf.Clamp(pitch, 0.5f, 2f);
         }
@@ -75,6 +81,7 @@ namespace IBlameYou.Systems
         // 배경음악을 잠시 작게 (예: 보스 방 바로 앞 방에서 0.55 — 폭풍 전 고요). 1이면 원래 크기. 곡을 바꿔도 유지되므로 쓴 쪽이 1로 되돌린다.
         public static void SetMusicDuck(float scale)
         {
+            Net.NetAudio.Record(Net.AudioOp.MusicDuck, scale);
             if (instance == null && scale >= 1f) return; // 아직 소리를 안 냈으면 되돌릴 것도 없다 (종료 중 오브젝트를 새로 만들지 않게)
             Instance.musicDuck = Mathf.Clamp01(scale);
         }
@@ -83,6 +90,7 @@ namespace IBlameYou.Systems
         // 크기 조절(SetMusicDuck)과 따로 움직이므로 다른 쪽이 정한 크기를 건드리지 않는다.
         public static void SilenceMusic(float seconds)
         {
+            Net.NetAudio.Record(Net.AudioOp.Silence, seconds);
             if (instance == null) return; // 아직 곡이 없으면 끊을 것도 없다
             instance.silentUntil = Mathf.Max(instance.silentUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
         }
@@ -90,6 +98,7 @@ namespace IBlameYou.Systems
         // 배경음악을 물속처럼 먹먹하게 (일시정지 창이 열린 동안). 크기는 그대로라 볼륨 막대를 움직이면 그 크기로 들린다.
         public static void SetMusicMuffled(bool muffled)
         {
+            Net.NetAudio.Record(Net.AudioOp.Muffle, muffled ? 1f : 0f);
             if (instance == null && !muffled) return; // 되돌릴 것이 없으면 오브젝트를 새로 만들지 않는다
             Instance.musicMuffled = muffled;
         }
@@ -144,6 +153,7 @@ namespace IBlameYou.Systems
 
         private void PlayOneShot(string name, float volume, float pitchJitter, float delay, float basePitch = 1f)
         {
+            Net.NetAudio.RecordSfx(name, volume, pitchJitter, delay, basePitch);
             var clip = Load($"Audio/SFX/{name}");
             if (clip == null) return;
 
