@@ -1,4 +1,5 @@
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
 
 namespace IBlameYou.UI
 {
@@ -185,7 +186,7 @@ namespace IBlameYou.UI
 
         private static void DrawStyle(GUIStyle style, Rect rect)
         {
-            if (Event.current.type == EventType.Repaint) style.Draw(rect, false, false, false, false);
+            if (Event.current.type == EventType.Repaint) GUI.StyleDraw(style, rect, false, false, false, false);
         }
     }
 }
