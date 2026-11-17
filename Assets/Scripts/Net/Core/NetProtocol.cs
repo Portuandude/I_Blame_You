@@ -21,6 +21,7 @@ namespace IBlameYou.Net
         Hud = 13,       // 호스트 → 클라이언트: 한 프레임의 HUD 그리기 명령
         Audio = 14,     // 호스트 → 클라이언트: 효과음·배경음 사건
         ResetView = 15, // 호스트 → 클라이언트: 그림 표를 비우고 처음부터 (새 접속)
+        Compressed = 20, // 안에 다른 메시지 하나가 deflate로 줄어 들어 있다 (NetCompression)
     }
 
     public static class HelloMessage
