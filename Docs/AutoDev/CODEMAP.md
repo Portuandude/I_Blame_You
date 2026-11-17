@@ -18,6 +18,7 @@
 
 | 기능 | 파일 |
 | --- | --- |
+| 온라인 2인 (호스트 방식, 컴퓨터 두 대) | `Net/` — 순수 `Net/Core/`(바이트·TCP·P2 입력·압축, 테스트 `Tests/EditMode/NetCoreTests`), 그림·HUD 옮기기 `Net/View/`(`NetWorld`·`HudRecorder`·`NetGUI` 별칭, 테스트 `Tests/EditModeUnity/NetViewTests`), 연결 `NetSession`, 호스트 보내기 `NetHostStreamer`, 친구 화면 `NetClientView`, P2 입력 `P2Input`, 소리 `NetAudio`, 메뉴 창 `Core/OnlineWindow.cs`. OnGUI 파일은 `using GUI = IBlameYou.Net.NetGUI;` 필수 |
 | 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch), 저장 `Core/RunSave.cs`·`SaveData.cs`, 카메라 `Core/CameraFollow.cs` |
 | 스테이지 계획·청크 지형 (순수 C#, 테스트 가능) | `Systems/MapGeneration/Chunks/`: `StagePlanner`(청크 순서·시간), `ChunkGenerator`(청크 지형), `StageValidator`(갈 수 있는지), `ChunkData`(타일·적·기능 데이터) |
 | 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+(좌우 2+)·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
