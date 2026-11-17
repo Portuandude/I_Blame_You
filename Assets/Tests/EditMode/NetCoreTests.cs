@@ -294,5 +294,26 @@ namespace IBlameYou.Tests
                 Assert.IsFalse(client.IsConnected);
             }
         }
+
+        [Test]
+        public void Compression_ShrinksBigRepetitiveMessages_AndRoundTrips()
+        {
+            var w = new NetWriter();
+            w.WriteByte((byte)MsgType.Hud);
+            for (int i = 0; i < 200; i++) w.WriteString("체력 100 / 100  마나 50");
+            var original = w.ToArray();
+            var packed = NetCompression.MaybeCompress(original);
+            Assert.AreEqual((byte)MsgType.Compressed, packed[0]);
+            Assert.Less(packed.Length, original.Length / 4);
+            CollectionAssert.AreEqual(original, NetCompression.Unwrap(packed));
+        }
+
+        [Test]
+        public void Compression_LeavesSmallMessagesAlone()
+        {
+            var small = new byte[] { (byte)MsgType.World, 1, 2, 3 };
+            Assert.AreSame(small, NetCompression.MaybeCompress(small));
+            Assert.AreSame(small, NetCompression.Unwrap(small));
+        }
     }
 }
