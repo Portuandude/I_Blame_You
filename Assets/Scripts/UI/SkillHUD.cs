@@ -5,6 +5,8 @@ using IBlameYou.Enemies;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
+using GUILayout = IBlameYou.Net.NetGUILayout;
 
 namespace IBlameYou.UI
 {

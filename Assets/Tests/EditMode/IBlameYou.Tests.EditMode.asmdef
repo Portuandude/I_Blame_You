@@ -8,7 +8,8 @@
         "IBlameYou.Relics",
         "IBlameYou.Equipment",
         "IBlameYou.Formula",
-        "IBlameYou.SkillRules"
+        "IBlameYou.SkillRules",
+        "IBlameYou.Net"
     ],
     "includePlatforms": [
         "Editor"

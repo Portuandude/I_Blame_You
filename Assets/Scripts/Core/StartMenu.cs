@@ -2,12 +2,14 @@ using System;
 using IBlameYou.Systems;
 using IBlameYou.UI;
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
+using GUILayout = IBlameYou.Net.NetGUILayout;
 
 namespace IBlameYou.Core
 {
     // 게임 시작 전 화면 (기획서 2.8/2.9). 개발자 모드를 켜고 끄고, 볼륨을 맞추고, 로컬 테스트를 시작한다.
     // 설정과 최고 기록은 SaveData(PlayerPrefs)에 남는다.
-    // 온라인(데디케이티드 서버)은 아직 없어 버튼만 자리를 잡아 둔다.
+    // 온라인 2인(호스트 방식, 컴퓨터 두 대)은 아래 버튼의 창에서 방을 열거나 참가한다 (OnlineWindow, Docs/OnlinePlay.md).
     // IMGUI로 그린다 (버튼은 UI/CuteButton.cs의 둥근 그림).
     public class StartMenu : MonoBehaviour
     {
@@ -27,6 +29,7 @@ namespace IBlameYou.Core
         private bool recordsTogglePending;
         private readonly DisplaySettingsWindow display = new DisplaySettingsWindow(); // 화면 설정 창 (일시정지 메뉴와 같은 창)
         private readonly RelicCodexWindow codex = new RelicCodexWindow(); // 유물 도감 창 (C 또는 도감 줄 클릭). 게임 중에도 같은 창 (SkillHUD.Codex)
+        private readonly OnlineWindow online = new OnlineWindow(); // 온라인 2인 창 (호스트 하기 / 참가하기)
         private GUIStyle button;
         private GUIStyle toggle;
         private GUIStyle panel;    // 둥근 패널 (HUD와 같은 Resources/UI/HUD/Panel.png)
@@ -96,17 +99,17 @@ namespace IBlameYou.Core
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
             var e = Event.current;
-            if (!display.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
+            if (!display.IsOpen && !online.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
             {
                 if (e.keyCode == KeyCode.C && !codex.IsOpen) codex.Show(devMode); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
                 else codex.Close(true); // 사람이 닫으면 "통"
                 e.Use();
             }
-            if (!display.IsOpen && !codex.IsOpen) HandleMenuKeys(e);
+            if (!display.IsOpen && !codex.IsOpen && !online.IsOpen) HandleMenuKeys(e);
             else if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
                 activateKeyHeld = false; // 창이 열린 동안 뗐어도 풀어 둔다 (닫은 뒤 첫 Enter가 무시되지 않게, 리뷰 LOW)
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = !codex.IsOpen && !display.IsOpen; // 도감·화면 설정 창이 열려 있으면 뒤 메뉴는 누를 수 없게
+            GUI.enabled = !codex.IsOpen && !display.IsOpen && !online.IsOpen; // 도감·화면 설정·온라인 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
@@ -169,23 +172,23 @@ namespace IBlameYou.Core
                 StartRun(true);
             }
 
-            GUI.enabled = false;
-            IBlameYou.UI.CuteButton.LayoutButton("온라인 (데디케이티드 서버) — 준비 중", button, GUILayout.Height(40f));
-            GUI.enabled = true;
+            GUILayout.Space(4f);
+            if (MenuButton(StartSlot + 2, OnlineWindow.ButtonLabel(), 40f)) online.Show();
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
             GUI.matrix = screenMatrix;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
             bool displayWasOpen = display.IsOpen;
             display.Draw(panel, body, button);
+            online.Draw(panel, body, button);
             // 화면 설정 창을 Enter·Space로 닫고 그 키를 누르고 있으면, 키 반복이 뒤 메뉴 버튼을 누르지 않게 (리뷰 LOW)
             if (displayWasOpen && !display.IsOpen && (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter) || Input.GetKey(KeyCode.Space)))
                 activateKeyHeld = true;
         }
 
-        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트. 온라인은 준비 중이라 고를 수 없다.
+        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트 · 온라인 2인.
         private int StartSlot => saved != null ? 1 : 0;
-        private int MenuButtonCount => StartSlot + 2;
+        private int MenuButtonCount => StartSlot + 3;
 
         // 키보드로 아래 큰 버튼 고르기 (↑↓·W/S) · 누르기 (Enter·Space). 일시정지 창과 같은 방식.
         // OnGUI는 Update 뒤에 돌고, 시작하면 만들어지는 플레이어는 다음 프레임부터 Update를 돌아 이 Enter·Space가 순간이동·점프로 새지 않는다.
