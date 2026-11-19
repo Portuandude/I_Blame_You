@@ -58,6 +58,7 @@ namespace IBlameYou.Net
             DontDestroyOnLoad(go);
             instance = go.AddComponent<NetSession>();
             go.AddComponent<NetHostStreamer>();
+            go.AddComponent<NetPeerLossPause>(); // 판 도중 친구가 끊기면 호스트를 일시정지
             return instance;
         }
 
