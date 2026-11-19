@@ -1776,6 +1776,29 @@ def player_down():
     return normalize(fade_edges(out))
 
 
+def ping_mark():
+    """P2 "여기!" 신호 (마우스 가운데 버튼): 맑은 "띠-링" (E6 → A6 사인 두 음 + 위 배음 반짝임, 둘째 음이 길게 울림), 0.4초.
+    적이 알아챈 "삐빅"(Notice, 네모파)과 헷갈리지 않게 둥근 사인으로."""
+    n = int(0.4 * SR)
+    out = np.zeros(n)
+    for at, hz, decay, amp in ((0.0, 1318.5, 0.05, 0.7), (0.08, 1760.0, 0.12, 1.0)):
+        m = n - int(at * SR)
+        tone = osc("sine", hz, m) + 0.3 * osc("sine", hz * 2, m) * env_exp(m, decay * 0.4)
+        mix_at(out, amp * tone * env_exp(m, decay), int(at * SR))
+    return normalize(fade_edges(lowpass(out, 7500), 3))
+
+
+def net_join():
+    """온라인 친구가 들어옴·다시 연결됨: 위로 올라가는 세 음 "도-미-솔" 종소리 (C5 E5 G5, 마지막 음 길게), 0.6초."""
+    n = int(0.6 * SR)
+    out = np.zeros(n)
+    for at, hz in ((0.0, 523.25), (0.09, 659.25), (0.18, 783.99)):
+        m = n - int(at * SR)
+        tone = osc("sine", hz, m) + 0.35 * osc("tri", hz * 2, m) * env_exp(m, 0.05)
+        mix_at(out, tone * env_exp(m, 0.09 if hz < 700 else 0.2), int(at * SR))
+    return normalize(fade_edges(lowpass(out, 6000), 4))
+
+
 def main():
     sfx = {
         "Cast_Fire": cast_fire, "Cast_Water": cast_water, "Cast_Wind": cast_wind, "Cast_Earth": cast_earth,
@@ -1790,12 +1813,13 @@ def main():
         "Land": land, "SquishHit": squish_hit, "StoneCrack": stone_crack, "RockShatter": rock_shatter, "EliteWarn": elite_warn, "Enrage": enrage, "KnightLink": knight_link, "EnrageEnd": enrage_end, "SlimeSplit": slime_split, "BroodTick": brood_tick, "BroodMerge": brood_merge, "BroodGulp": brood_gulp, "BroodClear": brood_clear, "TentacleLash": tentacle_lash, "TentacleSlap": tentacle_slap, "TentacleGrab": tentacle_grab, "TentacleSnap": tentacle_snap, "KingFall": king_fall, "KingSlam": king_slam, "KingLand": king_land, "BowTwang": bow_twang, "ArrowWhiz": arrow_whiz, "ArrowThunk": arrow_thunk, "SlimeHop": slime_hop, "SlimePlop": slime_plop, "GoblinSwing": goblin_swing, "SpikeStab": spike_stab, "FlameSizzle": flame_sizzle, "PitFall": pit_fall, "PitReturn": pit_return, "GateDeflect": gate_deflect, "GateShatter": gate_shatter, "PlatformWake": platform_wake, "PlatformSleep": platform_sleep, "BlinkAppear": blink_appear, "BlinkVanish": blink_vanish, "PlatformStop": platform_stop, "MushroomBoing": mushroom_boing, "WindGust": wind_gust,
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
+        "PingMark": ping_mark, "NetJoin": net_join,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08, "KingFall": 0.07, "BowTwang": 0.07, "ArrowWhiz": 0.06, "ArrowThunk": 0.07, "SlimeHop": 0.06, "SlimePlop": 0.07, "GoblinSwing": 0.07, "SpikeStab": 0.07, "FlameSizzle": 0.07, "PitFall": 0.08, "PitReturn": 0.08, "GateDeflect": 0.07, "PlatformWake": 0.08, "PlatformSleep": 0.07, "BlinkAppear": 0.06, "BlinkVanish": 0.07, "PlatformStop": 0.06, "MushroomBoing": 0.09, "WindGust": 0.07}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08, "KingFall": 0.07, "BowTwang": 0.07, "ArrowWhiz": 0.06, "ArrowThunk": 0.07, "SlimeHop": 0.06, "SlimePlop": 0.07, "GoblinSwing": 0.07, "SpikeStab": 0.07, "FlameSizzle": 0.07, "PitFall": 0.08, "PitReturn": 0.08, "GateDeflect": 0.07, "PlatformWake": 0.08, "PlatformSleep": 0.07, "BlinkAppear": 0.06, "BlinkVanish": 0.07, "PlatformStop": 0.06, "MushroomBoing": 0.09, "WindGust": 0.07, "PingMark": 0.08, "NetJoin": 0.09}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()
