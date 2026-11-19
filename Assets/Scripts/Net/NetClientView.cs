@@ -137,14 +137,22 @@ namespace IBlameYou.Net
             if (Event.current.type != EventType.Repaint) return;
             if (statusStyle == null)
                 statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerRight, richText = true };
-            float silent = Time.unscaledTime - lastHostMessage;
+            float silent = Mathf.Max(Time.unscaledTime - lastHostMessage, NetSession.PeerSilentSeconds);
             string line = silent > 2f
-                ? $"<color=#ffa659>호스트 대답 없음 {silent:0}초</color> · F10 연결 끊기"
-                : "<color=#ffa659>P2</color> 온라인 · F10 연결 끊기";
+                ? $"<color=#ffa659>호스트 대답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김) · F10 연결 끊기"
+                : $"<color=#ffa659>P2</color> 온라인 · {LatencyText(NetSession.RttMs)} · F10 연결 끊기";
             var previous = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, 0.7f);
             GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);
             GUI.color = previous;
+        }
+
+        // "지연 45ms" (빠르면 초록, 보통 노랑, 느리면 빨강). 호스트 화면 표시도 같이 쓴다.
+        public static string LatencyText(int rttMs)
+        {
+            if (rttMs < 0) return "지연 재는 중";
+            string color = rttMs < 80 ? "#8fe388" : rttMs < 150 ? "#fff3a0" : "#ff7b6b";
+            return $"<color={color}>지연 {rttMs}ms</color>";
         }
     }
 }

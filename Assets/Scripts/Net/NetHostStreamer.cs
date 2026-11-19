@@ -112,12 +112,15 @@ namespace IBlameYou.Net
         // UnityEngine.GUI를 직접 써서 기록하지 않는다 (친구 화면에는 자기 커서가 있다).
         private static readonly Color P2Orange = new Color(1f, 0.65f, 0.35f, 0.95f);
 
+        private GUIStyle statusStyle;
+
         private void OnGUI()
         {
             if (!NetSession.RemoteP2Active || Event.current.type != EventType.Repaint) return;
+            GUI.depth = -1000;
+            DrawPeerStatus();
             var s = NetSession.Tracker.Latest;
             if (!s.MouseInside) return;
-            GUI.depth = -1000;
             float x = s.MouseX * Screen.width;
             float y = (1f - s.MouseY) * Screen.height;
             var previous = GUI.color;
@@ -125,6 +128,21 @@ namespace IBlameYou.Net
             DrawCross(x + 1f, y + 1f);
             GUI.color = P2Orange;
             DrawCross(x, y);
+            GUI.color = previous;
+        }
+
+        // 오른쪽 아래 작은 줄: 친구 이름과 왕복 지연. 친구 응답이 2초 넘게 없으면 몇 초째인지 (10초면 끊는다).
+        private void DrawPeerStatus()
+        {
+            if (statusStyle == null)
+                statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerRight, richText = true };
+            float silent = NetSession.PeerSilentSeconds;
+            string line = silent > 2f
+                ? $"<color=#ffa659>{NetSession.PeerName} 응답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김)"
+                : $"<color=#ffa659>P2</color> {NetSession.PeerName} · {NetClientView.LatencyText(NetSession.RttMs)}";
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.7f);
+            GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);
             GUI.color = previous;
         }
 
