@@ -24,6 +24,7 @@ namespace IBlameYou.Core
         private List<string> localAddresses;
         private int openedFrame = -1;
         private float copiedAt = -10f;
+        private string addressError;
 
         public bool IsOpen { get; private set; }
 
@@ -34,6 +35,7 @@ namespace IBlameYou.Core
             address = PlayerPrefs.GetString(AddressKey, "127.0.0.1");
             portText = PlayerPrefs.GetInt(PortKey, NetProtocol.DefaultPort).ToString();
             localAddresses = null;
+            addressError = null;
             GameAudio.PlaySfx("PauseOpen", 0.5f, 0.03f);
         }
 
@@ -163,12 +165,16 @@ namespace IBlameYou.Core
                     PlayerPrefs.SetInt(PortKey, joinPort);
                     portText = joinPort.ToString();
                     NetSession.Join(target, joinPort);
+                    addressError = null;
                 }
+                else addressError = "주소를 읽을 수 없어요. 192.168.0.12 또는 192.168.0.12:27777처럼 넣어 주세요.";
             }
             y += 50f;
             GUI.Label(new Rect(x, y, inner, 40f), "주소: 호스트 창에 보이는 숫자 (예: 192.168.0.12 또는 가상 LAN 주소, 호스트가 \"주소 복사\"로 보낸 192.168.0.12:27777도 그대로). 같은 컴퓨터로 시험하면 127.0.0.1.", note);
             y += 44f;
-            if (!string.IsNullOrEmpty(NetSession.Status))
+            if (!string.IsNullOrEmpty(addressError))
+                GUI.Label(new Rect(x, y, inner, 40f), "<color=#ff7b6b>" + addressError + "</color>", note);
+            else if (!string.IsNullOrEmpty(NetSession.Status))
                 GUI.Label(new Rect(x, y, inner, 40f), "<color=#fff3a0>" + NetSession.Status + "</color>", note);
 
             if (CuteButton.Button(new Rect(x, rect.yMax - 64f, inner, 44f), "닫기 (Esc)", button)) Close();
