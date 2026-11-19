@@ -4,7 +4,7 @@
 
 ## 2026-11-19 20:15 UTC
 - 브랜치/PR: `claude/project-thread-7sieak` → #124 (develop 대상)
-- 완료 (5개, PR #123 마법진이 사람 머지 대기라 그 PR이 안 건드리는 `Net/` 온라인 베타 다듬기): ① 친구 저절로 다시 연결 ② 상태 줄 초당 전송량 ③ 호스트 주소 복사·"주소:포트" 참가 ④ P2 가운데 버튼 "여기!" 신호 ⑤ 친구 화면 GUILayout 스크롤 칸. 적대적 리뷰: ① MEDIUM 2개(재연결 중 시작 화면이 떠서 혼자 판을 시작할 수 있음, 참가 대답 제한 없음)·LOW 2개 고친 뒤 APPROVE, ②~④ APPROVE (LOW 고침). 로컬 282/282
+- 완료 (7개, PR #123 마법진이 사람 머지 대기라 그 PR이 안 건드리는 `Net/` 온라인 베타 다듬기): ① 친구 저절로 다시 연결 ② 상태 줄 초당 전송량 ③ 호스트 주소 복사·"주소:포트" 참가 ④ P2 가운데 버튼 "여기!" 신호 ⑤ 친구 화면 GUILayout 스크롤 칸 ⑥ 호스트 주소 목록 가상 LAN 먼저 ⑦ 새 소리 PingMark·NetJoin. 적대적 리뷰: ① MEDIUM 2개(재연결 중 시작 화면이 떠서 혼자 판을 시작할 수 있음, 참가 대답 제한 없음)·LOW 2개 고친 뒤 APPROVE, ②~⑥ APPROVE (LOW 고침). 로컬 284/284
 - 실패/보류: 바람 상자는 여전히 #123 머지 뒤 (BLOCKED)
 - 다음 실행 메모: #123이 머지됐으면 #117 닫고 바람 상자. 아니면 #123 파일(GameSession·RoleInput·SpellCaster·ChunkGenerator·StartMenu·README 등) 피하기
 

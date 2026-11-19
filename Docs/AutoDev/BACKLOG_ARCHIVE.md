@@ -12,6 +12,8 @@
 - DONE (claude/project-thread-7sieak): 호스트 창 "주소 복사"(첫 주소:포트) + 참가 칸에 "주소:포트" 붙여 넣기 (`NetAddress`)
 - DONE (claude/project-thread-7sieak): P2 마우스 가운데 버튼 "여기!" 신호 — 두 화면 모두 보임 (`Net/P2PingMarker`)
 - DONE (claude/project-thread-7sieak): 친구 화면에 GUILayout 스크롤 칸(아카데미·기록 목록) 그리기 (`HudRecorder.BeginDeferredGroup`)
+- DONE (claude/project-thread-7sieak): 호스트 주소 목록 가상 LAN(Radmin·Hamachi·Tailscale·ZeroTier) 먼저, 주소 복사도 그것 (`AddressRanking`)
+- DONE (claude/project-thread-7sieak): 새 소리 여기! 신호 `PingMark`, 친구 접속·다시 연결 `NetJoin`
 
 ## 2026-11-16 07:38 UTC 실행 (claude/project-thread-9yicp1, PR #119)
 
