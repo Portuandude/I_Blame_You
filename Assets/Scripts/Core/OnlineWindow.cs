@@ -105,13 +105,15 @@ namespace IBlameYou.Core
                 GUI.Label(new Rect(x, y, inner, 22f), "친구에게 알려 줄 주소 (포트 " + NetSession.Port + "):", note);
                 y += 24f;
                 if (localAddresses == null) localAddresses = LocalAddresses();
-                string list = localAddresses.Count > 0 ? string.Join("   ", localAddresses) : "(찾지 못함)";
+                var labels = new List<string>(localAddresses.Count);
+                foreach (var ip in localAddresses) labels.Add(AddressRanking.IsVirtualLan(ip) ? ip + " (가상 LAN)" : ip);
+                string list = localAddresses.Count > 0 ? string.Join("   ", labels) : "(찾지 못함)";
                 bool canCopy = localAddresses.Count > 0;
                 float labelWidth = canCopy ? inner - 150f : inner;
                 GUI.Label(new Rect(x, y, labelWidth, 44f), "<b>" + list + "</b>", note);
                 if (canCopy)
                 {
-                    // 메신저에 바로 붙여 넣게: 첫 주소:포트 (가상 LAN이면 그 주소가 목록에 같이 보인다 — 다른 것을 알려 줘도 된다)
+                    // 메신저에 바로 붙여 넣게: 첫 주소:포트 (가상 LAN 주소가 있으면 그것이 맨 앞 — AddressRanking)
                     bool justCopied = Time.unscaledTime - copiedAt < 1.5f;
                     if (CuteButton.Button(new Rect(x + inner - 140f, y, 140f, 36f), justCopied ? "복사했어요!" : "주소 복사", button))
                     {
@@ -193,7 +195,7 @@ namespace IBlameYou.Core
                 }
             }
             catch (System.Exception) { }
-            return result;
+            return AddressRanking.Sort(result); // 가상 LAN → 집 네트워크 → 나머지
         }
     }
 }
