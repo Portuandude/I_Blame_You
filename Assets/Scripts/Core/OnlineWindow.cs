@@ -23,6 +23,8 @@ namespace IBlameYou.Core
         private string portText;
         private List<string> localAddresses;
         private int openedFrame = -1;
+        private float copiedAt = -10f;
+        private string addressError;
 
         public bool IsOpen { get; private set; }
 
@@ -33,6 +35,7 @@ namespace IBlameYou.Core
             address = PlayerPrefs.GetString(AddressKey, "127.0.0.1");
             portText = PlayerPrefs.GetInt(PortKey, NetProtocol.DefaultPort).ToString();
             localAddresses = null;
+            addressError = null;
             GameAudio.PlaySfx("PauseOpen", 0.5f, 0.03f);
         }
 
@@ -46,6 +49,8 @@ namespace IBlameYou.Core
         // 메뉴 버튼에 붙일 한 줄 (방을 열었거나 접속 중일 때)
         public static string ButtonLabel()
         {
+            if (NetSession.Reconnecting)
+                return $"온라인 2인 — 호스트에 다시 연결하는 중 ({NetSession.ReconnectAttempt}/{ReconnectPlan.MaxAttempts}) · F10 그만두기";
             switch (NetSession.CurrentMode)
             {
                 case NetSession.Mode.Hosting:
@@ -100,8 +105,23 @@ namespace IBlameYou.Core
                 GUI.Label(new Rect(x, y, inner, 22f), "친구에게 알려 줄 주소 (포트 " + NetSession.Port + "):", note);
                 y += 24f;
                 if (localAddresses == null) localAddresses = LocalAddresses();
-                string list = localAddresses.Count > 0 ? string.Join("   ", localAddresses) : "(찾지 못함)";
-                GUI.Label(new Rect(x, y, inner, 44f), "<b>" + list + "</b>", note);
+                var labels = new List<string>(localAddresses.Count);
+                foreach (var ip in localAddresses) labels.Add(AddressRanking.IsVirtualLan(ip) ? ip + " (가상 LAN)" : ip);
+                string list = localAddresses.Count > 0 ? string.Join("   ", labels) : "(찾지 못함)";
+                bool canCopy = localAddresses.Count > 0;
+                float labelWidth = canCopy ? inner - 150f : inner;
+                GUI.Label(new Rect(x, y, labelWidth, 44f), "<b>" + list + "</b>", note);
+                if (canCopy)
+                {
+                    // 메신저에 바로 붙여 넣게: 첫 주소:포트 (가상 LAN 주소가 있으면 그것이 맨 앞 — AddressRanking)
+                    bool justCopied = Time.unscaledTime - copiedAt < 1.5f;
+                    if (CuteButton.Button(new Rect(x + inner - 140f, y, 140f, 36f), justCopied ? "복사했어요!" : "주소 복사", button))
+                    {
+                        GUIUtility.systemCopyBuffer = localAddresses[0] + ":" + NetSession.Port;
+                        copiedAt = Time.unscaledTime;
+                        GameAudio.PlaySfx("PauseOpen", 0.4f, 0.05f);
+                    }
+                }
                 y += 48f;
                 GUI.Label(new Rect(x, y, inner, 70f),
                     "같은 집 네트워크가 아니면: 두 사람 모두 Radmin VPN 같은 가상 LAN에 들어가 그 주소를 쓰거나, 호스트 공유기에서 이 포트(TCP)를 열어 주세요. " +
@@ -140,18 +160,23 @@ namespace IBlameYou.Core
             address = GUI.TextField(new Rect(x + 70f, y, 260f, 34f), address ?? "", 64, field);
             if (CuteButton.Button(new Rect(x + 340f, y - 2f, inner - 340f, 40f), "참가하기", button))
             {
-                string target = (address ?? "").Trim();
-                if (target.Length > 0)
+                // "주소:포트"(호스트 창 "주소 복사")도 받는다
+                if (NetAddress.TryParse(address, Port(), out string target, out int joinPort))
                 {
-                    PlayerPrefs.SetString(AddressKey, target);
-                    PlayerPrefs.SetInt(PortKey, Port());
-                    NetSession.Join(target, Port());
+                    PlayerPrefs.SetString(AddressKey, (address ?? "").Trim());
+                    PlayerPrefs.SetInt(PortKey, joinPort);
+                    portText = joinPort.ToString();
+                    NetSession.Join(target, joinPort);
+                    addressError = null;
                 }
+                else addressError = "주소를 읽을 수 없어요. 192.168.0.12 또는 192.168.0.12:27777처럼 넣어 주세요.";
             }
             y += 50f;
-            GUI.Label(new Rect(x, y, inner, 40f), "주소: 호스트 창에 보이는 숫자 (예: 192.168.0.12 또는 가상 LAN 주소). 같은 컴퓨터로 시험하면 127.0.0.1.", note);
+            GUI.Label(new Rect(x, y, inner, 40f), "주소: 호스트 창에 보이는 숫자 (예: 192.168.0.12 또는 가상 LAN 주소, 호스트가 \"주소 복사\"로 보낸 192.168.0.12:27777도 그대로). 같은 컴퓨터로 시험하면 127.0.0.1.", note);
             y += 44f;
-            if (!string.IsNullOrEmpty(NetSession.Status))
+            if (!string.IsNullOrEmpty(addressError))
+                GUI.Label(new Rect(x, y, inner, 40f), "<color=#ff7b6b>" + addressError + "</color>", note);
+            else if (!string.IsNullOrEmpty(NetSession.Status))
                 GUI.Label(new Rect(x, y, inner, 40f), "<color=#fff3a0>" + NetSession.Status + "</color>", note);
 
             if (CuteButton.Button(new Rect(x, rect.yMax - 64f, inner, 44f), "닫기 (Esc)", button)) Close();
@@ -170,7 +195,7 @@ namespace IBlameYou.Core
                 }
             }
             catch (System.Exception) { }
-            return result;
+            return AddressRanking.Sort(result); // 가상 LAN → 집 네트워크 → 나머지
         }
     }
 }

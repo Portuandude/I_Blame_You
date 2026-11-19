@@ -239,18 +239,37 @@ namespace IBlameYou.Net
             GUILayout.EndArea();
         }
 
-        // 레이아웃 스크롤 칸은 친구 화면에 자리를 알 수 없어 안을 그리지 않는다 (도시 아카데미 목록·시작 화면 기록 목록)
+        // 레이아웃 스크롤 칸 (도시 아카데미 목록·시작 화면 기록 목록): 칸 자리는 안을 다 그린 뒤에야 알아서
+        // (EndScrollView 뒤 GetLastRect), 묶음 자리를 비워 두고 나중에 채운다. 친구 화면에는 보이는 칸 안만, 스크롤한 만큼 옮겨 그린다 (막대는 빠짐).
+        private static readonly System.Collections.Generic.Stack<long> scrollTokens = new System.Collections.Generic.Stack<long>();
+
+        private static int scrollFrame = -1;
+
         public static Vector2 BeginScrollView(Vector2 scrollPosition, params GUILayoutOption[] options)
         {
+            // 예외(ExitGUI 등)로 End를 못 부른 묶음이 다음 프레임까지 남지 않게
+            if (Time.frameCount != scrollFrame)
+            {
+                scrollTokens.Clear();
+                scrollFrame = Time.frameCount;
+            }
             var result = GUILayout.BeginScrollView(scrollPosition, options);
-            HudRecorder.Hide(true);
+            long token = HudRecorder.BeginDeferredGroup();
+            scrollTokens.Push(token);
+            if (token >= 0) HudRecorder.Group(new Rect(-result.x, -result.y, 100000f, 100000f));
             return result;
         }
 
         public static void EndScrollView()
         {
-            HudRecorder.Hide(false);
+            long token = scrollTokens.Count > 0 ? scrollTokens.Pop() : -1;
+            if (token >= 0)
+            {
+                HudRecorder.EndGroup();
+                HudRecorder.EndGroup();
+            }
             GUILayout.EndScrollView();
+            if (token >= 0) HudRecorder.PatchGroup(token, GUILayoutUtility.GetLastRect());
         }
 
         public static void Label(string text, params GUILayoutOption[] options) => Label(new GUIContent(text), GUI.skin.label, options);

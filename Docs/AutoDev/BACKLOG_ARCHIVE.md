@@ -3,6 +3,18 @@
 `BACKLOG.md`에서 `DONE`이 된 항목을 옮겨 둔다 (최근 것이 위). 무엇을 했는지 찾을 때만 읽는다.
 
 
+## 온라인 2인 베타 다듬기 (2026-11-19)
+
+- DONE (claude/project-thread-6jeib3): 1초마다 Ping/Pong으로 왕복 지연 재기, 양쪽 화면 오른쪽 아래 "지연 45ms" 표시. 10초 동안 아무 메시지가 없으면 죽은 연결로 보고 끊는다 (호스트는 자리를 비워 친구가 다시 들어올 수 있게 — 예전에는 친구 컴퓨터가 꺼지면 반쯤 열린 TCP가 자리를 막았다). 프로토콜 버전 2
+- DONE (claude/project-thread-6jeib3): 판 도중 친구가 끊기면 호스트 게임을 일시정지 메뉴로 멈추고 안내 줄 ("친구 연결이 끊겼어요" → 다시 들어오면 "다시 들어왔어요!"). 영창·다른 창 중이면 멈출 수 있는 첫 프레임에
+- DONE (claude/project-thread-7sieak): 친구가 판 도중 끊기면 같은 호스트에 저절로 다시 연결 (8번·30초 남짓, 그동안 친구 화면 유지 + 위 안내, F10 그만두기). 참가 15초 대답 제한 (`ReconnectPlan`)
+- DONE (claude/project-thread-7sieak): 상태 줄에 초당 보낸·받은 양 `↑KB/s ↓KB/s` (`TrafficMeter`)
+- DONE (claude/project-thread-7sieak): 호스트 창 "주소 복사"(첫 주소:포트) + 참가 칸에 "주소:포트" 붙여 넣기 (`NetAddress`)
+- DONE (claude/project-thread-7sieak): P2 마우스 가운데 버튼 "여기!" 신호 — 두 화면 모두 보임 (`Net/P2PingMarker`)
+- DONE (claude/project-thread-7sieak): 친구 화면에 GUILayout 스크롤 칸(아카데미·기록 목록) 그리기 (`HudRecorder.BeginDeferredGroup`)
+- DONE (claude/project-thread-7sieak): 호스트 주소 목록 가상 LAN(Radmin·Hamachi·Tailscale·ZeroTier) 먼저, 주소 복사도 그것 (`AddressRanking`)
+- DONE (claude/project-thread-7sieak): 새 소리 여기! 신호 `PingMark`, 친구 접속·다시 연결 `NetJoin`
+
 ## 2026-11-16 07:38 UTC 실행 (claude/project-thread-9yicp1, PR #119)
 
 - DONE (claude/project-thread-9yicp1): 두 번째 중간보스 프리즘 젤리 ① 몸·8초 색 바꾸기·같은 색 반감(`PrismJellyRules`)·시드로 기사와 반반 ② 출렁 착지 충격파·젤리 방울 웅덩이·프리즘 광선(`JellyPatterns`, `JellyHazards`) ③ 수정 젤리 그림 36장(`Tools/ArtGen/generate_prism_jelly.py`)

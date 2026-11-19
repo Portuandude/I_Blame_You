@@ -17,6 +17,11 @@ namespace IBlameYou.Net
         private static readonly P2InputTracker tracker = new P2InputTracker();
         private static readonly P2InputState scratchInput = new P2InputState();
         private readonly PingTracker ping = new PingTracker(); // 지연 재기·응답 없는 연결 끊기 (Net/Core/NetPing)
+        private readonly TrafficMeter traffic = new TrafficMeter(); // 초당 보낸·받은 양 (Net/Core/TrafficMeter)
+        private readonly ReconnectPlan reconnect = new ReconnectPlan(); // 친구: 판 도중 끊기면 같은 호스트에 다시 붙기 (Net/Core/ReconnectPlan)
+        private string joinAddress = "";
+        private int joinPort;
+        private GUIStyle reconnectStyle;
 
         private ITransport transport;
         private Mode mode;
@@ -24,6 +29,10 @@ namespace IBlameYou.Net
         private string status = "";
         private string peerName = "";
         private bool previousRunInBackground;
+        private bool holdingBackground; // runInBackground를 켜 둔 동안 (다시 붙기 사이에도 유지)
+        private bool clientViewKept; // 친구: 끊긴 뒤 다시 붙는 동안 마지막 화면을 그대로 둔다 (시작 화면으로 나가지 않음)
+        private float joinStartedAt;
+        private const float JoinTimeout = 15f; // 연결 시작부터 호스트 대답(Welcome)까지 (TCP 연결 8초 포함)
 
         public static Mode CurrentMode => instance != null ? instance.mode : Mode.Offline;
         public static bool IsHost => CurrentMode == Mode.Hosting;
@@ -38,6 +47,18 @@ namespace IBlameYou.Net
         public static string Status => instance != null ? instance.status : "";
         public static string PeerName => instance != null ? instance.peerName : "";
         public static int Port { get; private set; } = NetProtocol.DefaultPort;
+
+        // 친구: 호스트와 끊겨 같은 주소에 다시 붙으려는 중 (기다리거나 시도 중)
+        public static bool Reconnecting => instance != null && instance.reconnect.InProgress && instance.mode != Mode.Client;
+        // 상태 줄용 " · ↑120KB/s ↓3KB/s" (연결돼 있을 때만, 아니면 빈 문자열)
+        public static string TrafficText()
+        {
+            if (instance == null || instance.transport == null || !instance.transport.IsConnected) return "";
+            var t = instance.traffic;
+            return $" · ↑{TrafficMeter.Format(t.SentPerSecond)} ↓{TrafficMeter.Format(t.ReceivedPerSecond)}";
+        }
+
+        public static int ReconnectAttempt => instance != null ? instance.reconnect.Attempt : 0;
 
         // 왕복 지연 (밀리초, 아직 모르면 -1). 호스트는 직접 재고, 친구는 호스트가 잰 값을 받는다.
         public static int RttMs => instance != null && (instance.peerReady || instance.mode == Mode.Client) ? instance.ping.RttMs : -1;
@@ -65,6 +86,7 @@ namespace IBlameYou.Net
         public static void StartHost(int port)
         {
             var s = Ensure();
+            s.reconnect.Forget();
             s.Shutdown(null);
             try
             {
@@ -85,17 +107,42 @@ namespace IBlameYou.Net
         public static void Join(string address, int port)
         {
             var s = Ensure();
-            s.Shutdown(null);
-            s.transport = TcpTransport.Connect(address, port);
-            Port = port;
-            s.mode = Mode.Joining;
-            s.KeepRunningInBackground();
+            s.reconnect.Forget(); // 사람이 고른 새 참가: 예전 호스트로 다시 붙기는 그만
+            s.Connect(address, port, false);
             s.status = $"{address}:{port}에 연결하는 중...";
+        }
+
+        private void Connect(string address, int port, bool retry)
+        {
+            Shutdown(null, retry);
+            joinStartedAt = Time.unscaledTime;
+            transport = TcpTransport.Connect(address, port);
+            Port = port;
+            joinAddress = address;
+            joinPort = port;
+            mode = Mode.Joining;
+            KeepRunningInBackground();
         }
 
         public static void Stop()
         {
-            if (instance != null) instance.Shutdown("연결을 끊었어요.");
+            if (instance == null) return;
+            instance.reconnect.Forget();
+            instance.Shutdown("연결을 끊었어요.");
+        }
+
+        // 친구 쪽 연결이 사람 뜻과 상관없이 끊겼다 (호스트 응답 없음·TCP 끊김·다시 붙기 시도 실패).
+        // 한 번 받아 준 호스트면 잠시 뒤 같은 주소로 다시 붙는다.
+        private void LoseConnection(string reason)
+        {
+            bool wasRetrying = reconnect.InProgress;
+            // 다음 시도를 먼저 잡는다: 잡혔으면 친구 화면을 그대로 두고(ClientEnded 없음) 위에 안내만 띄운다.
+            bool retry = reconnect.Lost(Time.unscaledTime);
+            Shutdown(reason, retry);
+            if (retry)
+                status = $"{reason}\n다시 연결하는 중 ({reconnect.Attempt}/{ReconnectPlan.MaxAttempts})...";
+            else if (wasRetrying)
+                status = $"호스트에 다시 연결하지 못했어요 ({ReconnectPlan.MaxAttempts}번 시도). {reason}";
         }
 
         public static void Send(byte[] message)
@@ -106,27 +153,45 @@ namespace IBlameYou.Net
         private void KeepRunningInBackground()
         {
             // 두 창을 번갈아 보거나 친구 창이 뒤에 있어도 게임이 멈추면 안 된다.
-            previousRunInBackground = Application.runInBackground;
+            if (!holdingBackground)
+            {
+                previousRunInBackground = Application.runInBackground;
+                holdingBackground = true;
+            }
             Application.runInBackground = true;
         }
 
-        private void Shutdown(string reason)
+        private void ReleaseBackground()
+        {
+            if (!holdingBackground) return;
+            Application.runInBackground = previousRunInBackground;
+            holdingBackground = false;
+        }
+
+        // keepClientView: 친구가 다시 붙으려는 중이라 화면·runInBackground를 그대로 둔다
+        private void Shutdown(string reason, bool keepClientView = false)
         {
             var oldMode = mode;
             bool hadPeer = peerReady;
             transport?.Dispose();
             transport = null;
+            traffic.Reset();
             peerReady = false;
             peerName = "";
             tracker.Reset();
-            if (oldMode != Mode.Offline) Application.runInBackground = previousRunInBackground;
+            if (!keepClientView) ReleaseBackground();
             mode = Mode.Offline;
             if (reason != null) status = reason;
             if (oldMode == Mode.Hosting && hadPeer) PeerLeft?.Invoke();
-            if (oldMode == Mode.Client)
+            if (oldMode == Mode.Client || clientViewKept)
             {
-                NetClientView.End();
-                ClientEnded?.Invoke(reason ?? "");
+                if (keepClientView) clientViewKept = true;
+                else
+                {
+                    clientViewKept = false;
+                    NetClientView.End();
+                    ClientEnded?.Invoke(reason ?? "");
+                }
             }
         }
 
@@ -138,6 +203,23 @@ namespace IBlameYou.Net
 
         private void Update()
         {
+            if (reconnect.InProgress && mode != Mode.Client && Input.GetKeyDown(KeyCode.F10))
+            {
+                Stop(); // 다시 붙기 그만두기 (연결 중 시도도 닫는다)
+                status = "다시 연결을 그만뒀어요.";
+                return;
+            }
+            if (mode == Mode.Offline && reconnect.Due(Time.unscaledTime))
+            {
+                Connect(reconnect.Address, reconnect.Port, true);
+                status = $"호스트에 다시 연결하는 중 ({reconnect.Attempt}/{ReconnectPlan.MaxAttempts})...";
+            }
+            if (mode == Mode.Joining && Time.unscaledTime - joinStartedAt > JoinTimeout)
+            {
+                // TCP는 붙었는데 호스트 게임이 대답하지 않는다 (멈췄거나 다른 프로그램)
+                LoseConnection($"호스트가 {JoinTimeout:0}초 동안 대답하지 않아요.");
+                return;
+            }
             if (transport == null) return;
             int handled = 0;
             while (transport != null && transport.TryReceive(out var e))
@@ -146,6 +228,7 @@ namespace IBlameYou.Net
                 if (++handled > 500) break; // 한 프레임에 너무 오래 붙잡지 않는다
             }
             if (mode == Mode.Hosting) tracker.Step();
+            if (transport != null) traffic.Sample(Time.unscaledTime, transport.BytesSent, transport.BytesReceived);
             KeepAlive(Time.unscaledTime);
         }
 
@@ -164,7 +247,7 @@ namespace IBlameYou.Net
             }
             else if (mode == Mode.Client && ping.TimedOut(now))
             {
-                Shutdown($"호스트 응답이 {PingTracker.Timeout:0}초 없어 연결을 끊었어요.");
+                LoseConnection($"호스트 응답이 {PingTracker.Timeout:0}초 없어 연결을 끊었어요.");
             }
         }
 
@@ -193,7 +276,7 @@ namespace IBlameYou.Net
                             : $"친구가 나갔어요 ({e.Reason}). 다시 기다리는 중 (포트 {Port})";
                         if (had) PeerLeft?.Invoke();
                     }
-                    else Shutdown(e.Reason ?? "연결이 끊겼어요.");
+                    else LoseConnection(e.Reason ?? "연결이 끊겼어요.");
                     break;
 
                 case TransportEventKind.Data:
@@ -209,6 +292,21 @@ namespace IBlameYou.Net
                     }
                     break;
             }
+        }
+
+        // 친구 화면: 다시 붙는 동안 위에 안내 (호스트 HUD가 아니라 이 컴퓨터에만 그린다)
+        private void OnGUI()
+        {
+            if (!Reconnecting || Event.current.type != EventType.Repaint) return;
+            GUI.depth = -100; // 남겨 둔 친구 화면 HUD 위에
+            if (reconnectStyle == null)
+                reconnectStyle = new GUIStyle(GUI.skin.box) { fontSize = 18, alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = true };
+            float wait = reconnect.SecondsLeft(Time.unscaledTime);
+            string line = reconnect.Waiting
+                ? $"호스트와 연결이 끊겼어요. {wait:0}초 뒤 다시 연결 ({reconnect.Attempt}/{ReconnectPlan.MaxAttempts})"
+                : $"호스트에 다시 연결하는 중... ({reconnect.Attempt}/{ReconnectPlan.MaxAttempts})";
+            float w = Mathf.Min(620f, Screen.width - 20f);
+            GUI.Box(new Rect((Screen.width - w) / 2f, 14f, w, 56f), line + "\n<size=13>F10: 그만두기</size>", reconnectStyle);
         }
 
         private void HandleMessage(byte[] data)
@@ -233,6 +331,8 @@ namespace IBlameYou.Net
                         ping.Reset(Time.unscaledTime);
                         status = $"{peerName} 접속! P2(공격)는 친구 마우스로 해요.";
                         PeerJoined?.Invoke();
+                        // 들어옴·다시 들어옴 "도미솔" (그림 표를 다시 보낸 뒤라 친구 컴퓨터에도 들린다 — NetAudio)
+                        IBlameYou.Systems.GameAudio.PlaySfx("NetJoin", 0.6f, 0f);
                         break;
                     case MsgType.Pong:
                         if (!peerReady) return;
@@ -252,12 +352,16 @@ namespace IBlameYou.Net
                 WelcomeMessage.Read(r, out _, out bool accepted, out string reason);
                 if (!accepted)
                 {
+                    reconnect.Forget(); // 버전이 다르면 다시 해 봐야 같다
                     Shutdown(reason ?? "호스트가 거절했어요.");
                     return;
                 }
+                bool again = reconnect.InProgress;
+                reconnect.Remember(joinAddress, joinPort);
+                clientViewKept = false;
                 mode = Mode.Client;
                 ping.Reset(Time.unscaledTime);
-                status = "접속했어요! 나는 P2(공격): 마우스로 조준·공격";
+                status = again ? "다시 접속했어요! 나는 P2(공격)" : "접속했어요! 나는 P2(공격): 마우스로 조준·공격";
                 NetClientView.Begin();
                 ClientStarted?.Invoke();
                 return;

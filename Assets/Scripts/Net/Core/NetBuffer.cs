@@ -78,6 +78,17 @@ namespace IBlameYou.Net
             WriteUInt32(bits.UInt);
         }
 
+        // 이미 쓴 자리(position)의 float 4바이트를 바꾼다. 나중에야 아는 값(레이아웃 스크롤 칸 자리)을 채울 때.
+        public void PatchFloat(int position, float value)
+        {
+            if (position < 0 || position + 4 > length) throw new ArgumentOutOfRangeException(nameof(position));
+            uint v = new FloatBits { Float = value }.UInt;
+            data[position] = (byte)v;
+            data[position + 1] = (byte)(v >> 8);
+            data[position + 2] = (byte)(v >> 16);
+            data[position + 3] = (byte)(v >> 24);
+        }
+
         public void WriteString(string value)
         {
             if (value == null)

@@ -21,6 +21,9 @@ namespace IBlameYou.Net
     {
         bool IsConnected { get; }
         long PendingSendBytes { get; }
+        // 이 전송이 지금까지 실제로 보낸·받은 바이트 (길이 머리 포함, 연결이 바뀌어도 계속 센다). 상태 줄 KB/s용 (TrafficMeter)
+        long BytesSent { get; }
+        long BytesReceived { get; }
         void Send(byte[] message);
         bool TryReceive(out TransportEvent e);
         // 호스트: 지금 친구만 끊고 계속 기다린다 (응답이 없는 연결 정리). Disconnected 사건이 reason으로 온다.
@@ -41,10 +44,14 @@ namespace IBlameYou.Net
         private volatile bool disposed;
         private volatile bool connected;
         private long pendingBytes;
+        private long bytesSent;
+        private long bytesReceived;
         private int connectionId; // 끊긴 연결의 스레드가 새 연결을 건드리지 않게
 
         public bool IsConnected => connected;
         public long PendingSendBytes => Interlocked.Read(ref pendingBytes);
+        public long BytesSent => Interlocked.Read(ref bytesSent);
+        public long BytesReceived => Interlocked.Read(ref bytesReceived);
         public int ListenPort { get; private set; }
 
         private TcpTransport() { }
@@ -166,6 +173,7 @@ namespace IBlameYou.Net
                 {
                     int read = s.Read(buffer, 0, buffer.Length);
                     if (read <= 0) break;
+                    Interlocked.Add(ref bytesReceived, read);
                     frames.Clear();
                     assembler.Push(buffer, 0, read, frames);
                     foreach (var frame in frames)
@@ -198,6 +206,7 @@ namespace IBlameYou.Net
                     }
                     s.Write(next, 0, next.Length);
                     Interlocked.Add(ref pendingBytes, -next.Length);
+                    Interlocked.Add(ref bytesSent, next.Length);
                 }
             }
             catch (Exception ex)
