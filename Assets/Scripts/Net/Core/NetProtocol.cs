@@ -5,7 +5,7 @@ namespace IBlameYou.Net
     public static class NetProtocol
     {
         // 메시지 모양이 바뀌면 올린다. 다르면 접속을 거절한다 (두 사람이 같은 빌드를 써야 한다).
-        public const ushort Version = 1;
+        public const ushort Version = 2; // 2: Ping/Pong (지연 표시·끊김 감지)
         public const int DefaultPort = 27777;
     }
 
@@ -15,6 +15,8 @@ namespace IBlameYou.Net
         Hello = 1,      // 클라이언트 → 호스트: 버전, 이름
         Welcome = 2,    // 호스트 → 클라이언트: 받아 줌/거절 + 이유
         P2Input = 3,    // 클라이언트 → 호스트: P2 마우스·키 상태
+        Ping = 4,       // 호스트 → 클라이언트: 보낸 시각 + 잰 왕복 지연 (NetPing)
+        Pong = 5,       // 클라이언트 → 호스트: 받은 Ping 시각 그대로
         Texture = 10,   // 호스트 → 클라이언트: 그림 한 장 (PNG)
         Sprite = 11,    // 호스트 → 클라이언트: 그림 안의 스프라이트 영역
         World = 12,     // 호스트 → 클라이언트: 카메라 + 바뀐 그림 조각들

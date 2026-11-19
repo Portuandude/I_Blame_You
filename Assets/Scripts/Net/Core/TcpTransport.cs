@@ -23,6 +23,8 @@ namespace IBlameYou.Net
         long PendingSendBytes { get; }
         void Send(byte[] message);
         bool TryReceive(out TransportEvent e);
+        // 호스트: 지금 친구만 끊고 계속 기다린다 (응답이 없는 연결 정리). Disconnected 사건이 reason으로 온다.
+        void DropPeer(string reason);
     }
 
     // TCP 전송. 호스트는 포트를 열고 한 명만 받는다 (2인 게임). 보내기·받기는 각자 스레드에서 돌고,
@@ -232,6 +234,13 @@ namespace IBlameYou.Net
         }
 
         public bool TryReceive(out TransportEvent e) => events.TryDequeue(out e);
+
+        public void DropPeer(string reason)
+        {
+            int id;
+            lock (sendLock) id = connectionId;
+            Drop(id, reason);
+        }
 
         public void Dispose()
         {
