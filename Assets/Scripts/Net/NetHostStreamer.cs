@@ -139,7 +139,7 @@ namespace IBlameYou.Net
             float silent = NetSession.PeerSilentSeconds;
             string line = silent > 2f
                 ? $"<color=#ffa659>{NetSession.PeerName} 응답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김)"
-                : $"<color=#ffa659>P2</color> {NetSession.PeerName} · {NetClientView.LatencyText(NetSession.RttMs)}";
+                : $"<color=#ffa659>P2</color> {NetSession.PeerName} · {NetClientView.LatencyText(NetSession.RttMs)}{NetSession.TrafficText()}";
             var previous = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, 0.7f);
             GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);
