@@ -16,6 +16,7 @@ namespace IBlameYou.Net
         private static NetSession instance;
         private static readonly P2InputTracker tracker = new P2InputTracker();
         private static readonly P2InputState scratchInput = new P2InputState();
+        private readonly PingTracker ping = new PingTracker(); // 지연 재기·응답 없는 연결 끊기 (Net/Core/NetPing)
 
         private ITransport transport;
         private Mode mode;
@@ -38,6 +39,11 @@ namespace IBlameYou.Net
         public static string PeerName => instance != null ? instance.peerName : "";
         public static int Port { get; private set; } = NetProtocol.DefaultPort;
 
+        // 왕복 지연 (밀리초, 아직 모르면 -1). 호스트는 직접 재고, 친구는 호스트가 잰 값을 받는다.
+        public static int RttMs => instance != null && (instance.peerReady || instance.mode == Mode.Client) ? instance.ping.RttMs : -1;
+        // 상대에게서 마지막으로 무엇이든 받은 뒤 지난 초
+        public static float PeerSilentSeconds => instance != null && (instance.peerReady || instance.mode == Mode.Client) ? instance.ping.SilentFor(Time.unscaledTime) : 0f;
+
         // 클라이언트: 호스트가 받아 줌 / 연결이 끝남 (PlaytestBootstrap이 시작 화면을 감추고 되살린다)
         public static event Action ClientStarted;
         public static event Action<string> ClientEnded;
@@ -52,6 +58,7 @@ namespace IBlameYou.Net
             DontDestroyOnLoad(go);
             instance = go.AddComponent<NetSession>();
             go.AddComponent<NetHostStreamer>();
+            go.AddComponent<NetPeerLossPause>(); // 판 도중 친구가 끊기면 호스트를 일시정지
             return instance;
         }
 
@@ -139,6 +146,26 @@ namespace IBlameYou.Net
                 if (++handled > 500) break; // 한 프레임에 너무 오래 붙잡지 않는다
             }
             if (mode == Mode.Hosting) tracker.Step();
+            KeepAlive(Time.unscaledTime);
+        }
+
+        private void KeepAlive(float now)
+        {
+            if (transport == null) return;
+            if (mode == Mode.Hosting && peerReady)
+            {
+                if (ping.TimedOut(now))
+                {
+                    // 친구 컴퓨터가 꺼졌거나 인터넷이 끊겼다: 자리를 비워 친구가 다시 들어올 수 있게 한다
+                    transport.DropPeer($"친구 응답이 {PingTracker.Timeout:0}초 없어요");
+                    return;
+                }
+                if (ping.ShouldSendPing(now)) transport.Send(PingMessage.Write(now, ping.RttMs));
+            }
+            else if (mode == Mode.Client && ping.TimedOut(now))
+            {
+                Shutdown($"호스트 응답이 {PingTracker.Timeout:0}초 없어 연결을 끊었어요.");
+            }
         }
 
         private void Handle(TransportEvent e)
@@ -161,7 +188,9 @@ namespace IBlameYou.Net
                         peerReady = false;
                         peerName = "";
                         tracker.Reset();
-                        status = $"친구가 나갔어요. 다시 기다리는 중 (포트 {Port})";
+                        status = string.IsNullOrEmpty(e.Reason)
+                            ? $"친구가 나갔어요. 다시 기다리는 중 (포트 {Port})"
+                            : $"친구가 나갔어요 ({e.Reason}). 다시 기다리는 중 (포트 {Port})";
                         if (had) PeerLeft?.Invoke();
                     }
                     else Shutdown(e.Reason ?? "연결이 끊겼어요.");
@@ -169,6 +198,7 @@ namespace IBlameYou.Net
 
                 case TransportEventKind.Data:
                     if (e.Data == null || e.Data.Length == 0) return;
+                    if (mode == Mode.Client || (mode == Mode.Hosting && peerReady)) ping.Heard(Time.unscaledTime);
                     try
                     {
                         HandleMessage(NetCompression.Unwrap(e.Data));
@@ -200,8 +230,13 @@ namespace IBlameYou.Net
                         peerName = string.IsNullOrEmpty(name) ? "친구" : name;
                         tracker.Reset();
                         transport.Send(WelcomeMessage.Write(true, null));
+                        ping.Reset(Time.unscaledTime);
                         status = $"{peerName} 접속! P2(공격)는 친구 마우스로 해요.";
                         PeerJoined?.Invoke();
+                        break;
+                    case MsgType.Pong:
+                        if (!peerReady) return;
+                        ping.PongReceived(PongMessage.Read(r), Time.unscaledTime);
                         break;
                     case MsgType.P2Input:
                         if (!peerReady) return;
@@ -221,13 +256,22 @@ namespace IBlameYou.Net
                     return;
                 }
                 mode = Mode.Client;
+                ping.Reset(Time.unscaledTime);
                 status = "접속했어요! 나는 P2(공격): 마우스로 조준·공격";
                 NetClientView.Begin();
                 ClientStarted?.Invoke();
                 return;
             }
 
-            if (mode == Mode.Client) NetClientView.Receive(type, r);
+            if (mode != Mode.Client) return;
+            if (type == MsgType.Ping)
+            {
+                PingMessage.Read(r, out float sentAt, out int rttMs);
+                ping.SetRemoteRtt(rttMs);
+                transport.Send(PongMessage.Write(sentAt));
+                return;
+            }
+            NetClientView.Receive(type, r);
         }
     }
 }
