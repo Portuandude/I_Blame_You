@@ -40,10 +40,12 @@ namespace IBlameYou.Systems
     }
 
     // 중간보스 후보 (2026-11-14 23:30 사람 결정: "중간 보스는 둘 중 하나만 랜덤으로").
-    // 지금 구현된 것은 쌍둥이 슬라임 기사뿐이다. 두 번째 중간보스가 생기면 여기와 RoomLayout.MidBossPool에 더한다.
+    // 쌍둥이 슬라임 기사(후보 C)와 프리즘 젤리(후보 D, 2026-11-16 "종족은 슬라임으로 하나 더")가 시드로 반반.
+    // 후보를 더하면 여기와 RoomLayout.MidBossPool에 더한다. 0번(기사)이 기본값이라 직접 만든 RoomData는 기사 방이 된다.
     public enum MidBossKind
     {
-        SlimeKnights
+        SlimeKnights,
+        PrismJelly
     }
 
     public class RoomData
@@ -61,6 +63,7 @@ namespace IBlameYou.Systems
         public int ParentIndex = -1; // 곁방: 가장 가까운 주 경로 조상 방의 Index (깊이·"쓰러진 곳" 기준)
         public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
         public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
+        public MidBossKind MidBoss;  // 중간보스 방일 때 나올 중간보스 (RoomLayoutData.MidBoss와 같음, RoomShaper가 본다)
         // 넓은 방 (2026-11-12 "큰 방"): 주 구간(Chunk) 앞, 들어오는 문 쪽에 이어 붙이는 이동 구간들. 비어 있으면 한 화면 방.
         public readonly List<ChunkKind> Leads = new List<ChunkKind>();
         public int Cols => (1 + Leads.Count) * ChunkData.Width; // 방 가로 칸 수
@@ -110,6 +113,9 @@ namespace IBlameYou.Systems
         public const int StartX = 2;                 // 시작 방: 가운데 열, y 1 또는 2
         // 방 구성 하한 (2026-11-14 사람 결정)
         public const int MinCombatRooms = 5;         // 일반 전투 방 (정예·중간보스·보스 제외)
+        // 좌우 일반 전투 방 (앞 구간에 기믹 지형이 붙는 방) 최소 수 (2026-11-16 기본안: 세로 전투 방만 이어지면 단조롭다).
+        // 5×4 나무 모양에서는 퍼즐·마을·중간보스·보스가 좌우 자리를 먼저 차지해 판마다 1개 안팎이었다. 못 맞추면 다른 배치로 다시 뽑는다.
+        public const int MinSideCombatRooms = 2;
         public const int MinPuzzleRooms = 2;         // 퍼즐 방 (몹 없음)
         public const int Villages = 1;               // 마을 1개 고정 (2026-11-14 23:30)
         public const int MinRewardRooms = 1;         // 막다른 보상 방 (보물 상자 / 회복 샘) (2026-11-14 23:37 다시 넣음)
@@ -120,7 +126,7 @@ namespace IBlameYou.Systems
         public const float MinSeconds = 15f * 60f;   // 스테이지 목표 15~30분 (사람 확정 2026-11-12)
         public const float MaxSeconds = 30f * 60f;
         public const float BacktrackSeconds = 12f;   // 곁가지를 들어갔다 나오는 데 문 하나당 더 드는 시간 (어림)
-        private const int MaxAttempts = 400;
+        private const int MaxAttempts = 800; // 좌우 전투 방 2개 보장(2026-11-16)으로 다시 뽑기가 늘어 여유를 둔다 (시드 56000판 최대 365회)
         private const int MaxElites = 2;
         public const int MinFights = MinCombatRooms; // 중간보스·보스 말고 일반 전투 방 최소 수 (옛 이름)
 
@@ -403,6 +409,7 @@ namespace IBlameYou.Systems
             mid.Chunk = ChunkKind.EliteArena;
             layout.MidBossPathIndex = mid.PathIndex;
             layout.MidBoss = MidBossFor(seed: layout.Seed);
+            mid.MidBoss = layout.MidBoss;
 
             // 막다른 방 (주 경로 밖, 문 하나)
             var leaves = new List<RoomData>();
@@ -470,12 +477,16 @@ namespace IBlameYou.Systems
             }
 
             // 나머지는 모두 전투 방. 좌우 방 일부(깊이 0.3+, 1/3, 최대 2개)는 정예. 일반 전투 방이 MinCombatRooms개에 못 미치면 정예를 덜 둔다.
+            // 좌우 일반 전투 방이 MinSideCombatRooms개 아래로 내려가게 하는 정예도 두지 않는다. 좌우 자리가 모자라면 다시 뽑는다.
             int spare = rest.Count - MinCombatRooms;
             if (spare < 0) return false;
+            int sideSpare = -MinSideCombatRooms;
+            foreach (var r in rest) if (!r.IsVertical) sideSpare++;
+            if (sideSpare < 0) return false;
             int elites = 0;
             foreach (var r in rest)
             {
-                bool elite = !r.IsVertical && elites < Math.Min(MaxElites, spare) && r.Difficulty >= 0.3f && rng.Next(3) == 0;
+                bool elite = !r.IsVertical && elites < Math.Min(MaxElites, Math.Min(spare, sideSpare)) && r.Difficulty >= 0.3f && rng.Next(3) == 0;
                 r.Kind = elite ? RoomKind.Elite : RoomKind.Combat;
                 r.Chunk = elite ? ChunkKind.EliteArena : ChunkKind.Arena;
                 if (elite) elites++;
@@ -485,7 +496,7 @@ namespace IBlameYou.Systems
         }
 
         // 중간보스 고르기: 시드로 후보 중 하나 (배치 난수열을 쓰지 않아 다른 방은 그대로).
-        public static readonly MidBossKind[] MidBossPool = { MidBossKind.SlimeKnights };
+        public static readonly MidBossKind[] MidBossPool = { MidBossKind.SlimeKnights, MidBossKind.PrismJelly };
         public static MidBossKind MidBossFor(int seed) => MidBossPool[(int)(unchecked((uint)seed * 2654435761u) % (uint)MidBossPool.Length)];
 
         // 둘째 퍼즐 방 종류: 시드를 2로 나눈 나머지로 등불 순서 · 거울 룬 (배치 난수열을 쓰지 않아 다른 방은 그대로).

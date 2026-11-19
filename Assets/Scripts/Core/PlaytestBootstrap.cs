@@ -33,7 +33,30 @@ namespace IBlameYou.Core
 
         private void Start()
         {
+            Net.NetSession.ClientStarted += OnOnlineClientStarted;
+            Net.NetSession.ClientEnded += OnOnlineClientEnded;
             ShowMenu();
+        }
+
+        private void OnDestroy()
+        {
+            Net.NetSession.ClientStarted -= OnOnlineClientStarted;
+            Net.NetSession.ClientEnded -= OnOnlineClientEnded;
+        }
+
+        // 온라인 2인에 친구(P2)로 들어감: 이 컴퓨터는 게임을 돌리지 않고 호스트 화면을 그린다 (Net/NetClientView). 메뉴를 치운다.
+        private void OnOnlineClientStarted()
+        {
+            foreach (var menu in GetComponents<StartMenu>()) Destroy(menu);
+            foreach (var city in GetComponents<CityMenu>()) Destroy(city);
+            foreach (var intro in GetComponents<StoryIntro>()) Destroy(intro);
+            GameAudio.StopMusic(); // 곡은 호스트가 보내 준다
+        }
+
+        // 연결이 끝나면 시작 화면으로 (이유는 온라인 창에 보인다)
+        private void OnOnlineClientEnded(string reason)
+        {
+            if (GetComponent<StartMenu>() == null) ShowMenu();
         }
 
         private void ShowMenu()
@@ -271,6 +294,7 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKnightFire: enemy = SlimeKnightSpawner.Spawn(position, Element.Fire, artConfig); break;
                 case StageEnemy.SlimeKnightWater: enemy = SlimeKnightSpawner.Spawn(position, Element.Water, artConfig); break;
                 case StageEnemy.TreasureGoblin: enemy = TreasureGoblinSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.PrismJelly: enemy = PrismJellySpawner.Spawn(position, artConfig); break;
                 default: enemy = SlimeSpawner.Spawn(position, artConfig); break;
             }
 

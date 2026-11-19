@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using IBlameYou.Core;
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
 
 namespace IBlameYou.UI
 {
@@ -152,7 +153,7 @@ namespace IBlameYou.UI
                 float cw = CapWidth(item.Keys[k]);
                 // 버튼이 아니라 그림만: 마우스를 올려도 바뀌지 않게 보통 상태로만 그린다
                 if (Event.current.type == EventType.Repaint)
-                    helpCap.Draw(new Rect(x, centerY - HelpCapHeight * 0.5f, cw, HelpCapHeight), key, false, false, false, false);
+                    GUI.StyleDraw(helpCap, new Rect(x, centerY - HelpCapHeight * 0.5f, cw, HelpCapHeight), key, false, false, false, false);
                 x += cw;
             }
 

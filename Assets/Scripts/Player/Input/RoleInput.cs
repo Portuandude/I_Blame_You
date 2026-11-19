@@ -1,11 +1,13 @@
 using IBlameYou.Core;
+using IBlameYou.Net;
 using IBlameYou.Systems;
 using UnityEngine;
 
 namespace IBlameYou.Player
 {
-    // 플레이어 A/B 역할별 입력. 지금은 로컬 키보드/마우스에서 읽지만, 데디케이티드 서버가 붙으면
-    // 각 클라이언트가 자기 역할의 입력만 서버로 보내도록 이 클래스만 바꾸면 된다.
+    // 플레이어 A/B 역할별 입력. 한 컴퓨터로 할 때는 로컬 키보드/마우스에서 읽는다.
+    // 온라인(호스트 방식, Docs/OnlinePlay.md)에서는 호스트 컴퓨터가 A를, 친구 컴퓨터가 B를 맡는다:
+    // B 입력은 모두 P2Input을 거쳐서 친구가 보낸 마우스·키를 읽는다 (호스트 사람의 마우스는 무시).
     //
     // 플레이어 A (이동)                       플레이어 B (공격)
     //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 마법 (누르고 있으면 다이얼)
@@ -36,7 +38,7 @@ namespace IBlameYou.Player
         // F12(임시, 2026-11-14 사람 지시): 혼자 시험할 때 두 사람이 동시에 누른 것으로 친다 — 꾹 누르면 건너뛰기 게이지가 찬다.
         public static bool StorySkipBoth => Input.GetKey(KeyCode.F12);
         public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || StorySkipBoth;
-        public static bool StoryButtonB => Input.GetMouseButton(0) || StorySkipBoth;
+        public static bool StoryButtonB => P2Input.GetMouseButton(0) || (P2Input.Remote && P2Input.GetKey(KeyCode.Space)) || StorySkipBoth; // 온라인이면 친구의 Space도
 
         // ---- 플레이어 A ----
 
@@ -103,13 +105,13 @@ namespace IBlameYou.Player
 
         // ---- 플레이어 B ----
 
-        public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && !Dial.IsOpen && Time.frameCount != dialCancelFrame && Input.GetMouseButtonDown(0);
+        public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && !Dial.IsOpen && Time.frameCount != dialCancelFrame && P2Input.GetMouseButtonDown(0);
 
         public static Vector2 AimWorldPoint(Vector2 fallback)
         {
             var cam = Camera.main;
             if (cam == null) return fallback;
-            var mouse = Input.mousePosition;
+            var mouse = P2Input.mousePosition;
             mouse.z = -cam.transform.position.z;
             return cam.ScreenToWorldPoint(mouse);
         }
@@ -147,20 +149,20 @@ namespace IBlameYou.Player
                 return false;
             }
             // 개발자 모드: 상단 6~9·0은 기본 마법 즉시. 우클릭 다이얼도 똑같이 쓴다 (아카데미에서 배운 마법을 고르는 길, 리뷰 MEDIUM)
-            if (GameSession.DevMode && GetIndexedKeyDown(TopRowLastFive, out element)) return true;
+            if (GameSession.DevMode && GetIndexedKeyDownB(TopRowLastFive, out element)) return true;
 
-            float wheel = Input.mouseScrollDelta.y;
-            Vector2 mouse = Input.mousePosition;
+            float wheel = P2Input.mouseScrollDelta.y;
+            Vector2 mouse = P2Input.mousePosition;
             if (Dial.IsOpen)
             {
-                if (Input.GetMouseButtonDown(0))
+                if (P2Input.GetMouseButtonDown(0))
                 {
                     Dial.Cancel();
                     dialCancelFrame = Time.frameCount; // 같은 프레임에 PlayerCombat이 나중에 돌아도 평타가 나가지 않게
                     return false;
                 }
                 Dial.Update(mouse.x, mouse.y, wheel, Time.unscaledTime);
-                if (Input.GetMouseButton(1)) return false;
+                if (P2Input.GetMouseButton(1)) return false;
                 if (!Dial.Release(out int e, out int s)) return false;
                 MouseSpellIndex = e;
                 SpellSlotOf[e] = s;
@@ -171,13 +173,13 @@ namespace IBlameYou.Player
 
             if (wheel != 0f) // 휠 위로 = 다음 속성. 한 프레임에 한 칸만
                 MouseSpellIndex = SpellDialRules.Step(MouseSpellIndex, MouseSpellCount, wheel);
-            if (Input.GetMouseButtonDown(1))
+            if (P2Input.GetMouseButtonDown(1))
             {
                 for (int i = 0; i < MouseSpellCount; i++) DialCounts[i] = SpellBook.LearnedCount((Element)i);
                 Dial.Open(mouse.x, mouse.y, MouseSpellIndex, DialCounts, SpellSlotOf, Time.unscaledTime);
                 return false;
             }
-            if (!GetIndexedKeyDown(TopRowFirstFive, out element)) return false;
+            if (!GetIndexedKeyDownB(TopRowFirstFive, out element)) return false;
             if ((int)element < MouseSpellCount)
             {
                 MouseSpellIndex = (int)element; // 숫자줄로 고른 속성도 휠·다이얼과 같은 상태로
@@ -187,16 +189,32 @@ namespace IBlameYou.Player
         }
 
         // ---- 마법진 그리기 (SpellCaster) ----
-        // 마우스 자리 (GUI 좌표: 왼쪽 위가 0)
+        // 마우스 자리 (GUI 좌표: 왼쪽 위가 0). 온라인이면 친구 마우스 (P2Input)
         public static Vector2 CircleMouseGui()
         {
-            var m = Input.mousePosition;
+            var m = P2Input.mousePosition;
             return new Vector2(m.x, Screen.height - m.y);
         }
 
-        public static bool CircleDrawDown() => !BBlocked && Input.GetMouseButtonDown(0);
-        public static bool CircleDrawHeld() => !BBlocked && Input.GetMouseButton(0);
-        public static bool CircleCancelDown() => Input.GetKeyDown(KeyCode.Escape) || (!BBlocked && Input.GetMouseButtonDown(1));
+        public static bool CircleDrawDown() => !BBlocked && P2Input.GetMouseButtonDown(0);
+        public static bool CircleDrawHeld() => !BBlocked && P2Input.GetMouseButton(0);
+        public static bool CircleCancelDown() => P2Input.GetKeyDown(KeyCode.Escape) || (!BBlocked && P2Input.GetMouseButtonDown(1));
+
+        // B(P2)의 숫자줄: 온라인이면 친구 키보드
+        private static bool GetIndexedKeyDownB(KeyCode[] keys, out Element element)
+        {
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (P2Input.GetKeyDown(keys[i]))
+                {
+                    element = (Element)i;
+                    return true;
+                }
+            }
+
+            element = Element.Neutral;
+            return false;
+        }
 
         private static bool GetIndexedKeyDown(KeyCode[] keys, out Element element)
         {

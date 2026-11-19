@@ -31,8 +31,10 @@ namespace IBlameYou.Systems
         private const int H = ChunkData.Height;
 
         // 중간보스 방: 정예 전투 구역 지형에 정예 대신 쌍둥이 슬라임 기사 둘 (Docs/MidBossDraft.md 후보 C)
+        // 또는 프리즘 젤리 한 마리 (후보 D, 구역 가운데). 어느 쪽인지는 room.MidBoss (판마다 시드로 반반)
         public const int MidBossFireX = 9;
         public const int MidBossWaterX = 22;
+        public const int MidBossJellyX = 15;
         private const int ArenaStartX = 2;  // ChunkGenerator.BuildArena의 전투 구역 시작 열 (기사 자리 기준)
 
         // 세로 방 발판 모양: 지그재그 계단 / 양 갈래 계단 / 지그재그 + 옆 선반(궁수 자리)
@@ -57,7 +59,7 @@ namespace IBlameYou.Systems
                 geometry = BuildHorizontal(seed, room);
             }
 
-            if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk);
+            if (room.Kind == RoomKind.MidBoss) ArmMidBoss(geometry.Chunk, room.MidBoss);
             if (IsWallArcherAmbush(seed, room)) AddWallArchers(geometry.Chunk);
             if (HasPairGate(room)) AddPairGate(seed, room, geometry.Chunk);
             if (room.Kind == RoomKind.Puzzle) geometry.Chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy); // 퍼즐 방에는 몹이 없다 (2026-11-14 사람 결정)
@@ -95,15 +97,18 @@ namespace IBlameYou.Systems
             });
         }
 
-        // 중간보스 전투 구역인지 (구역 적에 쌍둥이 기사가 있음). 처치 보상(체력 50% 즉시 회복 + 유물 상자 확정)을 고를 때 쓴다.
+        // 중간보스 전투 구역인지 (구역 적에 쌍둥이 기사나 프리즘 젤리가 있음). 처치 보상(체력 50% 즉시 회복 + 유물 상자 확정)을 고를 때 쓴다.
         public static bool IsMidBossArena(ChunkData chunk)
         {
             foreach (var f in chunk.Features)
                 if (f.Kind == FeatureKind.Enemy && f.Deferred &&
-                    (f.Enemy == StageEnemy.SlimeKnightFire || f.Enemy == StageEnemy.SlimeKnightWater))
+                    IsMidBossEnemy(f.Enemy))
                     return true;
             return false;
         }
+
+        public static bool IsMidBossEnemy(StageEnemy kind) =>
+            kind == StageEnemy.SlimeKnightFire || kind == StageEnemy.SlimeKnightWater || kind == StageEnemy.PrismJelly;
 
         // 매복 변형 "벽 위 궁수" (2026-11-14, ① 컨텐츠): 난이도 WallArcherMinDifficulty 이상인 매복 전투 방(AmbushRule과 같은 판정)은
         // 전투 구역 양쪽 문 바로 안쪽 높은 곳(바닥 + WallLedgeRise)에 3칸 선반을 두고, 가장 바깥 두 적을 그 선반 위 고블린 궁수로 바꾼다 (적 수는 그대로).
@@ -167,15 +172,20 @@ namespace IBlameYou.Systems
             return true;
         }
 
-        // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 둔다. 구역 바닥은 평평하다(BuildArena).
+        // 전투 구역 적(나중에 나오는 적)을 모두 빼고 불 기사·물 기사를 구역 양쪽에 (또는 프리즘 젤리를 가운데에) 둔다. 구역 바닥은 평평하다(BuildArena).
         // 넓은 방에서는 전투 구역이 방 안쪽 끝 구간에 있으므로 기사 자리는 구역 시작 열(한 화면 방에서는 2)만큼 민다.
-        private static void ArmMidBoss(ChunkData chunk)
+        private static void ArmMidBoss(ChunkData chunk, MidBossKind kind)
         {
             int ground = chunk.EntryHeight;
             int shift = 0;
             foreach (var f in chunk.Features)
                 if (f.Kind == FeatureKind.Arena) { ground = f.Y; shift = f.X - ArenaStartX; break; }
             chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy && f.Deferred);
+            if (kind == MidBossKind.PrismJelly)
+            {
+                chunk.AddEnemy(StageEnemy.PrismJelly, shift + MidBossJellyX, ground, true);
+                return;
+            }
             chunk.AddEnemy(StageEnemy.SlimeKnightFire, shift + MidBossFireX, ground, true);
             chunk.AddEnemy(StageEnemy.SlimeKnightWater, shift + MidBossWaterX, ground, true);
         }

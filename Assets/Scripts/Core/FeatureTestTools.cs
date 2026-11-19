@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
 
 namespace IBlameYou.Core
 {
@@ -127,7 +128,7 @@ namespace IBlameYou.Core
             var kind = Monsters[monsterIndex];
             var movement = player.GetComponent<PlayerMovement>();
             float facing = movement != null ? movement.Facing : 1f;
-            bool big = kind == StageEnemy.SlimeKing || kind == StageEnemy.SlimeKnightFire || kind == StageEnemy.SlimeKnightWater;
+            bool big = kind == StageEnemy.SlimeKing || kind == StageEnemy.SlimeKnightFire || kind == StageEnemy.SlimeKnightWater || kind == StageEnemy.PrismJelly;
             var position = player.transform.position + new Vector3(facing * (big ? 6f : 4f), big ? 2.5f : 1f, 0f);
             var health = spawner(kind, position, enemyRoot);
             StageEvents.PostNotice(health != null ? $"소환: {MonsterName(kind)}" : $"소환 실패: {MonsterName(kind)}");
@@ -377,6 +378,7 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKnightFire: return "슬라임 기사 불 (중간보스)";
                 case StageEnemy.SlimeKnightWater: return "슬라임 기사 물 (중간보스)";
                 case StageEnemy.TreasureGoblin: return "보물 고블린 (10초)";
+                case StageEnemy.PrismJelly: return "프리즘 젤리 (중간보스)";
                 default: return kind.ToString();
             }
         }

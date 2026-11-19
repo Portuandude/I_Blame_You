@@ -195,49 +195,65 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void MidBossRoomHasTwinKnightsOnArenaFloor()
+        public void MidBossRoomHasTwinKnightsOrPrismJellyOnArenaFloor()
         {
+            int jellyRuns = 0;
             for (int seed = 0; seed < SeedCount; seed++)
             {
                 int midBossRooms = 0;
-                foreach (var room in RoomLayout.Generate(seed, TargetSeconds).Rooms)
+                var layout = RoomLayout.Generate(seed, TargetSeconds);
+                foreach (var room in layout.Rooms)
                 {
                     var chunk = RoomShaper.Build(seed, room).Chunk;
-                    var knights = new System.Collections.Generic.List<ChunkFeature>();
+                    var bosses = new System.Collections.Generic.List<ChunkFeature>();
                     ChunkFeature? arena = null;
                     foreach (var f in chunk.Features)
                     {
                         if (f.Kind == FeatureKind.Arena) arena = f;
-                        if (f.Kind == FeatureKind.Enemy && (f.Enemy == StageEnemy.SlimeKnightFire || f.Enemy == StageEnemy.SlimeKnightWater))
-                            knights.Add(f);
+                        if (f.Kind == FeatureKind.Enemy && RoomShaper.IsMidBossEnemy(f.Enemy))
+                            bosses.Add(f);
                     }
 
                     Assert.AreEqual(room.Kind == RoomKind.MidBoss, RoomShaper.IsMidBossArena(chunk),
                         $"seed {seed} room {room.Index}: 중간보스 보상 판정(IsMidBossArena)이 방 종류와 다름");
                     if (room.Kind != RoomKind.MidBoss)
                     {
-                        Assert.AreEqual(0, knights.Count, $"seed {seed} room {room.Index}: 중간보스 방이 아닌데 기사가 있음");
+                        Assert.AreEqual(0, bosses.Count, $"seed {seed} room {room.Index}: 중간보스 방이 아닌데 중간보스가 있음");
                         continue;
                     }
 
                     midBossRooms++;
+                    Assert.AreEqual(layout.MidBoss, room.MidBoss, $"seed {seed}: 방의 중간보스가 판의 중간보스와 다름");
                     Assert.IsTrue(arena.HasValue, $"seed {seed}: 중간보스 방에 전투 구역이 없음");
                     int deferred = 0;
                     foreach (var f in chunk.Features) if (f.Kind == FeatureKind.Enemy && f.Deferred) deferred++;
-                    Assert.AreEqual(2, deferred, $"seed {seed}: 중간보스 방의 구역 적은 기사 둘뿐이어야 함");
-                    Assert.AreEqual(2, knights.Count);
-                    Assert.AreNotEqual(knights[0].Enemy, knights[1].Enemy, "불 기사 하나, 물 기사 하나");
-                    Assert.AreNotEqual(knights[0].Id, knights[1].Id);
-                    foreach (var k in knights)
+                    if (room.MidBoss == MidBossKind.PrismJelly)
+                    {
+                        jellyRuns++;
+                        Assert.AreEqual(1, deferred, $"seed {seed}: 프리즘 젤리 방의 구역 적은 젤리 하나뿐이어야 함");
+                        Assert.AreEqual(1, bosses.Count);
+                        Assert.AreEqual(StageEnemy.PrismJelly, bosses[0].Enemy);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(2, deferred, $"seed {seed}: 중간보스 방의 구역 적은 기사 둘뿐이어야 함");
+                        Assert.AreEqual(2, bosses.Count);
+                        Assert.AreNotEqual(bosses[0].Enemy, bosses[1].Enemy, "불 기사 하나, 물 기사 하나");
+                        Assert.AreNotEqual(bosses[0].Id, bosses[1].Id);
+                        Assert.IsFalse(bosses.Exists(b => b.Enemy == StageEnemy.PrismJelly));
+                    }
+                    foreach (var k in bosses)
                     {
                         Assert.IsTrue(k.Deferred);
-                        Assert.IsTrue(k.X > arena.Value.X && k.X < arena.Value.X + arena.Value.Width, $"seed {seed}: 기사가 구역 밖 ({k.X})");
-                        Assert.IsTrue(chunk.IsSolid(k.X, k.Y - 1) && !chunk.IsSolid(k.X, k.Y), $"seed {seed}: 기사가 바닥 위가 아님 ({k.X},{k.Y})");
+                        Assert.IsTrue(k.X > arena.Value.X && k.X < arena.Value.X + arena.Value.Width, $"seed {seed}: 중간보스가 구역 밖 ({k.X})");
+                        Assert.IsTrue(chunk.IsSolid(k.X, k.Y - 1) && !chunk.IsSolid(k.X, k.Y), $"seed {seed}: 중간보스가 바닥 위가 아님 ({k.X},{k.Y})");
                     }
                 }
 
                 Assert.AreEqual(1, midBossRooms, $"seed {seed}: 중간보스 방은 하나");
             }
+            Assert.Greater(jellyRuns, 0, "프리즘 젤리 판이 한 번은 나와야 함");
+            Assert.Less(jellyRuns, SeedCount, "쌍둥이 기사 판도 한 번은 나와야 함");
         }
 
         // 세로 방 발판 모양 세 가지가 모두 나오고, 고른 모양 그대로 검증을 통과한다 (지그재그로 되돌아가는 일 없음).

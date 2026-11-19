@@ -1,7 +1,9 @@
 using IBlameYou.Core;
+using IBlameYou.Net;
 using IBlameYou.Player;
 using IBlameYou.Systems;
 using UnityEngine;
+using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/NetGUI)
 
 namespace IBlameYou.UI
 {
@@ -24,7 +26,7 @@ namespace IBlameYou.UI
             if (mouseSpellStyle == null)
                 mouseSpellStyle = new GUIStyle(small) { wordWrap = false, fontStyle = FontStyle.Bold };
 
-            Vector2 mouse = Input.mousePosition;
+            Vector2 mouse = P2Input.mousePosition; // 온라인이면 친구 커서 자리
             var pos = new Vector2(mouse.x + 16f, Screen.height - mouse.y + 14f); // GUI 좌표는 위가 0
             var content = new GUIContent($"우클릭 {spell.Name}");
             Vector2 size = mouseSpellStyle.CalcSize(content);
