@@ -46,6 +46,8 @@ namespace IBlameYou.Core
         // 메뉴 버튼에 붙일 한 줄 (방을 열었거나 접속 중일 때)
         public static string ButtonLabel()
         {
+            if (NetSession.Reconnecting)
+                return $"온라인 2인 — 호스트에 다시 연결하는 중 ({NetSession.ReconnectAttempt}/{ReconnectPlan.MaxAttempts}) · F10 그만두기";
             switch (NetSession.CurrentMode)
             {
                 case NetSession.Mode.Hosting:
