@@ -20,7 +20,6 @@ namespace IBlameYou.Net
         private static Font font;
 
         private PlayerMovement player;
-        private float nextPlayerSearch;
         private float lastPing = -10f;
         private readonly System.Collections.Generic.List<GameObject> markers = new System.Collections.Generic.List<GameObject>();
 
@@ -59,8 +58,6 @@ namespace IBlameYou.Net
         private bool FindPlayer()
         {
             if (player != null) return true;
-            if (Time.unscaledTime < nextPlayerSearch) return false;
-            nextPlayerSearch = Time.unscaledTime + 1f; // 메뉴에서 누를 때마다 씬 전체를 찾지 않게
             player = FindAnyObjectByType<PlayerMovement>();
             return player != null;
         }
