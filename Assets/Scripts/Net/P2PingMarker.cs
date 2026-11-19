@@ -52,7 +52,7 @@ namespace IBlameYou.Net
                 markers.RemoveAt(0);
             }
             markers.Add(Spawn(world));
-            GameAudio.PlaySfx("Notice", 0.45f, 0.05f);
+            GameAudio.PlaySfx("PingMark", 0.6f, 0.04f);
         }
 
         private bool FindPlayer()

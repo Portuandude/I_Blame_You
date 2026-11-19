@@ -331,6 +331,8 @@ namespace IBlameYou.Net
                         ping.Reset(Time.unscaledTime);
                         status = $"{peerName} 접속! P2(공격)는 친구 마우스로 해요.";
                         PeerJoined?.Invoke();
+                        // 들어옴·다시 들어옴 "도미솔" (그림 표를 다시 보낸 뒤라 친구 컴퓨터에도 들린다 — NetAudio)
+                        IBlameYou.Systems.GameAudio.PlaySfx("NetJoin", 0.6f, 0f);
                         break;
                     case MsgType.Pong:
                         if (!peerReady) return;
