@@ -198,6 +198,29 @@ namespace IBlameYou.Net
             WriteRect(frame, rect);
         }
 
+        // 자리를 나중에 아는 묶음 (GUILayout 스크롤 칸: 칸 자리는 안을 다 그린 뒤 GetLastRect로 안다).
+        // 돌려준 표를 PatchGroup에 넘기면 자리를 채운다. 기록 중이 아니면 -1.
+        public static long BeginDeferredGroup()
+        {
+            if (!Begin()) return -1;
+            frame.WriteByte((byte)HudOp.Group);
+            int position = frame.Length;
+            WriteRect(frame, new Rect(0f, 0f, 0f, 0f));
+            return ((long)frameNumber << 32) | (uint)position;
+        }
+
+        public static void PatchGroup(long token, Rect rect)
+        {
+            if (token < 0) return;
+            int frameOfToken = (int)(token >> 32);
+            int position = (int)(token & 0xffffffffL);
+            if (frameOfToken != frameNumber || position + 16 > frame.Length) return; // 그 사이 프레임이 넘어갔다
+            frame.PatchFloat(position, rect.x);
+            frame.PatchFloat(position + 4, rect.y);
+            frame.PatchFloat(position + 8, rect.width);
+            frame.PatchFloat(position + 12, rect.height);
+        }
+
         public static void EndGroup()
         {
             if (!Begin()) return;
