@@ -243,8 +243,16 @@ namespace IBlameYou.Net
         // (EndScrollView 뒤 GetLastRect), 묶음 자리를 비워 두고 나중에 채운다. 친구 화면에는 보이는 칸 안만, 스크롤한 만큼 옮겨 그린다 (막대는 빠짐).
         private static readonly System.Collections.Generic.Stack<long> scrollTokens = new System.Collections.Generic.Stack<long>();
 
+        private static int scrollFrame = -1;
+
         public static Vector2 BeginScrollView(Vector2 scrollPosition, params GUILayoutOption[] options)
         {
+            // 예외(ExitGUI 등)로 End를 못 부른 묶음이 다음 프레임까지 남지 않게
+            if (Time.frameCount != scrollFrame)
+            {
+                scrollTokens.Clear();
+                scrollFrame = Time.frameCount;
+            }
             var result = GUILayout.BeginScrollView(scrollPosition, options);
             long token = HudRecorder.BeginDeferredGroup();
             scrollTokens.Push(token);
