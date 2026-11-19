@@ -96,7 +96,7 @@ namespace IBlameYou.Net
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F10))
+            if (Input.GetKeyDown(KeyCode.F10) && NetSession.IsClient) // 다시 붙는 중(화면만 남김)에는 NetSession이 F10을 받는다
             {
                 NetSession.Stop();
                 return;
