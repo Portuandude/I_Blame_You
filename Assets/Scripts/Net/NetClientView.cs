@@ -96,7 +96,7 @@ namespace IBlameYou.Net
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F10))
+            if (Input.GetKeyDown(KeyCode.F10) && NetSession.IsClient) // 다시 붙는 중(화면만 남김)에는 NetSession이 F10을 받는다
             {
                 NetSession.Stop();
                 return;
@@ -138,9 +138,11 @@ namespace IBlameYou.Net
             if (statusStyle == null)
                 statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerRight, richText = true };
             float silent = Mathf.Max(Time.unscaledTime - lastHostMessage, NetSession.PeerSilentSeconds);
-            string line = silent > 2f
+            string line = NetSession.Reconnecting
+                ? "<color=#ffa659>호스트와 끊김 — 다시 연결하는 중</color> · F10 그만두기"
+                : silent > 2f
                 ? $"<color=#ffa659>호스트 대답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김) · F10 연결 끊기"
-                : $"<color=#ffa659>P2</color> 온라인 · {LatencyText(NetSession.RttMs)} · F10 연결 끊기";
+                : $"<color=#ffa659>P2</color> 온라인 · {LatencyText(NetSession.RttMs)}{NetSession.TrafficText()} · F10 연결 끊기";
             var previous = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, 0.7f);
             GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);

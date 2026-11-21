@@ -233,6 +233,22 @@ namespace IBlameYou.Tests
             Assert.AreEqual("버전이 달라요", reason);
         }
 
+        [Test]
+        public void Writer_PatchFloatOverwritesEarlierValue()
+        {
+            var w = new NetWriter(8);
+            w.WriteByte(7);
+            int at = w.Length;
+            w.WriteFloat(0f);
+            w.WriteFloat(2.5f);
+            w.PatchFloat(at, 123.25f);
+            var r = new NetReader(w.ToArray());
+            Assert.AreEqual(7, r.ReadByte());
+            Assert.AreEqual(123.25f, r.ReadFloat());
+            Assert.AreEqual(2.5f, r.ReadFloat(), "뒤 값은 그대로");
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => w.PatchFloat(w.Length - 2, 1f));
+        }
+
         private static TransportEvent WaitFor(ITransport t, TransportEventKind kind)
         {
             var deadline = DateTime.UtcNow.AddSeconds(5);
