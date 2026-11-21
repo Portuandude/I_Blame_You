@@ -30,11 +30,10 @@ namespace IBlameYou.Tests
         }
 
         [Test]
-        public void GateIsCoopWithTwoDifferentElements()
+        public void GateHasTwoDifferentElements()
         {
             var gates = FeatureTestStage.Build().Chunks.SelectMany(c => c.Features).Where(f => f.Kind == FeatureKind.ElementGate).ToList();
             Assert.AreEqual(1, gates.Count);
-            Assert.IsTrue(gates[0].ShieldFirst);
             Assert.IsTrue(gates[0].HasSecondElement);
             Assert.AreNotEqual(gates[0].ElementIndex, gates[0].SecondElementIndex);
         }

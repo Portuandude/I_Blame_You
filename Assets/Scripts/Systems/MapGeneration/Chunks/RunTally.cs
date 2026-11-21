@@ -19,13 +19,7 @@ namespace IBlameYou.Systems
             return $"{who} 최애 {kind}: {name}({counts[best]}회)";
         }
 
-        // 결과 창 한 줄: B 공격 마법과 A 방어막 최애를 " · "로 잇는다. 둘 다 없으면 빈 문자열.
-        public static string Line(int[] spells, int[] shields, string[] names, string[] colors = null)
-        {
-            string b = Favorite("B", "마법", spells, names, colors);
-            string a = Favorite("A", "방어막", shields, names, colors);
-            if (b.Length == 0) return a;
-            return a.Length == 0 ? b : b + " · " + a;
-        }
+        // 결과 창 한 줄: B 공격 마법 최애. 없으면 빈 문자열. (A 방어막 최애는 방어막과 함께 2026-11-16 빠졌다)
+        public static string Line(int[] spells, string[] names, string[] colors = null) => Favorite("B", "마법", spells, names, colors);
     }
 }

@@ -9,7 +9,7 @@ namespace IBlameYou.Player
         GroundSpike, // 조준점에서 가장 가까운 적을 노려 발밑에서 솟아오름
         FireWall,    // 앞 땅 위에 잠깐 서는 불벽 (불꽃 장막, FireWall.cs)
         Mist,        // 커서 자리 둥근 안개 (물안개, MistZone)
-        Tailwind     // B 자신에게 거는 버프: Duration초 동안 영창 문장이 짧아짐 (순풍, ChantRules)
+        Tailwind     // B 자신에게 거는 버프: Duration초 동안 마법진이 한 단계 쉬워짐 (순풍, MagicCircleRules.TierFor)
     }
 
     public class SpellDefinition
@@ -17,7 +17,7 @@ namespace IBlameYou.Player
         public Element Element;
         public string Name;
         public float ManaCost;
-        public string Chant;
+        public string Chant;              // 주문 한 줄. 2026-11-16부터는 타이핑하지 않고 마법진 위에 읽을거리로만 띄운다
         public SpellShape Shape;
         public float Speed;
         public float Radius;
@@ -38,7 +38,7 @@ namespace IBlameYou.Player
         public string Description;
     }
 
-    // 플레이어 B의 공격 스킬 목록 (기획서 2.5). 영창문은 "불꽃이여, 작렬하라!"만 확정 예시이고 나머지는 가안.
+    // 플레이어 B의 공격 스킬 목록 (기획서 2.5). 고르면 마법진을 따라 그려 발동한다 (MagicCircleRules, 2026-11-16 영창 타이핑 대체).
     // 피해는 스탯 문서의 속성 데미지(각 25)에 DamageMultiplier를 곱하고 마법 공식으로 계산한다.
     // 모든 투사체는 수평으로 출발하고 유도로 방향을 꺾는다.
     // 속성별 성격 (2026-10-12 사용자 지시):
@@ -103,7 +103,7 @@ namespace IBlameYou.Player
         }
 
         // 아카데미 마법 (도시 4단계, 2026-11-15 사람 결정 속성마다 2개 — 불 범위·물 디버프·바람 마법 속도·대지 데미지).
-        // 속성마다 싼 것(60)·비싼 것(90). 칼바람 영창은 가장 짧게, 운석은 가장 길게 (특화가 문장 길이로도 느껴지게).
+        // 속성마다 싼 것(60)·비싼 것(90). 마법진 단계는 같은 속성 안 코스트 순위 (CircleTier).
         public static readonly SpellDefinition[] Academy =
         {
             new SpellDefinition { Id = "IceShackle", Element = Element.Water, Name = "얼음 족쇄", ManaCost = 20f, Chant = "얼음이여, 묶어라!",
@@ -120,7 +120,7 @@ namespace IBlameYou.Player
                 Description = "앞 5칸에 2초 동안 불벽: 안의 적 모두 0.4초마다 데고, 처음 닿으면 반드시 화상" },
             new SpellDefinition { Id = "Tailwind", Element = Element.Wind, Name = "순풍", ManaCost = 15f, Chant = "바람이여, 등을 밀어라!",
                 Shape = SpellShape.Tailwind, Duration = 6f, DustCost = 60,
-                Description = "6초 동안 모든 영창 문장이 짧아진다 (\"불꽃이여, 작렬하라!\" → \"불꽃이여!\")" },
+                Description = "6초 동안 모든 마법진이 한 단계 쉬워진다 (대마법 → 숙련, 숙련 → 견습)" },
             new SpellDefinition { Id = "FlameRain", Element = Element.Fire, Name = "불꽃 비", ManaCost = 35f, Chant = "불꽃이여, 비가 되어 쏟아져라!",
                 Shape = SpellShape.FireWall, AtCursor = true, Radius = 4f, Height = 4f, Range = 14f, DamageMultiplier = 0.3f, Duration = 1.5f,
                 Debuff = StatusDebuff.Burn, DustCost = 90,
@@ -131,12 +131,24 @@ namespace IBlameYou.Player
             new SpellDefinition { Id = "GaleBlades", Element = Element.Wind, Name = "칼바람", ManaCost = 25f, Chant = "베어라!",
                 Shape = SpellShape.Projectile, Volley = 3, Speed = 24f, Radius = 0.35f, Range = 16f, DamageMultiplier = 0.45f,
                 HomingTurnRate = 600f, DustCost = 90,
-                Description = "가장 짧은 영창, 바람 칼날 3발을 빠르게 연달아" },
+                Description = "바람 칼날 3발을 빠르게 연달아" },
             new SpellDefinition { Id = "Meteor", Element = Element.Earth, Name = "운석", ManaCost = 40f, Chant = "하늘의 바위여, 별이 되어 떨어져 모든 것을 부숴라!",
                 Shape = SpellShape.GroundSpike, AtCursor = true, Radius = 1f, Range = 16f, DamageMultiplier = 2.45f,
                 Windup = 0.8f, CastDelay = 0.7f, Debuff = StatusDebuff.Stun, DustCost = 90,
-                Description = "가장 긴 영창 뒤 커서 자리에 운석: 바위 가시의 3.5배, 좁은 범위" },
+                Description = "선딜 뒤 커서 자리에 운석: 바위 가시의 3.5배, 좁은 범위" },
         };
+
+        // 마법진 단계 (0 견습 · 1 숙련 · 2 대마법): 같은 속성의 기본 마법 + 아카데미 마법 중 코스트 순위. 배웠는지와 상관없이 고정.
+        public static int CircleTier(SpellDefinition spell, bool tailwind = false)
+        {
+            if (spell == null) return 0;
+            var costs = new System.Collections.Generic.List<float>();
+            int e = (int)spell.Element;
+            if (e >= 0 && e < Spells.Length && Spells[e] != null) costs.Add(Spells[e].ManaCost);
+            foreach (var extra in Academy)
+                if (extra.Element == spell.Element) costs.Add(extra.ManaCost);
+            return MagicCircleRules.TierFor(spell.ManaCost, costs, tailwind);
+        }
 
         public static bool IsLearned(SpellDefinition spell)
         {

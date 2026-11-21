@@ -789,8 +789,8 @@ namespace IBlameYou.Tests
         // BounceMushroom.LaunchHeight(7.5) + 갓 높이(0.95). 테스트 어셈블리가 MonoBehaviour 쪽을 참조하지 않아 값을 옮겨 둔다
         private const float BounceMushroom_LaunchReach = 7.5f + 0.95f;
 
-        // 협동 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
-        // 첫 속성(A 방어막)과 둘째 속성(B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
+        // 두 속성 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
+        // 두 속성(둘 다 B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
         [Test]
         public void PairGatesGuardLateTreasureRooms()
         {
@@ -801,7 +801,10 @@ namespace IBlameYou.Tests
                 {
                     var geometry = RoomShaper.Build(seed, room);
                     var chunk = geometry.Chunk;
-                    var gates = chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate && f.ShieldFirst);
+                    // 다른 방(정예 방 등)의 두 속성 봉인문과 섞이지 않게 보물 곁방만 본다 (예전에는 협동 봉인문 표시로 골랐다)
+                    var gates = room.Kind == RoomKind.Treasure
+                        ? chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate && f.HasSecondElement)
+                        : new List<ChunkFeature>();
                     string where = $"seed {seed} room {room.Index} ({room.Kind}, {room.Doors}, {room.Difficulty:0.00})";
                     bool expected = room.Kind == RoomKind.Treasure && room.Difficulty >= RoomShaper.PairGateMinDifficulty;
                     Assert.AreEqual(expected ? 1 : 0, gates.Count, where);

@@ -7,7 +7,7 @@ using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/N
 
 namespace IBlameYou.UI
 {
-    // P2가 휠로 고른 공격 스킬을 마우스 커서 옆에 작게 보여 준다 (RoleInput.MouseSpell, 우클릭하면 이 스킬의 영창이 열림).
+    // P2가 휠로 고른 공격 스킬을 마우스 커서 옆에 작게 보여 준다 (RoleInput.MouseSpell, 우클릭하면 이 스킬의 마법진이 열림).
     // P2는 조준하느라 커서를 보고 있으니 커서 옆이 가장 잘 보인다. 2026-11-15 2인 점검: 숫자줄 대신 마우스만으로 스킬 고르기.
     public partial class SkillHUD
     {
@@ -16,7 +16,7 @@ namespace IBlameYou.UI
         private void DrawMouseSpellTag()
         {
             if (GameSession.DevMode || caster == null || control == null) return;
-            if (caster.ChantOpen || control.Locked || health.IsDead || deathHandled || stageCleared) return;
+            if (caster.CircleOpen || control.Locked || health.IsDead || deathHandled || stageCleared) return;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return; // 창 위에는 안 띄운다
             if (RoleInput.Focus == ControlFocus.A) return; // 기능 테스트 A만 조작 중이면 B 표시는 뺀다
             if (RoleInput.Dial.IsOpen) return; // 다이얼이 열리면 다이얼이 대신 보여 준다 (SkillHUD.SpellDial.cs)

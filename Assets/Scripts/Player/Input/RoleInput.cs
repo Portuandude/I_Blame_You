@@ -9,14 +9,13 @@ namespace IBlameYou.Player
     // 온라인(호스트 방식, Docs/OnlinePlay.md)에서는 호스트 컴퓨터가 A를, 친구 컴퓨터가 B를 맡는다:
     // B 입력은 모두 P2Input을 거쳐서 친구가 보낸 마우스·키를 읽는다 (호스트 사람의 마우스는 무시).
     //
-    // 플레이어 A (이동·방어)                  플레이어 B (공격)
-    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 영창 (누르고 있으면 다이얼)
-    //   Shift 달리기, Left Ctrl 대쉬             상단 1~5: 공격 스킬 선택 → 영창 타이핑 → Enter
+    // 플레이어 A (이동)                       플레이어 B (공격)
+    //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 마법 (누르고 있으면 다이얼)
+    //   Shift 달리기, Left Ctrl 대쉬             상단 1~4: 공격 스킬 선택 → 마법진을 좌클릭 꾹 한붓으로 따라 그리기 (우클릭·Esc 취소)
     //   W/A/S/D + Enter: 순간이동 (2026-11-12 방향키에서 바꿈)
     //   W(또는 ↑): 마을 건물 앞에서 들어가기
-    //   넘패드 1~5: 속성 방어막 → W/A/S/D 순서 입력
     //
-    // 개발자 모드: 상단 1~5 = A 방어막 즉시, 6~9·0 = B 공격 스킬 즉시 (미니게임 생략).
+    // 개발자 모드: 상단 1~5·6~9·0 = B 공격 스킬 즉시 (미니게임 생략). 속성 방어막은 2026-11-16 사람 결정으로 빠졌다.
     // 기능 테스트의 A/B 전환 (2026-11-14 사람 결정 ④ 두 사람 플레이 첫 단계): 한 사람이 한 역할만 조작해 보며 각자 무엇을 하는지 시험한다.
     public enum ControlFocus { Both, A, B }
 
@@ -29,7 +28,6 @@ namespace IBlameYou.Player
         private static bool ABlocked(PlayerControlState state) => state.AKeyboardBlocked || Focus == ControlFocus.B;
         private static bool BBlocked => Focus == ControlFocus.A;
 
-        private static readonly KeyCode[] NumpadKeys = { KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4, KeyCode.Keypad5 };
         private static readonly KeyCode[] TopRowFirstFive = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5 };
         private static readonly KeyCode[] TopRowLastFive = { KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9, KeyCode.Alpha0 };
 
@@ -105,25 +103,6 @@ namespace IBlameYou.Player
             return dir.normalized;
         }
 
-        public static bool ShieldDown(PlayerControlState state, out Element element)
-        {
-            element = Element.Neutral;
-            if (ABlocked(state) || state.ShieldMinigameActive) return false;
-            return GetIndexedKeyDown(GameSession.DevMode ? TopRowFirstFive : NumpadKeys, out element);
-        }
-
-        // 방어막 미니게임 입력 (W/A/S/D 중 이번 프레임에 눌린 것). 없으면 false.
-        public static bool MinigameArrowDown(out char key)
-        {
-            key = '\0';
-            if (Focus == ControlFocus.B) return false; // B만 조작 중이면 A의 방패 미니게임 입력도 막는다
-            if (Input.GetKeyDown(KeyCode.W)) key = 'W';
-            else if (Input.GetKeyDown(KeyCode.A)) key = 'A';
-            else if (Input.GetKeyDown(KeyCode.S)) key = 'S';
-            else if (Input.GetKeyDown(KeyCode.D)) key = 'D';
-            return key != '\0';
-        }
-
         // ---- 플레이어 B ----
 
         public static bool AttackDown(PlayerControlState state) => !BBlocked && !state.Locked && !state.ChantActive && !Dial.IsOpen && Time.frameCount != dialCancelFrame && P2Input.GetMouseButtonDown(0);
@@ -138,11 +117,11 @@ namespace IBlameYou.Player
         }
 
         // P2가 마우스만으로 공격 스킬을 쓰는 길 (2026-11-15 2인 점검): 한 키보드에서 숫자줄 1~4는 P1 왼손(W/A/S/D) 바로 위라 두 사람 손이 겹친다.
-        // 휠로 속성을 고르고(불 → 물 → 바람 → 땅 → 불) 우클릭하면 그 스킬의 영창이 열린다. 숫자줄 1~4도 그대로 된다.
-        // 2026-11-15 사람 결정: 우클릭을 누르고 있으면 2단계 원형 다이얼(속성 → 그 속성의 배운 마법)이 펼쳐지고, 떼면 고른 마법의 영창 (SpellDialRules).
+        // 휠로 속성을 고르고(불 → 물 → 바람 → 땅 → 불) 우클릭하면 그 스킬의 마법진이 열린다. 숫자줄 1~4도 그대로 된다.
+        // 2026-11-15 사람 결정: 우클릭을 누르고 있으면 2단계 원형 다이얼(속성 → 그 속성의 배운 마법)이 펼쳐지고, 떼면 고른 마법의 마법진 (SpellDialRules).
         //   짧게 톡 누르면 예전처럼 지금 고른 마법. 다이얼이 열린 동안 게임은 멈추지 않는다. 좌클릭은 다이얼 취소 (평타는 안 나감).
         // 휠·숫자줄·다이얼은 같은 상태(MouseSpellIndex + 속성별 마지막 마법 칸)를 쓴다.
-        // 영창 타이핑은 여전히 키보드라, 그때는 P2가 키보드를 잡는다 (P1 키는 막힘).
+        // 마법진은 마우스로만 그리므로 그동안에도 P1 키보드는 막히지 않는다 (2026-11-16, 예전 영창 타이핑 때는 막혔다).
         public const int MouseSpellCount = SpellDialRules.ElementCount; // 불·물·바람·땅 (무속성은 평타)
         public static int MouseSpellIndex { get; private set; }
         public static Element MouseSpell => (Element)MouseSpellIndex;
@@ -187,7 +166,6 @@ namespace IBlameYou.Player
                 if (!Dial.Release(out int e, out int s)) return false;
                 MouseSpellIndex = e;
                 SpellSlotOf[e] = s;
-                if (state.ShieldMinigameActive && GameSession.SharedKeyboard) return false;
                 element = (Element)e;
                 slot = s;
                 return true;
@@ -195,14 +173,12 @@ namespace IBlameYou.Player
 
             if (wheel != 0f) // 휠 위로 = 다음 속성. 한 프레임에 한 칸만
                 MouseSpellIndex = SpellDialRules.Step(MouseSpellIndex, MouseSpellCount, wheel);
-            if (state.ShieldMinigameActive && GameSession.SharedKeyboard) return false;
             if (P2Input.GetMouseButtonDown(1))
             {
                 for (int i = 0; i < MouseSpellCount; i++) DialCounts[i] = SpellBook.LearnedCount((Element)i);
                 Dial.Open(mouse.x, mouse.y, MouseSpellIndex, DialCounts, SpellSlotOf, Time.unscaledTime);
                 return false;
             }
-            if (GameSession.DevMode) return false; // 개발자 모드 상단 1~5는 A 방어막
             if (!GetIndexedKeyDownB(TopRowFirstFive, out element)) return false;
             if ((int)element < MouseSpellCount)
             {
@@ -211,6 +187,18 @@ namespace IBlameYou.Player
             }
             return true;
         }
+
+        // ---- 마법진 그리기 (SpellCaster) ----
+        // 마우스 자리 (GUI 좌표: 왼쪽 위가 0). 온라인이면 친구 마우스 (P2Input)
+        public static Vector2 CircleMouseGui()
+        {
+            var m = P2Input.mousePosition;
+            return new Vector2(m.x, Screen.height - m.y);
+        }
+
+        public static bool CircleDrawDown() => !BBlocked && P2Input.GetMouseButtonDown(0);
+        public static bool CircleDrawHeld() => !BBlocked && P2Input.GetMouseButton(0);
+        public static bool CircleCancelDown() => P2Input.GetKeyDown(KeyCode.Escape) || (!BBlocked && P2Input.GetMouseButtonDown(1));
 
         // B(P2)의 숫자줄: 온라인이면 친구 키보드
         private static bool GetIndexedKeyDownB(KeyCode[] keys, out Element element)

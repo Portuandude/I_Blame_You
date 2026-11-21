@@ -16,9 +16,8 @@ namespace IBlameYou.Core
         public static event System.Action<int> GoldSpentNow; // 골드를 썼다 (쓴 양). HUD 골드 알약 아래 빨간 "-N" (SkillHUD.Gold)
         public static bool Ended { get; set; } // 쓰러지거나 클리어한 뒤에는 더 세지 않는다
         public static int HeartDust { get; private set; } // 이번 판에 얻은 마음 가루 (도시 화폐, 얻는 순간 SaveData에 쌓인다 — Docs/CityDesign.md)
-        // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동, A 방어막 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
+        // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
-        public static readonly int[] ShieldCasts = new int[5];
 
         public static void Reset()
         {
@@ -34,7 +33,6 @@ namespace IBlameYou.Core
             GoldSpent = 0;
             HeartDust = 0;
             System.Array.Clear(SpellCasts, 0, SpellCasts.Length);
-            System.Array.Clear(ShieldCasts, 0, ShieldCasts.Length);
             Ended = false;
         }
 
@@ -87,11 +85,6 @@ namespace IBlameYou.Core
         public static void AddSpell(int element)
         {
             if (!Ended && element >= 0 && element < SpellCasts.Length) SpellCasts[element]++;
-        }
-
-        public static void AddShield(int element)
-        {
-            if (!Ended && element >= 0 && element < ShieldCasts.Length) ShieldCasts[element]++;
         }
 
         public static string Summary(int level, int relics = 0) =>

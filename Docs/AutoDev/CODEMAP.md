@@ -30,7 +30,7 @@
 | 수치 | `Systems/Stats/StatTable.cs`(스탯 문서 값), `DamageCalculator.cs`(피해·`IDamageModifier`), `Formula/`(상성, 순수 C#) |
 | 상태이상 | `Systems/StatusEffects/` |
 | 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` |
-| 마법·스킬 | `Player/Skills/` (`SpellBook` 목록, `SpellCaster` 영창) |
+| 마법·스킬 | `Player/Skills/` (`SpellBook` 목록, `SpellCaster` 마법진 그리기, 규칙 `Rules/MagicCircleRules`) |
 | 레벨·특성·유물 | `Player/Progression/`, `Player/Relics/` |
 | 이펙트 | `Systems/Effects/` (`EffectLibrary` 프레임 로드, `VfxPlayer`, `ElementRecolor` 그림 바꿔 끼우기) |
 | HUD·UI | `UI/SkillHUD*.cs`(partial, 기능별 파일), `MinimapUI.cs`, `EnemyHealthBar.cs` |

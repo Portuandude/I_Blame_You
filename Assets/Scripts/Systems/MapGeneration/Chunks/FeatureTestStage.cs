@@ -1,8 +1,8 @@
 namespace IBlameYou.Systems
 {
     // 기능 테스트 모드 맵 (2026-11-12 플레이테스트 피드백: 7·8·11·19번 "테스트 불가").
-    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯·바람 구멍 방(2026-11-14) → 협동 봉인문(A 방어막 + B 마법) → 이중 스위치 발판
-    // → 등불 순서 방 → 거울 룬 방 → 방어막 다리 방(퍼즐 방, 2026-11-14) → 버섯 탑 방(오른쪽 벽, 2026-11-14).
+    // 적이 없는 짧은 외길: 텅 빈 방 → 통통 버섯·바람 구멍 방(2026-11-14) → 두 속성 봉인문(B 마법 둘) → 이중 스위치 발판
+    // → 등불 순서 방 → 거울 룬 방 → 버섯 탑 방(오른쪽 벽, 2026-11-14). 방어막 다리 방은 2026-11-16 빠졌다.
     // 몬스터·유물은 이 맵 위에서 FeatureTestTools(키)로 불러 시험한다. 순수 C#이라 EditMode 테스트에서 그대로 검증한다.
     public static class FeatureTestStage
     {
@@ -13,16 +13,15 @@ namespace IBlameYou.Systems
         // 순서 = 청크 번호. FeatureTestTools의 "다음 구역" 키(F10)가 이 순서를 쓴다.
         public static readonly ChunkKind[] Order =
         {
-            ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.ShieldBridge, ChunkKind.Rest
+            ChunkKind.Start, ChunkKind.Rest, ChunkKind.ElementGate, ChunkKind.SwitchBridge, ChunkKind.LanternPuzzle, ChunkKind.MirrorPuzzle, ChunkKind.Rest
         };
 
         public const int BounceArea = 1; // 통통 버섯 방 (청크 번호)
         public const int LanternArea = 4; // 등불 순서 방 (청크 번호)
         public const int MirrorArea = 5;  // 거울 룬 방 (청크 번호)
-        public const int ShieldArea = 6;  // 방어막 다리 방 (청크 번호)
-        public const int TowerArea = 7;  // 버섯 탑 방 (청크 번호)
+        public const int TowerArea = 6;  // 버섯 탑 방 (청크 번호)
 
-        public static readonly string[] Names = { "텅 빈 방", "통통 버섯·바람 방", "협동 봉인문", "이중 스위치 발판", "등불 순서 방", "거울 룬 방", "방어막 다리 방", "버섯 탑 방" };
+        public static readonly string[] Names = { "텅 빈 방", "통통 버섯·바람 방", "두 속성 봉인문", "이중 스위치 발판", "등불 순서 방", "거울 룬 방", "버섯 탑 방" };
 
         public static StageData Build()
         {
@@ -40,7 +39,7 @@ namespace IBlameYou.Systems
                 }
 
                 if (chunk == null) chunk = ChunkGenerator.Fallback(index, kind, 1f, height);
-                if (kind == ChunkKind.ElementGate) MakeCoopGate(chunk);
+                if (kind == ChunkKind.ElementGate) MakePairGate(chunk);
                 if (index == BounceArea)
                 {
                     ChunkGenerator.AddBounceLedge(chunk); // 평평한 빈 방 가운데에 버섯 + 높은 선반 + 동전
@@ -93,14 +92,13 @@ namespace IBlameYou.Systems
             chunk.SetRow(RoomShaper.TowerSniperX0, RoomShaper.TowerSniperX1, stand1 - 1, StageTile.Platform);
         }
 
-        // 봉인문을 협동 봉인문으로: 첫 속성은 A 방어막, 둘째는 B 마법 (RoomShaper 보물 곁방 문과 같은 규칙).
-        private static void MakeCoopGate(ChunkData chunk)
+        // 봉인문을 두 속성 봉인문으로: B 마법 두 속성을 차례로 (RoomShaper 보물 곁방 문과 같은 규칙).
+        private static void MakePairGate(ChunkData chunk)
         {
             for (int i = 0; i < chunk.Features.Count; i++)
             {
                 var f = chunk.Features[i];
                 if (f.Kind != FeatureKind.ElementGate) continue;
-                f.ShieldFirst = true;
                 f.HasSecondElement = true;
                 f.SecondElementIndex = (f.ElementIndex + 1) % ChunkGenerator.GateElementCount;
                 chunk.Features[i] = f;

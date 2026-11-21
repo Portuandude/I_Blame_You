@@ -155,7 +155,7 @@ namespace IBlameYou.UI
         {
             if (streamer == null || !streamer.IsRoomMode) return;
             UpdateCompassShow();
-            // B가 영창을 치는 중에는 글자 입력과 겹치지 않게 무시한다
+            // 조작이 잠긴 동안(방 이동 연출 등)에는 무시한다
             if (control != null && control.AKeyboardBlocked) return;
             // 일시정지 중에는 새로 펼치지 않는다 (펼친 지도는 닫을 수 있게 둔다)
             if (Time.timeScale == 0f && !expanded) return;

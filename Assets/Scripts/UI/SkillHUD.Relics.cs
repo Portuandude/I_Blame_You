@@ -8,7 +8,7 @@ namespace IBlameYou.UI
 {
     // 유물 고르기 창: 정예 구역의 유물 상자(RelicChest)에 닿으면 열린다. 후보 3개(네잎 클로버면 4개) 중 하나를 숫자 키나 클릭으로 고른다.
     // 열려 있는 동안 게임이 멈추고 조작이 잠긴다 (특성 창과 같은 방식). 유물은 A/B 공용이라 누가 고르든 둘 다 갖는다.
-    // 영창·방어막 미니게임·특성 창·일시정지 중에는 열지 않고, 상자가 다시 물어 올 때까지 기다린다.
+    // 마법진 그리기·특성 창·일시정지 중에는 열지 않고, 상자가 다시 물어 올 때까지 기다린다.
     public partial class SkillHUD
     {
         private bool relicWindowOpen;
@@ -43,7 +43,7 @@ namespace IBlameYou.UI
         {
             if (relicWindowOpen || relicUnlockFrame >= 0 || equipCardOpen || equipCardUnlockFrame >= 0 || villageOpen || villageUnlockFrame >= 0) return false;
             if (paused || traitWindowOpen || deathHandled || stageCleared || health == null || health.IsDead) return false;
-            return !control.ChantActive && !control.ShieldMinigameActive && !control.Locked;
+            return !control.ChantActive && !control.Locked;
         }
 
         private bool OpenRelicWindow(RelicId[] offer, Action<RelicId> onChosen, Action onCancelled)

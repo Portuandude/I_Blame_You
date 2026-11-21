@@ -5,7 +5,7 @@ namespace IBlameYou.UI
 {
     // 게임 중 C키 유물 도감 (2026-11-12 플레이테스트 피드백 22번): 시작 화면과 같은 창(Core/RelicCodexWindow)을 띄운다.
     // 열려 있는 동안 일시정지처럼 Time.timeScale = 0이고 조작이 잠긴다. C·Esc·닫기 버튼으로 닫는다.
-    // 다른 창(일시정지·특성·유물 고르기)이 열려 있거나, B가 영창을 치는 중(공용 키보드에서 C는 글자다), A의 방어막 미니게임 중,
+    // 다른 창(일시정지·특성·유물 고르기)이 열려 있거나, B가 마법진을 그리는 중,
     // 다른 이유로 조작이 잠긴 때(출구 진입·붙잡힘), 쓰러짐/클리어 화면에서는 열지 않는다.
     // 열려 있는 동안에는 Esc(일시정지)·Tab(특성 창) 입력을 이 창이 먼저 가져간다 (창 안의 Tab은 일반/개발자 보기 바꾸기).
     public partial class SkillHUD
@@ -26,7 +26,7 @@ namespace IBlameYou.UI
 
             if (!Input.GetKeyDown(KeyCode.C)) return false;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return false;
-            if (control.ChantActive || control.ShieldMinigameActive || control.Locked) return false;
+            if (control.ChantActive || control.Locked) return false;
 
             codexWindow.Show(GameSession.DevMode, relics != null ? relics.Owned : null); // 이번 판에 가진 유물에 "보유" 점
             codexLocked = true;

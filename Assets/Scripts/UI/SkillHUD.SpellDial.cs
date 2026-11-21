@@ -23,7 +23,7 @@ namespace IBlameYou.UI
             var dial = RoleInput.Dial;
             if (!dial.IsOpen) return;
             if (caster == null || control == null) return; // 개발자 모드도 다이얼을 쓴다 (배운 마법 고르기)
-            if (caster.ChantOpen || caster.WindingUp || control.Locked || health.IsDead || deathHandled || stageCleared) return;
+            if (caster.CircleOpen || caster.WindingUp || control.Locked || health.IsDead || deathHandled || stageCleared) return;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return;
             if (dialName == null)
             {
@@ -78,7 +78,7 @@ namespace IBlameYou.UI
             }
 
             DrawShadowed(new Rect(elementCenter.x - 120f, elementCenter.y + SpellDialRules.Radius + DialBubble + 10f, 240f, 18f),
-                "떼면 영창 · 휠·커서로 고르기 · 좌클릭 취소", dialHint, new Color(1f, 1f, 1f, 0.85f));
+                "떼면 마법진 · 휠·커서로 고르기 · 좌클릭 취소", dialHint, new Color(1f, 1f, 1f, 0.85f));
             GUI.color = previous;
         }
 

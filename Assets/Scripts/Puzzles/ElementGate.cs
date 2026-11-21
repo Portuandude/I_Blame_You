@@ -7,13 +7,11 @@ using UnityEngine;
 namespace IBlameYou.Puzzles
 {
     // 맵 퍼즐: 봉인문. 바닥부터 천장 위까지 길을 막는 마력 벽이고, 문 색(가운데 문양)과 같은 속성의 B 마법을 맞혀야 열린다.
-    // 다른 속성이나 평타는 튕겨 나가며 벽이 하얗게 번쩍인다 (안내 문구는 없다: 2026-11-12 사람 지시, 문양 색·방어막 거품으로만 알린다). 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
+    // 다른 속성이나 평타는 튕겨 나가며 벽이 하얗게 번쩍인다 (안내 문구는 없다: 2026-11-12 사람 지시, 문양 색으로만 알린다). 연 문은 ChunkStreamer가 기록해서 청크를 다시 만들어도 열린 채로 둔다.
     // 맞힘·튕겨냄·열림 연출(고리·"팅"·벽 조각·빛 기둥)은 ElementGateFx (그림·소리만).
     // 마나는 계속 재생되므로 잘못 쏘거나 영창을 틀려도 기다리면 다시 시도할 수 있다 (갇히지 않는다).
     // 두 속성 봉인문: 문양이 위아래로 둘이고 아래 문양부터 순서대로 맞힌다. 하나를 맞히면 그 문양이 꺼지고 벽 색이 다음 속성으로 바뀐다.
     // 틀려도 진행은 초기화되지 않는다. 맞힌 개수는 ChunkStreamer가 기록해서 청크를 다시 만들어도 이어진다.
-    // 협동 봉인문(shieldFirst): 아래 문양은 A의 방어막 속성이다. A가 그 속성 방어막을 두른 채 문에 닿으면 풀리고, 그다음 위 문양은 B 마법으로 푼다.
-    // 아래 문양 뒤에는 방어막 거품이 보여서 마법이 아니라 방어막으로 푸는 문양임을 알린다.
     public class ElementGate : MonoBehaviour, IElementReceiver
     {
         private const float DeflectCooldown = 0.4f;
@@ -21,9 +19,6 @@ namespace IBlameYou.Puzzles
         private static readonly List<ElementGate> Active = new List<ElementGate>();
         private const float SigilHeight = 2.2f;
         private const float SigilSpacing = 1f;
-        private const float ShieldCheckInterval = 0.1f;
-        private const float ShieldTouchReach = 1.3f; // 문 가운데에서 플레이어 가운데까지 가로 거리 (문 반폭 0.5 + 몸 반폭 + 여유)
-        private const float ShieldTouchHeight = 2.5f; // 문 바닥에서 이 높이까지만 본다 (윗 발판에서 켠 방어막은 닿은 것으로 치지 않음)
 
         private Element[] sequence;
         private int step;
@@ -32,14 +27,10 @@ namespace IBlameYou.Puzzles
         private Action onOpened;
         private Action<int> onStep;
         private bool opened;
-        private bool shieldFirst;
-        private SpriteRenderer shieldMark;
-        private float nextShieldCheck;
         private float height;
         private float nextDeflectTime;
 
         public Element Required => sequence[step];
-        private bool ShieldStep => shieldFirst && step == 0;
 
         private void OnEnable() => Active.Add(this);
         private void OnDisable() => Active.Remove(this);
@@ -62,7 +53,7 @@ namespace IBlameYou.Puzzles
         // alreadyOpen이면 아무것도 만들지 않고 null.
         // elements: 맞혀야 하는 속성 순서 (1~2개). startStep: 이미 맞힌 개수 (청크를 다시 만들 때), onStep: 하나 맞힐 때마다 새 개수.
         public static ElementGate Create(Transform parent, Vector2 bottom, float height, Element[] elements, bool alreadyOpen, Action onOpened,
-            int startStep = 0, Action<int> onStep = null, bool shieldFirst = false)
+            int startStep = 0, Action<int> onStep = null)
         {
             if (alreadyOpen || elements == null || elements.Length == 0) return null;
             startStep = Mathf.Clamp(startStep, 0, elements.Length - 1);
@@ -83,7 +74,6 @@ namespace IBlameYou.Puzzles
             gate.step = startStep;
             gate.onOpened = onOpened;
             gate.onStep = onStep;
-            gate.shieldFirst = shieldFirst && elements.Length > 1;
             gate.height = height;
 
             var color = ElementInfo.Color(required);
@@ -106,15 +96,6 @@ namespace IBlameYou.Puzzles
                 if (i < startStep) Dim(gate.sigils[i]);
             }
 
-            if (gate.shieldFirst && startStep == 0)
-            {
-                var c = ElementInfo.Color(elements[0]);
-                gate.shieldMark = EffectLibrary.CreateVisual(go.transform, "SigilShield", EffectLibrary.ShieldFrames, 10f, true,
-                    new Color(c.r, c.g, c.b, 0.5f), 1.1f, 2);
-                gate.shieldMark.transform.localPosition = new Vector3(0f, SigilHeight, 0f);
-                gate.shieldMark.color = new Color(c.r, c.g, c.b, 0.55f);
-                if (EffectLibrary.ShieldFrames != null) gate.shieldMark.transform.localScale = Vector3.one * 0.7f;
-            }
             return gate;
         }
 
@@ -129,12 +110,6 @@ namespace IBlameYou.Puzzles
             if (opened) return;
 
             var required = sequence[step];
-            if (ShieldStep)
-            {
-                Deflect();
-                return;
-            }
-
             if (element != required)
             {
                 Deflect();
@@ -157,7 +132,6 @@ namespace IBlameYou.Puzzles
             {
                 // 맞힌 문양은 꺼지고, 벽 색이 다음 속성으로 바뀐다.
                 Dim(sigils[step - 1]);
-                if (shieldMark != null) shieldMark.gameObject.SetActive(false);
                 onStep?.Invoke(step);
                 if (barrier != null)
                 {
@@ -175,46 +149,7 @@ namespace IBlameYou.Puzzles
             Destroy(gameObject);
         }
 
-        // 방어막 문양: 플레이어가 문에 부딪히면 그 방어막으로 풀리는지 본다.
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            var player = TrapCommon.PlayerFrom(collision.collider);
-            if (opened || player == null) return;
-            if (ShieldStep)
-            {
-                TryShield(player);
-            }
-        }
-
-        // 방어막 문양: 방어막 미니게임 동안 캐릭터가 멈춰 있어 충돌 이벤트가 다시 오지 않으므로, 문 옆에 붙어 있는지 주기적으로 본다.
-        private void Update()
-        {
-            if (opened || !ShieldStep || Time.time < nextShieldCheck) return;
-            nextShieldCheck = Time.time + ShieldCheckInterval;
-
-            Vector2 center = (Vector2)transform.position + Vector2.up * (ShieldTouchHeight / 2f);
-            foreach (var hit in Physics2D.OverlapBoxAll(center, new Vector2(ShieldTouchReach * 2f, ShieldTouchHeight), 0f))
-            {
-                var player = TrapCommon.PlayerFrom(hit);
-                if (player != null && TryShield(player)) return;
-            }
-        }
-
-        private bool TryShield(PlayerMovement player)
-        {
-            var shield = player.GetComponent<ElementShield>();
-            if (shield == null || !shield.Active) return false;
-            if (shield.ActiveElement != sequence[0])
-            {
-                Deflect();
-                return false;
-            }
-
-            Advance();
-            return true;
-        }
-
-        // 틀린 속성·평타·다른 방어막: 문구 대신 벽이 잠깐 하얗게 번쩍여 튕겨냈음을 보여 준다.
+        // 틀린 속성·평타: 문구 대신 벽이 잠깐 하얗게 번쩍여 튕겨냈음을 보여 준다.
         private void Deflect()
         {
             if (barrier == null || Time.time < nextDeflectTime) return;

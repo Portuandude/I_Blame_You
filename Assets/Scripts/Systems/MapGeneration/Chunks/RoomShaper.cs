@@ -66,7 +66,8 @@ namespace IBlameYou.Systems
             return geometry;
         }
 
-        // 협동 봉인문 (A 방어막 속성 → B 마법 속성): 깊이 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
+        // 두 속성 봉인문 (B 마법 두 속성을 차례로): 깊이 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
+        // (예전엔 첫 속성을 A 방어막으로 푸는 협동 봉인문이었다. 방어막은 2026-11-16 사람 결정으로 빠졌다)
         // - 좌우 곁방: 늘 오른쪽 문 하나뿐이고(부모의 왼쪽에 붙음) 바닥이 평평한 휴식 지형. 문(31열)과 상자(가운데 16열) 사이 24열.
         // - 세로 곁방: 바닥 왼쪽 8열 (지그재그 10~21, 양 갈래 3~7·9~12 발판 사이, 옆 선반은 4~7로 당김). 상자는 그 왼쪽 ShaftPairChestX열.
         //   위·아래 문(14~16열)과 도착 칸(11열)은 봉인문 오른쪽이다.
@@ -87,12 +88,12 @@ namespace IBlameYou.Systems
         {
             var rng = new Random(unchecked(seed * 92821 + room.Index * 68917 + 3)); // 지형 난수열과 따로
             int count = ChunkGenerator.GateElementCount;
-            int shield = rng.Next(count);
+            int first = rng.Next(count);
             chunk.Features.Add(new ChunkFeature
             {
                 Kind = FeatureKind.ElementGate, X = PairGateX(room), Y = room.IsVertical ? ShaftGround : chunk.ExitHeight, Width = 1,
-                ElementIndex = shield, HasSecondElement = true,
-                SecondElementIndex = (shield + 1 + rng.Next(count - 1)) % count, ShieldFirst = true
+                ElementIndex = first, HasSecondElement = true,
+                SecondElementIndex = (first + 1 + rng.Next(count - 1)) % count
             });
         }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Core;
 using IBlameYou.Systems;
 using UnityEngine;
@@ -5,10 +6,12 @@ using UnityEngine;
 namespace IBlameYou.Player
 {
     // 플레이어 B의 공격 스킬 (기획서 2.5).
-    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, 우클릭을 누르고 있으면 속성 → 마법 2단계 다이얼, RoleInput.Dial)로 스킬을 고르면 영창문이 뜨고, 똑같이 타이핑한 뒤 Enter를 누르면 발동한다.
-    // 오타가 있는 채로 Enter를 누르면 마나만 날아간다. Esc는 마나 소모 없이 취소.
-    // 개발자 모드에서는 상단 6~9·0으로 영창 없이 바로 발동한다.
-    // 영창 입력창 자체는 UI(SkillHUD)가 그리고, 입력이 끝나면 SubmitChant/CancelChant를 부른다.
+    // 상단 숫자키 1~4(또는 휠로 고르고 우클릭, 우클릭을 누르고 있으면 속성 → 마법 2단계 다이얼, RoleInput.Dial)로 스킬을 고르면
+    // 화면 가운데에 마법진이 뜨고, 마우스 왼쪽을 누른 채 한 번에(한붓) 따라 그린다 (2026-11-16 사람 결정: 영창 타이핑 대신, Docs/MagicCircleDesign.md).
+    // 마우스를 떼는 순간(또는 제한 시간이 다 되면) 일치율로 판정한다: 50% 이하면 마나만 날아가고, 그 위는 피해 × 일치율 ÷ 75% (MagicCircleRules).
+    // 그리는 동안 게임은 그대로 흐르고 P1 키보드도 막히지 않는다 (마우스만 쓰므로). 우클릭·Esc는 마나 소모 없이 취소.
+    // 개발자 모드에서는 상단 1~5·6~9·0으로 마법진 없이 바로 발동한다 (피해 ×1).
+    // 마법진 그림은 UI(SkillHUD.MagicCircle)가 그리고, 판 자리(BoardCenter/BoardRadius)는 여기서 정한다.
     [RequireComponent(typeof(PlayerControlState))]
     [RequireComponent(typeof(ManaSystem))]
     [RequireComponent(typeof(CombatStats))]
@@ -20,18 +23,31 @@ namespace IBlameYou.Player
         private HealthSystem health;
         private PlayerCombat combat;
 
-        public bool ChantOpen { get; private set; }
+        public bool CircleOpen { get; private set; }
         public SpellDefinition PendingSpell { get; private set; }
-        public string PendingChant { get; private set; } // 이번에 쳐야 하는 문장 (순풍 동안 짧아짐, ChantRules)
+        public int CircleTier { get; private set; }                 // 0 견습 · 1 숙련 · 2 대마법 (순풍이면 한 단계 쉬움)
+        public List<CirclePoint> CirclePath { get; private set; }   // 따라 그릴 선 (한 획, 판 좌표)
+        public readonly List<CirclePoint> Drawn = new List<CirclePoint>(); // P2가 그린 선 (판 좌표)
+        public bool Drawing { get; private set; }                   // 마우스 왼쪽을 누른 채 그리는 중
+        public float CircleTolerance { get; private set; }
+        public float CircleTimeLeft { get; private set; }
+        public float CircleTimeLimit { get; private set; }
+        public float CircleOpenedAt { get; private set; }           // 열린 시각 (unscaled, 그림 연출용)
+        public float CircleEase { get; set; }                       // 수정 탑 "마법진 여유": 허용 폭 배율 보너스 (PlaytestBootstrap.ApplyTowerBonuses)
+        // 마지막 판정 (HUD가 잠깐 크게 띄운다)
+        public int LastPercent { get; private set; } = -1;
+        public float LastJudgedAt { get; private set; } = -10f;
+        public Element LastElement { get; private set; }
+        public event System.Action<int> CircleJudged;               // 판정 일치율 (실패 포함). 쌍둥이 반지
+        private Vector2? lockedAim;                                 // 커서 자리 마법: 마법을 고른 순간의 커서 자리 (그리는 동안 커서가 판 위에 있으므로)
         private float tailwindUntil = -1f;
         public bool TailwindActive => Time.time < tailwindUntil;
         public float TailwindRemaining => Mathf.Max(0f, tailwindUntil - Time.time);
-        public int ChantOpenedFrame { get; private set; }
         public bool WindingUp { get; private set; } // 바위 가시 선딜 중
         // 운석처럼 선딜이 있는 커서 자리 마법: 영창을 마친 순간의 자리를 묶어 둔다 (선딜 중 커서를 옮겨도 그 자리에 떨어짐, 미리보기도 그 자리)
         public SpellDefinition WindupSpell { get; private set; }
         public Vector2 WindupLanding { get; private set; }
-        public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (영창 일치·개발자 모드 즉시 발동). 응원 리본 유물
+        public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (마법진 성공·개발자 모드 즉시 발동). 응원 리본 유물
         private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
 
@@ -50,13 +66,13 @@ namespace IBlameYou.Player
             if (health.IsDead)
             {
                 RoleInput.CloseSpellDial();
-                if (ChantOpen) CloseChant();
+                if (CircleOpen) CloseCircle();
                 return;
             }
 
-            if (ChantOpen && control.Locked)
+            if (CircleOpen)
             {
-                CancelChant();
+                UpdateCircle();
                 return;
             }
 
@@ -81,25 +97,106 @@ namespace IBlameYou.Player
                     return;
                 }
 
-                Cast(spell);
+                Cast(spell, 1f, -1);
                 return;
             }
 
+            OpenCircle(spell);
+        }
+
+        // ---- 마법진 ----
+
+        // 판 자리 (GUI 좌표, 위가 0): 화면 가운데 조금 위. 판 반지름 = 마법진 좌표 1.
+        public static Vector2 BoardCenter => new Vector2(Screen.width * 0.5f, Screen.height * 0.46f);
+        public static float BoardRadius => Mathf.Min(Screen.height, Screen.width) * 0.3f;
+
+        private static CirclePoint ToBoard(Vector2 gui)
+        {
+            var c = BoardCenter;
+            float r = BoardRadius;
+            return new CirclePoint((gui.x - c.x) / r, (gui.y - c.y) / r);
+        }
+
+        private void OpenCircle(SpellDefinition spell)
+        {
             PendingSpell = spell;
-            PendingChant = ChantRules.For(spell.Chant, TailwindActive);
-            ChantOpen = true;
-            ChantOpenedFrame = Time.frameCount;
+            CircleTier = SpellBook.CircleTier(spell, TailwindActive);
+            CirclePath = MagicCircleRules.Path((int)spell.Element, CircleTier);
+            CircleTolerance = MagicCircleRules.ToleranceOf(CircleTier, CircleEase);
+            CircleTimeLimit = CircleTimeLeft = MagicCircleRules.TimeLimitOf(CircleTier);
+            CircleOpenedAt = Time.unscaledTime;
+            Drawn.Clear();
+            Drawing = false;
+            lockedAim = null;
+            lockedAim = spell.AtCursor ? CursorPoint(spell.Range) : (Vector2?)null; // 그리는 동안 커서는 판 위에 있으므로 고른 순간의 자리로
+            CircleOpen = true;
             control.ChantActive = true;
         }
 
-        // 영창 입력창에서 Enter를 눌렀을 때.
-        public void SubmitChant(string typed)
+        private void UpdateCircle()
         {
-            if (!ChantOpen) return;
+            if (control.Locked)
+            {
+                CancelCircle("방 이동으로 마법진 취소");
+                return;
+            }
+            if (RoleInput.CircleCancelDown())
+            {
+                CancelCircle("마법진 취소");
+                return;
+            }
 
+            CircleTimeLeft -= Time.deltaTime;
+            var point = ToBoard(RoleInput.CircleMouseGui());
+            if (!Drawing)
+            {
+                if (RoleInput.CircleDrawDown())
+                {
+                    Drawing = true;
+                    Drawn.Clear();
+                    Drawn.Add(point);
+                }
+            }
+            else
+            {
+                var last = Drawn[Drawn.Count - 1];
+                float dx = point.X - last.X, dy = point.Y - last.Y;
+                if (dx * dx + dy * dy > 0.00004f) Drawn.Add(point);
+                if (!RoleInput.CircleDrawHeld()) // 한붓: 떼는 순간 판정
+                {
+                    JudgeCircle();
+                    return;
+                }
+            }
+
+            if (CircleTimeLeft <= 0f)
+            {
+                if (Drawn.Count > 1) JudgeCircle();
+                else
+                {
+                    var spell = PendingSpell;
+                    CloseCircle();
+                    lockedAim = null;
+                    SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name}: 시간 초과 (마나는 그대로)", true);
+                }
+            }
+        }
+
+        private void JudgeCircle()
+        {
+            try { JudgeAndCast(); }
+            finally { lockedAim = null; } // 커서 자리는 이번 발동(운석 선딜 자리 포함)에만
+        }
+
+        private void JudgeAndCast()
+        {
             var spell = PendingSpell;
-            string chant = PendingChant ?? spell.Chant;
-            CloseChant();
+            var result = MagicCircleRules.Score(CirclePath, Drawn, CircleTolerance);
+            CloseCircle();
+            LastPercent = result.Percent;
+            LastJudgedAt = Time.unscaledTime;
+            LastElement = spell.Element;
+            CircleJudged?.Invoke(result.Percent);
 
             if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
             {
@@ -107,32 +204,36 @@ namespace IBlameYou.Player
                 return;
             }
 
-            if (typed != chant)
+            if (result.Failed)
             {
                 mana.MarkWasted(ManaUser.PlayerB, spell.ManaCost);
-                SkillMessages.Post(ManaUser.PlayerB, $"영창 실패 (오타) — 마나 {spell.ManaCost:0} 날림", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {spell.ManaCost:0} 날림", true);
                 return;
             }
 
-            Cast(spell);
+            Cast(spell, result.Power, result.Percent);
         }
 
-        public void CancelChant()
+        public void CancelCircle(string reason = "마법진 취소")
         {
-            if (!ChantOpen) return;
-            CloseChant();
-            SkillMessages.Post(ManaUser.PlayerB, "영창 취소");
+            if (!CircleOpen) return;
+            CloseCircle();
+            lockedAim = null;
+            SkillMessages.Post(ManaUser.PlayerB, reason);
         }
 
-        private void CloseChant()
+        private void CloseCircle()
         {
-            ChantOpen = false;
+            CircleOpen = false;
+            Drawing = false;
             control.ChantActive = false;
         }
 
-        private void Cast(SpellDefinition spell)
+        // power: 피해 배율 (마법진 일치율 ÷ 75%, 개발자 모드 1). percent: 일치율 (개발자 모드 -1)
+        private void Cast(SpellDefinition spell, float power, int percent)
         {
-            // 공격 스킬은 마우스가 아니라 캐릭터가 바라보는 방향으로 나간다 (B는 영창 중 손이 키보드에 있음).
+            string tag = percent >= 0 ? $" · {percent}% ×{power:0.00}" : "";
+            // 공격 스킬은 마우스가 아니라 캐릭터가 바라보는 방향으로 나간다 (커서 자리 마법만 커서 자리).
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f);
             float facing = Mathf.Sign(transform.localScale.x);
             if (combat != null) combat.PlayCastAnimation(origin + Vector2.right * facing); // 방향은 그대로 두고 동작만
@@ -144,7 +245,7 @@ namespace IBlameYou.Player
             {
                 tailwindUntil = Time.time + spell.Duration;
                 EffectLibrary.PlayCast(Element.Wind, transform.position + new Vector3(0f, 0.6f, 0f), facing < 0f, 1.2f);
-                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} — {spell.Duration:0}초 동안 영창이 짧아진다");
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} — {spell.Duration:0}초 동안 마법진이 한 단계 쉬워진다");
                 return;
             }
 
@@ -153,14 +254,14 @@ namespace IBlameYou.Player
                 var mist = new GameObject("Spell_Mist");
                 mist.transform.position = CursorLanding(spell);
                 mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
-                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동{tag}");
                 return;
             }
 
             if (spell.Shape == SpellShape.FireWall)
             {
-                SpawnFireWall(spell, facing);
-                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+                SpawnFireWall(spell, facing, power);
+                SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동{tag}");
                 return;
             }
 
@@ -173,16 +274,16 @@ namespace IBlameYou.Player
                     WindupLanding = CursorLanding(spell);
                 }
                 else WindupSpell = null;
-                StartCoroutine(GroundSpikeAfterWindup(spell, facing));
+                StartCoroutine(GroundSpikeAfterWindup(spell, facing, power, tag));
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 시전 중...");
                 return;
             }
 
             // 첫 발사각은 바라보는 방향으로 수평. 이후 방향은 유도가 꺾는다.
-            SpawnProjectile(spell, origin, new Vector2(facing, 0f));
-            if (spell.Volley > 1) StartCoroutine(VolleyRest(spell, facing)); // 칼바람: 나머지 발을 0.12초 간격으로
+            SpawnProjectile(spell, origin, new Vector2(facing, 0f), power);
+            if (spell.Volley > 1) StartCoroutine(VolleyRest(spell, facing, power)); // 칼바람: 나머지 발을 0.12초 간격으로
 
-            SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+            SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동{tag}");
         }
 
         // B의 평타: 바라보는 방향으로 무속성 마력탄을 쏜다. 마나가 모자라면 false.
@@ -192,7 +293,7 @@ namespace IBlameYou.Player
         public bool FireBasicBolt()
         {
             var bolt = SpellBook.BasicBolt;
-            if (health.IsDead || WindingUp || ChantOpen) return false;
+            if (health.IsDead || WindingUp || CircleOpen) return false;
             float cost = Mathf.Max(0f, bolt.ManaCost - BoltCostReduction);
             if (!mana.TryConsume(cost, ManaUser.PlayerB))
             {
@@ -207,7 +308,7 @@ namespace IBlameYou.Player
             return true;
         }
 
-        private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, float facing)
+        private System.Collections.IEnumerator GroundSpikeAfterWindup(SpellDefinition spell, float facing, float power, string tag)
         {
             WindingUp = true;
             charge = EffectLibrary.CreateVisual(transform, "EarthCharge", EffectLibrary.CastFrames(Element.Earth), 10f, true,
@@ -225,11 +326,11 @@ namespace IBlameYou.Player
             WindupSpell = null;
             if (health.IsDead) yield break;
 
-            SpawnGroundSpike(spell, facing, locked ? landing : (Vector2?)null);
-            SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동");
+            SpawnGroundSpike(spell, facing, power, locked ? landing : (Vector2?)null);
+            SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동{tag}");
         }
 
-        private void SpawnProjectile(SpellDefinition spell, Vector2 origin, Vector2 direction)
+        private void SpawnProjectile(SpellDefinition spell, Vector2 origin, Vector2 direction, float power = 1f)
         {
             EffectLibrary.PlayCast(spell.Element, origin + direction.normalized * 0.35f, direction.x < 0f);
 
@@ -241,7 +342,7 @@ namespace IBlameYou.Player
 
             var projectile = go.AddComponent<Projectile>();
             projectile.Launch(stats, true, DamageKind.Magic, spell.Element, direction, spell.Speed,
-                spell.Radius, spell.Range, spell.Shape == SpellShape.Piercing, spell.DamageMultiplier);
+                spell.Radius, spell.Range, spell.Shape == SpellShape.Piercing, spell.DamageMultiplier * power);
             projectile.SetHoming(spell.HomingTurnRate, SpellBook.HomingRange);
             projectile.Hit = target =>
             {
@@ -260,7 +361,7 @@ namespace IBlameYou.Player
             };
         }
 
-        private void SpawnGroundSpike(SpellDefinition spell, float facing, Vector2? lockedLanding = null)
+        private void SpawnGroundSpike(SpellDefinition spell, float facing, float power, Vector2? lockedLanding = null)
         {
             // 바라보는 방향 사거리 안에서 가장 가까운 적을 노린다. 없으면 앞쪽 SpikeDefaultDistance 지점에서 솟는다.
             Vector2 self = transform.position;
@@ -281,7 +382,7 @@ namespace IBlameYou.Player
 
             var go = new GameObject("Spell_Earth");
             go.transform.position = point;
-            go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.CastDelay, target,
+            go.AddComponent<GroundSpike>().Begin(stats, spell.Radius, spell.DamageMultiplier * power, spell.CastDelay, target,
                 groundMask, health =>
                 {
                     EffectLibrary.PlayHit(Element.Earth, HitPoint(health));
@@ -290,28 +391,28 @@ namespace IBlameYou.Player
                 });
         }
 
-        private System.Collections.IEnumerator VolleyRest(SpellDefinition spell, float facing)
+        private System.Collections.IEnumerator VolleyRest(SpellDefinition spell, float facing, float power)
         {
             for (int i = 1; i < spell.Volley; i++)
             {
                 yield return new WaitForSeconds(0.12f);
                 if (health.IsDead) yield break;
                 Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.2f + (i % 2 == 1 ? 0.25f : -0.2f));
-                SpawnProjectile(spell, origin, new Vector2(facing, 0f));
+                SpawnProjectile(spell, origin, new Vector2(facing, 0f), power);
             }
         }
 
-        // 커서 자리 (사거리 안으로 줄임). 불꽃 비·물안개·운석.
+        // 커서 자리 (사거리 안으로 줄임). 불꽃 비·물안개·운석. 마법진을 그리는 동안·그 직후 발동은 고른 순간의 자리(lockedAim).
         private Vector2 CursorPoint(float range)
         {
             Vector2 self = transform.position;
-            Vector2 aim = RoleInput.AimWorldPoint(self);
+            Vector2 aim = lockedAim ?? RoleInput.AimWorldPoint(self);
             Vector2 offset = aim - self;
             if (offset.magnitude > range) aim = self + offset.normalized * range;
             return aim;
         }
 
-        // 커서 자리 마법이 실제로 놓일 자리. 발동과 영창 중 미리보기(CursorSpellPreview)가 같은 계산을 쓴다.
+        // 커서 자리 마법이 실제로 놓일 자리. 발동과 마법진 그리는 중 미리보기(CursorSpellPreview)가 같은 계산을 쓴다.
         // 물안개는 커서 자리 그대로, 불꽃 비는 아래 12칸 안 땅 (없으면 커서 1칸 아래), 운석은 아래 30칸 안 땅 (없으면 캐릭터 발 높이).
         public Vector2 CursorLanding(SpellDefinition spell)
         {
@@ -326,7 +427,7 @@ namespace IBlameYou.Player
         }
 
         // 불꽃 장막: 바라보는 쪽 바로 앞 땅 위에 불벽 (가장 가까운 끝이 캐릭터 0.5칸 앞).
-        private void SpawnFireWall(SpellDefinition spell, float facing)
+        private void SpawnFireWall(SpellDefinition spell, float facing, float power)
         {
             Vector2 self = transform.position;
             Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
@@ -344,7 +445,7 @@ namespace IBlameYou.Player
 
             var go = new GameObject("Spell_FireWall");
             go.transform.position = point;
-            go.AddComponent<FireWall>().Begin(stats, spell.Radius, spell.DamageMultiplier, spell.Duration, (health, first) =>
+            go.AddComponent<FireWall>().Begin(stats, spell.Radius, spell.DamageMultiplier * power, spell.Duration, (health, first) =>
             {
                 EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
                 if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
@@ -393,7 +494,7 @@ namespace IBlameYou.Player
             WindingUp = false;
             WindupSpell = null;
             if (charge != null) Destroy(charge.gameObject);
-            if (ChantOpen) CloseChant();
+            if (CircleOpen) CloseCircle();
         }
     }
 }

@@ -3,11 +3,11 @@ namespace IBlameYou.Core
     // 시작 화면에서 고른 설정을 런 동안 들고 있는다.
     public static class GameSession
     {
-        // 개발자 모드: 한 사람이 A/B를 동시에 조작하고, 스킬 미니게임을 키보드 상단 숫자키 즉시 발동으로 대체한다 (기획서 2.9).
+        // 개발자 모드: 한 사람이 A/B를 동시에 조작하고, 마법진 그리기를 키보드 상단 숫자키 즉시 발동으로 대체한다 (기획서 2.9).
         public static bool DevMode { get; set; } = true;
 
-        // 한 컴퓨터로 하면 A와 B가 한 키보드를 같이 쓴다. 그래서 B가 영창을 타이핑하는 동안에는 A의 키보드 입력을 막는다.
-        // 온라인(친구가 자기 컴퓨터로 B)이면 키보드가 둘이라 막지 않는다 (Net/NetSession).
+        // 한 컴퓨터로 하면 A와 B가 한 키보드를 같이 쓴다. 온라인(친구가 자기 컴퓨터로 B)이면 키보드가 둘이다 (Net/NetSession).
+        // (예전 영창 타이핑 때는 이 값이 true인 동안 A 키보드를 막았다. 2026-11-16부터 B는 마법진을 마우스로 그려서 막지 않는다.)
         public static bool SharedKeyboard => !Net.NetSession.RemoteP2Active;
 
         public static bool Started { get; set; }
