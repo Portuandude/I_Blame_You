@@ -39,14 +39,16 @@ namespace IBlameYou.Puzzles
         // from에서 facing 쪽으로 range 안, 높이 차 6칸 이내에 닫힌 문이 있으면 그 문이 받은 것으로 친다.
         public static void NotifyNearby(Vector2 from, float facing, float range, Element element)
         {
+            ElementGate nearest = null; // 목록 순서가 아니라 가장 가까운 문 (멀리 있는 문이 대신 받지 않게, 버그 점검 2026-11-22)
+            float nearestDx = float.MaxValue;
             foreach (var gate in Active)
             {
                 if (gate == null || gate.opened) continue;
                 float dx = (gate.transform.position.x - from.x) * Mathf.Sign(facing);
                 if (dx < 0f || dx > range || Mathf.Abs(from.y - gate.transform.position.y) > 6f) continue;
-                gate.ReceiveElement(element);
-                return;
+                if (dx < nearestDx) { nearest = gate; nearestDx = dx; }
             }
+            if (nearest != null) nearest.ReceiveElement(element);
         }
 
         // bottom: 문이 선 칸의 바닥 가운데 (월드). height: 막을 높이 (ChunkData.GateHeight, 방 안 좌표로 잰 칸 수).
