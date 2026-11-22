@@ -31,10 +31,12 @@ namespace IBlameYou.Player
         public EquipmentItem Equip(EquipmentItem item)
         {
             if (item == null) return null;
-            var old = Remove(item.Slot, false);
-            equipped[item.Slot] = item;
+            equipped.TryGetValue(item.Slot, out var old);
+            // 새 장비를 먼저 더하고 옛 것을 뺀다: 꽉 찬 체력·마나·기력이 바꿔 끼는 사이 최대치로 잘려 날아가지 않게 (버그 점검 2026-11-22)
             var stats = item.Stats();
             Apply(stats, 1f);
+            if (applied.TryGetValue(item.Slot, out var oldStats)) Apply(oldStats, -1f);
+            equipped[item.Slot] = item;
             applied[item.Slot] = stats;
             Changed?.Invoke(item.Slot, item);
             return old;
@@ -47,9 +49,9 @@ namespace IBlameYou.Player
         public void Refresh(EquipSlot slot)
         {
             if (!equipped.TryGetValue(slot, out var item)) return;
-            if (applied.TryGetValue(slot, out var old)) Apply(old, -1f);
             var stats = item.Stats();
-            Apply(stats, 1f);
+            Apply(stats, 1f); // 새 수식어 먼저 (Equip과 같은 까닭)
+            if (applied.TryGetValue(slot, out var old)) Apply(old, -1f);
             applied[slot] = stats;
             Changed?.Invoke(slot, item);
         }
