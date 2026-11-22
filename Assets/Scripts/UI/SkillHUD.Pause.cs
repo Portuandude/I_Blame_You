@@ -51,7 +51,7 @@ namespace IBlameYou.UI
                 pauseMap.SetExpanded(false); // 펼친 큰 지도가 있으면 Esc는 지도만 접는다
                 return;
             }
-            if (control.ChantActive || control.Locked) return;
+            if (control.ChantActive || control.Locked || IBlameYou.Player.RoleInput.CircleCancelledThisFrame) return;
 
             paused = true;
             pauseOpenedAt = Time.unscaledTime;
