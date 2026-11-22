@@ -33,6 +33,9 @@ namespace IBlameYou.Net
         private bool clientViewKept; // 친구: 끊긴 뒤 다시 붙는 동안 마지막 화면을 그대로 둔다 (시작 화면으로 나가지 않음)
         private float joinStartedAt;
         private const float JoinTimeout = 15f; // 연결 시작부터 호스트 대답(Welcome)까지 (TCP 연결 8초 포함)
+        // 호스트: TCP로 붙고 이 안에 맞는 Hello가 없으면 내보낸다 (버전이 다르거나 엉뚱한 프로그램이 자리를 계속 차지하지 않게, 2026-11-22)
+        private const float HelloTimeout = 10f;
+        private float peerConnectedAt;
 
         public static Mode CurrentMode => instance != null ? instance.mode : Mode.Offline;
         public static bool IsHost => CurrentMode == Mode.Hosting;
@@ -235,6 +238,13 @@ namespace IBlameYou.Net
         private void KeepAlive(float now)
         {
             if (transport == null) return;
+            // 아직 아무도 없으면 시계를 계속 맞춰 둔다 (Connected 알림이 이 프레임 뒤에 와도 옛 시각으로 바로 내보내지 않게)
+            if (mode == Mode.Hosting && !transport.IsConnected) peerConnectedAt = now;
+            else if (mode == Mode.Hosting && !peerReady && now - peerConnectedAt > HelloTimeout)
+            {
+                transport.DropPeer("들어오는 인사가 없어요");
+                return;
+            }
             if (mode == Mode.Hosting && peerReady)
             {
                 if (ping.TimedOut(now))
@@ -261,7 +271,11 @@ namespace IBlameYou.Net
                         status = "연결됨, 호스트 대답을 기다리는 중...";
                         transport.Send(HelloMessage.Write(SystemInfo.deviceName));
                     }
-                    else if (mode == Mode.Hosting) status = "누군가 들어오는 중...";
+                    else if (mode == Mode.Hosting)
+                    {
+                        status = "누군가 들어오는 중...";
+                        peerConnectedAt = Time.unscaledTime;
+                    }
                     break;
 
                 case TransportEventKind.Disconnected:
@@ -281,6 +295,8 @@ namespace IBlameYou.Net
 
                 case TransportEventKind.Data:
                     if (e.Data == null || e.Data.Length == 0) return;
+                    // 호스트: 인사(Hello) 전에는 다른 메시지를 풀지도 않는다 (낯선 접속이 압축 폭탄으로 멈추게 하지 못하게)
+                    if (mode == Mode.Hosting && !peerReady && e.Data[0] != (byte)MsgType.Hello) return;
                     if (mode == Mode.Client || (mode == Mode.Hosting && peerReady)) ping.Heard(Time.unscaledTime);
                     try
                     {

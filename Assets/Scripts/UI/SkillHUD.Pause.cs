@@ -51,7 +51,11 @@ namespace IBlameYou.UI
                 pauseMap.SetExpanded(false); // 펼친 큰 지도가 있으면 Esc는 지도만 접는다
                 return;
             }
-            if (control.ChantActive || control.Locked) return;
+            // 온라인: 친구가 마법진을 그리는 중이어도 호스트 Esc는 일시정지 (마법진은 마나를 쓰지 않고 닫는다, 2026-11-22)
+            if (control.ChantActive && IBlameYou.Net.P2Input.Remote && caster != null && caster.CircleOpen
+                && !IBlameYou.Player.RoleInput.CircleCancelledThisFrame)
+                caster.CancelCircle("호스트 일시정지로 마법진 취소");
+            if (control.ChantActive || control.Locked || IBlameYou.Player.RoleInput.CircleCancelledThisFrame) return;
 
             paused = true;
             pauseOpenedAt = Time.unscaledTime;

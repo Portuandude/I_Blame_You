@@ -3,7 +3,8 @@
     python3 Tools/Dev/unity_meta.py check            → 이번 작업(origin/develop 이후)에 새로 만든 .cs·.asmdef와 그 상위 폴더 중 .meta가 없는 것
     python3 Tools/Dev/unity_meta.py check --all      → 저장소 전체 (예전 파일 중 사람 PC에서만 .meta가 생긴 것도 나온다. 그건 만들지 말 것:
                                                        사람 PC의 추적 안 된 .meta와 충돌해 pull이 막힌다)
-    python3 Tools/Dev/unity_meta.py add <경로>...    → 그 파일/폴더(와 .meta 없는 상위 폴더)에 .meta 생성 (이미 있으면 건너뜀)
+    python3 Tools/Dev/unity_meta.py add <경로>...    → 그 파일/폴더(와 이번에 새로 만든 상위 폴더)에 .meta 생성 (이미 있으면 건너뜀.
+                                                       origin/develop에 있던 폴더는 .meta가 없어도 만들지 않는다, 2026-11-22)
     python3 Tools/Dev/unity_meta.py add --missing    → check(이번 작업분)에 나온 것 전부 생성
 
 Resources 아래 런타임 로드 PNG는 검사하지 않는다. 새로 만든 런타임 PNG는 `add`로 .meta를 붙인다
@@ -69,7 +70,8 @@ def candidates(everything=False):
         paths.add(f)
         d = os.path.dirname(f)
         while d and d != "Assets":
-            paths.add(d + "/")
+            if everything or not tracked_folder(d):
+                paths.add(d + "/")
             d = os.path.dirname(d)
     return sorted(paths)
 
@@ -119,8 +121,21 @@ def add(paths):
             parents.append(d)
             d = os.path.dirname(d)
         for parent in reversed(parents):
-            write_meta(parent)
+            # 이미 저장소에 있던 폴더는 .meta를 만들지 않는다 (예전부터 폴더 .meta가 빠진 폴더가 있어, 만들면 엉뚱한 새 파일이 생긴다).
+            # 새로 만든 폴더(추적되는 파일이 하나도 없음)만 만든다.
+            if not tracked_folder(parent):
+                write_meta(parent)
         write_meta(rel)
+
+
+def tracked_folder(rel):
+    """origin/develop에 이미 있던 폴더인지 (그런 폴더는 .meta가 저장소에 없어도 사람 PC에 있으니 만들지 않는다)."""
+    try:
+        out = subprocess.run(["git", "ls-tree", "-d", "--name-only", "origin/develop", "--", rel.rstrip("/")],
+                             cwd=ROOT, capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return out.strip() != ""
 
 
 if __name__ == "__main__":

@@ -154,7 +154,8 @@ namespace IBlameYou.Net
 
         private void Need(int count)
         {
-            if (position + count > end) throw new FormatException("네트워크 메시지가 중간에 끊겼다");
+            // count > end - position: position + count가 넘쳐 음수가 되어 검사를 지나가지 않게 (버그 점검 2026-11-22)
+            if (count < 0 || count > end - position) throw new FormatException("네트워크 메시지가 중간에 끊겼다");
         }
 
         public byte ReadByte()

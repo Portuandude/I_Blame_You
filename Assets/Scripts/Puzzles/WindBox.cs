@@ -150,7 +150,15 @@ namespace IBlameYou.Puzzles
             EffectLibrary.PlayOneShot(new Vector3(slideTo.x, slideTo.y - Size / 2f + 0.1f, 0f), TrapCommon.Frames("Smoke"), 14f,
                 new Color(0.8f, 0.78f, 0.72f, 0.6f), 0.5f);
             bool step = WindBoxRules.IsStep(column, ledgeX0, ledgeWidth);
-            if (step && !onStep) GameAudio.PlaySfx("Switch_On", 0.7f, 0f); // 디딤 자리에 닿음: "딸깍"
+            if (step && !onStep)
+            {
+                GameAudio.PlaySfx("Switch_On", 0.7f, 0f); // 디딤 자리에 닿음: "딸깍"
+                // 선반 위 보상 쪽으로 반짝임 둘: "이제 저기로" (글 없이 눈길을 위로)
+                var ledgeTop = chunkOrigin + new Vector2(ledgeX0 + ledgeWidth / 2f, row + ChunkGenerator.WindLedgeRise + 0.6f);
+                var sparkle = TrapCommon.Frames("Sparkle");
+                EffectLibrary.PlayOneShot(new Vector3(ledgeTop.x - 0.8f, ledgeTop.y, 0f), sparkle, 14f, new Color(0.7f, 1f, 0.9f, 0.9f), 0.5f);
+                EffectLibrary.PlayOneShot(new Vector3(ledgeTop.x + 0.8f, ledgeTop.y + 0.3f, 0f), sparkle, 12f, new Color(0.7f, 1f, 0.9f, 0.9f), 0.4f);
+            }
             onStep = step;
             ApplyLook();
         }

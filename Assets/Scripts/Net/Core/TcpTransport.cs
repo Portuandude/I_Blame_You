@@ -47,6 +47,7 @@ namespace IBlameYou.Net
         private long bytesSent;
         private long bytesReceived;
         private int connectionId; // 끊긴 연결의 스레드가 새 연결을 건드리지 않게
+        private int maxIncomingFrame = FrameAssembler.MaxFrameBytes; // 호스트는 작은 메시지만 받는다 (FrameAssembler.HostMaxFrameBytes)
 
         public bool IsConnected => connected;
         public long PendingSendBytes => Interlocked.Read(ref pendingBytes);
@@ -59,7 +60,7 @@ namespace IBlameYou.Net
         // 호스트: port를 열고 기다린다. 0이면 빈 포트 아무거나 (테스트용).
         public static TcpTransport Host(int port)
         {
-            var t = new TcpTransport();
+            var t = new TcpTransport { maxIncomingFrame = FrameAssembler.HostMaxFrameBytes };
             t.listener = new TcpListener(IPAddress.Any, port);
             t.listener.Start();
             t.ListenPort = ((IPEndPoint)t.listener.LocalEndpoint).Port;
@@ -148,6 +149,12 @@ namespace IBlameYou.Net
             int id;
             lock (sendLock)
             {
+                if (disposed)
+                {
+                    // Dispose가 disposed 검사와 여기 사이에 끼면 버려진 transport에 유령 연결이 붙던 것 (버그 점검 2026-11-22)
+                    try { tcp.Close(); } catch (Exception) { }
+                    return;
+                }
                 client = tcp;
                 stream = tcp.GetStream();
                 sendQueue.Clear();
@@ -163,7 +170,7 @@ namespace IBlameYou.Net
 
         private void ReceiveLoop(NetworkStream s, int id)
         {
-            var assembler = new FrameAssembler();
+            var assembler = new FrameAssembler(maxIncomingFrame);
             var buffer = new byte[64 * 1024];
             var frames = new List<byte[]>();
             string reason = "상대가 연결을 끊었어요.";
