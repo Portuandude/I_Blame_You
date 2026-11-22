@@ -41,6 +41,7 @@ namespace IBlameYou.Systems
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
         private readonly HashSet<int> solvedPuzzles = new HashSet<int>(); // 등불 순서 퍼즐을 푼 청크 (방). 런 이어하기 저장은 안 쓰므로 StageRecords에 넣지 않는다
+        private readonly Dictionary<int, int> windBoxColumns = new Dictionary<int, int>(); // 바람 상자를 밀어 둔 열 (방을 나갔다 와도 그 자리)
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
         private readonly Dictionary<int, StageExit> exits = new Dictionary<int, StageExit>();
 
@@ -141,12 +142,15 @@ namespace IBlameYou.Systems
             return switchElements[index];
         }
 
-        private static bool IsDeductionPuzzle(ChunkKind kind) => kind == ChunkKind.LanternPuzzle || kind == ChunkKind.MirrorPuzzle;
+        private static bool IsDeductionPuzzle(ChunkKind kind) =>
+            kind == ChunkKind.LanternPuzzle || kind == ChunkKind.MirrorPuzzle || kind == ChunkKind.WindBoxPuzzle;
 
-        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서·거울 룬)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
+        // 미니맵 방 이벤트 점: 추리 퍼즐 방(등불 순서·거울 룬·바람 상자)을 아직 안 풀었거나, 풀었는데 유물 상자를 아직 안 열었는지.
+        // 바람 상자는 선반의 회복 구슬을 주우면 푼 것이다 (유물 상자가 없다).
         public bool HasPuzzleLeft(int index) =>
             stage != null && index >= 0 && index < stage.Chunks.Count && IsDeductionPuzzle(stage.Chunks[index].Kind)
-            && (!solvedPuzzles.Contains(index) || !takenRelics.Contains(index));
+            && (!solvedPuzzles.Contains(index)
+                || (stage.Chunks[index].Kind != ChunkKind.WindBoxPuzzle && !takenRelics.Contains(index)));
 
         // 미니맵 방 이벤트 점 (2026-11-14): 저주받은 상자 방에서 아직 유물을 안 골랐는지 (상자가 잠들어 있거나, 정예를 잡고 유물 상자만 남았거나).
         public bool HasCursedChestLeft(int index) =>
@@ -421,7 +425,22 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.Reward:
                         // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
-                        SpawnReward(root, index, new Vector2(ox + f.X + 0.5f, oy + f.Y), false);
+                        // 바람 상자 선반의 구슬은 주우면 그 퍼즐을 푼 것으로 친다 (마음 가루 + 결과 창 퍼즐 N/M)
+                        int rewardChunk = index;
+                        System.Action solvedByOrb = chunk.Kind == ChunkKind.WindBoxPuzzle
+                            ? () =>
+                            {
+                                if (solvedPuzzles.Add(rewardChunk)) IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle);
+                            }
+                            : (System.Action)null;
+                        SpawnReward(root, index, new Vector2(ox + f.X + 0.5f, oy + f.Y), false, solvedByOrb);
+                        break;
+                    case FeatureKind.WindBox:
+                        // 바람 상자 (Puzzles/WindBox): 밀어 둔 자리를 기억해 다시 들어와도 그 자리에. Direction = 선반 왼쪽 열, Width = 선반 폭
+                        int boxChunk = index;
+                        int boxColumn = windBoxColumns.TryGetValue(index, out int keptColumn) ? keptColumn : f.X;
+                        IBlameYou.Puzzles.WindBox.Create(root, chunk, new Vector2(ox, oy), boxColumn, f.Y, f.Direction, f.Width,
+                            column => windBoxColumns[boxChunk] = column);
                         break;
                     case FeatureKind.CoinPile:
                         SpawnCoinPile(root, CoinPileKey(index, coinOrdinal++), new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.Difficulty);
@@ -642,10 +661,14 @@ namespace IBlameYou.Systems
         private static string MedalPercent => $"{IBlameYou.Player.RelicBook.HeroMedalHealRatio * 100f:0}";
 
         // 일반 전투 구역 보상 (보스 구역은 출구가 보상이라 없음). 이미 주웠으면 만들지 않는다.
-        private void SpawnReward(Transform root, int chunkIndex, Vector2 position, bool dropped)
+        private void SpawnReward(Transform root, int chunkIndex, Vector2 position, bool dropped, System.Action alsoOnCollect = null)
         {
             if (collectedRewards.Contains(chunkIndex)) return;
-            ArenaReward.Create(root, position, dropped, () => collectedRewards.Add(chunkIndex));
+            ArenaReward.Create(root, position, dropped, () =>
+            {
+                collectedRewards.Add(chunkIndex);
+                alsoOnCollect?.Invoke();
+            });
         }
 
         // 동전 무더기: 청크마다 여럿일 수 있어서(넓은 방은 구간 여러 개) 청크 번호와 청크 안 순번으로 기록한다
