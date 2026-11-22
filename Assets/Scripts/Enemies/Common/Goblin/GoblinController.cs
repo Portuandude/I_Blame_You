@@ -101,7 +101,12 @@ namespace IBlameYou.Enemies
             }
 
             float offsetFromHome = transform.position.x - homeX;
-            if (Mathf.Abs(offsetFromHome) > patrolRadius) SetFacing(-Mathf.Sign(offsetFromHome));
+            if (Mathf.Abs(offsetFromHome) > patrolRadius)
+            {
+                SetFacing(-Mathf.Sign(offsetFromHome));
+                // 돌아가는 길이 낭떠러지·벽으로 막혔으면 여기를 새 출발 위치로 (전에는 벽에 계속 밀거나 낭떠러지로 걸어 떨어졌다, 버그 점검 2026-11-22)
+                if (WallAhead(facing)) { homeX = transform.position.x; SetFacing(-facing); }
+            }
             else if (WallAhead(facing)) SetFacing(-facing);
             moveDirection = facing;
         }

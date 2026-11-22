@@ -26,9 +26,12 @@ namespace IBlameYou.Net
         private static int frameNumber = -1;
         private static int headerLength;
 
-        private static readonly Dictionary<GUIStyle, int> styleIds = new Dictionary<GUIStyle, int>();
+        // 스타일은 GUIStyle 객체가 아니라 모양(직렬화한 바이트)으로 번호를 붙인다. HUD 여러 곳이 OnGUI마다 new GUIStyle을 만들어서,
+        // 객체로 묶으면 프레임마다 새 번호·새 Style 명령이 생겨 호스트 표·친구 표가 끝없이 커지고 HUD 프레임 중복 건너뛰기도 안 됐다 (버그 점검 2026-11-22).
+        private static readonly Dictionary<ulong, int> styleByHash = new Dictionary<ulong, int>();
         private static readonly Dictionary<int, byte[]> styleBytes = new Dictionary<int, byte[]>();
         private static int nextStyle = 1;
+        internal const int MaxStyles = 1024; // 모양이 이만큼 넘게 쌓이면 번호를 1부터 다시 쓴다 (친구는 같은 번호를 새 정의로 덮는다)
 
         private static Matrix4x4 lastMatrix;
         private static Color lastColor, lastContentColor, lastBackgroundColor;
@@ -39,7 +42,7 @@ namespace IBlameYou.Net
 
         public static void ResetTables()
         {
-            styleIds.Clear();
+            styleByHash.Clear();
             styleBytes.Clear();
             nextStyle = 1;
             completed.Clear();
@@ -234,19 +237,24 @@ namespace IBlameYou.Net
             frame.WriteBool(hide);
         }
 
-        // 스타일 번호. 처음이거나 모양이 바뀌었으면 Style 명령을 프레임에 먼저 넣는다.
+        // 스타일 번호. 처음 보는 모양이면 새 번호로 Style 명령을 프레임에 먼저 넣는다 (같은 모양은 객체가 달라도 같은 번호).
         private static int StyleId(GUIStyle style)
         {
             if (style == null) return 0;
             scratch.Clear();
             WriteStyle(scratch, style);
-            if (!styleIds.TryGetValue(style, out int id))
-            {
-                id = nextStyle++;
-                styleIds[style] = id;
-            }
-            else if (styleBytes.TryGetValue(id, out var previous) && scratch.SameAs(previous)) return id;
+            ulong hash = scratch.Hash();
+            if (styleByHash.TryGetValue(hash, out int id) && styleBytes.TryGetValue(id, out var previous) && scratch.SameAs(previous)) return id;
 
+            if (nextStyle > MaxStyles)
+            {
+                // 번호를 1부터 다시: 이 프레임 앞쪽 명령은 친구가 이미 풀어 옛 모양을 쥐고 있고, 뒤쪽은 새 정의를 쓴다
+                styleByHash.Clear();
+                styleBytes.Clear();
+                nextStyle = 1;
+            }
+            id = nextStyle++;
+            styleByHash[hash] = id;
             styleBytes[id] = scratch.ToArray();
             frame.WriteByte((byte)HudOp.Style);
             frame.WriteVarUInt((uint)id);

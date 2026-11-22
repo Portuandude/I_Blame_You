@@ -165,6 +165,8 @@ namespace IBlameYou.Enemies
             if (Mathf.Abs(offsetFromHome) > patrolRadius)
             {
                 SetFacing(-Mathf.Sign(offsetFromHome));
+                // 돌아가는 길이 낭떠러지·벽으로 막혔으면 여기를 새 출발 위치로 (버그 점검 2026-11-22)
+                if (WallAhead(facing)) { homeX = transform.position.x; SetFacing(-facing); }
             }
             else if (WallAhead(facing))
             {

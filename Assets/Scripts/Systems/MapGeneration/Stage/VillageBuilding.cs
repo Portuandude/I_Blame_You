@@ -25,6 +25,21 @@ namespace IBlameYou.Systems
 
         public VillageService Service => service;
 
+        // 건물 그림은 종류마다 한 번만 만든다 (마을 방을 다시 불러올 때마다 Sprite가 쌓이지 않게, 온라인이면 친구에게 다시 보내지 않게)
+        private static readonly System.Collections.Generic.Dictionary<VillageService, Sprite> buildingSprites =
+            new System.Collections.Generic.Dictionary<VillageService, Sprite>();
+
+        private static Sprite BuildingSprite(VillageService service)
+        {
+            if (buildingSprites.TryGetValue(service, out var cached) && cached != null) return cached;
+            var tex = Resources.Load<Texture2D>(service == VillageService.Restaurant ? "Village/Restaurant" : "Village/Shop");
+            if (tex == null) return null;
+            tex.filterMode = FilterMode.Point;
+            var sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0f), PixelsPerUnit);
+            buildingSprites[service] = sprite;
+            return sprite;
+        }
+
         public static VillageBuilding Create(Transform parent, Vector2 groundCenter, VillageService service)
         {
             var go = new GameObject(service == VillageService.Restaurant ? "Village_Restaurant" : "Village_Shop");
@@ -33,12 +48,7 @@ namespace IBlameYou.Systems
 
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sortingOrder = -3; // 플레이어(1)·바닥보다 뒤
-            var tex = Resources.Load<Texture2D>(service == VillageService.Restaurant ? "Village/Restaurant" : "Village/Shop");
-            if (tex != null)
-            {
-                tex.filterMode = FilterMode.Point;
-                renderer.sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0f), PixelsPerUnit);
-            }
+            renderer.sprite = BuildingSprite(service);
 
             // 문 앞 범위 (건물 가운데 2.4유닛 폭, 사람 키 높이)
             var trigger = go.AddComponent<BoxCollider2D>();
