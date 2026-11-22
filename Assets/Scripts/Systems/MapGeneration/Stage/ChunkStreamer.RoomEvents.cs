@@ -12,21 +12,20 @@ namespace IBlameYou.Systems
         {
             if (goblinWaiting.Count == 0 || !goblinWaiting.Contains(currentRoom)) return;
             if (player.position.y - Origin(currentRoom).y > GoblinWakeHeight) return;
-            goblinWaiting.Remove(currentRoom);
-            SpawnTreasureGoblin(currentRoom);
+            if (SpawnTreasureGoblin(currentRoom)) goblinWaiting.Remove(currentRoom); // 못 불렀으면(설 자리 없음) 다음 프레임에 다시: 먼저 지우면 그 판엔 영영 안 나왔다 (버그 점검 2026-11-22)
         }
 
-        // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다.
-        private void SpawnTreasureGoblin(int index)
+        // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다. 불렀으면 true.
+        private bool SpawnTreasureGoblin(int index)
         {
-            if (spawnEnemy == null || player == null) return;
+            if (spawnEnemy == null || player == null) return false;
             var origin = Origin(index);
             int cols = RoomCols(index);
             float local = player.position.x - origin.x;
             var spot = FindStandSpot(index, Mathf.RoundToInt(cols * (local < cols / 2f ? 0.7f : 0.3f)), headroom: EnemyHeadroom);
-            if (!spot.HasValue) return;
+            if (!spot.HasValue) return false;
             var health = spawnEnemy(StageEnemy.TreasureGoblin, new Vector3(spot.Value.x, spot.Value.y + SpawnLift, 0f), transform);
-            if (health == null) return;
+            if (health == null) return false;
             RegisterEnemy(health);
             treasureGoblin = health;
             treasureGoblinRoom = index;
@@ -44,6 +43,7 @@ namespace IBlameYou.Systems
             }
             StageEvents.PostNotice("보물 고블린이다! 10초 안에 잡아라!");
             GameAudio.PlaySfx("CoinPile", 0.6f, 0f);
+            return true;
         }
 
         // 보물 고블린 장비 떨굼 (Chunks/TreasureGoblinRule.DropsEquipment): 잡힌 자리 근처 바닥에 장비 하나가 튀어나온다.

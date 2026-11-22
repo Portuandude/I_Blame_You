@@ -97,11 +97,13 @@ namespace IBlameYou.Systems
         }
 
         // 이미 쓴 마나가 미니게임 실패로 헛되이 날아갔음을 기록한다 (마나는 TryConsume에서 이미 빠졌다).
+        // amount는 마법의 원래 값(TryConsume에 넘긴 값). 실제로 낸 값(비용 배율 적용)으로 기록해 결과 창에서 날린 마나가 쓴 마나보다 커지지 않게 한다.
         public void MarkWasted(ManaUser user, float amount)
         {
+            amount *= TotalCostMultiplier;
             wastedByUser[(int)user] += amount;
             ManaSpent?.Invoke(user, amount, true);
-            if (WastedRefundRatio > 0f && !Infinite) SetCurrent(current + amount * TotalCostMultiplier * WastedRefundRatio);
+            if (WastedRefundRatio > 0f && !Infinite) SetCurrent(current + amount * WastedRefundRatio);
         }
 
         private void SetCurrent(float value)

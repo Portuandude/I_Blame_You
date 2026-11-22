@@ -64,7 +64,7 @@ namespace IBlameYou.Systems
         public void AddMax(float amount, bool fillCurrent = true)
         {
             maxHealth += amount;
-            SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
+            SetCurrent(fillCurrent && !IsDead ? current + Mathf.Max(amount, 0f) : current); // 쓰러진 뒤에는 채우지 않는다 (Heal과 같게). fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
         // 최대/현재 체력을 한꺼번에 정한다 (보스 분열처럼 체력을 나눠 가질 때).
@@ -81,9 +81,26 @@ namespace IBlameYou.Systems
             SetCurrent(current - amount);
         }
 
+        // 지속 피해 (화상): Drain처럼 경직·Damaged 없이 깎지만, 무적 중이면 무시하고 쓰러질 피해면 버티기(DeathSaves)를 쓴다.
+        // Drain을 쓰던 때는 화상이 대쉬·순간이동 무적, 무적 치트, 불사조 깃털·생명 20을 뚫고 쓰러뜨렸다 (버그 점검 2026-11-22). 깎았으면 true.
+        public bool TakeDotDamage(float amount)
+        {
+            if (amount <= 0f || IsDead || IsInvulnerable) return false;
+            if (current - amount <= 0f && DeathSaves > 0)
+            {
+                DeathSaves--;
+                SetCurrent(maxHealth * DeathSaveRatio);
+                DeathPrevented?.Invoke();
+                return true;
+            }
+            SetCurrent(current - amount);
+            return true;
+        }
+
+        // 쓰러진 뒤에는 회복하지 않는다 (체력이 0에서 올라가면 IsDead가 풀려 다시 사는 것처럼 보인다, 버그 점검 2026-11-22).
         public void Heal(float amount)
         {
-            if (amount <= 0f) return;
+            if (amount <= 0f || IsDead) return;
             SetCurrent(current + amount);
         }
 

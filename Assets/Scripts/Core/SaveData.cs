@@ -106,6 +106,7 @@ namespace IBlameYou.Core
             if (amount <= 0 || GameSession.FeatureTest) return;
             bool dev = GameSession.DevMode;
             PlayerPrefs.SetInt(ModeKey(KeyHeartDust, dev), HeartDust(dev) + amount);
+            PlayerPrefs.Save(); // 쓰러져 끝난 판도 바로 저장 (게임이 꺼지면 가루를 잃지 않게)
         }
 
         // 한 판에 모은 골드(쓴 것 포함, RunStats.GoldEarned) 최고. 기록이 없으면 0.

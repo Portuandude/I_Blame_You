@@ -111,7 +111,7 @@ namespace IBlameYou.Core
             if (!Mathf.Approximately(unclamped.y, followPosition.y)) velocity.y = 0f;
 
             Vector3 shake = Vector3.zero;
-            if (shakeTimeRemaining > 0f)
+            if (shakeTimeRemaining > 0f && Time.timeScale > 0f) // 멈춘 동안(일시정지·창)은 흔들지 않는다: 시간이 안 흘러 같은 세기로 계속 떨렸다 (버그 점검 2026-11-22)
             {
                 shakeTimeRemaining -= Time.deltaTime;
                 float falloff = Mathf.Clamp01(shakeTimeRemaining / currentShakeDuration);

@@ -232,7 +232,7 @@ namespace IBlameYou.Player
             if (result.Failed)
             {
                 mana.MarkWasted(ManaUser.PlayerB, spell.ManaCost);
-                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {spell.ManaCost:0} 날림", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {spell.ManaCost * mana.TotalCostMultiplier:0} 날림", true);
                 return;
             }
 
