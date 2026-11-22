@@ -200,7 +200,7 @@ namespace IBlameYou.Tests
                 HudRecorder.Group(new Rect(5, 5, 50, 50));
                 HudRecorder.Texture(new Rect(0, 0, 8, 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, false, Color.white, Vector4.zero, Vector4.zero);
                 HudRecorder.EndGroup();
-                style.normal.textColor = Color.green; // 모양이 바뀌면 같은 번호로 다시 정의
+                style.normal.textColor = Color.green; // 모양이 바뀌면 새 번호로 정의 (번호는 객체가 아니라 모양에 붙는다)
                 HudRecorder.Content(HudOp.Box, new Rect(0, 0, 10, 10), new GUIContent("마나"), style, 0);
             }
             catch (System.Exception ex) when (ex.Message.Contains("OnGUI"))
@@ -224,16 +224,52 @@ namespace IBlameYou.Tests
             Assert.AreEqual("마나", hud.TextAt(1));
             Assert.Greater(hud.CommandCount, 5); // 상태(행렬·색·켜짐) + 글자 + 묶음 + 그림 + 묶음 끝 + 상자
 
-            var replayed = hud.StyleById(1);
+            Assert.AreEqual((Color32)Color.red, (Color32)hud.StyleById(1).normal.textColor); // 처음 모양
+            var replayed = hud.StyleById(2);
             Assert.IsNotNull(replayed);
             Assert.AreEqual(22, replayed.fontSize);
             Assert.AreEqual(FontStyle.Bold, replayed.fontStyle);
             Assert.AreEqual(TextAnchor.MiddleCenter, replayed.alignment);
             Assert.IsTrue(replayed.richText);
             Assert.AreEqual(3, replayed.padding.top);
-            Assert.AreEqual((Color32)Color.green, (Color32)replayed.normal.textColor); // 마지막 정의
+            Assert.AreEqual((Color32)Color.green, (Color32)replayed.normal.textColor); // 바뀐 모양
             Assert.IsNotNull(replayed.normal.background);
             Assert.AreEqual(Color.blue, replayed.normal.background.GetPixel(0, 0));
+        }
+
+        // OnGUI마다 new GUIStyle을 만드는 HUD가 많아서, 같은 모양은 객체가 달라도 번호 하나로 묶어야 표가 끝없이 커지지 않는다 (버그 점검 2026-11-22).
+        [Test]
+        public void Hud_SameLookingStylesShareOneId()
+        {
+            HudRecorder.ResetTables();
+            HudRecorder.Assets = sender;
+            HudRecorder.Recording = true;
+            HudRecorder.ForceRepaintForTests = true;
+            try
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    var style = new GUIStyle { fontSize = 18, richText = true }; // 프레임마다 새 객체 (CuteButton 등과 같은 방식)
+                    HudRecorder.Content(HudOp.Label, new Rect(0, i, 10, 10), new GUIContent("x"), style, 0);
+                }
+            }
+            catch (System.Exception ex) when (ex.Message.Contains("OnGUI"))
+            {
+                Assert.Ignore("OnGUI 밖이라 GUI 상태를 읽을 수 없는 환경: " + ex.Message);
+            }
+            finally
+            {
+                HudRecorder.ForceRepaintForTests = false;
+            }
+
+            var frames = new List<byte[]>();
+            HudRecorder.TakeCompleted(frames, true);
+            outbox.AddRange(frames);
+            var hud = new HudReplay(receiver);
+            DeliverAll(null, hud);
+            Assert.IsNotNull(hud.StyleById(1));
+            Assert.AreEqual(18, hud.StyleById(1).fontSize);
+            Assert.IsNull(hud.StyleById(2)); // 같은 모양 49개는 새 번호를 받지 않았다
         }
 
         [Test]

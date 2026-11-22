@@ -72,6 +72,20 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void Writer_HashFollowsContent()
+        {
+            var a = new NetWriter();
+            var b = new NetWriter();
+            a.WriteVarInt(18); a.WriteString("x");
+            b.WriteVarInt(18); b.WriteString("x");
+            Assert.AreEqual(a.Hash(), b.Hash()); // 다른 writer라도 같은 내용이면 같은 해시 (HUD 스타일 묶기)
+            b.WriteByte(1);
+            Assert.AreNotEqual(a.Hash(), b.Hash());
+            b.Clear(); b.WriteVarInt(18); b.WriteString("x");
+            Assert.AreEqual(a.Hash(), b.Hash());
+        }
+
+        [Test]
         public void FrameAssembler_SplitsAndJoinsChunks()
         {
             var a = FrameAssembler.Frame(new byte[] { 1, 2, 3 });
