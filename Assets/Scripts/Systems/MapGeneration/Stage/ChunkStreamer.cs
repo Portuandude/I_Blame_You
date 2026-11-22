@@ -703,7 +703,7 @@ namespace IBlameYou.Systems
             if (firstVisit && RoomEventRule.IsTreasureGoblinRoom(stage.Seed, entered))
             {
                 if (entered.IsVertical) goblinWaiting.Add(index); // 바닥 가까이 내려오면 (WakeWaitingGoblin)
-                else SpawnTreasureGoblin(index);
+                else if (!SpawnTreasureGoblin(index)) goblinWaiting.Add(index); // 설 자리를 못 찾았으면 기다렸다가 다시 (WakeWaitingGoblin)
             }
             // 기다리는 보물 고블린이 있는 세로 방에 위쪽으로 들어오면 아래에서 금화 소리 (2026-11-14 자동 실행): 내려가 보라는 힌트
             if (goblinWaiting.Contains(index) && player != null && player.position.y - Origin(index).y > GoblinWakeHeight)
