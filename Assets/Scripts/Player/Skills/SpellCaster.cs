@@ -28,8 +28,8 @@ namespace IBlameYou.Player
         public int CircleTier { get; private set; }                 // 0 견습 · 1 숙련 · 2 대마법 (순풍이면 한 단계 쉬움)
         public List<CirclePoint> CirclePath { get; private set; }   // 따라 그릴 선 (한 획, 판 좌표)
         public readonly List<CirclePoint> Drawn = new List<CirclePoint>(); // P2가 그린 선 (판 좌표)
-        public bool Drawing { get; private set; }
-        private bool openedRemote; // 마법진을 열 때 온라인 친구가 P2였는지                   // 마우스 왼쪽을 누른 채 그리는 중
+        public bool Drawing { get; private set; }                   // 마우스 왼쪽을 누른 채 그리는 중
+        private bool openedRemote;                                  // 마법진을 열 때 온라인 친구가 P2였는지
         public float CircleTolerance { get; private set; }
         public float CircleTimeLeft { get; private set; }
         public float CircleTimeLimit { get; private set; }
@@ -122,7 +122,8 @@ namespace IBlameYou.Player
         private void OpenCircle(SpellDefinition spell)
         {
             // 마나가 모자라면 열지 않는다: 6초 동안 다 그린 뒤에야 "마나 부족"을 알게 되지 않게 (버그 점검 2026-11-22)
-            if (!mana.HasEnough(spell.ManaCost * mana.TotalCostMultiplier))
+            // 피의 계약처럼 모자란 마나를 대신 내는 유물이 있으면 판정 때 TryConsume에 맡긴다
+            if (mana.ShortfallCover == null && !mana.HasEnough(spell.ManaCost * mana.TotalCostMultiplier))
             {
                 SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
                 return;
