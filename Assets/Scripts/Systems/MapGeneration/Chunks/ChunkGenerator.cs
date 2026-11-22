@@ -937,7 +937,7 @@ namespace IBlameYou.Systems
         public const int WindLedgeRise = 3;      // 선반 위 서는 칸 = 바닥 + 3 (발판 행 = 바닥 + 2)
         public const int WindLedgeRightX0 = 20;  // 오른쪽 선반의 왼쪽 열 (왼쪽 선반은 좌우 거울 자리)
         public const int WindBoxStartGap = 7;    // 상자 처음 자리 = 선반 가까운 끝에서 이만큼 떨어진 열 (바람 6번이면 선반 옆)
-        public const int WindWardMargin = 4;     // 선반 양옆 마력 안개 폭 (순간이동 4칸 + 낙하 중 옆으로 흐르는 거리보다 넓게)
+        public const int WindWardMargin = 5;     // 선반 양옆 마력 안개 폭 (순간이동 4칸 + 낙하 중 옆으로 흐르는 거리(약 2.3칸)보다 넉넉히. 4면 여유 0.8칸뿐이라 5)
 
         public static int WindLedgeX0(bool right) => right ? WindLedgeRightX0 : W - WindLedgeRightX0 - WindLedgeWidth;
 
