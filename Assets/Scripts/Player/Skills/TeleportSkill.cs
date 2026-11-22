@@ -23,8 +23,6 @@ namespace IBlameYou.Player
         private HealthSystem health;
         private HitStun hitStun;
         private PlayerMovement movement;
-        private float invulnerableUntil;
-        private bool grantedInvulnerability;
         private readonly List<RaycastHit2D> castResults = new List<RaycastHit2D>();
         private readonly List<Collider2D> overlapResults = new List<Collider2D>();
         private ContactFilter2D groundFilter;
@@ -57,12 +55,6 @@ namespace IBlameYou.Player
 
         private void Update()
         {
-            if (grantedInvulnerability && Time.time >= invulnerableUntil)
-            {
-                grantedInvulnerability = false;
-                if (!movement.IsDashing && (hitStun == null || !hitStun.IsStunned)) health.Invulnerable = false;
-            }
-
             if (!RoleInput.TeleportDown(control)) return;
             if (health.IsDead || movement.IsDashing || (hitStun != null && hitStun.IsStunned)) return;
 
@@ -207,9 +199,8 @@ namespace IBlameYou.Player
 
             if (direction.x != 0f) transform.localScale = new Vector3(Mathf.Sign(direction.x), 1f, 1f);
 
-            health.Invulnerable = true;
-            grantedInvulnerability = true;
-            invulnerableUntil = Time.time + invulnerableTime;
+            // 시간 무적: 공용 스위치(Invulnerable)를 쓰면 그 사이 대시가 끝나거나 경직이 풀릴 때 꺼져 버려 짧은 무적이 일찍 끝났다 (버그 점검 2026-11-22)
+            health.GrantGrace(invulnerableTime);
 
             SkillMessages.Post(ManaUser.PlayerA, "순간이동");
         }
