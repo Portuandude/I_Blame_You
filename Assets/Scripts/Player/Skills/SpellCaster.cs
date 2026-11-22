@@ -28,7 +28,8 @@ namespace IBlameYou.Player
         public int CircleTier { get; private set; }                 // 0 견습 · 1 숙련 · 2 대마법 (순풍이면 한 단계 쉬움)
         public List<CirclePoint> CirclePath { get; private set; }   // 따라 그릴 선 (한 획, 판 좌표)
         public readonly List<CirclePoint> Drawn = new List<CirclePoint>(); // P2가 그린 선 (판 좌표)
-        public bool Drawing { get; private set; }                   // 마우스 왼쪽을 누른 채 그리는 중
+        public bool Drawing { get; private set; }
+        private bool openedRemote; // 마법진을 열 때 온라인 친구가 P2였는지                   // 마우스 왼쪽을 누른 채 그리는 중
         public float CircleTolerance { get; private set; }
         public float CircleTimeLeft { get; private set; }
         public float CircleTimeLimit { get; private set; }
@@ -114,12 +115,20 @@ namespace IBlameYou.Player
         {
             var c = BoardCenter;
             float r = BoardRadius;
+            if (r <= 0f) return new CirclePoint(0f, 0f); // 창 최소화 등 화면 크기 0: 0으로 나누지 않게 (버그 점검 2026-11-22)
             return new CirclePoint((gui.x - c.x) / r, (gui.y - c.y) / r);
         }
 
         private void OpenCircle(SpellDefinition spell)
         {
+            // 마나가 모자라면 열지 않는다: 6초 동안 다 그린 뒤에야 "마나 부족"을 알게 되지 않게 (버그 점검 2026-11-22)
+            if (!mana.HasEnough(spell.ManaCost * mana.TotalCostMultiplier))
+            {
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
+                return;
+            }
             PendingSpell = spell;
+            openedRemote = IBlameYou.Net.P2Input.Remote;
             CircleTier = SpellBook.CircleTier(spell, TailwindActive);
             CirclePath = MagicCircleRules.Path((int)spell.Element, CircleTier);
             CircleTolerance = MagicCircleRules.ToleranceOf(CircleTier, CircleEase);
@@ -140,8 +149,15 @@ namespace IBlameYou.Player
                 CancelCircle("방 이동으로 마법진 취소");
                 return;
             }
+            if (openedRemote && !IBlameYou.Net.P2Input.Remote)
+            {
+                // 온라인 친구가 그리는 중에 끊김: 호스트 마우스로 바뀌어 그리다 만 그림이 판정되지 않게 취소 (마나 그대로)
+                CancelCircle("친구 연결이 끊겨 마법진 취소");
+                return;
+            }
             if (RoleInput.CircleCancelDown())
             {
+                RoleInput.MarkCircleCancel(); // 같은 프레임의 Esc가 일시정지 창까지 열지 않게
                 CancelCircle("마법진 취소");
                 return;
             }
@@ -164,6 +180,13 @@ namespace IBlameYou.Player
                 if (dx * dx + dy * dy > 0.00004f) Drawn.Add(point);
                 if (!RoleInput.CircleDrawHeld()) // 한붓: 떼는 순간 판정
                 {
+                    if (Drawn.Count < 2)
+                    {
+                        // 톡 클릭만 한 것은 그린 것으로 치지 않는다: 마나를 날리지 않고 다시 그리기 (버그 점검 2026-11-22)
+                        Drawing = false;
+                        Drawn.Clear();
+                        return;
+                    }
                     JudgeCircle();
                     return;
                 }
@@ -196,13 +219,14 @@ namespace IBlameYou.Player
             LastPercent = result.Percent;
             LastJudgedAt = Time.unscaledTime;
             LastElement = spell.Element;
-            CircleJudged?.Invoke(result.Percent);
 
             if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
             {
                 SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
                 return;
             }
+            // 판정 알림(쌍둥이 반지 마나 보상 등)은 마나를 낸 뒤에: 보상 마나로 모자란 마나를 메워 시전하지 않게 (버그 점검 2026-11-22)
+            CircleJudged?.Invoke(result.Percent);
 
             if (result.Failed)
             {

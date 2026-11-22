@@ -198,6 +198,10 @@ namespace IBlameYou.Player
 
         public static bool CircleDrawDown() => !BBlocked && P2Input.GetMouseButtonDown(0);
         public static bool CircleDrawHeld() => !BBlocked && P2Input.GetMouseButton(0);
+        // 마법진을 Esc로 취소한 프레임: 같은 프레임에 SkillHUD가 Esc를 보고 일시정지를 열지 않게 (컴포넌트 실행 순서와 무관, 2026-11-22)
+        private static int circleCancelFrame = -1;
+        public static void MarkCircleCancel() => circleCancelFrame = Time.frameCount;
+        public static bool CircleCancelledThisFrame => Time.frameCount == circleCancelFrame;
         public static bool CircleCancelDown() => P2Input.GetKeyDown(KeyCode.Escape) || (!BBlocked && P2Input.GetMouseButtonDown(1));
 
         // B(P2)의 숫자줄: 온라인이면 친구 키보드
