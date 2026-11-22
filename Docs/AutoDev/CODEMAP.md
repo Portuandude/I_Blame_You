@@ -28,6 +28,7 @@
 | 적 공통 | `Enemies/EnemyController.cs`(체력·경직·접촉 피해), `EnemySpawner.cs`(조립 헬퍼) |
 | 적 종류 | `Enemies/Common/{Slime,Goblin,GoblinArcher}`, `Enemies/Elite/{MotherSlime,GoblinWarrior}`, 보스 `Enemies/Bosses/SlimeKing`, 중간보스 `Enemies/Bosses/SlimeKnights`·`Enemies/Bosses/PrismJelly`(패턴 `JellyPatterns`, 위험물 `JellyHazards`, 규칙 `Stats/Formula/PrismJellyRules`) — 각 폴더의 `*Spawner`가 구성의 단일 출처 |
 | 수치 | `Systems/Stats/StatTable.cs`(스탯 문서 값), `DamageCalculator.cs`(피해·`IDamageModifier`), `Formula/`(상성, 순수 C#) |
+| 체력·마나·기력 | `Systems/Health/HealthSystem.cs` (피해 `TakeDamage`, 지속 피해 `TakeDotDamage`(무적·버티기 지킴), 자해 `Drain`, 시간 무적 `GrantGrace` — 짧은 무적은 공용 `Invulnerable` 대신 이것), `Systems/Mana/`, `Systems/Stamina/` |
 | 상태이상 | `Systems/StatusEffects/` |
 | 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` |
 | 마법·스킬 | `Player/Skills/` (`SpellBook` 목록, `SpellCaster` 마법진 그리기, 규칙 `Rules/MagicCircleRules`) |
@@ -40,7 +41,7 @@
 
 | 경로 | 내용 |
 | --- | --- |
-| `Assets/Tests/EditMode/` | EditMode 테스트. 스테이지 생성 테스트는 `stage-tests` 스킬로 로컬 실행 |
+| `Assets/Tests/EditMode/` | 순수 C# EditMode 테스트. `editmode-tests` 스킬로 로컬 실행. Unity가 필요한 테스트는 `Assets/Tests/EditModeUnity/` (CI에서만) |
 | `Tools/ArtGen/` | 그림 생성기 (Python PIL). `palette.py` 색, `generate_*.py`, `decorate_slime.py` |
 | `Tools/AudioGen/`, `Tools/StageGen/` | 효과음 생성, 스테이지 미리보기 |
 | `Docs/` | `GameDesignDocument.md`(기획), `LevelDesign.md`(방 격자), `ArtStyle.md`, 초안들(`*Draft.md`) |

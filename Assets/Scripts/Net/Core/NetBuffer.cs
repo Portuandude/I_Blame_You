@@ -25,6 +25,14 @@ namespace IBlameYou.Net
             return copy;
         }
 
+        // ToArray와 같지만, reuse가 같은 길이면 새로 만들지 않고 그 배열에 덮어써 돌려준다 (프레임마다 바뀌는 조각의 쓰레기를 줄인다).
+        public byte[] ToArray(byte[] reuse)
+        {
+            if (reuse == null || reuse.Length != length) return ToArray();
+            Buffer.BlockCopy(data, 0, reuse, 0, length);
+            return reuse;
+        }
+
         private void Ensure(int extra)
         {
             int need = length + extra;
