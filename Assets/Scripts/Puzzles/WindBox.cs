@@ -73,8 +73,15 @@ namespace IBlameYou.Puzzles
             solid.sharedMaterial = PhysicsMaterialFactory.Frictionless();
 
             // 돌 상자: 밝은 테두리 + 어두운 몸 + 가운데 바람 문양 (바람으로 미는 것이라는 모양 신호)
-            TrapCommon.AddSprite(go.transform, "Rim", null, Vector2.zero, new Vector2(Size, Size), RimColor, 1);
-            TrapCommon.AddSprite(go.transform, "Stone", null, Vector2.zero, new Vector2(Size - 0.14f, Size - 0.14f), StoneColor, 2);
+            // 그림(Resources/Stage/WindBox, Tools/ArtGen --windbox)이 있으면 그 돌 상자, 없으면 단색 테두리 + 몸
+            var boxSprite = TrapCommon.Frame("WindBox");
+            if (boxSprite != null)
+                TrapCommon.AddSprite(go.transform, "Stone", boxSprite, Vector2.zero, Vector2.one, Color.white, 2);
+            else
+            {
+                TrapCommon.AddSprite(go.transform, "Rim", null, Vector2.zero, new Vector2(Size, Size), RimColor, 1);
+                TrapCommon.AddSprite(go.transform, "Stone", null, Vector2.zero, new Vector2(Size - 0.14f, Size - 0.14f), StoneColor, 2);
+            }
             var sigilSprite = TrapCommon.Frame($"RuneSigil_{Element.Wind}");
             box.sigil = TrapCommon.AddSprite(go.transform, "Sigil", sigilSprite, Vector2.zero, new Vector2(0.45f, 0.45f),
                 ElementInfo.Color(Element.Wind), 3);
