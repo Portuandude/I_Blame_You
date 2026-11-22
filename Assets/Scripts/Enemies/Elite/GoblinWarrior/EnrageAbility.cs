@@ -66,7 +66,11 @@ namespace IBlameYou.Enemies
 
         private void Update()
         {
-            if (health.IsDead) return;
+            if (health.IsDead)
+            {
+                if (Active) End(); // 광폭화 중 쓰러지면 붉은 몸 색이 쓰러지는 동안 남지 않게 (버그 점검 2026-11-22)
+                return;
+            }
 
             if (AutoTrigger && !used && health.Current <= health.Max * triggerHealthRatio && mana >= manaCost)
             {
