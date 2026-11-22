@@ -226,7 +226,9 @@ namespace IBlameYou.Enemies
                 if (target == null || target == health || target.GetComponent<EnemyController>() != null) continue;
                 if (!struck.Add(target)) continue;
 
-                if (DamageCalculator.Strike(stats, target, DamageKind.Magic, Element.Fire, DamageMultiplier) > 0f)
+                // 무적(구르기·순간이동 직후) 중에는 피해가 막히니 화상도 붙이지 않는다 (Strike는 막힌 피해도 값으로 돌려준다, 버그 점검 2026-11-22)
+                bool guarded = target.IsInvulnerable;
+                if (DamageCalculator.Strike(stats, target, DamageKind.Magic, Element.Fire, DamageMultiplier) > 0f && !guarded)
                     StatusEffects.TryApply(target, StatusDebuff.Burn, stats);
             }
         }

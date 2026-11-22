@@ -104,7 +104,12 @@ namespace IBlameYou.Enemies
                 StageEvents.PostNotice("짝을 잃은 기사가 광폭화했다!");
                 if (GameAudio.CurrentMusic == MidBossMusicName) GameAudio.SetMusicPitch(EnragedMusicPitch); // 남은 기사 싸움은 곡도 조금 빠르게 (구역을 돌파해 곡이 바뀌면 원래대로)
             }
-            if (!partnerAlive) BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
+            if (!partnerAlive)
+            {
+                BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
+                // 광폭화로 빨라진 곡을 되돌린다 (쓰러진 뒤엔 Update가 돌지 않아 UpdateEnrageFx의 되돌리기가 오지 않던 것, 버그 점검 2026-11-22)
+                if (GameAudio.CurrentMusic == MidBossMusicName) GameAudio.SetMusicPitch(1f);
+            }
         }
 
         private void Update()
