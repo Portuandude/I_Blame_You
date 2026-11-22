@@ -283,6 +283,11 @@ namespace IBlameYou.Net
         {
             foreach (var p in pieces.Values) if (p.Go != null) NetUnity.Destroy(p.Go);
             pieces.Clear();
+            // 조각과 함께 공용 재질도 치운다 (다시 그릴 때 새로 만든다). 전에는 친구 창을 열고 닫을 때마다 재질 2개가 남았다
+            NetUnity.Destroy(lineMaterial);
+            NetUnity.Destroy(flashMaterial);
+            lineMaterial = null;
+            flashMaterial = null;
         }
 
         public void Read(NetReader r)

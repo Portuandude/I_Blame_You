@@ -124,6 +124,18 @@ namespace IBlameYou.Net
         // 다른 writer의 내용을 그대로 이어 붙인다.
         public void WriteRaw(NetWriter other) => WriteRaw(other.data, 0, other.length);
 
+        // 내용 해시 (FNV-1a 64비트). 같은 내용이면 같은 값 — 스타일을 객체가 아니라 모양으로 묶을 때 (HudRecorder).
+        public ulong Hash()
+        {
+            ulong h = 14695981039346656037UL;
+            for (int i = 0; i < length; i++)
+            {
+                h ^= data[i];
+                h *= 1099511628211UL;
+            }
+            return h;
+        }
+
         // 같은 내용인지 (스타일 등 바뀌었는지 비교할 때)
         public bool SameAs(byte[] other)
         {
