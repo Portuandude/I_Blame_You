@@ -146,8 +146,7 @@ namespace IBlameYou.Systems
             burnTicksLeft--;
             if (burnTicksLeft <= 0) ClearBurn();
 
-            if (total <= 0f) return;
-            health.Drain(total);
+            if (total <= 0f || !health.TakeDotDamage(total)) return; // 무적 중이면 이번 피해는 없음, 쓰러질 피해면 버티기
             DamageNumbers.ShowText(transform.position + new Vector3(Random.Range(-0.3f, 0.3f), 1.5f, 0f),
                 total.ToString("0.#"), BurnColor, 0.8f);
         }
