@@ -22,7 +22,7 @@
 | 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch), 저장 `Core/RunSave.cs`·`SaveData.cs`, 카메라 `Core/CameraFollow.cs` |
 | 스테이지 계획·청크 지형 (순수 C#, 테스트 가능) | `Systems/MapGeneration/Chunks/`: `StagePlanner`(청크 순서·시간), `ChunkGenerator`(청크 지형), `StageValidator`(갈 수 있는지), `ChunkData`(타일·적·기능 데이터) |
 | 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+(좌우 2+)·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
-| 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환·보상), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |
+| 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환, partial: `.Queries` 미니맵·결과 창 질문 / `.Puzzles` 등불 퍼즐 / `.Rewards` 보상·런 기록 / `.RoomEvents` 보물 고블린·저주 상자), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |
 | 함정·발판 | `Systems/Traps/` |
 | 퍼즐 (봉인문·등불 순서/거울 룬·바람 상자) | `Puzzles/` — `ElementGate`, `LanternPuzzle`·`LanternLight`, `WindBox`(규칙 `Chunks/WindBoxRules`, 투사체 방향 `Combat/IElementPushReceiver`). 지형은 `ChunkGenerator.Add*Puzzle`, 불러오기 `ChunkStreamer` |
 | 적 공통 | `Enemies/EnemyController.cs`(체력·경직·접촉 피해), `EnemySpawner.cs`(조립 헬퍼) |
@@ -48,5 +48,5 @@
 
 ## 큰 파일 읽는 법
 
-300줄이 넘는 파일(`ChunkStreamer`, `ChunkGenerator`, `SlimeKingController`, `PlaytestBootstrap`, `README.md` 등)은 통째로 읽지 않는다.
+300줄이 넘는 파일(`ChunkStreamer`(745줄), `ChunkGenerator`, `SlimeKingController`, `PlaytestBootstrap`, `README.md` 등)은 통째로 읽지 않는다.
 `grep -n "함수명\|키워드"`로 줄 번호를 찾고 `sed -n 'A,Bp'`로 그 부분만 읽는다.
