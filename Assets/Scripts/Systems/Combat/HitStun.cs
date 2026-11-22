@@ -24,6 +24,7 @@ namespace IBlameYou.Systems
         private float poseDuration;
 
         public bool IsStunned { get; private set; }
+        public bool HoldsInvulnerability => IsStunned && invulnerableWhileStunned; // 지금 경직이 무적을 켜 두고 있는지 (대시 끝이 끄지 않게)
 
         // 경직에 걸리지 않는 상태 (보스의 슈퍼아머).
         public bool Immune { get; set; }

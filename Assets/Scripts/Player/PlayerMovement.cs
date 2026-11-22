@@ -289,7 +289,7 @@ namespace IBlameYou.Player
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
             lastGroundedTime = float.NegativeInfinity; // 대시가 공중에서 끝나면 코요테 점프 없음 (땅에서 끝나면 다음 Update가 다시 채움)
-            health.Invulnerable = false;
+            if (!hitStun.HoldsInvulnerability) health.Invulnerable = false; // 대시 중 걸린 경직 무적은 경직이 끝낼 때까지 (버그 점검 2026-11-22)
             if (PostDashGrace > 0f) health.GrantGrace(PostDashGrace);
         }
 

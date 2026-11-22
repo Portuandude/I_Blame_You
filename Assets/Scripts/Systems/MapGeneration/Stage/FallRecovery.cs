@@ -23,8 +23,6 @@ namespace IBlameYou.Systems
         private HealthSystem health;
         private Vector3 safePoint;
         private float nextRecord;
-        private float invulnerableUntil;
-        private bool grantedInvulnerability;
         private int groundMask;
         private bool fallSoundPlayed; // 이번 추락에서 "휘이이잉"을 냈는지 (복귀하거나 땅에 서면 다시)
 
@@ -47,12 +45,6 @@ namespace IBlameYou.Systems
 
         private void Update()
         {
-            if (grantedInvulnerability && Time.time >= invulnerableUntil)
-            {
-                grantedInvulnerability = false;
-                if (!movement.IsDashing) health.Invulnerable = false;
-            }
-
             if (health.IsDead) return;
 
             if (transform.position.y < FloorY + KillY)
@@ -101,9 +93,8 @@ namespace IBlameYou.Systems
             transform.position = safePoint;
             var movement = GetComponent<PlayerMovement>();
             if (movement != null) movement.ResetAirborne();
-            health.Invulnerable = true;
-            grantedInvulnerability = true;
-            invulnerableUntil = Time.time + InvulnerableTime;
+            // 시간 무적으로 준다: 공유 Invulnerable을 켜고 끄면 경직·대쉬·순간이동이 끝나며 이 1초를 먼저 꺼 버린다 (버그 점검 2026-11-22)
+            health.GrantGrace(InvulnerableTime);
             StageEvents.PostNotice(free
                 ? $"모래시계가 시간을 되감았다! 피해 없음 (남은 {FreeFalls}번)"
                 : $"낭떠러지! 체력 -{DamageRatio * 100f:0}%");
