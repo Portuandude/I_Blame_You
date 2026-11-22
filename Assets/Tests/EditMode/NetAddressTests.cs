@@ -42,6 +42,23 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void Ipv6LoopbackAndBracketPortWork()
+        {
+            Assert.IsTrue(NetAddress.TryParse("::1", 27777, out string host, out int port));
+            Assert.AreEqual("::1", host);
+            Assert.AreEqual(27777, port);
+            Assert.IsTrue(NetAddress.TryParse("[fe80::1]:30000", 27777, out host, out port));
+            Assert.AreEqual("fe80::1", host);
+            Assert.AreEqual(30000, port);
+            Assert.IsTrue(NetAddress.TryParse("[::1]", 27777, out host, out port));
+            Assert.AreEqual("::1", host);
+            Assert.AreEqual(27777, port);
+            Assert.IsFalse(NetAddress.TryParse("[::1]:x", 27777, out _, out _));
+            Assert.IsFalse(NetAddress.TryParse("[]:1", 27777, out _, out _));
+            Assert.IsFalse(NetAddress.TryParse("[::1]9", 27777, out _, out _));
+        }
+
+        [Test]
         public void VirtualLanAddressesComeFirst_ThenHome()
         {
             var sorted = AddressRanking.Sort(new[] { "203.0.113.5", "192.168.0.12", "26.10.3.4", "100.101.5.6", "10.0.0.3" });

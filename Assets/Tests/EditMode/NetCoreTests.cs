@@ -105,6 +105,76 @@ namespace IBlameYou.Tests
             Assert.Throws<FormatException>(() => assembler.Push(bad, 0, bad.Length, new List<byte[]>()));
         }
 
+        [Test]
+        public void FrameAssembler_HostLimitRejectsBigFrame_ButClientAcceptsIt()
+        {
+            var header = new byte[] { 0, 0, 8, 0 }; // 512KB
+            Assert.Throws<FormatException>(() =>
+                new FrameAssembler(FrameAssembler.HostMaxFrameBytes).Push(header, 0, header.Length, new List<byte[]>()));
+            Assert.DoesNotThrow(() => new FrameAssembler().Push(header, 0, header.Length, new List<byte[]>()));
+        }
+
+        [Test]
+        public void FrameAssembler_KeepsWorkingAfterBigFrameShrinksBuffer()
+        {
+            var big = new byte[3 * 1024 * 1024];
+            big[big.Length - 1] = 7;
+            var assembler = new FrameAssembler();
+            var frames = new List<byte[]>();
+            var framed = FrameAssembler.Frame(big);
+            assembler.Push(framed, 0, framed.Length, frames);
+            Assert.AreEqual(1, frames.Count);
+            Assert.AreEqual(7, frames[0][big.Length - 1]);
+
+            // 줄어든 뒤에도 반쯤 들어온 메시지를 잇는다
+            var small = FrameAssembler.Frame(new byte[] { 4, 5, 6 });
+            assembler.Push(small, 0, 3, frames);
+            assembler.Push(small, 3, small.Length - 3, frames);
+            Assert.AreEqual(2, frames.Count);
+            CollectionAssert.AreEqual(new byte[] { 4, 5, 6 }, frames[1]);
+        }
+
+        [Test]
+        public void Reader_HugeByteCountThrowsFormatException()
+        {
+            var w = new NetWriter();
+            w.WriteVarUInt(int.MaxValue); // 길이만 적고 내용 없음
+            var bytes = w.ToArray();
+            Assert.Throws<FormatException>(() => new NetReader(bytes).ReadBytes());
+            Assert.Throws<FormatException>(() => new NetReader(bytes).ReadString());
+        }
+
+        [Test]
+        public void Compression_RoundTrips_AndRejectsBomb()
+        {
+            var text = new byte[8000];
+            for (int i = 0; i < text.Length; i++) text[i] = (byte)(i % 7);
+            var packed = NetCompression.MaybeCompress(text);
+            Assert.AreEqual((byte)MsgType.Compressed, packed[0]);
+            CollectionAssert.AreEqual(text, NetCompression.Unwrap(packed));
+
+            // 1MB 0을 줄인 것을 64KB 한도로 풀면 거절
+            var zeros = NetCompression.MaybeCompress(new byte[1024 * 1024]);
+            Assert.Less(zeros.Length, 64 * 1024);
+            Assert.Throws<FormatException>(() => NetCompression.Unwrap(zeros, 64 * 1024));
+        }
+
+        [Test]
+        public void P2Input_NonFiniteValuesKeepPreviousValue()
+        {
+            var good = new P2InputState { MouseX = 0.3f, MouseY = 0.6f, WheelTotal = 4f };
+            var back = new P2InputState();
+            var bytes = good.Write();
+            back.Read(new NetReader(bytes, 1, bytes.Length - 1));
+
+            var bad = new P2InputState { MouseX = float.NaN, MouseY = float.PositiveInfinity, WheelTotal = float.NegativeInfinity };
+            bytes = bad.Write();
+            back.Read(new NetReader(bytes, 1, bytes.Length - 1));
+            Assert.AreEqual(0.3f, back.MouseX);
+            Assert.AreEqual(0.6f, back.MouseY);
+            Assert.AreEqual(4f, back.WheelTotal);
+        }
+
         private static P2InputState RoundTrip(P2InputState s)
         {
             var bytes = s.Write();
