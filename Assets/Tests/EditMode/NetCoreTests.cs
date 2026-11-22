@@ -86,6 +86,23 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void Writer_ToArrayReusesSameLengthBuffer()
+        {
+            var w = new NetWriter();
+            w.WriteByte(1); w.WriteByte(2);
+            var first = w.ToArray();
+            w.Clear(); w.WriteByte(3); w.WriteByte(4);
+            var again = w.ToArray(first);
+            Assert.AreSame(first, again);
+            CollectionAssert.AreEqual(new byte[] { 3, 4 }, again);
+            w.WriteByte(5);
+            var longer = w.ToArray(first);
+            Assert.AreNotSame(first, longer);
+            CollectionAssert.AreEqual(new byte[] { 3, 4, 5 }, longer);
+            Assert.AreEqual(3, w.ToArray(null).Length);
+        }
+
+        [Test]
         public void FrameAssembler_SplitsAndJoinsChunks()
         {
             var a = FrameAssembler.Frame(new byte[] { 1, 2, 3 });
