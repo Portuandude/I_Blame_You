@@ -815,6 +815,26 @@ def rock_shatter():
         out[start:] += 0.18 * osc("sine", note_hz(note), m) * env_exp(m, 0.06)
     return normalize(fade_edges(lowpass(out, 9000)))
 
+def box_slide():
+    """바람 상자가 한 칸 미끄러짐 (2026-11-22): 돌이 바닥을 긁는 "드르륵" (낮은 거친 잡음이 짧게 떨림) + 끝에 멈추는 둔한 "톡", 0.3초."""
+    n = int(0.3 * SR)
+    t = t_axis(0.3)
+    scrape = bandpass(noise(n), 250, 1400) * (0.55 + 0.45 * np.sin(2 * np.pi * 38 * t)) * env_adsr(n, a=0.01, d=0.05, s=0.7, r=0.12)
+    out = scrape * 0.8
+    start = int(0.2 * SR)
+    m = n - start
+    out[start:] += osc("sine", np.linspace(170.0, 90.0, m), m) * env_exp(m, 0.03) * 0.9
+    return normalize(fade_edges(lowpass(out, 6000)))
+
+
+def box_bump():
+    """바람 상자가 못 감 (벽 앞·땅 앞): 둔하고 낮은 "쿵" + 작은 덜컹, 0.25초."""
+    n = int(0.25 * SR)
+    thud = osc("sine", np.linspace(120.0, 60.0, n), n) * env_exp(n, 0.06)
+    rattle = bandpass(noise(n), 600, 2400) * env_exp(n, 0.02) * 0.35
+    return normalize(fade_edges(lowpass(thud + rattle, 5000)))
+
+
 def jelly_squish():
     """젤리 방석으로 버티는 발판: 말랑하게 눌렸다 펴지는 "뭉-뿅" (아래로 처지는 둥근 사인 + 떨림, 끝에 위로 튀는 작은 뿅), 0.5초."""
     n = int(0.5 * SR)
@@ -1814,12 +1834,13 @@ def main():
         "VillageFound": village_found, "ShopBell": shop_bell, "Reroll": reroll,
         "Jingle_Clear": jingle_clear, "Jingle_Defeat": jingle_defeat,
         "PingMark": ping_mark, "NetJoin": net_join,
+        "BoxSlide": box_slide, "BoxBump": box_bump,
     }
     only = [a for a in sys.argv[1:] if not a.startswith("-")]  # 이름을 주면 그 소리만 만든다 (나머지 파일은 그대로)
     if only:
         sfx = {k: v for k, v in sfx.items() if k in only}
     # 소리마다 난수 씨앗을 따로 둬서 한 소리를 고쳐도 다른 소리가 바뀌지 않게 한다.
-    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08, "KingFall": 0.07, "BowTwang": 0.07, "ArrowWhiz": 0.06, "ArrowThunk": 0.07, "SlimeHop": 0.06, "SlimePlop": 0.07, "GoblinSwing": 0.07, "SpikeStab": 0.07, "FlameSizzle": 0.07, "PitFall": 0.08, "PitReturn": 0.08, "GateDeflect": 0.07, "PlatformWake": 0.08, "PlatformSleep": 0.07, "BlinkAppear": 0.06, "BlinkVanish": 0.07, "PlatformStop": 0.06, "MushroomBoing": 0.09, "WindGust": 0.07, "PingMark": 0.08, "NetJoin": 0.09}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
+    soft = {"Cast_Neutral": 0.13, "Jump": 0.1, "Dash": 0.12, "Switch_Tick": 0.08, "Land": 0.11, "SquishHit": 0.12, "StarShard": 0.1, "VampireHeart": 0.09, "Crumble_Back": 0.08, "StoneCrack": 0.09, "JellySquish": 0.1, "JellyDrip": 0.06, "MagnetWhoosh": 0.07, "Coin": 0.08, "CoinPile": 0.09, "Crit": 0.08, "Combo": 0.09, "Notice": 0.07, "EnemyWindup": 0.06, "ShieldUp": 0.09, "ShieldBlock": 0.07, "TrapWarn": 0.08, "FlameHiss": 0.07, "ShopBell": 0.07, "Reroll": 0.08, "Blink": 0.09, "Fizzle": 0.07, "Step": 0.05, "UiClick": 0.06, "BossNear": 0.12, "Heartbeat": 0.1, "Summon": 0.08, "RoomPass": 0.06, "TraitUp": 0.08, "NpcTalk": 0.07, "ChestCreak": 0.09, "RelicSlot": 0.07, "BookOpen": 0.08, "EnrageEnd": 0.09, "BroodTick": 0.07, "TentacleLash": 0.07, "TentacleSlap": 0.08, "KingFall": 0.07, "BowTwang": 0.07, "ArrowWhiz": 0.06, "ArrowThunk": 0.07, "SlimeHop": 0.06, "SlimePlop": 0.07, "GoblinSwing": 0.07, "SpikeStab": 0.07, "FlameSizzle": 0.07, "PitFall": 0.08, "PitReturn": 0.08, "GateDeflect": 0.07, "PlatformWake": 0.08, "PlatformSleep": 0.07, "BlinkAppear": 0.06, "BlinkVanish": 0.07, "PlatformStop": 0.06, "MushroomBoing": 0.09, "WindGust": 0.07, "PingMark": 0.08, "NetJoin": 0.09, "BoxSlide": 0.09, "BoxBump": 0.09}  # 평타처럼 자주 나는 소리는 작고, tanh 압축 없이 부드럽게
     for name, fn in sfx.items():
         reseed(name)
         sound = fn()

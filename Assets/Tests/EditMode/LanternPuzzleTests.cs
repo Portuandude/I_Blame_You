@@ -108,14 +108,15 @@ namespace IBlameYou.Tests
         }
     
         [Test]
-        // 방어막 다리 방은 방어막과 함께 빠졌다 (2026-11-16): 둘째 퍼즐은 등불 순서 · 거울 룬 둘 중 하나
-        public void SecondPuzzleCyclesThroughTwoKinds()
+        // 방어막 다리 방은 방어막과 함께 빠졌다 (2026-11-16). 바람 상자가 더해졌다 (2026-11-22): 둘째 퍼즐은 등불 순서 · 거울 룬 · 바람 상자 셋 중 하나
+        public void SecondPuzzleCyclesThroughThreeKinds()
         {
-            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(2));
-            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(3));
-            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(-1));
+            Assert.AreEqual(ChunkKind.WindBoxPuzzle, RoomLayout.DeductionPuzzle(2));
+            Assert.AreEqual(ChunkKind.LanternPuzzle, RoomLayout.DeductionPuzzle(3));
+            Assert.AreEqual(ChunkKind.WindBoxPuzzle, RoomLayout.DeductionPuzzle(-1));
+            Assert.AreEqual(ChunkKind.MirrorPuzzle, RoomLayout.DeductionPuzzle(-2));
             for (int seed = 0; seed < 20; seed++)
-                Assert.That(RoomLayout.DeductionPuzzle(seed), Is.EqualTo(ChunkKind.LanternPuzzle).Or.EqualTo(ChunkKind.MirrorPuzzle));
+                CollectionAssert.Contains(RoomLayout.SecondPuzzles, RoomLayout.DeductionPuzzle(seed));
             var stage = FeatureTestStage.Build();
             Assert.AreEqual(ChunkKind.Rest, stage.Chunks[FeatureTestStage.TowerArea].Kind);
             Assert.AreEqual("버섯 탑 방", FeatureTestStage.Names[FeatureTestStage.TowerArea]);

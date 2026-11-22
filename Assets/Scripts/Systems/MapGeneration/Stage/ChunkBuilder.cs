@@ -49,6 +49,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.TwinPath: tint = new Color(0.45f, 0.9f, 0.5f, 0.14f); break; // 두 갈래 길: 연두
                 case ChunkKind.MirrorPuzzle:
                 case ChunkKind.LanternPuzzle: tint = new Color(0.12f, 0.1f, 0.3f, 0.45f); break; // 등불 순서 방: 어두운 남색 (켜진 등불이 돋보이게)
+                case ChunkKind.WindBoxPuzzle: tint = new Color(0.45f, 0.95f, 0.8f, 0.16f); break; // 바람 상자 방: 옅은 바람빛 (돌 상자가 돋보이게)
             }
 
             if (!tint.HasValue) return;

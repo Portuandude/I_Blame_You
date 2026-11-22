@@ -93,6 +93,10 @@ public static class StagePreview
                     case FeatureKind.PlatformSwitch: grid[ox + f.X, f.Y] = 'S'; break;
                     case FeatureKind.ElementGate: for (int y = f.Y; y < ChunkData.Height; y++) grid[ox + f.X, y] = 'G'; break;
                     case FeatureKind.Enemy: grid[ox + f.X, f.Y] = EnemyChar(f.Enemy, f.Deferred); break;
+                    case FeatureKind.Lantern: grid[ox + f.X, f.Y] = 'L'; break;       // 등불 (등불 순서·거울 룬)
+                    case FeatureKind.WindBox: grid[ox + f.X, f.Y] = 'B'; break;       // 바람 상자 처음 자리 (2026-11-22)
+                    case FeatureKind.Reward: grid[ox + f.X, f.Y] = 'H'; break;        // 회복 구슬
+                    case FeatureKind.CoinPile: grid[ox + f.X, f.Y] = '$'; break;      // 동전 무더기
                 }
             }
         }

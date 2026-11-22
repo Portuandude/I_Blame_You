@@ -95,8 +95,13 @@ namespace IBlameYou.Systems
                 // 플레이어 마법이 봉인문 같은 속성 장치에 맞으면 속성을 전달한다 (적이 쏜 화살은 제외).
                 if (hitsEnemies)
                 {
-                    var receiver = wall.collider.GetComponentInParent<IElementReceiver>();
-                    if (receiver != null) receiver.ReceiveElement(element);
+                    var pushed = wall.collider.GetComponentInParent<IElementPushReceiver>(); // 바람 상자: 날아온 방향도 넘긴다
+                    if (pushed != null) pushed.ReceiveElement(element, velocity);
+                    else
+                    {
+                        var receiver = wall.collider.GetComponentInParent<IElementReceiver>();
+                        if (receiver != null) receiver.ReceiveElement(element);
+                    }
                 }
                 Impact?.Invoke(wall.point);
                 Destroy(gameObject);

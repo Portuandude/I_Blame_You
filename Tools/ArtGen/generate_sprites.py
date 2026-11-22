@@ -1510,6 +1510,41 @@ def generate_rune_switch():
             img.save(os.path.join(folder, f"{i:02d}.png"))
 
 
+def wind_box_sprite():
+    """바람 상자 퍼즐의 돌 상자 (가로 100 × 세로 100 = 1 × 1유닛, 중앙 피벗, 2026-11-22).
+    통통한 둥근 모서리 돌 + 위 빛 + 아래 그늘 + 네 귀 금속 징. 가운데는 비워 두고 게임이 바람 문양(RuneSigil_Wind)을 얹는다.
+    양옆에 바람 홈(갈고리 세 줄)을 새겨 "바람으로 미는 것"이라는 모양 신호."""
+    w, h = 100, 100
+    img = blank(w, h)
+    d = ImageDraw.Draw(img)
+    S = SS
+    stone, light, dark = rgba("#7d8796"), rgba("#a9b4c2"), rgba("#555d6b")
+    d.rounded_rectangle([2 * S, 2 * S, 98 * S, 98 * S], radius=16 * S, fill=OUTLINE)
+    d.rounded_rectangle([7 * S, 7 * S, 93 * S, 93 * S], radius=12 * S, fill=stone)
+    d.rounded_rectangle([11 * S, 10 * S, 89 * S, 26 * S], radius=8 * S, fill=light)   # 윗면 빛
+    d.rounded_rectangle([11 * S, 78 * S, 89 * S, 90 * S], radius=6 * S, fill=dark)    # 아래 그늘
+    # 가운데 문양 받침 (어두운 둥근 홈)
+    dot(d, 50 * S, 52 * S, 26 * S, OUTLINE)
+    dot(d, 50 * S, 52 * S, 23 * S, dark)
+    # 양옆 바람 홈: 짧은 가로 줄 셋 (끝이 살짝 말린다)
+    for side in (-1, 1):
+        for i, y in enumerate((38, 52, 66)):
+            x0 = 50 + side * 30
+            x1 = 50 + side * (41 - (i % 2) * 3)
+            d.line([(x0 * S, y * S), (x1 * S, y * S)], fill=(235, 255, 250, 210), width=3 * S)
+    # 네 귀 징
+    for x, y in ((16, 16), (84, 16), (16, 84), (84, 84)):
+        dot(d, x * S, y * S, 5 * S, OUTLINE)
+        dot(d, x * S, y * S, 3 * S, rgba("#d8dee8"))
+    return finish(img, w, h)
+
+
+def generate_wind_box():
+    folder = os.path.join(ROOT, "Assets", "Resources", "Stage", "WindBox")
+    os.makedirs(folder, exist_ok=True)
+    wind_box_sprite().save(os.path.join(folder, "00.png"))
+
+
 def generate_stage_art():
     base = os.path.join(ROOT, "Assets", "Resources", "Stage")
     sets = {
@@ -1532,6 +1567,7 @@ def generate_stage_art():
         "RuneSwitch": [rune_switch_sprite()],
         "RuneSwitchGlow": rune_switch_glow_frames(),
         "RuneArrow": [rune_arrow_sprite()],
+        "WindBox": [wind_box_sprite()],
     }
     for name, frames in sets.items():
         folder = os.path.join(base, name)
@@ -1610,6 +1646,10 @@ if __name__ == "__main__":
     if "--switch" in sys.argv:  # 마법 스위치 룬 그림만
         generate_rune_switch()
         print("switch done")
+        sys.exit(0)
+    if "--windbox" in sys.argv:  # 바람 상자 그림만 (2026-11-22)
+        generate_wind_box()
+        print("windbox done")
         sys.exit(0)
     if "--goblins" in sys.argv:  # 고블린 4종 그림만 (모든 프레임 + 경직)
         generate_goblins()

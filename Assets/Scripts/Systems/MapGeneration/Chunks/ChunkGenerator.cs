@@ -52,6 +52,7 @@ namespace IBlameYou.Systems
                 case ChunkKind.Rest: BuildRest(chunk, heights); break;
                 case ChunkKind.LanternPuzzle: BuildLanternPuzzle(chunk, heights, rng); break;
                 case ChunkKind.MirrorPuzzle: BuildMirrorPuzzle(chunk, heights, rng); break;
+                case ChunkKind.WindBoxPuzzle: BuildWindBoxPuzzle(chunk, heights, rng); break;
                 case ChunkKind.Boss: BuildBoss(chunk, heights); break;
                 default: Flat(heights, entryHeight); break;
             }
@@ -76,6 +77,7 @@ namespace IBlameYou.Systems
             if (kind == ChunkKind.Start) chunk.AddFeature(FeatureKind.PlayerStart, 4, entryHeight);
             if (kind == ChunkKind.LanternPuzzle) AddLanternPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0))); // 대체 청크에도 퍼즐은 둔다
             if (kind == ChunkKind.MirrorPuzzle) AddMirrorPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0)));
+            if (kind == ChunkKind.WindBoxPuzzle) AddWindBoxPuzzle(chunk, entryHeight, new Random(Hash(index, 7, 0)));
             chunk.ExitHeight = entryHeight;
             return chunk;
         }
@@ -923,6 +925,41 @@ namespace IBlameYou.Systems
                 });
             chunk.AddFeature(FeatureKind.MirrorMural, MirrorCenterX, ground);
             chunk.AddFeature(FeatureKind.PuzzleChest, MirrorChestX, ground);
+        }
+
+        // 퍼즐 방 "바람 상자" (2026-11-22, Docs/PuzzleRoomDesign.md 2절 4번, 기본안 = 칸 단위로 미는 상자):
+        // 평지 한쪽 위에 걸린 한쪽 발판 선반(서는 칸 = 바닥 + WindLedgeRise)에 회복 구슬 + 동전 무더기. 걷기 점프(약 2.45칸)로는 못 오른다.
+        // 반대쪽 바닥에 돌 상자 하나: B의 바람 마법에 맞으면 맞은 반대쪽으로 한 칸 미끄러진다 (WindBoxRules).
+        // 상자를 선반 아래나 바로 옆까지 밀면 A가 상자 위(바닥 + 1)에서 뛰어 선반에 오른다. 선반 둘레는 마력 안개라 순간이동·대시로 못 건너뛴다.
+        // 선반은 한쪽 발판이라 아래로 걸어 지나가고, 상자가 선반 밑에 들어가도 길을 막지 않는다 (상자 1칸 + 위가 발판).
+        // 상자 없이도 방은 지나갈 수 있다 (검증기는 상자를 무시). 선반이 왼쪽/오른쪽인지는 시드로.
+        public const int WindLedgeWidth = 4;
+        public const int WindLedgeRise = 3;      // 선반 위 서는 칸 = 바닥 + 3 (발판 행 = 바닥 + 2)
+        public const int WindLedgeRightX0 = 20;  // 오른쪽 선반의 왼쪽 열 (왼쪽 선반은 좌우 거울 자리)
+        public const int WindBoxStartGap = 7;    // 상자 처음 자리 = 선반 가까운 끝에서 이만큼 떨어진 열 (바람 6번이면 선반 옆)
+        public const int WindWardMargin = 5;     // 선반 양옆 마력 안개 폭 (순간이동 4칸 + 낙하 중 옆으로 흐르는 거리(약 2.3칸)보다 넉넉히. 4면 여유 0.8칸뿐이라 5)
+
+        public static int WindLedgeX0(bool right) => right ? WindLedgeRightX0 : W - WindLedgeRightX0 - WindLedgeWidth;
+
+        private static void BuildWindBoxPuzzle(ChunkData chunk, int[] heights, Random rng)
+        {
+            int ground = chunk.EntryHeight;
+            Flat(heights, ground);
+            ApplyHeights(chunk, heights);
+            AddWindBoxPuzzle(chunk, ground, rng);
+        }
+
+        private static void AddWindBoxPuzzle(ChunkData chunk, int ground, Random rng)
+        {
+            bool right = rng.Next(2) == 0;
+            int x0 = WindLedgeX0(right);
+            int x1 = x0 + WindLedgeWidth - 1;
+            chunk.SetRow(x0, x1, ground + WindLedgeRise - 1, StageTile.Platform);
+            chunk.AddFeature(FeatureKind.BlinkWard, x0 - WindWardMargin, 0, WindLedgeWidth + 2 * WindWardMargin);
+            chunk.AddFeature(FeatureKind.Reward, x0 + 1, ground + WindLedgeRise);
+            chunk.AddFeature(FeatureKind.CoinPile, x0 + 2, ground + WindLedgeRise);
+            int boxX = right ? x0 - WindBoxStartGap : x1 + WindBoxStartGap;
+            chunk.AddFeature(FeatureKind.WindBox, boxX, ground, WindLedgeWidth, x0);
         }
 
         // 0 ~ count-1을 섞은 배열 (Fisher-Yates).

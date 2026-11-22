@@ -24,7 +24,7 @@
 | 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+(좌우 2+)·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
 | 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환·보상), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |
 | 함정·발판 | `Systems/Traps/` |
-| 퍼즐 (봉인문) | `Puzzles/ElementGate.cs` |
+| 퍼즐 (봉인문·등불 순서/거울 룬·바람 상자) | `Puzzles/` — `ElementGate`, `LanternPuzzle`·`LanternLight`, `WindBox`(규칙 `Chunks/WindBoxRules`, 투사체 방향 `Combat/IElementPushReceiver`). 지형은 `ChunkGenerator.Add*Puzzle`, 불러오기 `ChunkStreamer` |
 | 적 공통 | `Enemies/EnemyController.cs`(체력·경직·접촉 피해), `EnemySpawner.cs`(조립 헬퍼) |
 | 적 종류 | `Enemies/Common/{Slime,Goblin,GoblinArcher}`, `Enemies/Elite/{MotherSlime,GoblinWarrior}`, 보스 `Enemies/Bosses/SlimeKing`, 중간보스 `Enemies/Bosses/SlimeKnights`·`Enemies/Bosses/PrismJelly`(패턴 `JellyPatterns`, 위험물 `JellyHazards`, 규칙 `Stats/Formula/PrismJellyRules`) — 각 폴더의 `*Spawner`가 구성의 단일 출처 |
 | 수치 | `Systems/Stats/StatTable.cs`(스탯 문서 값), `DamageCalculator.cs`(피해·`IDamageModifier`), `Formula/`(상성, 순수 C#) |
