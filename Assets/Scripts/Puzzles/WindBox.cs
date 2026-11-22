@@ -114,7 +114,7 @@ namespace IBlameYou.Puzzles
             if (next == column || Occupied(next))
             {
                 // 못 간다: 상자가 살짝 떨고 "쿵"
-                GameAudio.PlaySfx("ArrowThunk", 0.5f);
+                GameAudio.PlaySfx("BoxBump", 0.6f);
                 StartCoroutine(Shake(dir));
                 return;
             }
@@ -124,7 +124,8 @@ namespace IBlameYou.Puzzles
             slideTo = CellCenter(next);
             slideStart = Time.time;
             sliding = true;
-            GameAudio.PlaySfx("WindGust", 0.45f);
+            GameAudio.PlaySfx("WindGust", 0.35f);
+            GameAudio.PlaySfx("BoxSlide", 0.6f); // 돌이 바닥을 긁는 "드르륵-톡"
             moved?.Invoke(column);
         }
 
