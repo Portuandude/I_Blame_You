@@ -64,7 +64,7 @@ namespace IBlameYou.Systems
         public void AddMax(float amount, bool fillCurrent = true)
         {
             maxHealth += amount;
-            SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
+            SetCurrent(fillCurrent && !IsDead ? current + Mathf.Max(amount, 0f) : current); // 쓰러진 뒤에는 채우지 않는다 (Heal과 같게). fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
         // 최대/현재 체력을 한꺼번에 정한다 (보스 분열처럼 체력을 나눠 가질 때).
