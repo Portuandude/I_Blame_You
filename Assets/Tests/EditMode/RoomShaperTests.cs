@@ -607,8 +607,17 @@ namespace IBlameYou.Tests
                     foreach (var f in geometry.Chunk.Features)
                     {
                         if (f.Kind != FeatureKind.Reward) continue;
-                        shelves++;
                         string where = $"seed {seed} room {room.Index}";
+                        if (room.Chunk == ChunkKind.WindBoxPuzzle)
+                        {
+                            // 바람 상자 선반의 회복 구슬 (2026-11-22): 상자 없이 걷기·점프로는 닿지 않는다
+                            string windReason;
+                            Assert.IsFalse(StageValidator.ValidateRoom(geometry.Chunk, new List<(int x, int y)>(geometry.Arrivals.Values),
+                                new List<(int x, int y)> { (f.X, f.Y) }, out windReason), $"{where}: 바람 상자 선반이 상자 없이 닿는다");
+                            StringAssert.Contains("가는 길이 없음", windReason, where);
+                            continue;
+                        }
+                        shelves++;
                         Assert.IsTrue(RoomShaper.IsShaftFightRoom(room), where);
                         Assert.AreEqual(DoorDir.None, room.Doors & DoorDir.Up, where);
                         Assert.AreEqual(StageTile.Platform, geometry.Chunk.Tiles[f.X, f.Y - 1], where);
