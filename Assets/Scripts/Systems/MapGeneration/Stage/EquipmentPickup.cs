@@ -60,10 +60,23 @@ namespace IBlameYou.Systems
         private void SetItem(EquipmentItem value)
         {
             item = value;
-            var tex = Resources.Load<Texture2D>("UI/HUD/Equipment/" + value.Id);
-            if (tex == null) return;
+            var sprite = IconSprite(value.Id);
+            if (sprite != null) icon.sprite = sprite;
+        }
+
+        // 장비 그림은 장비마다 한 번만 만든다 (떨어질 때마다 Sprite가 쌓이지 않게)
+        private static readonly System.Collections.Generic.Dictionary<EquipmentId, Sprite> iconSprites =
+            new System.Collections.Generic.Dictionary<EquipmentId, Sprite>();
+
+        private static Sprite IconSprite(EquipmentId id)
+        {
+            if (iconSprites.TryGetValue(id, out var cached) && cached != null) return cached;
+            var tex = Resources.Load<Texture2D>("UI/HUD/Equipment/" + id);
+            if (tex == null) return null;
             tex.filterMode = FilterMode.Point;
-            icon.sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width); // 1유닛
+            var sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width); // 1유닛
+            iconSprites[id] = sprite;
+            return sprite;
         }
 
         // 방금 생긴 자리에 플레이어가 가만히 서 있으면(Rigidbody 수면) Enter가 오지 않을 수 있어, 처음 한 번 직접 겹침을 본다 (RelicChest와 같음).
