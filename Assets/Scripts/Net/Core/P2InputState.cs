@@ -66,12 +66,17 @@ namespace IBlameYou.Net
             return w.ToArray();
         }
 
+        // 이상한 값이면 앞의 값을 그대로 쓴다
+        private static float Finite(float value, float previous) =>
+            float.IsNaN(value) || float.IsInfinity(value) ? (float.IsNaN(previous) || float.IsInfinity(previous) ? 0f : previous) : value;
+
         // 첫 바이트(MsgType)는 이미 읽은 reader
         public void Read(NetReader r)
         {
             Sequence = r.ReadVarUInt();
-            MouseX = r.ReadFloat();
-            MouseY = r.ReadFloat();
+            // 깨졌거나 일부러 만든 NaN·무한대가 조준·카메라 계산으로 번지지 않게 (버그 점검 2026-11-22)
+            MouseX = Finite(r.ReadFloat(), MouseX);
+            MouseY = Finite(r.ReadFloat(), MouseY);
             byte flags = r.ReadByte();
             MouseInside = (flags & 1) != 0;
             for (int i = 0; i < ButtonCount; i++) ButtonHeld[i] = (flags & (2 << i)) != 0;
@@ -80,7 +85,7 @@ namespace IBlameYou.Net
                 ButtonPresses[i] = r.ReadUInt16();
                 ButtonReleases[i] = r.ReadUInt16();
             }
-            WheelTotal = r.ReadFloat();
+            WheelTotal = Finite(r.ReadFloat(), WheelTotal);
             uint keyBits = r.ReadVarUInt();
             for (int i = 0; i < KeyCount; i++) KeyHeld[i] = (keyBits & (1u << i)) != 0;
             for (int i = 0; i < KeyCount; i++) KeyPresses[i] = r.ReadUInt16();
