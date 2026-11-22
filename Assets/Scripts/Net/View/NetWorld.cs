@@ -16,6 +16,7 @@ namespace IBlameYou.Net
         private readonly List<int> removed = new List<int>();
         private readonly NetWriter message = new NetWriter(16 * 1024);
         private readonly NetWriter piece = new NetWriter(256);
+        private readonly NetWriter body = new NetWriter(8 * 1024); // 바뀐 조각 모음 (Capture마다 Clear)
         private Vector3[] points = new Vector3[64];
         private int changedCount;
 
@@ -38,7 +39,7 @@ namespace IBlameYou.Net
 
             seen.Clear();
             changedCount = 0;
-            var body = new NetWriter(8 * 1024);
+            body.Clear(); // 프레임마다 새로 만들지 않고 다시 쓴다 (호스트 쓰레기 줄이기)
 
             foreach (var r in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
@@ -88,7 +89,7 @@ namespace IBlameYou.Net
         {
             seen.Add(id);
             if (lastSent.TryGetValue(id, out var previous) && piece.SameAs(previous)) return;
-            lastSent[id] = piece.ToArray();
+            lastSent[id] = piece.ToArray(previous); // 길이가 같으면 지난 배열에 덮어쓴다 (움직이는 조각은 매 프레임 바뀐다)
             body.WriteVarInt(id);
             body.WriteByte((byte)kind);
             body.WriteRaw(piece);
