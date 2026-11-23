@@ -28,6 +28,7 @@ namespace IBlameYou.Core
         private Vector2 recordScroll;
         private bool recordsTogglePending;
         private readonly DisplaySettingsWindow display = new DisplaySettingsWindow(); // 화면 설정 창 (일시정지 메뉴와 같은 창)
+        private readonly KeyBindingsWindow keys = new KeyBindingsWindow(); // P1 조작 키 창 (일시정지 메뉴와 같은 창)
         private readonly RelicCodexWindow codex = new RelicCodexWindow(); // 유물 도감 창 (C 또는 도감 줄 클릭). 게임 중에도 같은 창 (SkillHUD.Codex)
         private readonly OnlineWindow online = new OnlineWindow(); // 온라인 2인 창 (호스트 하기 / 참가하기)
         private GUIStyle button;
@@ -99,17 +100,17 @@ namespace IBlameYou.Core
             GUI.Box(area, GUIContent.none, panel); // 두 겹으로 덜 비치게 (HUD 창과 같은 방식)
 
             var e = Event.current;
-            if (!display.IsOpen && !online.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
+            if (!display.IsOpen && !keys.IsOpen && !online.IsOpen && e.type == EventType.KeyDown && (e.keyCode == KeyCode.C || (codex.IsOpen && e.keyCode == KeyCode.Escape)))
             {
                 if (e.keyCode == KeyCode.C && !codex.IsOpen) codex.Show(devMode); // 다시 열면 고른 칸 없이, 메뉴 토글 모드로 시작
                 else codex.Close(true); // 사람이 닫으면 "통"
                 e.Use();
             }
-            if (!display.IsOpen && !codex.IsOpen && !online.IsOpen) HandleMenuKeys(e);
+            if (!display.IsOpen && !keys.IsOpen && !codex.IsOpen && !online.IsOpen) HandleMenuKeys(e);
             else if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
                 activateKeyHeld = false; // 창이 열린 동안 뗐어도 풀어 둔다 (닫은 뒤 첫 Enter가 무시되지 않게, 리뷰 LOW)
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = !codex.IsOpen && !display.IsOpen && !online.IsOpen; // 도감·화면 설정·온라인 창이 열려 있으면 뒤 메뉴는 누를 수 없게
+            GUI.enabled = !codex.IsOpen && !display.IsOpen && !keys.IsOpen && !online.IsOpen; // 도감·화면 설정·조작 키·온라인 창이 열려 있으면 뒤 메뉴는 누를 수 없게
 
             GUILayout.BeginArea(new Rect(area.x + 24f, area.y + 16f, width - 48f, height - 32f));
             DrawTitle(GUILayoutUtility.GetRect(width - 48f, 60f, GUILayout.Height(60f)));
@@ -132,6 +133,7 @@ namespace IBlameYou.Core
                 codex.Show(devMode);
             }
             GUILayout.FlexibleSpace();
+            if (IBlameYou.UI.CuteButton.LayoutButton("조작 키", recordSmall)) keys.Show();
             if (IBlameYou.UI.CuteButton.LayoutButton("화면 설정", recordSmall)) display.Show();
             GUILayout.EndHorizontal();
             DrawTip(width - 48f);
@@ -179,11 +181,12 @@ namespace IBlameYou.Core
             GUI.enabled = wasEnabled;
             GUI.matrix = screenMatrix;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
-            bool displayWasOpen = display.IsOpen;
+            bool displayWasOpen = display.IsOpen || keys.IsOpen;
             display.Draw(panel, body, button);
+            keys.Draw(panel, body, button);
             online.Draw(panel, body, button);
             // 화면 설정 창을 Enter·Space로 닫고 그 키를 누르고 있으면, 키 반복이 뒤 메뉴 버튼을 누르지 않게 (리뷰 LOW)
-            if (displayWasOpen && !display.IsOpen && (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter) || Input.GetKey(KeyCode.Space)))
+            if (displayWasOpen && !display.IsOpen && !keys.IsOpen && (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter) || Input.GetKey(KeyCode.Space)))
                 activateKeyHeld = true;
         }
 
@@ -430,7 +433,7 @@ namespace IBlameYou.Core
                 tipAdvancePending = true;
         }
 
-        private static string TipLabel(int index) => $"오늘의 팁 · {Tips[index]} ▸";
+        private static string TipLabel(int index) => $"오늘의 팁 · {Tips[index].Replace("{TELEPORT}", IBlameYou.Player.KeyBindings.TeleportKeys)} ▸";
 
         private float TipMaxHeight(float innerWidth)
         {
@@ -445,7 +448,7 @@ namespace IBlameYou.Core
         private static readonly string[] Tips =
         {
             "B가 마법진을 50% 이하로 그리면 마나만 날아간다. 90% 이상이면 피해가 커진다",
-            "순간이동은 W/A/S/D+Enter. 아래로 가면 발판을 뚫고 내려간다",
+            "순간이동은 {TELEPORT}. 아래로 가면 발판을 뚫고 내려간다", // {TELEPORT} = 지금 P1 키 (TipLabel)
             "안 가 본 방 문 앞에는 금빛 마름모가 반짝인다",
             "마을은 스테이지마다 하나. 식당에서 배를 채우고 상점에서 장비를 산다",
             "C를 누르면 게임 중에도 유물 도감을 볼 수 있다",
@@ -533,14 +536,18 @@ namespace IBlameYou.Core
             return line;
         }
 
-        private const string DevModeHelp =
-            "A  이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
+        // P1 줄은 지금 조작 키로 (KeyBindings, 기본값이면 예전 문구와 같은 키 이름)
+        private static string P1KeysLine =>
+            $"이동 {IBlameYou.Player.KeyBindings.MoveKeys} · 점프 {IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Jump)} · 달리기 {IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Run)} · 대쉬 {IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Dash)} · 순간이동 {IBlameYou.Player.KeyBindings.TeleportKeys}";
+
+        private static string DevModeHelp =>
+            "A  " + P1KeysLine + "\n" +
             "B  평타 마우스 좌클릭 (마우스 쪽으로)\n" +
             "B  공격 스킬 상단 1~4 또는 6~9 (불/물/바람/땅) 마법진 없이 즉시 발동\n" +
             "치트  F1 무적 · F2 마나 무한 · F3 방 안의 적 처치 · F4 체력 회복";
 
-        private const string NormalModeHelp =
-            "P1(A)  키보드: 이동 A/D · 점프 Space · 달리기 Shift · 대쉬 Left Ctrl · 순간이동 W/A/S/D+Enter\n" +
+        private static string NormalModeHelp =>
+            "P1(A)  키보드: " + P1KeysLine + "\n" +
             "P2(B)  마우스: 평타 좌클릭\n" +
             "P2(B)  공격 스킬 우클릭 꾹 → 다이얼에서 고르고 떼기(또는 휠+우클릭, 상단 1~4) → 화면의 마법진을 하얀 점부터 좌클릭 꾹 한 번에 따라 그리기 (떼면 판정, 50% 이하면 마나만 소모, 우클릭 취소)\n" +
             "P2가 마법진을 그리는 동안에도 게임은 그대로 흐르고 P1은 계속 움직일 수 있다.";
