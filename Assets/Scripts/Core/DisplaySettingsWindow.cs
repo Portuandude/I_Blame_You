@@ -13,6 +13,7 @@ namespace IBlameYou.Core
     // - 제목 아래 "지금: 해상도 · 창 모드", 지금 값과 다르게 고른 줄 왼쪽에 금색 점.
     // - 해상도 맨 끝이면 ◀/▶가 흐려지고, 키로 더 밀면 값 글자가 좌우로 흔들리며 Fizzle.
     // - 적용하면 "적용됨!" 금색 띠가 잠깐 보이고 닫힌다 (바뀐 것이 없으면 바로 닫힘). 그동안은 입력을 받지 않는다.
+    // - 눈 편의 (2026-11-23): "화면 흔들림"·"번쩍임" 0~100% (25% 단위, ComfortSettings). 이것만 바꿨으면 해상도는 다시 적용하지 않는다.
     // 시간은 모두 Time.unscaledTime (일시정지 중 timeScale 0).
     public class DisplaySettingsWindow
     {
@@ -26,15 +27,20 @@ namespace IBlameYou.Core
         private const float BumpTime = 0.3f;      // 끝 값 흔들림
         private const float AppliedTime = 0.55f;  // "적용됨!" 띠가 보이는 시간 (그 뒤 닫힘)
 
-        // 키보드 줄: 해상도 · 창 모드 · 적용 · 닫기
+        // 키보드 줄: 해상도 · 창 모드 · 화면 흔들림 · 번쩍임 · 적용 · 닫기
         private const int RowResolution = 0;
         private const int RowMode = 1;
-        private const int RowApply = 2;
-        private const int RowClose = 3;
-        private const int RowCount = 4;
+        private const int RowShake = 2;
+        private const int RowFlash = 3;
+        private const int RowApply = 4;
+        private const int RowClose = 5;
+        private const int RowCount = 6;
 
         private int resolution;
         private int mode;
+        private int shake;   // %
+        private int flash;   // %
+        private int bumpRow = RowResolution; // 끝 값 흔들림을 보일 줄
 
         private float openedAt = -10f;
         private int openedFrame = -1;
@@ -54,6 +60,8 @@ namespace IBlameYou.Core
             IsOpen = true;
             resolution = DisplaySettings.Resolution;
             mode = DisplaySettings.Mode;
+            shake = ComfortSettings.ShakePercent;
+            flash = ComfortSettings.FlashPercent;
             openedAt = Time.unscaledTime;
             openedFrame = Time.frameCount;
             keyboard = false;
@@ -96,7 +104,7 @@ namespace IBlameYou.Core
             GUI.color = previous;
 
             const float width = 440f;
-            const float height = 324f;
+            const float height = 324f + 2f * PercentRowStep; // 눈 편의 두 줄
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
             var previousMatrix = GUI.matrix;
             float pop = PopScale(open);
@@ -131,7 +139,7 @@ namespace IBlameYou.Core
             if (CuteButton.Button(right, "▶", button)) at = Mathf.Min(available.Count - 1, at + 1);
             GUI.enabled = enabled;
             resolution = available[at];
-            var valueRect = new Rect(rect.x + 164f + BumpOffset(now), y, 184f, 36f);
+            var valueRect = new Rect(rect.x + 164f + BumpOffset(now, RowResolution), y, 184f, 36f);
             GUI.Label(valueRect, DisplayRules.ResolutionName(resolution), center);
             if (ShowSelection(RowResolution)) CuteButton.DrawSelection(new Rect(left.x, y, right.xMax - left.x, 36f));
 
@@ -147,7 +155,13 @@ namespace IBlameYou.Core
                 if (CuteButton.Button(modeRect, label, button)) mode = i;
             }
 
+            // 눈 편의 줄 (화면 흔들림 · 번쩍임)
             y += 56f;
+            shake = PercentRow(rect, y, RowShake, "화면 흔들림", shake, ComfortSettings.ShakePercent, body, button, center, now);
+            y += PercentRowStep;
+            flash = PercentRow(rect, y, RowFlash, "번쩍임", flash, ComfortSettings.FlashPercent, body, button, center, now);
+            y += PercentRowStep;
+
             GUI.Label(new Rect(rect.x + 24f, y, rect.width - 48f, 40f),
                 "화면 비율은 16:9로 고정 (창 비율이 다르면 검은 띠). 테두리 없는 창은 모니터 해상도로 보일 수 있다. 에디터에서는 해상도·창 모드가 바뀌지 않는다",
                 note);
@@ -167,6 +181,42 @@ namespace IBlameYou.Core
         }
 
         private bool ShowSelection(int row) => keyboard && !Applying && selection == row;
+
+        private const float PercentRowStep = 44f;
+
+        // 0~100% 줄 (◀ 값 ▶). 바뀐 값을 돌려준다.
+        private int PercentRow(Rect rect, float y, int row, string label, int value, int saved, GUIStyle body, GUIStyle button, GUIStyle center, float now)
+        {
+            if (value != saved) DrawChangedDot(rect.x + 12f, y + 18f);
+            GUI.Label(new Rect(rect.x + 24f, y, 130f, 36f), label, body);
+            var left = new Rect(rect.x + 164f, y, 44f, 36f);
+            var right = new Rect(rect.x + 348f, y, 44f, 36f);
+            bool enabled = GUI.enabled;
+            GUI.enabled = enabled && value > 0;
+            if (CuteButton.Button(left, "◀", button)) value = Mathf.Max(0, value - ComfortSettings.Step);
+            GUI.enabled = enabled && value < 100;
+            if (CuteButton.Button(right, "▶", button)) value = Mathf.Min(100, value + ComfortSettings.Step);
+            GUI.enabled = enabled;
+            GUI.Label(new Rect(rect.x + 208f + BumpOffset(now, row), y, 140f, 36f), value == 0 ? "끔" : $"{value}%", center);
+            if (ShowSelection(row)) CuteButton.DrawSelection(new Rect(left.x, y, right.xMax - left.x, 36f));
+            return value;
+        }
+
+        // ←→로 % 줄 바꾸기. 끝이면 흔들림 + Fizzle.
+        private int StepPercent(int value, int dir, int row)
+        {
+            int next = value + dir * ComfortSettings.Step;
+            if (next < 0 || next > 100)
+            {
+                bumpAt = Time.unscaledTime;
+                bumpDir = dir;
+                bumpRow = row;
+                GameAudio.PlaySfx("Fizzle", 0.4f, 0.04f);
+                return value;
+            }
+            GameAudio.PlaySfx("UiClick", 0.5f, 0.04f);
+            return next;
+        }
 
         // 키보드 처리. at = 지금 고른 해상도의 available 안 번호.
         private void HandleKeys(Event e, int count, ref int at)
@@ -222,6 +272,7 @@ namespace IBlameYou.Core
                         {
                             bumpAt = Time.unscaledTime;
                             bumpDir = horizontal;
+                            bumpRow = RowResolution;
                             GameAudio.PlaySfx("Fizzle", 0.4f, 0.04f);
                         }
                         else
@@ -233,6 +284,12 @@ namespace IBlameYou.Core
                     case RowMode:
                         mode = (mode + horizontal + DisplayRules.ModeNames.Length) % DisplayRules.ModeNames.Length;
                         GameAudio.PlaySfx("UiClick", 0.5f, 0.04f);
+                        break;
+                    case RowShake:
+                        shake = StepPercent(shake, horizontal, RowShake);
+                        break;
+                    case RowFlash:
+                        flash = StepPercent(flash, horizontal, RowFlash);
                         break;
                     default:
                         selection = selection == RowApply ? RowClose : RowApply;
@@ -249,20 +306,22 @@ namespace IBlameYou.Core
                 activateHeld = true;
                 GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
                 if (selection == RowClose) Close(true);
-                else Apply(); // 해상도·창 모드 줄에서 Enter도 적용
+                else Apply(); // 해상도·창 모드·눈 편의 줄에서 Enter도 적용
             }
         }
 
         private void Apply()
         {
             if (Applying) return;
-            bool changed = resolution != DisplaySettings.Resolution || mode != DisplaySettings.Mode;
-            if (!changed)
+            bool screenChanged = resolution != DisplaySettings.Resolution || mode != DisplaySettings.Mode;
+            bool comfortChanged = shake != ComfortSettings.ShakePercent || flash != ComfortSettings.FlashPercent;
+            if (!screenChanged && !comfortChanged)
             {
                 Close();
                 return;
             }
-            DisplaySettings.Set(resolution, mode);
+            if (comfortChanged) ComfortSettings.Set(shake, flash);
+            if (screenChanged) DisplaySettings.Set(resolution, mode); // 눈 편의만 바꿨으면 창을 다시 만들지 않는다
             appliedAt = Time.unscaledTime;
             GameAudio.PlaySfx("RelicSlot", 0.5f, 0.03f);
         }
@@ -278,8 +337,9 @@ namespace IBlameYou.Core
         }
 
         // 끝 값에서 더 밀었을 때 값 글자 좌우 흔들림 (민 쪽으로 먼저).
-        private float BumpOffset(float now)
+        private float BumpOffset(float now, int row)
         {
+            if (row != bumpRow) return 0f;
             float t = now - bumpAt;
             if (t < 0f || t >= BumpTime) return 0f;
             float fade = 1f - t / BumpTime;

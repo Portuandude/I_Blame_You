@@ -119,7 +119,7 @@ namespace IBlameYou.Core
             {
                 shakeTimeRemaining -= Time.deltaTime;
                 float falloff = Mathf.Clamp01(shakeTimeRemaining / currentShakeDuration);
-                shake = (Vector3)(Random.insideUnitCircle * (currentShakeMagnitude * falloff));
+                shake = (Vector3)(Random.insideUnitCircle * (currentShakeMagnitude * falloff * ComfortSettings.ShakeScale)); // 화면 설정 "화면 흔들림" %
             }
 
             transform.position = followPosition + shake;
