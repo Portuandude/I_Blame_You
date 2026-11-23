@@ -2,6 +2,12 @@
 
 최신 실행이 맨 위. 최근 3개만 두고 오래된 기록은 [LOG_ARCHIVE.md](LOG_ARCHIVE.md)로 옮긴다.
 
+## 2026-11-23 06:33 UTC
+- 브랜치/PR: `claude/project-thread-8m1tv0` → #132 (develop 대상, 자동 머지 켬)
+- 완료 (백로그는 사람 확인 대기뿐): ① 프레임·틱마다 새 배열을 만들던 겹침 조회 정리 — 새 `Systems/Combat/OverlapQuery`(OverlapBoxAll/CircleAll과 같은 레이어·트리거 결과를 부르는 쪽 목록에 담음). 불꽃 장막·물안개, 쌍둥이 기사 돌진, 슬라임 킹 박치기·촉수, 슬라임 도약, 프리즘 젤리 위험물 4종. 적대적 리뷰 APPROVE
+- 실패/보류: 오래된 스크립트 20여 개(.cs)에 저장소 .meta가 없다 (`SkillHUD.Boss`·`Traits`, `ChunkStreamer`, `SlimeKingController` 등). 사람 PC의 Unity가 이미 만든 .meta와 GUID가 달라 pull이 막힐 수 있어 일부러 추가하지 않음
+- 다음 실행 메모: 남은 백로그는 사람 확인 대기. 계속 다듬기·점검
+
 ## 2026-11-23 01:34 UTC
 - 브랜치/PR: `claude/project-thread-bv1pk2` → #131 (develop 대상, 자동 머지 켬)
 - 완료 (성능 점검, 백로그는 사람 확인 대기뿐): ① HUD(보스 바·유물/특성/장비 창·마을·결과 창·일시정지·구슬 안내)가 OnGUI 호출마다 `new GUIStyle`을 만들던 30여 곳 → `SkillHUD.cs` EnsureStyles에서 한 번만 ② 메뉴 창(도시·화면 설정·온라인·도감·기능 테스트)은 새 `UI/DerivedStyle` ③ 투사체 겹침 조회(물리 프레임마다 배열 할당) → 투사체별 목록 재사용 ④ 적 접촉 피해 겹침 조회(적마다 물리 프레임마다) 목록 재사용, 추적 대상 체력 GetComponent 캐시 ⑤ 화살 발사대가 플레이어를 못 찾는 동안 매 프레임 씬 검색 → 0.5초 간격, 쓰러진 플레이어를 화살·종유석이 노리지 않음 ⑥ CODEMAP에 OnGUI 스타일 규칙 ⑦ 잔상(대쉬·튕김·순간이동·투사체 꼬리) 복사본을 꺼 두었다 다시 쓰기(최대 32개). ⑧ 판을 다시 시작해도 불꽃 벽·땅 가시·물안개가 씬에 남아 지운 플레이어 능력치로 새 판의 적을 때리던 것 → 다시 시작에서 치움 (마법 점검 code-reviewer, 나머지 지적 = 이미 막혀 있음). 적대적 리뷰 ⑤⑦ APPROVE. 적대적 리뷰 ①② APPROVE, ③④ APPROVE (LOW 주석 위치 고침). 퍼즐·함정 점검(code-reviewer): 일시정지·방 언로드(Destroy)·정적 상태는 문제 없음. 로컬 303/303
