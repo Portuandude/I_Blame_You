@@ -26,6 +26,9 @@ namespace IBlameYou.Systems
         private SpriteRenderer body;
         private Color baseColor;
         private Transform player;
+        private HealthSystem playerHealth; // 쓰러진 플레이어는 겨누지 않는다
+        private float nextLookup;          // 플레이어를 못 찾았을 때 다시 찾는 시각 (매 프레임 씬 검색하지 않게, Stalactite와 같음)
+        private const float LookupInterval = 0.5f;
         private bool warned;
 
         // 지금 예고 중인(곧 쏘는) 발사대. 화면 밖이면 HUD가 가장자리에 "!"를 띄운다 (SkillHUD.EnemyGuide.cs DrawAimWarnings).
@@ -53,9 +56,12 @@ namespace IBlameYou.Systems
         {
             if (player == null)
             {
+                if (Time.time < nextLookup) return;
+                nextLookup = Time.time + LookupInterval;
                 var movement = FindFirstObjectByType<Player.PlayerMovement>();
                 if (movement == null) return;
                 player = movement.transform;
+                playerHealth = movement.GetComponent<HealthSystem>();
             }
 
             if (!InRange())
@@ -143,6 +149,7 @@ namespace IBlameYou.Systems
 
         private bool InRange()
         {
+            if (playerHealth != null && playerHealth.IsDead) return false; // 쓰러진 뒤에는 예고·발사·HUD "!" 없음
             Vector2 offset = player.position - transform.position;
             return offset.x * direction > 0f && Mathf.Abs(offset.x) <= Range && Mathf.Abs(offset.y) <= HeightTolerance;
         }
