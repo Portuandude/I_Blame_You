@@ -92,11 +92,11 @@ namespace IBlameYou.Systems
                 case StatusDebuff.Burn:
                     ClearWet();
                     float fire = attacker != null ? attacker.Stats.ElementDamage(Element.Fire) : 0f;
+                    if (burnStacks == 0) burnTickTimer = 1f; // 쌓을 때마다 다시 1초로 맞추면 1초 안에 계속 맞는 동안 피해가 한 번도 안 들어간다
                     burnStacks++;
                     burnDamagePerStack = fire * BurnRatio;
                     burnRemaining = BurnDuration;
                     burnTicksLeft = Mathf.RoundToInt(BurnDuration);
-                    burnTickTimer = 1f;
                     Announce($"화상 x{burnStacks}", BurnColor);
                     break;
 
@@ -109,7 +109,8 @@ namespace IBlameYou.Systems
                     break;
 
                 case StatusDebuff.Stun:
-                    if (hitStun != null) hitStun.Apply(StunDuration);
+                    if (hitStun == null || hitStun.Immune) break; // 경직이 안 걸리는 대상(슈퍼아머 보스 등)에 아이콘·"경직" 글자만 뜨던 것
+                    hitStun.Apply(StunDuration);
                     stunRemaining = Mathf.Max(stunRemaining, StunDuration);
                     Announce("경직", StunColor);
                     break;
