@@ -121,7 +121,7 @@ namespace IBlameYou.Enemies
 
         private void UpdateShot(Transform target)
         {
-            if (IsStunned)
+            if (IsStunned || (drawing && target == null)) // 당기는 중 플레이어가 쓰러지거나 사라지면 허공에 쏘지 않고 거둔다
             {
                 EndShot();
                 return;
