@@ -47,8 +47,9 @@ namespace IBlameYou.EditorTools
 
             if (playerController == null || slimeController == null)
             {
-                Debug.LogError("[GameAssetSetup] 애니메이션 생성에 실패해 LevelArtConfig 갱신을 건너뜁니다. 위 경고 로그를 확인하세요.");
-                return;
+                // 예전에는 여기서 멈췄는데, 성공한 쪽 컨트롤러는 이미 지웠다 새로 만들어 GUID가 바뀐 뒤라 설정·프리팹 참조가 끊겼다 (버그 점검 2026-11-23).
+                // 그래서 만든 것만 설정에 넣고 프리팹까지 다시 굽는다. 실패한 쪽은 설정의 옛 값을 그대로 둔다.
+                Debug.LogError("[GameAssetSetup] 애니메이션 일부를 만들지 못했습니다 (위 경고 로그 확인). 만든 것만 LevelArtConfig에 반영합니다.");
             }
 
             EnsureFullRectMesh(TilesetPath);
@@ -66,10 +67,16 @@ namespace IBlameYou.EditorTools
             }
 
             if (groundTile != null) config.groundTile = groundTile; // 타일셋이 없는 컴퓨터에서 다시 돌려도 있던 타일을 지우지 않게
-            config.playerAnimatorController = playerController;
-            config.playerDefaultSprite = playerDefaultSprite;
-            config.slimeAnimatorController = slimeController;
-            config.slimeDefaultSprite = slimeDefaultSprite;
+            if (playerController != null)
+            {
+                config.playerAnimatorController = playerController;
+                config.playerDefaultSprite = playerDefaultSprite;
+            }
+            if (slimeController != null)
+            {
+                config.slimeAnimatorController = slimeController;
+                config.slimeDefaultSprite = slimeDefaultSprite;
+            }
 
             // 고블린류는 Tools/ArtGen/generate_sprites.py로 만든 임시 아트. 프레임이 없으면 비워 두고 스포너가 단색 사각형으로 대체한다.
             (config.goblinAnimatorController, config.goblinDefaultSprite) =

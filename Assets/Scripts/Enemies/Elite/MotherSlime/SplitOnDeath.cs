@@ -31,7 +31,7 @@ namespace IBlameYou.Enemies
             if (body != null) center = body.bounds.center;
             for (int i = 0; i < count; i++)
             {
-                float offset = (i - (count - 1) / 2f) * spread;
+                float offset = WallClamped((i - (count - 1) / 2f) * spread);
                 var slime = SlimeSpawner.Spawn(transform.position + new Vector3(offset, 0.3f, 0f), EffectLibrary.Config);
                 if (slime == null) continue;
                 EnemySquash.For(slime.gameObject).Spawn(); // 새끼는 길쭉하게 "뿅" 솟았다가 제 모양으로 (그림만)
@@ -48,6 +48,21 @@ namespace IBlameYou.Enemies
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.5f, "분열!", new Color(0.8f, 0.5f, 1f), 1.2f);
             SlimeSplitFx.Burst(center, SlimeSplitFx.GooColor, 6, 0.9f, 0.8f); // "뿌직-쪼옥" + 보라 젤리 방울 (그림·소리만)
         }
+
+        // 벽·좁은 통로 앞에서 죽으면 바깥쪽 새끼가 벽 안에 생겨 끼던 것 (버그 점검 2026-11-23): 그쪽 벽까지 거리 안으로 당긴다.
+        private float WallClamped(float offset)
+        {
+            if (Mathf.Abs(offset) < 0.01f) return offset;
+            int ground = LayerMask.NameToLayer("Ground"); // TrapCommon.GroundLayer는 없으면 Default(0)를 돌려줘 어미 몸에 맞을 수 있다
+            if (ground < 0) return offset;
+            var origin = (Vector2)transform.position + new Vector2(0f, 0.3f);
+            float dir = Mathf.Sign(offset);
+            var hit = Physics2D.Raycast(origin, new Vector2(dir, 0f), Mathf.Abs(offset) + SlimeHalfWidth, 1 << ground);
+            if (hit.collider == null) return offset;
+            return dir * Mathf.Max(0f, hit.distance - SlimeHalfWidth);
+        }
+
+        private const float SlimeHalfWidth = 0.45f; // 새끼 몸 반 폭쯤 (벽에서 이만큼 띄운다)
 
         private void OnDestroy()
         {
