@@ -13,6 +13,7 @@ namespace IBlameYou.Player
     //   A/D 이동, Space 점프                     마우스 조준, 좌클릭 평타, 휠 속성 고르기 → 우클릭 마법 (누르고 있으면 다이얼)
     //   Shift 달리기, Left Ctrl 대쉬             상단 1~4: 공격 스킬 선택 → 마법진을 좌클릭 꾹 한붓으로 따라 그리기 (우클릭·Esc 취소)
     //   W/A/S/D + Enter: 순간이동 (2026-11-12 방향키에서 바꿈)
+    //   ↑ 키는 모두 기본값. P1 키는 시작 메뉴·일시정지의 "조작 키" 창에서 바꿀 수 있다 (KeyBindings, 2026-11-23)
     //   W(또는 ↑): 마을 건물 앞에서 들어가기
     //
     // 개발자 모드: 상단 1~5·6~9·0 = B 공격 스킬 즉시 (미니게임 생략). 속성 방어막은 2026-11-16 사람 결정으로 빠졌다.
@@ -37,10 +38,10 @@ namespace IBlameYou.Player
         // 입력 장치가 나뉘면(패드·온라인) 여기만 P2의 Space로 바꾸면 된다.
         // F12(임시, 2026-11-14 사람 지시): 혼자 시험할 때 두 사람이 동시에 누른 것으로 친다 — 꾹 누르면 건너뛰기 게이지가 찬다.
         public static bool StorySkipBoth => Input.GetKey(KeyCode.F12);
-        public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || StorySkipBoth;
+        public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || KeyBindings.Get(P1Action.Jump) || StorySkipBoth; // 점프 키를 바꿨으면 그 키도
         public static bool StoryButtonB => P2Input.GetMouseButton(0) || (P2Input.Remote && P2Input.GetKey(KeyCode.Space)) || StorySkipBoth; // 온라인이면 친구의 Space도
         // 이번 프레임에 누른 순간 (짧게 톡 눌렀다 뗀 것을 놓치지 않게 — 온라인은 친구가 보낸 누름 횟수로 센다)
-        public static bool StoryButtonADown => Input.GetKeyDown(KeyCode.Space);
+        public static bool StoryButtonADown => Input.GetKeyDown(KeyCode.Space) || KeyBindings.GetDown(P1Action.Jump);
         public static bool StoryButtonBDown => P2Input.GetMouseButtonDown(0) || (P2Input.Remote && P2Input.GetKeyDown(KeyCode.Space));
 
         // ---- 플레이어 A ----
@@ -49,27 +50,26 @@ namespace IBlameYou.Player
         {
             if (ABlocked(state) || state.MovementFrozen) return 0f;
             float axis = 0f;
-            if (Input.GetKey(KeyCode.D)) axis += 1f;
-            if (Input.GetKey(KeyCode.A)) axis -= 1f;
+            if (KeyBindings.Get(P1Action.Right)) axis += 1f;
+            if (KeyBindings.Get(P1Action.Left)) axis -= 1f;
             return axis;
         }
 
         public static bool JumpDown(PlayerControlState state) =>
-            !ABlocked(state) && !state.MovementFrozen && Input.GetKeyDown(KeyCode.Space);
+            !ABlocked(state) && !state.MovementFrozen && KeyBindings.GetDown(P1Action.Jump);
 
         // 점프 키를 누르고 있는지 (짧게 누르면 낮은 점프). 막혀 있으면 뗀 것으로 본다.
         public static bool JumpHeld(PlayerControlState state) =>
-            !ABlocked(state) && Input.GetKey(KeyCode.Space);
+            !ABlocked(state) && KeyBindings.Get(P1Action.Jump);
 
         public static bool RunHeld(PlayerControlState state) =>
-            !ABlocked(state) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+            !ABlocked(state) && KeyBindings.Get(P1Action.Run);
 
         public static bool DashDown(PlayerControlState state) =>
-            !ABlocked(state) && !state.MovementFrozen && Input.GetKeyDown(KeyCode.LeftControl);
+            !ABlocked(state) && !state.MovementFrozen && KeyBindings.GetDown(P1Action.Dash);
 
         public static bool TeleportDown(PlayerControlState state) =>
-            !ABlocked(state) && !state.MovementFrozen &&
-            (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter));
+            !ABlocked(state) && !state.MovementFrozen && KeyBindings.GetDown(P1Action.Teleport);
 
         // 마을 건물 등 앞에서 상호작용: ↑를 누르거나 W를 짧게 톡 (떼는 순간).
         // 순간이동은 W를 누른 채 Enter라, W를 누르는 동안 Enter가 눌렸으면 상호작용으로 치지 않는다. 매 프레임 불러야 W 기록이 맞다.
@@ -79,30 +79,30 @@ namespace IBlameYou.Player
 
         public static bool InteractDown(PlayerControlState state)
         {
-            if (Input.GetKeyDown(KeyCode.W))
+            if (KeyBindings.GetDown(P1Action.Up))
             {
                 interactWDownAt = ABlocked(state) || state.MovementFrozen ? -1f : Time.unscaledTime; // 잠긴 동안(창을 W로 닫은 프레임 등) 누른 W는 톡으로 치지 않는다
                 interactEnterDuringW = false;
             }
-            if (Input.GetKey(KeyCode.W) && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))) interactEnterDuringW = true;
-            bool tap = Input.GetKeyUp(KeyCode.W) && interactWDownAt >= 0f && !interactEnterDuringW
+            if (KeyBindings.Get(P1Action.Up) && KeyBindings.GetDown(P1Action.Teleport)) interactEnterDuringW = true;
+            bool tap = KeyBindings.GetUp(P1Action.Up) && interactWDownAt >= 0f && !interactEnterDuringW
                 && Time.unscaledTime - interactWDownAt <= InteractTapSeconds;
-            if (Input.GetKeyUp(KeyCode.W)) interactWDownAt = -1f;
-            return !ABlocked(state) && !state.MovementFrozen && (tap || Input.GetKeyDown(KeyCode.UpArrow));
+            if (KeyBindings.GetUp(P1Action.Up)) interactWDownAt = -1f;
+            return !ABlocked(state) && !state.MovementFrozen && (tap || (Input.GetKeyDown(KeyCode.UpArrow) && !KeyBindings.Uses(KeyCode.UpArrow))); // ↑를 P1 키로 바꿨으면 그 키는 위 톡으로만 (누르자마자 들어가지 않게)
         }
 
         // 바람 구멍 기둥 안에서 S를 누르고 있으면 천천히 내려간다 (WindVent). 순간이동은 Enter를 눌러야 하므로 겹치지 않는다.
         public static bool DescendHeld(PlayerControlState state) =>
-            !ABlocked(state) && !state.MovementFrozen && Input.GetKey(KeyCode.S);
+            !ABlocked(state) && !state.MovementFrozen && KeyBindings.Get(P1Action.Down);
 
         // 순간이동 방향: 누르고 있는 W/A/S/D (대각선 가능, 네 방향 고르기는 TeleportRules.Cardinal). 아무것도 안 누르면 zero.
         public static Vector2 TeleportDirection()
         {
             var dir = Vector2.zero;
-            if (Input.GetKey(KeyCode.D)) dir.x += 1f;
-            if (Input.GetKey(KeyCode.A)) dir.x -= 1f;
-            if (Input.GetKey(KeyCode.W)) dir.y += 1f;
-            if (Input.GetKey(KeyCode.S)) dir.y -= 1f;
+            if (KeyBindings.Get(P1Action.Right)) dir.x += 1f;
+            if (KeyBindings.Get(P1Action.Left)) dir.x -= 1f;
+            if (KeyBindings.Get(P1Action.Up)) dir.y += 1f;
+            if (KeyBindings.Get(P1Action.Down)) dir.y -= 1f;
             return dir.normalized;
         }
 
