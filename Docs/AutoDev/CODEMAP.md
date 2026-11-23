@@ -34,7 +34,7 @@
 | 마법·스킬 | `Player/Skills/` (`SpellBook` 목록, `SpellCaster` 마법진 그리기, 규칙 `Rules/MagicCircleRules`) |
 | 레벨·특성·유물 | `Player/Progression/`, `Player/Relics/` |
 | 이펙트 | `Systems/Effects/` (`EffectLibrary` 프레임 로드, `VfxPlayer`, `ElementRecolor` 그림 바꿔 끼우기) |
-| HUD·UI | `UI/SkillHUD*.cs`(partial, 기능별 파일), `MinimapUI.cs`, `EnemyHealthBar.cs` |
+| HUD·UI | `UI/SkillHUD*.cs`(partial, 기능별 파일. 글자 스타일은 `SkillHUD.cs` EnsureStyles에서 한 번만 만든다 — OnGUI 안에서 `new GUIStyle` 금지, 메뉴 창은 `UI/DerivedStyle`), `MinimapUI.cs`, `EnemyHealthBar.cs` |
 | 에디터 툴 (애니메이션·프리팹 굽기) | `Editor/GameAssetSetup.cs`, `Editor/PrefabSetup.cs` |
 
 ## 저장소 루트
