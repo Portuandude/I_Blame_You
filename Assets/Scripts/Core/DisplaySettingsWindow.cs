@@ -159,7 +159,7 @@ namespace IBlameYou.Core
                 if (CuteButton.Button(modeRect, label, button)) mode = i;
             }
 
-            // 눈 편의 줄 (화면 흔들림 · 번쩍임)
+            // 프레임 제한 · 눈 편의 줄 (화면 흔들림 · 번쩍임)
             y += 56f;
             frameLimit = StepRow(rect, y, RowFrame, "프레임", frameLimit, DisplaySettings.FrameLimit,
                 0, DisplayRules.FrameUnlimited, 1, v => DisplayRules.FrameLimitNames[v], body, button, center, now);
