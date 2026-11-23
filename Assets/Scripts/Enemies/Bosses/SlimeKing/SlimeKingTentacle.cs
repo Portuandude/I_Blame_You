@@ -29,6 +29,7 @@ namespace IBlameYou.Enemies
         private Transform tip;
         private Vector2 direction;
         private float range;
+        private readonly System.Collections.Generic.List<Collider2D> tipOverlaps = new System.Collections.Generic.List<Collider2D>(); // 뻗는 중 프레임마다 끝 겹침 조회 (새 배열 대신)
         private float length;
         private State state;
         private LayerMask groundMask;
@@ -133,7 +134,7 @@ namespace IBlameYou.Enemies
 
         private bool TryCatch(Vector2 tipPosition)
         {
-            foreach (var hit in Physics2D.OverlapCircleAll(tipPosition, TipRadius))
+            foreach (var hit in OverlapQuery.Circle(tipPosition, TipRadius, tipOverlaps))
             {
                 var target = TrapCommon.PlayerFrom(hit);
                 if (target == null) continue;
