@@ -126,8 +126,9 @@ namespace IBlameYou.Core
                 return;
             }
 
-            bool a = RoleInput.StoryButtonA;
-            bool b = RoleInput.StoryButtonB;
+            // 누른 순간(Down)도 눌린 것으로 본다: 프레임 사이에 눌렀다 뗀 짧은 클릭(특히 온라인 친구 — 호스트는 받은 마지막 상태만 본다)을 놓치지 않게
+            bool a = RoleInput.StoryButtonA || RoleInput.StoryButtonADown;
+            bool b = RoleInput.StoryButtonB || RoleInput.StoryButtonBDown;
             float now = Time.unscaledTime;
             if (a && !aWasHeld) aDownAt = now;
             if (b && !bWasHeld) bDownAt = now;
@@ -135,7 +136,7 @@ namespace IBlameYou.Core
             if (a && b)
             {
                 comboUsed = true;
-                skipHeld += Time.unscaledDeltaTime;
+                skipHeld += Mathf.Min(Time.unscaledDeltaTime, 0.1f); // 한 프레임이 길게 끊겨도 한 번에 차지 않게
                 if (skipHeld >= SkipHoldSeconds)
                 {
                     GameAudio.PlaySfx("RoomPass", 0.6f);

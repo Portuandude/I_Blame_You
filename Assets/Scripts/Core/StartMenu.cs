@@ -141,8 +141,9 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                if (MenuButton(0, $"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f))
+                if (MenuButton(0, $"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f) && !launching)
                 {
+                    launching = true;
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
                     SaveData.SaveSettings();
                     GameSession.Started = true;
@@ -239,8 +240,12 @@ namespace IBlameYou.Core
             return pressed;
         }
 
+        private bool launching; // 같은 프레임에 버튼이 두 번 눌려도(클릭 + Enter) 판을 한 번만 시작 (Destroy는 프레임 끝에 일어난다)
+
         private void StartRun(bool featureTest)
         {
+            if (launching) return;
+            launching = true;
             GameSession.DevMode = devMode;
             SaveData.SaveSettings();
             GameSession.Started = true;
