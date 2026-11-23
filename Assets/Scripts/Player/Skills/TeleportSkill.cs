@@ -89,7 +89,32 @@ namespace IBlameYou.Player
             if (body == null) return distance;
             if (direction.y < 0f) return PlanDown();
             if (direction.y > 0f) return PlanUp();
-            return TeleportRules.Blocked(distance, CastDistance(direction, includePlatforms: true));
+            return PlanSide(direction);
+        }
+
+        // 좌/우: 몸 Cast는 합쳐진(Composite) 땅 콜라이더에서 콜라이더당 hit 하나만 줘서, 서 있는 바닥 hit(위 법선, 걸러짐)에 앞쪽 벽 hit이
+        // 가려지면 벽 속·얇은 벽 너머로 갈 수 있었다. 바닥에서 띄운 몸 높이 얇은 상자를 옆으로 밀어 벽까지 거리를 따로 재고,
+        // 도착 자리가 땅·발판과 겹치면 겹치지 않는 가장 먼 자리로 줄인다 (위 순간이동과 같은 규칙).
+        private float PlanSide(Vector2 direction)
+        {
+            var bounds = body.bounds;
+            var size = (Vector2)bounds.size * 0.95f;
+            Vector2 center = bounds.center;
+            float edgeX = direction.x > 0f ? bounds.max.x - 0.05f : bounds.min.x + 0.05f;
+            var probe = new Vector2(0.05f, Mathf.Max(0.1f, bounds.size.y - 0.24f)); // 위아래 0.12씩 줄여 바닥·천장에 스치지 않게
+            int count = Physics2D.BoxCast(new Vector2(edgeX, center.y), probe, 0f, direction, groundFilter, castResults, distance + 0.1f);
+            float solidHit = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = castResults[i];
+                if (Vector2.Dot(hit.normal, direction) > -0.5f) continue; // 옆으로 스치는 면은 벽이 아니다
+                solidHit = Mathf.Min(solidHit, Mathf.Max(hit.distance - 0.05f, 0f));
+            }
+            float bodyHit = CastDistance(direction, includePlatforms: true); // 몸 Cast가 잡는 벽(따로 놓인 콜라이더 등)도 그대로 본다
+            solidHit = Mathf.Min(solidHit, bodyHit);
+
+            return TeleportRules.PlanUp(distance, solidHit,
+                t => Physics2D.OverlapBox(center + direction * t, size, 0f, groundFilter, overlapResults) > 0);
         }
 
         // 몸을 direction으로 밀었을 때 처음 막는 면까지의 거리. 서 있는 바닥처럼 옆으로 스치는 면은 무시한다.
