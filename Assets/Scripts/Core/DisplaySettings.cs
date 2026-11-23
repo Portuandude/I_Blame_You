@@ -9,9 +9,15 @@ namespace IBlameYou.Core
     {
         private const string KeyResolution = "Settings.Resolution";
         private const string KeyWindowMode = "Settings.WindowMode";
+        private const string KeyFrameLimit = "Settings.FrameLimit";
 
         public static int Resolution { get; private set; } = -1; // DisplayRules.Resolutions 번호
         public static int Mode { get; private set; } = DisplayRules.Borderless;
+        public static int FrameLimit { get; private set; } = DisplayRules.FrameDefault; // DisplayRules.FrameLimitNames 번호
+
+        // "기본"으로 돌아갈 때 쓸 처음 값 (프로젝트 품질 설정)
+        private static int originalVSync = -1;
+        private static int originalFrameRate = -1;
 
         // 모니터 해상도 (창 모드에서는 Screen.currentResolution이 모니터, Screen.width가 창 크기).
         public static int MonitorWidth => Display.main != null && Display.main.systemWidth > 0 ? Display.main.systemWidth : Screen.currentResolution.width;
@@ -31,6 +37,10 @@ namespace IBlameYou.Core
                 : Screen.fullScreenMode == FullScreenMode.ExclusiveFullScreen ? DisplayRules.Fullscreen : DisplayRules.Borderless;
             Mode = DisplayRules.SanitizeMode(PlayerPrefs.GetInt(KeyWindowMode, defaultMode));
             if (PlayerPrefs.HasKey(KeyResolution)) Apply(); // 처음 실행(저장 없음)은 Unity 기본 화면을 그대로 둔다
+            originalVSync = QualitySettings.vSyncCount;
+            originalFrameRate = Application.targetFrameRate;
+            FrameLimit = DisplayRules.SanitizeFrameLimit(PlayerPrefs.GetInt(KeyFrameLimit, DisplayRules.FrameDefault));
+            if (FrameLimit != DisplayRules.FrameDefault) ApplyFrameLimit();
             EnsureLetterbox();
         }
 
@@ -42,6 +52,28 @@ namespace IBlameYou.Core
             PlayerPrefs.SetInt(KeyWindowMode, Mode);
             PlayerPrefs.Save();
             Apply();
+        }
+
+        // 프레임 제한만 바꾼다 (해상도·창은 다시 만들지 않는다).
+        public static void SetFrameLimit(int limit)
+        {
+            FrameLimit = DisplayRules.SanitizeFrameLimit(limit);
+            PlayerPrefs.SetInt(KeyFrameLimit, FrameLimit);
+            PlayerPrefs.Save();
+            ApplyFrameLimit();
+        }
+
+        private static void ApplyFrameLimit()
+        {
+            var (vSync, fps) = DisplayRules.FrameSettings(FrameLimit);
+            if (vSync < 0) // 기본: 처음 값으로
+            {
+                if (originalVSync >= 0) QualitySettings.vSyncCount = originalVSync;
+                Application.targetFrameRate = originalFrameRate;
+                return;
+            }
+            QualitySettings.vSyncCount = vSync;
+            Application.targetFrameRate = fps;
         }
 
         private static void Apply()
