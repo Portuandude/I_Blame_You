@@ -117,8 +117,12 @@ namespace IBlameYou.Core
             GUILayout.Label(IntroText, body);
             GUILayout.Space(12f);
 
-            devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
-            GUILayout.Space(8f);
+            if (!GameSession.Demo) // 데모 빌드에는 개발자 모드가 없다 (GameSession.DevMode)
+            {
+                devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
+                GUILayout.Space(8f);
+            }
+            else devMode = false;
             GUILayout.Label(devMode ? DevModeHelp : NormalModeHelp, body);
             GUILayout.Space(12f);
             musicVolume = VolumeSlider("배경음악", musicVolume);
@@ -154,8 +158,8 @@ namespace IBlameYou.Core
                 GUILayout.Space(4f);
             }
 
-            string startLabel = saved == null ? "플레이 테스트 시작 (일반 판)"
-                : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : "플레이 테스트 새로 시작";
+            string startLabel = saved == null ? (GameSession.Demo ? "게임 시작" : "플레이 테스트 시작 (일반 판)")
+                : confirmNewRun ? "정말 새로 시작? 이어하던 런이 지워진다 (한 번 더 누르기)" : GameSession.Demo ? "새로 시작" : "플레이 테스트 새로 시작";
             bool startPressed = MenuButton(StartSlot, startLabel, 48f);
             if (startPressed && saved != null && !confirmNewRun)
             {
@@ -167,15 +171,19 @@ namespace IBlameYou.Core
             }
 
             // 기능 테스트 모드: 적 없는 시험용 맵에서 몬스터·유물·협동 기능을 키로 불러 시험 (이어하던 런은 건드리지 않는다)
-            GUILayout.Space(4f);
-            if (MenuButton(StartSlot + 1, "기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", 40f))
+            if (!GameSession.Demo) // 데모 빌드에는 기능 테스트(치트 시험 맵)를 넣지 않는다
             {
-                StartRun(true);
+                GUILayout.Space(4f);
+                if (MenuButton(StartSlot + 1, "기능 테스트 시작 (빈 방에서 몬스터·유물·협동 기능 시험, 기록 안 남음)", 40f))
+                {
+                    StartRun(true);
+                }
             }
 
             GUILayout.Space(4f);
-            if (MenuButton(StartSlot + 2, OnlineWindow.ButtonLabel(), 40f)) online.Show();
+            if (MenuButton(OnlineSlot, OnlineWindow.ButtonLabel(), 40f)) online.Show();
             GUILayout.EndArea();
+            if (GameSession.Demo) DrawDemoBadge(area);
             GUI.enabled = wasEnabled;
             GUI.matrix = screenMatrix;
             if (codex.IsOpen) codex.Draw(panel, body, recordSmall, button);
@@ -187,9 +195,23 @@ namespace IBlameYou.Core
                 activateKeyHeld = true;
         }
 
-        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트 · 온라인 2인.
+        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트(데모에는 없음) · 온라인 2인.
         private int StartSlot => saved != null ? 1 : 0;
-        private int MenuButtonCount => StartSlot + 3;
+        private int OnlineSlot => StartSlot + (GameSession.Demo ? 1 : 2);
+        private int MenuButtonCount => OnlineSlot + 1;
+
+        private GUIStyle demoBadge;
+
+        // 데모 빌드 표시: 패널 오른쪽 아래 구석에 "데모 0.1" (친구와 버전이 같은지 눈으로 맞춰 보는 용도)
+        private void DrawDemoBadge(Rect area)
+        {
+            if (demoBadge == null)
+            {
+                demoBadge = new GUIStyle(body) { fontSize = 12, alignment = TextAnchor.LowerRight, wordWrap = false };
+                demoBadge.normal.textColor = new Color(1f, 1f, 1f, 0.55f);
+            }
+            GUI.Label(new Rect(area.xMax - 160f, area.yMax - 22f, 150f, 18f), $"데모 {GameSession.DemoVersion}", demoBadge);
+        }
 
         // 키보드로 아래 큰 버튼 고르기 (↑↓·W/S) · 누르기 (Enter·Space). 일시정지 창과 같은 방식.
         // OnGUI는 Update 뒤에 돌고, 시작하면 만들어지는 플레이어는 다음 프레임부터 Update를 돌아 이 Enter·Space가 순간이동·점프로 새지 않는다.
@@ -510,13 +532,13 @@ namespace IBlameYou.Core
         private float FixedContentHeight(float innerWidth)
         {
             float h = 60f + 4f + body.CalcHeight(new GUIContent(IntroText), innerWidth) + 12f;
-            h += toggle.CalcHeight(new GUIContent("  개발자 모드"), innerWidth) + 8f;
+            if (!GameSession.Demo) h += toggle.CalcHeight(new GUIContent("  개발자 모드"), innerWidth) + 8f;
             h += body.CalcHeight(new GUIContent(devMode ? DevModeHelp : NormalModeHelp), innerWidth) + 12f;
             h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
             h += 22f;                                 // 유물 도감 줄
             h += TipMaxHeight(innerWidth) + 4f;       // 오늘의 팁 (가장 긴 팁 기준)
             if (saved != null) h += 44f + 4f;         // 이어하기 버튼
-            h += 48f + 4f + 40f + 40f;                // 시작·기능 테스트·온라인 버튼
+            h += 48f + 4f + 40f + (GameSession.Demo ? 0f : 40f); // 시작·(기능 테스트)·온라인 버튼
             return h + 12f * 4f;                      // 요소 사이 기본 여백
         }
 

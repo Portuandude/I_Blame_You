@@ -54,7 +54,9 @@ namespace IBlameYou.Core
             try
             {
                 var data = JsonUtility.FromJson<Data>(json);
-                return data != null && data.version == Version ? data : null;
+                if (data == null || data.version != Version) return null;
+                if (data.devMode && GameSession.Demo) return null; // 데모에는 개발자 모드가 없다: 예전 빌드의 개발자 모드 판은 이어하지 않는다
+                return data;
             }
             catch (ArgumentException)
             {
