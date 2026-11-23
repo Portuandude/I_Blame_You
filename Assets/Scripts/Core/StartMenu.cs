@@ -18,6 +18,8 @@ namespace IBlameYou.Core
         private Action onCity; // 일반 판 시작은 스토리 소개 뒤 도시 메뉴로 (CityMenu, 2026-11-15 도시 2단계). 없으면 바로 판
         private RunSave.Data saved; // 이어 할 수 있는 런 (없으면 null)
         private bool confirmNewRun;  // 저장이 있을 때 "새로 시작"은 한 번 더 눌러야 한다
+        private float confirmQuitAt = -10f; // "게임 종료"를 한 번 누른 때 (3초 안에 한 번 더 누르면 끈다, 2026-11-23 스팀 출시 준비)
+        private const float QuitConfirmSeconds = 3f;
         private bool devMode;
         private float musicVolume;
         private float sfxVolume;
@@ -176,7 +178,15 @@ namespace IBlameYou.Core
             }
 
             GUILayout.Space(4f);
+            GUILayout.BeginHorizontal(); // 온라인 2인 · 게임 종료 (한 줄이라 메뉴 높이는 그대로)
             if (MenuButton(StartSlot + 2, OnlineWindow.ButtonLabel(), 40f)) online.Show();
+            bool confirmingQuit = Time.unscaledTime - confirmQuitAt < QuitConfirmSeconds;
+            if (MenuButton(StartSlot + 3, confirmingQuit ? "정말 종료? (한 번 더)" : "게임 종료", 40f, 170f))
+            {
+                if (confirmingQuit) QuitGame();
+                else confirmQuitAt = Time.unscaledTime;
+            }
+            GUILayout.EndHorizontal();
             GUILayout.EndArea();
             GUI.enabled = wasEnabled;
             GUI.matrix = screenMatrix;
@@ -190,9 +200,20 @@ namespace IBlameYou.Core
                 activateKeyHeld = true;
         }
 
-        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트 · 온라인 2인.
+        // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트 · 온라인 2인 · 게임 종료.
         private int StartSlot => saved != null ? 1 : 0;
-        private int MenuButtonCount => StartSlot + 3;
+        private int MenuButtonCount => StartSlot + 4;
+
+        // 실행 파일에서는 끈다. 에디터에서는 플레이 모드만 멈춘다 (Application.Quit은 에디터에서 아무 일도 안 한다).
+        private static void QuitGame()
+        {
+            SaveData.SaveSettings();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
 
         // 키보드로 아래 큰 버튼 고르기 (↑↓·W/S) · 누르기 (Enter·Space). 일시정지 창과 같은 방식.
         // OnGUI는 Update 뒤에 돌고, 시작하면 만들어지는 플레이어는 다음 프레임부터 Update를 돌아 이 Enter·Space가 순간이동·점프로 새지 않는다.
@@ -226,9 +247,11 @@ namespace IBlameYou.Core
         }
 
         // 아래 큰 버튼 하나: 마우스로 눌렀거나 Enter·Space로 골라 눌렀으면 true. 고른 버튼에는 금색 테두리.
-        private bool MenuButton(int slot, string label, float height)
+        private bool MenuButton(int slot, string label, float height, float width = 0f)
         {
-            bool pressed = IBlameYou.UI.CuteButton.LayoutButton(label, button, GUILayout.Height(height));
+            bool pressed = width > 0f
+                ? IBlameYou.UI.CuteButton.LayoutButton(label, button, GUILayout.Height(height), GUILayout.Width(width))
+                : IBlameYou.UI.CuteButton.LayoutButton(label, button, GUILayout.Height(height));
             if (keyboardUsed && slot == keySelection && GUI.enabled) IBlameYou.UI.CuteButton.DrawSelection(GUILayoutUtility.GetLastRect());
             if (pressed) keySelection = slot; // 마우스로 누른 버튼도 고른 칸으로 (새로 시작 확인을 Enter로 이어 누를 수 있게)
             if (keyActivate == slot)
