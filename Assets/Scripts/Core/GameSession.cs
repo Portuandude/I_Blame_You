@@ -4,7 +4,22 @@ namespace IBlameYou.Core
     public static class GameSession
     {
         // 개발자 모드: 한 사람이 A/B를 동시에 조작하고, 마법진 그리기를 키보드 상단 숫자키 즉시 발동으로 대체한다 (기획서 2.9).
-        public static bool DevMode { get; set; } = true;
+        // 데모 빌드(Demo)에서는 늘 꺼져 있다: 치트(F1~F4)·숫자 즉시 발동이 데모에 새지 않게 여기 한 곳에서 막는다.
+        public static bool DevMode
+        {
+            get => devMode && !Demo;
+            set => devMode = value;
+        }
+        private static bool devMode = true;
+
+        // 데모 빌드 (2026-11-23 사람 요청 "데모버전 생성"): Tools > I Blame You > 데모 빌드 만들기가 IBY_DEMO를 켜고 굽는다.
+        // 켜지면 시작 화면에서 개발자 모드 토글·기능 테스트 버튼을 숨기고 오른쪽 아래에 DemoVersion을 보인다.
+#if IBY_DEMO
+        public static readonly bool Demo = true;
+#else
+        public static readonly bool Demo = false;
+#endif
+        public const string DemoVersion = "0.1"; // 친구에게 새 데모를 줄 때마다 올린다 (폴더·zip 이름에도 들어간다)
 
         // 한 컴퓨터로 하면 A와 B가 한 키보드를 같이 쓴다. 온라인(친구가 자기 컴퓨터로 B)이면 키보드가 둘이다 (Net/NetSession).
         // (예전 영창 타이핑 때는 이 값이 true인 동안 A 키보드를 막았다. 2026-11-16부터 B는 마법진을 마우스로 그려서 막지 않는다.)
