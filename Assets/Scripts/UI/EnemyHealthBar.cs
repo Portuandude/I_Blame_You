@@ -19,6 +19,7 @@ namespace IBlameYou.UI
         private Collider2D body;
         private float width;
         private float lastHitTime;
+        private float lastCurrent = -1f;
         private CapsuleBar bar;
 
         // 적이 피해를 받을 때 부른다: 바가 없으면 만들고, 있으면 다시 보이게 한다.
@@ -54,6 +55,9 @@ namespace IBlameYou.UI
         private void Refresh(float current, float max)
         {
             if (bar == null) return;
+            // 화상 같은 지속 피해는 피격(Ping) 없이 체력만 줄어서, 줄어들 때도 바를 다시 보이게 한다
+            if (lastCurrent >= 0f && current < lastCurrent) lastHitTime = Time.time;
+            lastCurrent = current;
             bar.SetRatio(max > 0f ? current / max : 0f);
         }
 
