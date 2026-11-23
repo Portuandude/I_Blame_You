@@ -178,7 +178,6 @@ namespace IBlameYou.Systems
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
-        // 아직 맞히지 않은 살아 있는 대상 중 가장 가까운 것.
         // OverlapCircleAll과 같은 결과 (트리거 포함 여부는 프로젝트 설정 queriesHitTriggers를 따른다)
         private void Overlap(Vector2 center, float r)
         {
@@ -186,6 +185,7 @@ namespace IBlameYou.Systems
             Physics2D.OverlapCircle(center, r, filter, overlaps);
         }
 
+        // 아직 맞히지 않은 살아 있는 대상 중 가장 가까운 것.
         private HealthSystem FindTarget(Vector2 position)
         {
             HealthSystem best = null;
