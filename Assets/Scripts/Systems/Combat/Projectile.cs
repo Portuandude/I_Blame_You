@@ -20,6 +20,8 @@ namespace IBlameYou.Systems
         private float lifeRemaining;
         private LayerMask groundMask;
         private readonly HashSet<HealthSystem> alreadyHit = new HashSet<HealthSystem>();
+        // 겹침 검사 결과를 담아 두고 다시 쓴다 (OverlapCircleAll은 물리 프레임마다 새 배열을 만든다). 투사체마다 따로 둬서 맞힘 처리 중 다른 투사체가 덮어쓰지 않는다
+        private readonly List<Collider2D> overlaps = new List<Collider2D>(8);
         private Vector2 launchPosition;
         private bool launchKnown;
 
@@ -110,7 +112,8 @@ namespace IBlameYou.Systems
 
             transform.position = position + step;
 
-            foreach (var hit in Physics2D.OverlapCircleAll(transform.position, radius))
+            Overlap(transform.position, radius);
+            foreach (var hit in overlaps)
             {
                 // 길을 막지 않는 트리거 속성 장치 (마법 스위치 룬). 플레이어 마법만 전달하고 사라진다.
                 // 쏜 자리에서 이미 겹쳐 있던 장치(룬 위에 서서 다른 룬을 쏠 때)는 건너뛴다: 쏜 방향으로 장치 반폭보다 앞에 있어야 한다.
@@ -176,11 +179,19 @@ namespace IBlameYou.Systems
         }
 
         // 아직 맞히지 않은 살아 있는 대상 중 가장 가까운 것.
+        // OverlapCircleAll과 같은 결과 (트리거 포함 여부는 프로젝트 설정 queriesHitTriggers를 따른다)
+        private void Overlap(Vector2 center, float r)
+        {
+            var filter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
+            Physics2D.OverlapCircle(center, r, filter, overlaps);
+        }
+
         private HealthSystem FindTarget(Vector2 position)
         {
             HealthSystem best = null;
             float bestDistance = float.MaxValue;
-            foreach (var col in Physics2D.OverlapCircleAll(position, homingRange))
+            Overlap(position, homingRange);
+            foreach (var col in overlaps)
             {
                 var health = col.GetComponentInParent<HealthSystem>();
                 if (health == null || health.IsDead || alreadyHit.Contains(health)) continue;
