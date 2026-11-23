@@ -364,7 +364,6 @@ namespace IBlameYou.Systems
             go.transform.position = new Vector3(x, area.yMin + GateHeight / 2f, 0f);
             go.layer = TrapCommon.GroundLayer;
             go.AddComponent<BoxCollider2D>().size = new Vector2(1f, GateHeight);
-            go.AddComponent<UnsafeGround>(); // 돌파하면 치워지는 문 위를 낙사 복귀 자리로 기록하지 않게
 
             var frames = TrapCommon.Frames("Gate");
             var visual = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(1f, 0.35f, 0.4f, 0.55f), 1f, 2);
@@ -386,7 +385,6 @@ namespace IBlameYou.Systems
             go.transform.position = new Vector3(hole.center.x, hole.center.y, 0f);
             go.layer = TrapCommon.GroundLayer;
             go.AddComponent<BoxCollider2D>().size = hole.size;
-            go.AddComponent<UnsafeGround>(); // 돌파하면 치워지는 봉인 위를 낙사 복귀 자리로 기록하지 않게 (구멍 위 허공으로 돌아오지 않게)
             var frames = TrapCommon.Frames("Gate");
             var visual = EffectLibrary.CreateVisual(go.transform, "Visual", frames, 10f, true, new Color(1f, 0.35f, 0.4f, 0.55f), 1f, 2);
             visual.transform.localRotation = Quaternion.Euler(0f, 0f, 90f); // 세로 문 그림을 눕힌다
