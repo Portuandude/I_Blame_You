@@ -139,6 +139,7 @@ namespace IBlameYou.Player
         }
 
         private static int dialCancelFrame = -1;
+        private static bool dialRemote; // 다이얼을 열 때 온라인 친구가 P2였는지 (도중에 끊기거나 들어오면 다른 마우스로 놓여 바로 발동하던 것)
 
         public static void CloseSpellDial() => Dial.Cancel();
 
@@ -152,12 +153,17 @@ namespace IBlameYou.Player
                 return false;
             }
             // 개발자 모드: 상단 6~9·0은 기본 마법 즉시. 우클릭 다이얼도 똑같이 쓴다 (아카데미에서 배운 마법을 고르는 길, 리뷰 MEDIUM)
-            if (GameSession.DevMode && GetIndexedKeyDownB(TopRowLastFive, out element)) return true;
+            if (GameSession.DevMode && !Dial.IsOpen && GetIndexedKeyDownB(TopRowLastFive, out element)) return true; // 다이얼이 열린 채면 막는다 (놓을 때 한 번 더 나가던 것)
 
             float wheel = P2Input.mouseScrollDelta.y;
             Vector2 mouse = P2Input.mousePosition;
             if (Dial.IsOpen)
             {
+                if (P2Input.Remote != dialRemote)
+                {
+                    Dial.Cancel();
+                    return false;
+                }
                 if (P2Input.GetMouseButtonDown(0))
                 {
                     Dial.Cancel();
@@ -179,6 +185,7 @@ namespace IBlameYou.Player
             if (P2Input.GetMouseButtonDown(1))
             {
                 for (int i = 0; i < MouseSpellCount; i++) DialCounts[i] = SpellBook.LearnedCount((Element)i);
+                dialRemote = P2Input.Remote;
                 Dial.Open(mouse.x, mouse.y, MouseSpellIndex, DialCounts, SpellSlotOf, Time.unscaledTime);
                 return false;
             }

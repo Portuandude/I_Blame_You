@@ -56,7 +56,7 @@ namespace IBlameYou.Core
                 var data = JsonUtility.FromJson<Data>(json);
                 return data != null && data.version == Version ? data : null;
             }
-            catch (ArgumentException)
+            catch (Exception) // 깨진 저장이 어떤 예외를 내도 시작 메뉴가 멈추지 않게 (이어하기만 안 보인다)
             {
                 return null;
             }
