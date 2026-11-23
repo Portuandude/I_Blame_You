@@ -395,6 +395,7 @@ namespace IBlameYou.Player
 
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            if (!spell.AtCursor && target == null) aim = StopAtWall(self, aim, facing, groundMask, 0.3f); // 벽에 붙어 쓰면 벽 속·벽 너머에 솟던 것
             Vector2 point;
             if (spell.AtCursor) point = lockedLanding ?? CursorLanding(spell);
             else
@@ -458,6 +459,8 @@ namespace IBlameYou.Player
             Vector2 aim = spell.AtCursor ? CursorPoint(spell.Range) : self + new Vector2(facing * (spell.Radius + 0.5f), 0f);
             int groundLayer = LayerMask.NameToLayer("Ground");
             LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            // 벽 앞이면 먼 끝이 벽에 닿게 당긴다 (벽 속에서 시작한 아래 광선이 벽 안·벽 너머 땅에 불벽을 놓아 반대편 적까지 태우던 것)
+            if (!spell.AtCursor) aim = StopAtWall(self, aim, facing, groundMask, spell.Radius);
             Vector2 point;
             if (spell.AtCursor) point = CursorLanding(spell);
             else
@@ -491,8 +494,34 @@ namespace IBlameYou.Player
             return body != null ? body.bounds.center : target.transform.position + new Vector3(0f, 0.5f, 0f);
         }
 
+        // 몸 높이에서 aim까지 가로로 벽이 있으면 벽 앞 back칸 자리로 (가로 거리만 줄인다)
+        private static Vector2 StopAtWall(Vector2 self, Vector2 aim, float facing, LayerMask groundMask, float back)
+        {
+            Vector2 from = self + Vector2.up * 0.5f;
+            if (!FirstWall(from, new Vector2(aim.x, from.y), groundMask, out var wallPoint)) return aim;
+            float x = wallPoint.x - facing * back;
+            if ((x - self.x) * facing < 0f) x = self.x; // 벽에 딱 붙어 있으면 캐릭터 자리
+            return new Vector2(x, aim.y);
+        }
+
+        // from→to 사이 첫 벽. 한쪽 발판(PlatformEffector)은 벽으로 치지 않는다 (발판 위·아래 적도 예전처럼 노림)
+        private static bool FirstWall(Vector2 from, Vector2 to, LayerMask groundMask, out Vector2 point)
+        {
+            foreach (var hit in Physics2D.LinecastAll(from, to, groundMask))
+            {
+                if (hit.collider == null || hit.collider.isTrigger || hit.collider.usedByEffector) continue;
+                point = hit.point;
+                return true;
+            }
+            point = to;
+            return false;
+        }
+
         private static HealthSystem FindSpikeTarget(Vector2 self, float facing, float range)
         {
+            int groundLayer = LayerMask.NameToLayer("Ground");
+            LayerMask groundMask = groundLayer >= 0 ? (LayerMask)(1 << groundLayer) : (LayerMask)1;
+            Vector2 eye = self + Vector2.up * 0.5f;
             HealthSystem best = null;
             float bestDistance = float.MaxValue;
             foreach (var col in Physics2D.OverlapCircleAll(self, range))
@@ -502,6 +531,7 @@ namespace IBlameYou.Player
 
                 Vector2 offset = (Vector2)health.transform.position - self;
                 if (offset.x * facing < 0f) continue; // 등 뒤의 적은 노리지 않는다
+                if (FirstWall(eye, col.bounds.center, groundMask, out _)) continue; // 벽 너머 적은 노리지 않는다
 
                 float distance = offset.sqrMagnitude;
                 if (distance < bestDistance)
