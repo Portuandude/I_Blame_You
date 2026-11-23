@@ -99,7 +99,7 @@ namespace IBlameYou.Systems
         // 남은 채 방을 떠나면 무리는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다 (정예와 같음).
         private void AwakenCursedSwarm(Transform root, int index, Vector2 chestPosition, CursedChest chest)
         {
-            if (spawnEnemy == null) return;
+            if (spawnEnemy == null) { if (chest != null) chest.Rest(); return; }
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
             var kinds = CursedChestRule.SwarmFor(stage.Seed, index, RoomDepth(index)); // 깊은 방 무리엔 정예 하나
             var spawned = new List<HealthSystem>();
@@ -125,7 +125,7 @@ namespace IBlameYou.Systems
                     if (root != null) SpawnCursedReward(root, index, chestPosition, true);
                 };
             }
-            if (spawned.Count == 0) return;
+            if (spawned.Count == 0) { if (chest != null) chest.Rest(); return; }
             cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             GameAudio.PlaySfx("Summon", 0.7f);
             if (chest != null) chest.Watch(spawned.ToArray());
@@ -135,7 +135,7 @@ namespace IBlameYou.Systems
         // 정예를 두고 방을 떠나면 정예는 치워지고, 다시 오면 상자가 처음 상태로 다시 놓인다.
         private void AwakenCursedElite(Transform root, int index, Vector2 chestPosition, CursedChest chest)
         {
-            if (spawnEnemy == null) return;
+            if (spawnEnemy == null) { if (chest != null) chest.Rest(); return; }
             int chestColumn = Mathf.FloorToInt(chestPosition.x - Origin(index).x);
             int side = player != null && player.position.x < chestPosition.x ? 1 : -1;
             var spot = FindStandSpot(index, chestColumn + side * 4, headroom: EnemyHeadroom) ?? chestPosition;
@@ -143,7 +143,7 @@ namespace IBlameYou.Systems
             EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
             GameAudio.PlaySfx("Summon", 0.7f);
             var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
-            if (health == null) return;
+            if (health == null) { if (chest != null) chest.Rest(); return; }
             cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             RegisterEnemy(health);
             if (chest != null) chest.Watch(health);

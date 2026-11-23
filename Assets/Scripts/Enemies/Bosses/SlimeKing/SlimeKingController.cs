@@ -746,6 +746,7 @@ namespace IBlameYou.Enemies
 
             if (SlimeBrood.Active != null) SlimeBrood.Active.Dismiss();
             BossEvents.Notice = null;
+            if (GameAudio.CurrentMusic == "Boss") GameAudio.SetMusicPitch(1f); // 2페이즈로 빨라진 곡을 되돌린다 (같은 곡이 이어지면 빠른 채 남던 것, 쌍둥이 기사와 같음)
             StageEvents.PostNotice($"{DisplayName}을(를) 쓰러뜨렸다!");
             Shake(0.4f, 0.4f);
             BossDefeatFx.Play(BodyBounds.center, DisplayName);

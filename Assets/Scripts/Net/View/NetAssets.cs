@@ -33,6 +33,18 @@ namespace IBlameYou.Net
             SentTextureBytes = 0;
         }
 
+        // 지워진(Destroy) 그림·스프라이트가 표에 남은 수. 판을 다시 시작하거나 방을 치우면 코드로 만든 그림이 지워지는데,
+        // 표는 그 열쇠를 계속 들고 있고 친구도 받은 사본을 계속 들고 있다. 많이 쌓이면 호스트가 처음부터 다시 보낸다.
+        public int DeadCount()
+        {
+            int dead = 0;
+            foreach (var key in textureIds.Keys) if (key == null) dead++;
+            foreach (var key in spriteIds.Keys) if (key == null) dead++;
+            return dead;
+        }
+
+        public int Count => textureIds.Count + spriteIds.Count;
+
         public int TextureId(Texture texture)
         {
             if (texture == null) return NoTexture;

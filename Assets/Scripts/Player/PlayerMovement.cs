@@ -152,6 +152,8 @@ namespace IBlameYou.Player
             animator = GetComponentInChildren<Animator>();
             combatStats = GetComponent<CombatStats>();
             defaultGravityScale = rb.gravityScale;
+            // 가만히 서 있어도 잠들지 않게: 잠든 몸은 함정 트리거(불기둥이 켜지는 자리 등)의 Stay를 못 받아 피해·밀기가 빠진다
+            rb.sleepMode = RigidbodySleepMode2D.NeverSleep;
             bodyCollider = GetComponent<Collider2D>(); // 보통 CapsuleCollider2D (PlayerSpawner)
 
             // 인스펙터에서 손으로 만든 Rigidbody2D는 회전 잠금이 꺼져 있을 수 있어,

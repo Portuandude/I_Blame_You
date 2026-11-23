@@ -81,7 +81,7 @@ namespace IBlameYou.Player
 
         public void AddExperience(float amount)
         {
-            if (amount <= 0f) return;
+            if (!(amount > 0f) || float.IsInfinity(amount)) return; // NaN·무한대면 아래 레벨업 반복이 끝나지 않거나 값이 망가진다
             Experience += amount;
             TotalExperience += amount;
             int levelBefore = Level;

@@ -301,5 +301,23 @@ namespace IBlameYou.Tests
             Assert.AreEqual(0, outbox.Count);
             Assert.AreSame(Texture2D.whiteTexture, receiver.Texture(NetAssetSender.WhiteTexture));
         }
+
+        [Test]
+        public void Assets_DeadCountSeesDestroyedTexturesAndSprites()
+        {
+            var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0f), 16f);
+            sender.SpriteId(sprite);
+            Assert.AreEqual(2, sender.Count);
+            Assert.AreEqual(0, sender.DeadCount());
+
+            Object.DestroyImmediate(sprite);
+            Object.DestroyImmediate(texture);
+            Assert.AreEqual(2, sender.DeadCount());
+
+            sender.Reset();
+            Assert.AreEqual(0, sender.Count);
+            Assert.AreEqual(0, sender.DeadCount());
+        }
     }
 }

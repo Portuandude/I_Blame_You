@@ -8,6 +8,7 @@ namespace IBlameYou.Puzzles
     // B의 바람 마법(투사체)이 맞으면 날아온 쪽의 반대쪽으로 한 칸 미끄러져 멈춘다. 칸 번호는 WindBoxRules가 정하고 여기서는 연출만.
     // 다른 속성·평타는 "팅" 튕긴다. 디딤 자리(선반 아래·바로 옆)에 닿으면 바닥 무늬와 상자 문양이 밝아지며 "딸깍".
     // 마법 하나에 한 칸 (칼바람 3연발도 미끄러지는 동안과 PushCooldown 안의 것은 무시).
+    [DefaultExecutionOrder(-100)] // 위에 선 플레이어를 실어 나르는 속도를 PlayerMovement.FixedUpdate보다 먼저 넘긴다 (MovingPlatform과 같음)
     public class WindBox : MonoBehaviour, IElementPushReceiver
     {
         public const float SlideTime = 0.2f;
@@ -143,7 +144,9 @@ namespace IBlameYou.Puzzles
             if (!sliding) return;
             float t = Mathf.Clamp01((Time.time - slideStart) / SlideTime);
             float eased = 1f - (1f - t) * (1f - t); // 처음 빠르고 끝에서 느려지며 멈춘다
-            body.MovePosition(Vector2.Lerp(slideFrom, slideTo, eased));
+            var target = Vector2.Lerp(slideFrom, slideTo, eased);
+            CarryRider(target - body.position);
+            body.MovePosition(target);
             if (t < 1f) return;
 
             sliding = false;
@@ -161,6 +164,26 @@ namespace IBlameYou.Puzzles
             }
             onStep = step;
             ApplyLook();
+        }
+
+        // 상자 위에 선 플레이어를 같이 옮긴다 (상자는 마찰 없는 재질이라 그냥 두면 플레이어만 제자리에 남아 미끄러져 떨어진다)
+        private readonly Collider2D[] riders = new Collider2D[4];
+
+        private void CarryRider(Vector2 delta)
+        {
+            if (delta.sqrMagnitude < 1e-8f) return;
+            var center = new Vector2(body.position.x, body.position.y + Size / 2f + 0.1f);
+            var filter = new ContactFilter2D { useTriggers = false };
+            int count = Physics2D.OverlapBox(center, new Vector2(Size - 0.1f, 0.2f), 0f, filter, riders);
+            for (int i = 0; i < count; i++)
+            {
+                var rider = riders[i].attachedRigidbody;
+                if (rider == null || rider == body || rider.linearVelocity.y > 0.5f) continue; // 막 뛰어오르는 중이면 싣지 않는다
+                var mover = rider.GetComponent<IBlameYou.Player.PlayerMovement>();
+                if (mover == null) continue;
+                mover.SetPlatformVelocity(new Vector2(delta.x / Time.fixedDeltaTime, 0f));
+                return; // 플레이어 몸은 하나
+            }
         }
 
         private System.Collections.IEnumerator Shake(int dir)

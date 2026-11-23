@@ -29,6 +29,7 @@ namespace IBlameYou.Systems
 
         private Transform visual;
         private float lastBounce = -10f;
+        private float lastEnemyBounce = -10f; // 적 쿨다운은 따로: 적이 막 튕긴 버섯에 플레이어가 내려앉아도 씹히지 않게
         private float squashAge = 10f;
         private float nextSpore = -1f;
         private static float lastPlayerBounce = -10f;
@@ -141,13 +142,14 @@ namespace IBlameYou.Systems
 
         private void OnTriggerStay2D(Collider2D other)
         {
-            if (Time.time - lastBounce < Cooldown && Time.time >= lastBounce) return;
             var player = TrapCommon.PlayerFrom(other);
             if (player == null)
             {
+                if (Time.time - lastEnemyBounce < Cooldown && Time.time >= lastEnemyBounce) return;
                 TryBounceEnemy(other);
                 return;
             }
+            if (Time.time - lastBounce < Cooldown && Time.time >= lastBounce) return;
             if (player.IsDashing) return;
             var body = player.GetComponent<Rigidbody2D>();
             if (body == null || body.linearVelocity.y > 0.5f) return; // 올라가는 중(아래에서 뛰어 지나감)이면 튕기지 않는다
@@ -182,7 +184,7 @@ namespace IBlameYou.Systems
             float capTop = transform.position.y + CapTop;
             if (other.bounds.min.y < capTop - LandTolerance) return;
 
-            lastBounce = Time.time;
+            lastEnemyBounce = Time.time;
             float gravity = Mathf.Abs(Physics2D.gravity.y) * Mathf.Max(0.01f, body.gravityScale);
             body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Sqrt(2f * gravity * EnemyLaunchHeight));
             BounceTrailFx.Play(body.gameObject, false);
