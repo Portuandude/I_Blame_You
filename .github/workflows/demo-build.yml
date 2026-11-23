@@ -1,0 +1,59 @@
+name: Demo Build
+
+# 데모 빌드 (Docs/Demo.md). 친구에게 줄 Windows 데모 zip을 GitHub에서 만든다.
+# - Actions 탭 > Demo Build > Run workflow (develop) 로 아무 때나 만든다.
+# - release-* 브랜치에 푸시하거나 demo-* 태그를 달면 저절로 만든다 (Git-flow: 배포 전 QA용).
+# - 빌드 도구(WindowsBuild.cs)나 이 파일을 고친 PR에서도 한 번 돌려 데모가 실제로 구워지는지 확인한다.
+# 결과: 실행 화면 아래 Artifacts의 "IBlameYou_Demo_..." (안에 zip 하나).
+on:
+  workflow_dispatch:
+  push:
+    branches: ['release-*']
+    tags: ['demo-*']
+  pull_request:
+    branches: [develop]
+    paths:
+      - '.github/workflows/demo-build.yml'
+      - 'Assets/Scripts/Editor/WindowsBuild.cs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Win64-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ github.sha }}
+          restore-keys: |
+            Library-Win64-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
+            Library-Win64-
+      # unity-test-runner와 같은 이유로 4.3.x에 묶어 둔다 (4.4+ Personal 라이선스 활성화 실패, unity-ci.yml 참고)
+      - uses: game-ci/unity-builder@v4.3.0
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: IBlameYou.EditorTools.WindowsBuild.BuildDemo
+          allowDirtyBuild: true
+      - id: zip
+        run: |
+          zip=$(ls Builds/Demo/*.zip | head -n1)
+          echo "path=$zip" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$zip" .zip)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.zip.outputs.name }}
+          path: ${{ steps.zip.outputs.path }}
+          compression-level: 0
+          retention-days: 30
