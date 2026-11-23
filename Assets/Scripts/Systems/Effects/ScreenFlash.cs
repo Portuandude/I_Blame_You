@@ -42,6 +42,8 @@ namespace IBlameYou.Systems
 
         public static void Pulse(float alpha = DefaultAlpha)
         {
+            alpha *= ComfortSettings.FlashScale; // 화면 설정 "번쩍임" % (0이면 번쩍이지 않는다)
+            if (alpha <= 0f) return;
             if (Time.unscaledTime - lastPulse < MinInterval) return;
             var flash = Find();
             if (flash == null || flash.CurrentAlpha() > alpha) return; // 더 진한 덮개(방 전환)가 보이는 중이면 덮어쓰지 않는다
@@ -126,7 +128,7 @@ namespace IBlameYou.Systems
             float height = cam.orthographicSize * 2f;
             edge.transform.localPosition = new Vector3(0f, 0f, 1f);
             edge.transform.localScale = new Vector3(height * cam.aspect, height, 1f);
-            edge.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b, EdgeAlpha * blink);
+            edge.color = new Color(edgeColor.r, edgeColor.g, edgeColor.b, EdgeAlpha * blink * ComfortSettings.EdgeScale); // 번쩍임을 줄여도 알림이라 40%는 남김
         }
 
         private static ScreenFlash Find()
