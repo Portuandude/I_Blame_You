@@ -82,6 +82,10 @@ namespace IBlameYou.Core
 
         public void Shake(float duration, float magnitude)
         {
+            // 지금 남은 흔들림보다 약한 요청은 무시한다 (사망·보스 등장의 큰 흔들림을 착지 먼지 같은 작은 흔들림이 덮어써 끊던 것)
+            float remaining = shakeTimeRemaining > 0f && currentShakeDuration > 0f
+                ? currentShakeMagnitude * Mathf.Clamp01(shakeTimeRemaining / currentShakeDuration) : 0f;
+            if (magnitude < remaining) return;
             currentShakeDuration = duration;
             currentShakeMagnitude = magnitude;
             shakeTimeRemaining = duration;
