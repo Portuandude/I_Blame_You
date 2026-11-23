@@ -157,6 +157,7 @@ namespace IBlameYou.Systems
         private void Fire()
         {
             var go = new GameObject("TrapArrow");
+            go.transform.SetParent(transform.parent, false); // 방 아래에 둬서 방을 떠나 방이 치워지면 날던 화살도 같이 사라진다
             go.transform.position = transform.position + new Vector3(direction * MuzzleOffset, 0.05f, 0f);
             var look = EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
             var arrow = go.AddComponent<Projectile>();
