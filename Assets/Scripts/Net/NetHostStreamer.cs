@@ -12,6 +12,11 @@ namespace IBlameYou.Net
     public class NetHostStreamer : MonoBehaviour
     {
         private const long BacklogLimit = 1536 * 1024;
+        // 지워진 그림이 이만큼 쌓이면 그림 표를 비우고 친구 화면을 처음부터 다시 보낸다 (판을 여러 번 다시 시작해도 표가 끝없이 커지지 않게).
+        // 지운 그림 확인은 표 전체를 도므로 몇 초에 한 번만.
+        internal const int DeadAssetLimit = 128;
+        private const float DeadCheckInterval = 5f;
+        private float nextDeadCheck;
 
         private readonly NetAssetSender assets = new NetAssetSender(NetSession.Send);
         private NetWorldCapture world;
@@ -37,6 +42,11 @@ namespace IBlameYou.Net
         private void OnPeerJoined()
         {
             // 새 친구: 그림 표·스타일 표·지난 그림을 다 잊고 처음부터 보낸다
+            ResetStream();
+        }
+
+        private void ResetStream()
+        {
             assets.Reset();
             world.Reset();
             HudRecorder.ResetTables();
@@ -100,6 +110,17 @@ namespace IBlameYou.Net
             }
 
             Send(NetAudio.Take());
+
+            if (Time.unscaledTime >= nextDeadCheck)
+            {
+                nextDeadCheck = Time.unscaledTime + DeadCheckInterval;
+                if (assets.DeadCount() >= DeadAssetLimit)
+                {
+                    // 이번 프레임 HUD는 이미 보냈다. 다시 보내기 뒤 HUD 스타일은 다음 프레임 기록부터 새 표로 정의된다
+                    ResetStream();
+                    return;
+                }
+            }
 
             var transport = NetSession.Transport;
             bool behind = transport != null && transport.PendingSendBytes > BacklogLimit;
