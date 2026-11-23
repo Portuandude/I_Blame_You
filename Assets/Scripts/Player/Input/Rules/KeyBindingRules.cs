@@ -184,7 +184,7 @@ namespace IBlameYou.Player
             return b;
         }
 
-        // 안내 문구용 키 이름. '+'는 쓰지 않는다 (도움말이 "W/A/S/D+Enter"를 '+'로 나눈다). 모르는 키는 null (Unity 쪽이 KeyCode 이름으로 채운다).
+        // 안내 문구용 키 이름. '+'·'/'는 쓰지 않는다 (도움말이 "W/A/S/D+Enter"를 '+'로, 묶음을 '/'로 나눈다). 모르는 키는 null (Unity 쪽이 KeyCode 이름으로 채운다).
         public static string DisplayName(int code)
         {
             if (code >= A && code <= Z) return ((char)('A' + (code - A))).ToString();
@@ -206,7 +206,7 @@ namespace IBlameYou.Player
                 case LeftArrow: return "←";
                 case RightArrow: return "→";
                 case 266: return "Num.";
-                case 267: return "Num/";
+                case 267: return "Num Slash"; // 도움말이 "/"로 키를 나눈다
                 case 268: return "Num*";
                 case 269: return "Num-";
                 case 270: return "Num Plus";
@@ -221,7 +221,7 @@ namespace IBlameYou.Player
                 case 44: return ",";
                 case 45: return "-";
                 case 46: return ".";
-                case 47: return "/";
+                case 47: return "Slash";
                 case 59: return ";";
                 case 61: return "=";
                 case 91: return "[";
