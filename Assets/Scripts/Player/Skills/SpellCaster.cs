@@ -62,6 +62,15 @@ namespace IBlameYou.Player
             RoleInput.CloseSpellDial(); // 다이얼 상태는 static이라 새 판·씬 다시 불러오기에 남지 않게 (리뷰 LOW)
         }
 
+        // 창이 포커스를 잃으면(Alt-Tab) Unity가 마우스 버튼을 뗀 것으로 보아 다이얼이 발동하고 그리던 마법진이 판정되던 것 → 둘 다 마나 없이 취소.
+        // 온라인 친구가 P2면 호스트 창 포커스와 상관없으므로 그대로 둔다.
+        private void OnApplicationFocus(bool focused)
+        {
+            if (focused || IBlameYou.Net.P2Input.Remote) return;
+            RoleInput.CloseSpellDial();
+            if (CircleOpen && !openedRemote) CancelCircle();
+        }
+
         private void Update()
         {
             if (health.IsDead)
