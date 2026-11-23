@@ -99,7 +99,7 @@ namespace IBlameYou.UI
 
             if (!villageOpen) return villageUnlockFrame >= 0;
             if (Time.frameCount <= villageOpenedFrame) return true;
-            if (Input.GetKeyDown(KeyCode.Escape) || (!villageKeyboard && (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))))
+            if (Input.GetKeyDown(KeyCode.Escape) || (!villageKeyboard && (KeyBindings.GetDown(P1Action.Up) || Input.GetKeyDown(KeyCode.UpArrow)))) // 연 키(P1 위 키, 기본 W)로 닫기
             {
                 CloseVillage(true, true);
                 return true;

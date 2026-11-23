@@ -43,5 +43,19 @@ namespace IBlameYou.Tests
             Assert.AreEqual(0f, tall.x, 1e-4f);
             Assert.AreEqual(DisplayRules.Aspect, tall.width * 1600f / (tall.height * 1200f), 0.01f);
         }
+
+        [Test]
+        public void FrameLimits()
+        {
+            Assert.AreEqual(DisplayRules.FrameLimitNames.Length - 1, DisplayRules.FrameUnlimited);
+            Assert.AreEqual((-1, -1), DisplayRules.FrameSettings(DisplayRules.FrameDefault));
+            Assert.AreEqual((1, -1), DisplayRules.FrameSettings(DisplayRules.FrameVSync));
+            Assert.AreEqual((0, 60), DisplayRules.FrameSettings(2));
+            Assert.AreEqual((0, 144), DisplayRules.FrameSettings(4));
+            Assert.AreEqual((0, -1), DisplayRules.FrameSettings(DisplayRules.FrameUnlimited));
+            Assert.AreEqual(DisplayRules.FrameDefault, DisplayRules.SanitizeFrameLimit(-3));
+            Assert.AreEqual(DisplayRules.FrameDefault, DisplayRules.SanitizeFrameLimit(99));
+            Assert.AreEqual((-1, -1), DisplayRules.FrameSettings(42));
+        }
     }
 }

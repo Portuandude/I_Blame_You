@@ -31,7 +31,7 @@
 | 겹침 조회 (프레임·틱마다) | `Systems/Combat/OverlapQuery`(OverlapBoxAll/CircleAll과 같은 결과를 부르는 쪽이 가진 `List`에 담음). 자주 부르는 곳에서 `*All` 새 배열 금지, 목록은 부르는 쪽마다 따로 |
 | 체력·마나·기력 | `Systems/Health/HealthSystem.cs` (피해 `TakeDamage`, 지속 피해 `TakeDotDamage`(무적·버티기 지킴), 자해 `Drain`, 시간 무적 `GrantGrace` — 짧은 무적은 공용 `Invulnerable` 대신 이것), `Systems/Mana/`, `Systems/Stamina/` |
 | 상태이상 | `Systems/StatusEffects/` |
-| 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` |
+| 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` (`RoleInput` 역할별 입력. P1 키는 `KeyBindings`로만 읽는다 — `KeyCode.Space` 등 직접 금지, 규칙 `Input/Rules/KeyBindingRules`, 창 `Core/KeyBindingsWindow`) |
 | 마법·스킬 | `Player/Skills/` (`SpellBook` 목록, `SpellCaster` 마법진 그리기, 규칙 `Rules/MagicCircleRules`) |
 | 레벨·특성·유물 | `Player/Progression/`, `Player/Relics/` |
 | 이펙트 | `Systems/Effects/` (`EffectLibrary` 프레임 로드, `VfxPlayer`, `ElementRecolor` 그림 바꿔 끼우기) |

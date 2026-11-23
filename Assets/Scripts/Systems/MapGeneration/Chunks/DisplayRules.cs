@@ -40,6 +40,29 @@ namespace IBlameYou.Systems
 
         public static int SanitizeMode(int mode) => mode < Windowed || mode > Fullscreen ? Borderless : mode;
 
+        // 프레임 제한 (2026-11-23 스팀 출시 준비). 0 = 기본(프로젝트 품질 설정 그대로 — 저장이 없을 때), 1 = 수직 동기화,
+        // 2~4 = 60·120·144 FPS 고정, 5 = 제한 없음. 순서는 저장값이라 바꾸지 않는다.
+        public static readonly string[] FrameLimitNames = { "기본", "수직 동기화", "60 FPS", "120 FPS", "144 FPS", "제한 없음" };
+        public const int FrameDefault = 0;
+        public const int FrameVSync = 1;
+        public const int FrameUnlimited = 5;
+
+        public static int SanitizeFrameLimit(int limit) => limit < FrameDefault || limit > FrameUnlimited ? FrameDefault : limit;
+
+        // (수직 동기화 횟수, 목표 FPS). 기본은 호출하는 쪽이 원래 값을 쓴다 (vSync -1 = 건드리지 않음).
+        public static (int vSyncCount, int targetFrameRate) FrameSettings(int limit)
+        {
+            switch (SanitizeFrameLimit(limit))
+            {
+                case FrameVSync: return (1, -1);
+                case 2: return (0, 60);
+                case 3: return (0, 120);
+                case 4: return (0, 144);
+                case FrameUnlimited: return (0, -1);
+                default: return (-1, -1);
+            }
+        }
+
         // 화면(screenW × screenH) 안에 16:9를 가운데 맞춘 카메라 영역 (0~1 비율: x, y, 폭, 높이). 남는 쪽은 검은 띠.
         public static (float x, float y, float width, float height) Letterbox(int screenWidth, int screenHeight)
         {

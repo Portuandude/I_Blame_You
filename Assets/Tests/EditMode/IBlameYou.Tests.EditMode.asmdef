@@ -9,6 +9,7 @@
         "IBlameYou.Equipment",
         "IBlameYou.Formula",
         "IBlameYou.SkillRules",
+        "IBlameYou.InputRules",
         "IBlameYou.Net"
     ],
     "includePlatforms": [

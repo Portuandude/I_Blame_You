@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "IBlameYou.Net",
-        "IBlameYou.NetView"
+        "IBlameYou.NetView",
+        "IBlameYou.InputRules"
     ],
     "includePlatforms": [
         "Editor"
