@@ -31,8 +31,11 @@ namespace IBlameYou.Enemies
         private HitStun hitStun;
         private Collider2D bodyCollider;
         private Transform target;
+        private HealthSystem targetHealthCache; // target의 체력 (FindTarget이 매번 GetComponent 하지 않게)
         private float nextTargetSearchTime;
         private readonly Dictionary<HealthSystem, float> lastHitTime = new Dictionary<HealthSystem, float>();
+        // 접촉 피해 겹침 결과를 담아 두고 다시 쓴다 (OverlapBoxAll은 적마다 물리 프레임마다 새 배열을 만든다). 적마다 따로 둬서 피해 처리 중 다른 조회가 덮어쓰지 않는다
+        private readonly List<Collider2D> contactOverlaps = new List<Collider2D>(8);
 
         // 적이 죽을 때 (적, 드랍 경험치). HUD가 경험치를 모은다.
         public static event Action<EnemyController, float> Killed;
@@ -145,15 +148,12 @@ namespace IBlameYou.Enemies
             {
                 var player = FindFirstObjectByType<PlayerMovement>();
                 target = player != null ? player.transform : null;
+                targetHealthCache = target != null ? target.GetComponent<HealthSystem>() : null;
                 nextTargetSearchTime = Time.time + TargetSearchInterval;
             }
 
             // 플레이어가 죽었으면 더 이상 쫓지 않는다.
-            if (target != null)
-            {
-                var targetHealth = target.GetComponent<HealthSystem>();
-                if (targetHealth != null && targetHealth.IsDead) return null;
-            }
+            if (target != null && targetHealthCache != null && targetHealthCache.IsDead) return null;
 
             return target;
         }
@@ -237,7 +237,9 @@ namespace IBlameYou.Enemies
         private void ApplyContactDamage()
         {
             var bounds = BodyBounds;
-            foreach (var hit in Physics2D.OverlapBoxAll(bounds.center, bounds.size, 0f))
+            var filter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers }; // OverlapBoxAll과 같은 결과
+            Physics2D.OverlapBox(bounds.center, bounds.size, 0f, filter, contactOverlaps);
+            foreach (var hit in contactOverlaps)
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();
                 if (targetHealth == null || targetHealth == Health) continue;

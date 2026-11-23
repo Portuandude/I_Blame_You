@@ -315,7 +315,7 @@ namespace IBlameYou.UI
             DrawVillageGold(rect);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
                 $"한 번 들를 때 종류별 한 그릇 · {VillageKeysHint("1~5")}",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
+                smallCenter);
 
             bool healthFull = HealthFull, manaFull = ManaFull;
             float rate = VillagePriceRate;
@@ -339,8 +339,8 @@ namespace IBlameYou.UI
                     GUI.color = tint;
                 }
                 float textX = row.x + FoodIconSize + 12f;
-                GUI.Label(new Rect(textX, row.y + 2f, row.xMax - 130f - textX, 20f), $"{i + 1}. {name}", new GUIStyle(label) { richText = true });
-                GUI.Label(new Rect(textX + 18f, row.y + 20f, row.xMax - 130f - textX - 18f, 18f), desc, new GUIStyle(small) { richText = true });
+                GUI.Label(new Rect(textX, row.y + 2f, row.xMax - 130f - textX, 20f), $"{i + 1}. {name}", label);
+                GUI.Label(new Rect(textX + 18f, row.y + 20f, row.xMax - 130f - textX - 18f, 18f), desc, small);
 
                 var buy = new Rect(row.xMax - 120f, row.y + 5f, 110f, row.height - 10f);
                 bool wasEnabled = GUI.enabled;
@@ -348,14 +348,14 @@ namespace IBlameYou.UI
                 int cost = VillagePrice.Apply(food.Price, rate);
                 string price = check == FoodBuyCheck.NotEnoughGold ? $"<color=#ff6b6b>{cost} G</color>" : $"{cost} G";
                 if (cost < food.Price) price += " <size=11><color=#7dff8a>도장</color></size>"; // 단골 도장 할인
-                if (CuteButton.Button(buy, price, new GUIStyle(cardButton) { richText = true })) BuyFood(food);
+                if (CuteButton.Button(buy, price, cardButton)) BuyFood(food);
                 GUI.enabled = wasEnabled;
                 y += rowHeight;
             }
 
             if (!string.IsNullOrEmpty(villageMessage))
                 GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage,
-                    new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
+                    smallCenter);
             if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage(false, true);
             GUI.matrix = previousMatrix;
         }

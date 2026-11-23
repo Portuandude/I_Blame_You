@@ -118,7 +118,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f), equipCardKeyboard ? "A와 B가 함께 쓰는 한 벌 · ←→ 고르기 · Enter 누르기" : "A와 B가 함께 쓰는 한 벌 · 1 바꿔 끼기 · 2 두고 가기 · ←→ 고르기",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                smallCenter);
 
             var oldStats = equipCardOld != null ? equipCardOld.Stats() : new List<StatValue>();
             var newStats = equipCardNew.Stats();
@@ -126,7 +126,7 @@ namespace IBlameYou.UI
             var right = new Rect(left.xMax + gap, left.y, cw, cardHeight);
             DrawEquipCardSide(left, "지금", equipCardOld, oldStats, null, 0);
             DrawEquipCardSide(right, "새 장비", equipCardNew, newStats, oldStats, 1);
-            GUI.Label(new Rect(left.xMax, left.y + cardHeight / 2f - 16f, gap, 32f), "→", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(left.xMax, left.y + cardHeight / 2f - 16f, gap, 32f), "→", big);
 
             float by = rect.yMax - 48f;
             var takeRect = new Rect(rect.center.x - 170f, by, 160f, 34f);

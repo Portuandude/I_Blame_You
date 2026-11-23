@@ -112,7 +112,7 @@ namespace IBlameYou.UI
             if (best) line = line.Length > 0 ? line + " · 최고 골드!" : "최고 골드!";
             if (line.Length > 0)
             {
-                var style = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, wordWrap = false, clipping = TextClipping.Overflow };
+                var style = smallLineRightTint;
                 style.normal.textColor = best ? OutlinedLabel.Gold : OutlinedLabel.Cream;
                 GUI.Label(new Rect(row.x - 80f, row.yMax, row.width + 80f, 20f), line, style);
             }

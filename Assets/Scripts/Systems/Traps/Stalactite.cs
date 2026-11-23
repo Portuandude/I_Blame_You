@@ -44,6 +44,7 @@ namespace IBlameYou.Systems
         private Color baseColor;
         private BoxCollider2D hitBox;
         private Transform player;
+        private HealthSystem playerHealth; // 쓰러진 플레이어 위로는 떨어지지 않는다
         private float nextLookup;
         private Vector3 bodyScale;
         private float bodyHalfHeight;
@@ -223,7 +224,9 @@ namespace IBlameYou.Systems
                 var movement = FindFirstObjectByType<Player.PlayerMovement>();
                 if (movement == null) return false;
                 player = movement.transform;
+                playerHealth = movement.GetComponent<HealthSystem>();
             }
+            if (playerHealth != null && playerHealth.IsDead) return false;
 
             Vector2 offset = player.position - home;
             return Mathf.Abs(offset.x) <= TriggerHalfWidth && offset.y < 0f && -offset.y <= TriggerDepth;

@@ -54,7 +54,7 @@ namespace IBlameYou.UI
                 float angle = Mathf.Atan2(n.y, n.x) * Mathf.Rad2Deg;
                 GUIUtility.RotateAroundPivot(angle, arrowCenter);
                 GUI.Label(new Rect(arrowCenter.x - 8f, arrowCenter.y - 10f, 16f, 20f), "<color=#ff8cb3><b>▶</b></color>",
-                    new GUIStyle(small) { richText = true, alignment = TextAnchor.MiddleCenter });
+                    smallCenter);
                 GUI.matrix = previousMatrix;
             }
             GUI.color = previousColor;

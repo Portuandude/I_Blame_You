@@ -101,10 +101,10 @@ namespace IBlameYou.Core
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
 
-            var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
+            var head = headStyle.Get(body, s => { s.alignment = TextAnchor.MiddleCenter; s.fontSize = 22; s.fontStyle = FontStyle.Bold; });
             GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), $"유물 도감 ({(codexDevMode ? "개발자 모드" : "일반 모드")})", head);
             GUI.Label(new Rect(rect.x, rect.y + 42f, rect.width, 22f), SaveData.RelicCodexSummary(codexDevMode, all.Length),
-                new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter });
+                summaryStyle.Get(recordSmall, s => s.alignment = TextAnchor.MiddleCenter));
             DrawProgressBar(new Rect(rect.center.x - 90f, rect.y + 63f, 180f, 4f), RelicCodex.Count(mask, all.Length), all.Length, previous);
 
             // 칸 고르기: 방향키/WASD로 옮기고, 마우스를 움직이면 마우스가 올라간 칸(칸 밖이면 없음)으로 바뀐다.
@@ -138,7 +138,7 @@ namespace IBlameYou.Core
             if (mouseMoved) codexLastMouse = e.mousePosition;
             if (codexCursor >= all.Length) codexCursor = -1;
 
-            var name = new GUIStyle(recordSmall) { alignment = TextAnchor.UpperCenter, fontSize = 12 };
+            var name = nameStyle.Get(recordSmall, s => { s.alignment = TextAnchor.UpperCenter; s.fontSize = 12; });
             int mouseCell = -1;
             for (int i = 0; i < all.Length; i++)
             {
@@ -177,20 +177,29 @@ namespace IBlameYou.Core
                     ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
                       + (OwnedNow(all[hovered]) ? " (이번 판 보유)" : "")
                     : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
-            var infoStyle = new GUIStyle(recordSmall) { alignment = TextAnchor.MiddleCenter, wordWrap = true, clipping = TextClipping.Clip,
-                richText = hovered < 0 }; // 색 글자는 주인별 줄에만 (유물 설명은 그대로 찍는다)
+            // 색 글자는 주인별 줄에만 (유물 설명은 그대로 찍는다)
+            var infoStyle = hovered < 0
+                ? infoRich.Get(recordSmall, s => { s.alignment = TextAnchor.MiddleCenter; s.wordWrap = true; s.clipping = TextClipping.Clip; s.richText = true; })
+                : infoPlain.Get(recordSmall, s => { s.alignment = TextAnchor.MiddleCenter; s.wordWrap = true; s.clipping = TextClipping.Clip; s.richText = false; });
             GUI.color = hovered >= 0 && RelicCodex.Has(mask, (int)all[hovered]) ? OutlinedLabel.Cream : new Color(1f, 1f, 1f, 0.6f);
             GUI.Label(new Rect(rect.x + 10f, rect.yMax - 90f, rect.width - 20f, 36f), info, infoStyle);
             GUI.color = previous;
 
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x - 150f, rect.yMax - 48f, 160f, 36f), codexDevMode ? "Tab: 일반 보기" : "Tab: 개발자 보기",
-                    new GUIStyle(button) { fontSize = 16 })) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
+                    smallButton.Get(button, s => s.fontSize = 16))) // 160px 칸에 들어가게 작은 글씨 (리뷰 HIGH)
                 codexDevMode = !codexDevMode;
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) Close(true);
         }
 
         // 모은 유물 아이콘 왼쪽 아래에 주인 배지: A는 하늘색, B는 주황 글자 (공용은 표시 없음). corner = 아이콘 왼쪽 아래.
         private GUIStyle ownerBadge;
+        // 창 스타일 변형은 한 번만 만든다 (OnGUI마다 new GUIStyle 하지 않게)
+        private readonly DerivedStyle headStyle = new DerivedStyle();
+        private readonly DerivedStyle summaryStyle = new DerivedStyle();
+        private readonly DerivedStyle nameStyle = new DerivedStyle();
+        private readonly DerivedStyle infoRich = new DerivedStyle();
+        private readonly DerivedStyle infoPlain = new DerivedStyle();
+        private readonly DerivedStyle smallButton = new DerivedStyle();
 
         private void DrawOwnerBadge(string owner, Vector2 corner)
         {

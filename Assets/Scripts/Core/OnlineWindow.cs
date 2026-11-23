@@ -16,6 +16,10 @@ namespace IBlameYou.Core
     // 스팀 출시 때 스팀 친구 초대로 바꾼다.
     public class OnlineWindow
     {
+        // 창 글자 스타일 변형은 한 번만 만든다 (OnGUI마다 new GUIStyle 하지 않게)
+        private readonly DerivedStyle headStyle = new DerivedStyle();
+        private readonly DerivedStyle noteStyle = new DerivedStyle();
+        private readonly DerivedStyle fieldStyle = new DerivedStyle();
         private const string AddressKey = "NetLastAddress";
         private const string PortKey = "NetLastPort";
 
@@ -88,9 +92,9 @@ namespace IBlameYou.Core
             var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
-            var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
-            var note = new GUIStyle(body) { fontSize = 13, wordWrap = true, richText = true };
-            var field = new GUIStyle(GUI.skin.textField) { fontSize = 18, alignment = TextAnchor.MiddleLeft };
+            var head = headStyle.Get(body, s => { s.alignment = TextAnchor.MiddleCenter; s.fontSize = 22; s.fontStyle = FontStyle.Bold; });
+            var note = noteStyle.Get(body, s => { s.fontSize = 13; s.wordWrap = true; s.richText = true; });
+            var field = fieldStyle.Get(GUI.skin.textField, s => { s.fontSize = 18; s.alignment = TextAnchor.MiddleLeft; });
             GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), "온라인 2인 (컴퓨터 두 대)", head);
 
             float x = rect.x + 24f;

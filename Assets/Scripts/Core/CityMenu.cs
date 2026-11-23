@@ -21,6 +21,8 @@ namespace IBlameYou.Core
         private GUIStyle small;
         private GUIStyle button;
         private GUIStyle panel;
+        private readonly DerivedStyle bodyLeft = new DerivedStyle();  // 탑·아카데미 줄 (OnGUI마다 새로 만들지 않게)
+        private readonly DerivedStyle noteLeft = new DerivedStyle();
         private int keySelection = SlotDepart; // 0 수정 탑 · 1 아카데미 · 2 출발 · 3 시작 화면
         private bool keyboardUsed;
         private bool activateKeyHeld; // 스토리 소개를 Space로 넘기고 누르고 있으면 그 키가 바로 출발로 새지 않게
@@ -277,7 +279,7 @@ namespace IBlameYou.Core
                 GUILayout.BeginHorizontal();
                 var rowColor = Time.unscaledTime - towerFlashAt < 0.4f && towerFlashRow == i ? "#fff3a0" : "#ffffff";
                 GUILayout.Label($"<color={rowColor}><b>{CrystalTowerRule.Name(stat)}</b>  <color=#f0b8ff>{dots}</color>  {now} {next}</color>",
-                    new GUIStyle(body) { alignment = TextAnchor.MiddleLeft }, GUILayout.Height(40f));
+                    bodyLeft.Get(body, s => s.alignment = TextAnchor.MiddleLeft), GUILayout.Height(40f));
                 bool wasEnabled = GUI.enabled;
                 GUI.enabled = canBuy;
                 bool buy = CuteButton.LayoutButton(cost < 0 ? "완성" : $"바치기 {cost}", button, GUILayout.Width(150f), GUILayout.Height(40f));
@@ -316,8 +318,8 @@ namespace IBlameYou.Core
 
         private void DrawAcademy(int pressed, bool dev)
         {
-            var left = new GUIStyle(body) { alignment = TextAnchor.MiddleLeft };
-            var note = new GUIStyle(small) { alignment = TextAnchor.UpperLeft };
+            var left = bodyLeft.Get(body, s => s.alignment = TextAnchor.MiddleLeft);
+            var note = noteLeft.Get(small, s => s.alignment = TextAnchor.UpperLeft);
             const float rowHeight = 62f;
             float viewHeight = Mathf.Max(140f, Mathf.Min(Screen.height - 20f, 640f) - 300f);
             // 키보드로 고른 줄이 바뀔 때만 그 줄이 보이게 스크롤 (마우스 휠과 다투지 않게, 리뷰 LOW)

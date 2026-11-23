@@ -221,7 +221,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
                 $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter 또는 클릭",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                smallCenter);
 
             for (int i = 0; i < count; i++)
             {
@@ -240,7 +240,7 @@ namespace IBlameYou.UI
                 GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW
                     GUI.Label(new Rect(card.xMax - 56f, card.y + 46f, 46f, 18f), "<b><color=#7dff7a>NEW</color></b>",
-                        new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true });
+                        smallCenter);
                 GUI.Label(new Rect(card.x + 10f, card.y + 70f, card.width - 20f, 60f), $"<color=#ffd84d>{RelicBook.Description(id)}</color>", label);
 
                 var buttonRect = new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f);
@@ -263,7 +263,7 @@ namespace IBlameYou.UI
         // 마우스를 올린 아이콘은 이름을 줄 오른쪽에 적는다.
         private void DrawRelicOwnedRow(Rect row)
         {
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = false, richText = true };
+            var style = smallRowLeft;
             int owned = RelicCount;
             var header = new GUIContent(owned == 0 ? "<color=#bbbbbb>가진 유물 없음</color>" : $"<color=#ffd84d>가진 유물 {owned}개</color>");
             float headerWidth = style.CalcSize(header).x;
@@ -290,7 +290,7 @@ namespace IBlameYou.UI
             if (shown < owned) GUI.Label(new Rect(x, row.y, 40f, row.height), $"+{owned - shown}", style);
             if (hovered >= 0)
                 GUI.Label(new Rect(row.xMax - nameRoom, row.y, nameRoom, row.height), RelicBook.Name(relics.Owned[hovered]),
-                    new GUIStyle(style) { alignment = TextAnchor.MiddleRight });
+                    smallRowRight);
         }
     }
 }

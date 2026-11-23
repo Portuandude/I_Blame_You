@@ -209,7 +209,7 @@ namespace IBlameYou.UI
                 : $"남은 포인트 0 · 다음 레벨까지 경험치 <color=#c8b5ff>{Mathf.Max(1, Mathf.CeilToInt(progression.XpToNext - progression.Experience))}</color>";
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
                 $"레벨 {progression.Level} · {pointsText} · A와 B가 함께 쓰는 포인트 · ←→ + Enter 찍기 · Tab/Esc 닫기",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                smallCenter);
 
             for (int i = 0; i < TraitTree.All.Length; i++)
             {
@@ -227,7 +227,7 @@ namespace IBlameYou.UI
                 int toStar = PointsToNextStar(rank); // 오른쪽: 다음 별까지 남은 포인트
                 GUI.Label(new Rect(column.x + 10f, column.y + 34f, column.width - 20f, 22f),
                     toStar > 0 ? $"<color=#ffd84d>다음 별까지 {toStar}</color>" : "<color=#ffd84d>★ 완성</color>",
-                    new GUIStyle(small) { alignment = TextAnchor.MiddleRight, richText = true });
+                    smallRight);
 
                 // 랭크 막대: gold 캡슐 바 (SkillHUD.Bars.cs, 빛 테두리 여백 BarGlow만큼 안쪽으로)
                 var bar = new Rect(column.x + 10f + BarGlow, column.y + 58f, column.width - 20f - 2f * BarGlow, BarHeight);
