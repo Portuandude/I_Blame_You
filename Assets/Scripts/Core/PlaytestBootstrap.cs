@@ -318,6 +318,10 @@ namespace IBlameYou.Core
             if (player != null) Destroy(player);
             if (streamer != null) Destroy(streamer.gameObject); // 청크, 적, 함정이 모두 이 아래에 있다
             foreach (var projectile in FindObjectsByType<Projectile>(FindObjectsSortMode.None)) Destroy(projectile.gameObject);
+            // 땅에 남는 마법(불꽃 벽·땅 가시·물안개)도 씬 뿌리에 있어 새 판까지 남지 않게 치운다 (지운 플레이어 능력치로 계속 때리던 것)
+            foreach (var wall in FindObjectsByType<FireWall>(FindObjectsSortMode.None)) Destroy(wall.gameObject);
+            foreach (var spike in FindObjectsByType<GroundSpike>(FindObjectsSortMode.None)) Destroy(spike.gameObject);
+            foreach (var mist in FindObjectsByType<MistZone>(FindObjectsSortMode.None)) Destroy(mist.gameObject);
 
             yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
 
