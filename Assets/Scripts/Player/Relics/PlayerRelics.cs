@@ -217,7 +217,7 @@ namespace IBlameYou.Player
                     if (mana != null) mana.RegenMultiplier += RelicBook.SpringRingRegen;
                     break;
                 case RelicId.HawkEye:
-                    if (stats != null) stats.Stats.critChance = Mathf.Min(1f, stats.Stats.critChance + RelicBook.HawkEyeCrit);
+                    if (stats != null) stats.Stats.critChance += RelicBook.HawkEyeCrit; // 장비·특성처럼 자르지 않는다 (잘리면 장비를 뺄 때 확률이 원래보다 낮아짐). 1 넘으면 늘 치명타
                     break;
                 case RelicId.Featherfall:
                     var fall = GetComponent<FallRecovery>();
