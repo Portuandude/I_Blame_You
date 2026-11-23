@@ -494,11 +494,11 @@ namespace IBlameYou.Player
             return body != null ? body.bounds.center : target.transform.position + new Vector3(0f, 0.5f, 0f);
         }
 
-        // 몸 높이에서 aim까지 가로로 벽이 있으면 벽 앞 back칸 자리로 (가로 거리만 줄인다)
+        // 몸 높이에서 aim + back까지 가로로 벽이 있으면 벽 앞 back칸 자리로 (가로 거리만 줄인다)
         private static Vector2 StopAtWall(Vector2 self, Vector2 aim, float facing, LayerMask groundMask, float back)
         {
             Vector2 from = self + Vector2.up * 0.5f;
-            if (!FirstWall(from, new Vector2(aim.x, from.y), groundMask, out var wallPoint)) return aim;
+            if (!FirstWall(from, new Vector2(aim.x + facing * back, from.y), groundMask, out var wallPoint)) return aim; // 먼 끝(aim + back)까지 본다
             float x = wallPoint.x - facing * back;
             if ((x - self.x) * facing < 0f) x = self.x; // 벽에 딱 붙어 있으면 캐릭터 자리
             return new Vector2(x, aim.y);
