@@ -175,7 +175,7 @@ namespace IBlameYou.Tests
             for (int code = KeyBindingRules.MinKey; code < KeyBindingRules.FirstMouseOrJoystick; code++)
             {
                 string name = KeyBindingRules.DisplayName(code);
-                if (name != null) StringAssert.DoesNotContain("+", name, $"{code}");
+                if (name != null) { StringAssert.DoesNotContain("+", name, $"{code}"); StringAssert.DoesNotContain("/", name, $"{code}"); }
             }
             var b = KeyBindingRules.Defaults();
             KeyBindingRules.Assign(b, P1Action.Jump, 300 /*Numlock*/, out _);
