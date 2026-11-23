@@ -38,14 +38,16 @@ namespace IBlameYou.UI
         private GUIStyle helpPill;
         private List<HelpItem> helpItems;
         private bool helpItemsDev;
+        private int helpItemsKeys = -1; // IBlameYou.Player.KeyBindings.Revision (P1 키를 바꾸면 다시 만든다)
         private readonly List<int> helpRowStarts = new List<int>();
 
         private void DrawHelp()
         {
             EnsureHelpStyles();
-            if (helpItems == null || helpItemsDev != GameSession.DevMode)
+            if (helpItems == null || helpItemsDev != GameSession.DevMode || helpItemsKeys != IBlameYou.Player.KeyBindings.Revision)
             {
                 helpItemsDev = GameSession.DevMode;
+                helpItemsKeys = IBlameYou.Player.KeyBindings.Revision;
                 helpItems = BuildHelpItems(helpItemsDev);
                 foreach (var item in helpItems) item.Width = MeasureHelpItem(item);
             }
@@ -168,11 +170,12 @@ namespace IBlameYou.UI
             void Add(string tag, Color tagColor, string keys, string desc) =>
                 items.Add(new HelpItem { Tag = tag, TagColor = tagColor, Keys = SplitKeys(keys), Desc = desc });
 
-            Add(dev ? "A" : "P1·A", HelpColorA, "A/D", "이동");
-            Add(null, default, "Space", "점프");
-            Add(null, default, "Shift", "달리기");
-            Add(null, default, "L.Ctrl", "대쉬");
-            Add(null, default, "W/A/S/D+Enter", "순간이동");
+            // P1 키는 바꿀 수 있다 (KeyBindings). 기본값이면 "A/D", "Space", "Shift", "L.Ctrl", "W/A/S/D+Enter"
+            Add(dev ? "A" : "P1·A", HelpColorA, IBlameYou.Player.KeyBindings.MoveKeys, "이동");
+            Add(null, default, IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Jump), "점프");
+            Add(null, default, IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Run), "달리기");
+            Add(null, default, IBlameYou.Player.KeyBindings.Name(IBlameYou.Player.P1Action.Dash), "대쉬");
+            Add(null, default, IBlameYou.Player.KeyBindings.TeleportKeys, "순간이동");
 
             Add(dev ? "B" : "P2·B", HelpColorB, "좌클릭", "마력탄(마나 5)");
             if (dev) Add(null, default, "1~4", "공격 스킬");

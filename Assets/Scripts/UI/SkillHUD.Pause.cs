@@ -18,11 +18,13 @@ namespace IBlameYou.UI
         private const float PausePopTime = 0.18f;
         private MinimapUI pauseMap; // 같은 오브젝트의 미니맵 (방 격자 스테이지에만 있다). 처음 쓸 때 찾는다
         private const float PauseSideWidth = 320f;
-        private const int PauseButtonCount = 4; // 계속하기 · 다시 시작 · 시작 화면 · 화면 설정
+        private const int PauseButtonCount = 5; // 계속하기 · 다시 시작 · 시작 화면 · 화면 설정 · 조작 키
         private int pauseSelection;
         private bool pauseUnlockPending; // Enter·Space로 닫은 프레임: 조작 잠금을 LateUpdate에서 푼다 (같은 키가 순간이동·점프로 새지 않게)
         private bool pauseKeyboard; // 이번에 열고 화살표를 눌렀으면 테두리를 보인다 (마우스만 쓰면 안 보인다)
         private readonly DisplaySettingsWindow displayWindow = new DisplaySettingsWindow(); // 화면 설정 (시작 화면과 같은 창)
+        private readonly KeyBindingsWindow keysWindow = new KeyBindingsWindow(); // P1 조작 키 (시작 화면과 같은 창)
+        private bool PauseSubWindowOpen => displayWindow.IsOpen || keysWindow.IsOpen;
 
         public bool Paused => paused;
 
@@ -35,6 +37,11 @@ namespace IBlameYou.UI
             {
                 if (displayWindow.Applying) return; // "적용됨!" 띠 동안은 Esc도 무시 (곧 저절로 닫힌다)
                 displayWindow.Close(true); // Esc는 화면 설정 창만 닫는다 ("통")
+                return;
+            }
+            if (paused && keysWindow.IsOpen)
+            {
+                keysWindow.HandleEscape(); // 키를 기다리는 중이면 기다리기만 취소, 아니면 조작 키 창만 닫는다
                 return;
             }
 
@@ -75,6 +82,7 @@ namespace IBlameYou.UI
             if (resumeSound) GameAudio.PlaySfx("PauseClose", 0.7f, 0f);
             paused = false;
             displayWindow.Close();
+            keysWindow.Close();
             Time.timeScale = 1f;
             GameAudio.SetMusicMuffled(false);
             SaveData.SaveVolume();
@@ -99,7 +107,7 @@ namespace IBlameYou.UI
             GUI.color = previous;
 
             const float width = 360f;
-            const float height = 404f;
+            const float height = 458f; // 버튼 5개 (조작 키 더함, 2026-11-23)
             var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             var previousMatrix = GUI.matrix;
             float pop = PausePopScale();
@@ -113,14 +121,14 @@ namespace IBlameYou.UI
             float buttonWidth = rect.width - 80f;
 
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = !displayWindow.IsOpen; // 화면 설정 창 아래 조작(음량 막대 포함)이 클릭을 가로채지 않게
+            GUI.enabled = !PauseSubWindowOpen; // 화면 설정·조작 키 창 아래 조작(음량 막대 포함)이 클릭을 가로채지 않게
             GameAudio.MusicVolume = PauseVolumeSlider(new Rect(x, rect.y + 64f, buttonWidth, 28f), "배경음악", GameAudio.MusicVolume);
             GameAudio.SfxVolume = PauseVolumeSlider(new Rect(x, rect.y + 96f, buttonWidth, 28f), "효과음", GameAudio.SfxVolume);
 
             for (int i = 0; i < PauseButtonCount; i++)
             {
                 var buttonRect = new Rect(x, rect.y + 140f + 54f * i, buttonWidth, 44f);
-                if (pauseKeyboard && i == pauseSelection && !displayWindow.IsOpen) CuteButton.DrawSelection(buttonRect);
+                if (pauseKeyboard && i == pauseSelection && !PauseSubWindowOpen) CuteButton.DrawSelection(buttonRect);
                 if (CuteButton.Button(buttonRect, PauseButtonLabel(i), menuButton))
                 {
                     RunPauseButton(i);
@@ -129,7 +137,7 @@ namespace IBlameYou.UI
             }
             GUI.enabled = wasEnabled;
 
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 352f, rect.width - 20f, 50f),
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 406f, rect.width - 20f, 50f),
                 "볼륨은 저장된다. 스테이지 1은 15~30분이라 런 진행은 저장되지 않는다 (시작 화면으로 나가면 새로 시작)",
                 smallCenter);
 
@@ -137,6 +145,7 @@ namespace IBlameYou.UI
             DrawPauseMap(new Rect(rect.x - 12f - PauseSideWidth, rect.y, PauseSideWidth, height));
             GUI.matrix = previousMatrix; // 화면 설정 창은 크기 그대로
             displayWindow.Draw(panel, small, menuButton);
+            keysWindow.Draw(panel, small, menuButton);
         }
 
         private static string PauseButtonLabel(int index)
@@ -146,7 +155,8 @@ namespace IBlameYou.UI
                 case 0: return "계속하기 (Esc)";
                 case 1: return GameSession.FeatureTest ? "다시 시작 (새 맵)" : "도시로 (이번 판 포기)";
                 case 2: return "시작 화면";
-                default: return "화면 설정";
+                case 3: return "화면 설정";
+                default: return "조작 키";
             }
         }
 
@@ -168,8 +178,11 @@ namespace IBlameYou.UI
                     RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
                     restart?.Invoke(true);
                     break;
-                default:
+                case 3:
                     displayWindow.Show();
+                    break;
+                default:
+                    keysWindow.Show();
                     break;
             }
         }
@@ -177,7 +190,7 @@ namespace IBlameYou.UI
         // 키보드로 버튼 고르기·누르기. 처리했으면 true (그 프레임 Esc 확인은 건너뛴다). 화면 설정 창이 열려 있으면 그 창 몫.
         private bool UpdatePauseKeys()
         {
-            if (!paused || displayWindow.IsOpen) return false;
+            if (!paused || PauseSubWindowOpen) return false;
             int step = 0;
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) step = -1;
             else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) step = 1;
