@@ -4,9 +4,9 @@
 
 ## 2026-11-23 15:33 UTC
 - 브랜치/PR: `claude/project-thread-mb8ozo` → #137 (develop 대상, 자동 머지 켬)
-- 완료 (백로그는 사람 확인 대기뿐 → 스팀 출시 준비 설정·편의): ① P1(A) 조작 키 바꾸기 — 순수 규칙 `Player/Input/Rules/KeyBindingRules`(새 어셈블리 InputRules: 맞바꾸기·금지 키·저장 문자열 복구, EditMode 테스트 16개 + EditModeUnity KeyCode 값 일치), `KeyBindings`(PlayerPrefs `Settings.P1Keys`), `RoleInput`·`PlayerMovement`·마을 창 닫기 교체, 시작 화면·일시정지 "조작 키" 창(`Core/KeyBindingsWindow`), 도움말·시작 화면 안내·팁이 지금 키 이름. 기본값은 이전과 같음. 적대적 리뷰 APPROVE (LOW: 키 이름에 '/' → "Slash"로 고침) ② 눈 편의: 화면 설정 창에 화면 흔들림·번쩍임 0~100% (`Systems/Effects/ComfortSettings`, 가장자리 경고는 최소 40%). 리뷰 APPROVE ③ 시작 화면 "게임 종료" 버튼 (3초 안에 두 번, 온라인 2인 버튼 옆). 리뷰 APPROVE. 로컬 테스트 319/319
+- 완료 (백로그는 사람 확인 대기뿐 → 스팀 출시 준비 설정·편의): ① P1(A) 조작 키 바꾸기 — 순수 규칙 `Player/Input/Rules/KeyBindingRules`(새 어셈블리 InputRules: 맞바꾸기·금지 키·저장 문자열 복구, EditMode 테스트 16개 + EditModeUnity KeyCode 값 일치), `KeyBindings`(PlayerPrefs `Settings.P1Keys`), `RoleInput`·`PlayerMovement`·마을 창 닫기 교체, 시작 화면·일시정지 "조작 키" 창(`Core/KeyBindingsWindow`), 도움말·시작 화면 안내·팁이 지금 키 이름. 기본값은 이전과 같음. 적대적 리뷰 APPROVE (LOW: 키 이름에 '/' → "Slash"로 고침) ② 눈 편의: 화면 설정 창에 화면 흔들림·번쩍임 0~100% (`Systems/Effects/ComfortSettings`, 가장자리 경고는 최소 40%). 리뷰 APPROVE ③ 시작 화면 "게임 종료" 버튼 (3초 안에 두 번, 온라인 2인 버튼 옆). 리뷰 APPROVE ④ 화면 설정 창에 프레임 제한 (기본·수직 동기화·60/120/144·제한 없음, `DisplayRules.FrameSettings` 테스트). 리뷰 APPROVE. 로컬 테스트 320/320. CI 첫 회 실패: 마을 창 if 조건 가운데 넣은 주석이 닫는 괄호를 가림 → 고침 (줄 끝 주석은 문장 끝 `;`·`)` 뒤에)
 - 실패/보류: 없음. 사람 확인: 조작 키 창·흔들림/번쩍임 설정 플레이테스트 (PR 체크리스트)
-- 다음 실행 메모: 스팀 준비 후보 — 프레임 제한/수직 동기화 설정, 메뉴 이동 키도 바꾼 키 따르기(지금은 W/A/S/D·화살표 고정)
+- 다음 실행 메모: 스팀 준비 후보 — 메뉴 이동 키도 바꾼 키 따르기(지금은 W/A/S/D·화살표 고정)
 
 ## 2026-11-23 11:33 UTC
 - 브랜치/PR: `claude/project-thread-8viyhx` → #135 (develop 대상, 11:59 머지)
