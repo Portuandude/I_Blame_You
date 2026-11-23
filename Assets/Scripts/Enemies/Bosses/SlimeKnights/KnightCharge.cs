@@ -224,7 +224,7 @@ namespace IBlameYou.Enemies
             foreach (var hit in OverlapQuery.Box(bounds.center, bounds.size, overlaps))
             {
                 var target = hit.GetComponentInParent<HealthSystem>();
-                if (target == null || target == health || target.GetComponent<EnemyController>() != null) continue;
+                if (target == null || target.IsDead || target == health || target.GetComponent<EnemyController>() != null) continue;
                 if (!struck.Add(target)) continue;
 
                 // 무적(구르기·순간이동 직후) 중에는 피해가 막히니 화상도 붙이지 않는다 (Strike는 막힌 피해도 값으로 돌려준다, 버그 점검 2026-11-22)
