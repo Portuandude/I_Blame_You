@@ -16,6 +16,10 @@ namespace IBlameYou.Core
     // 시간은 모두 Time.unscaledTime (일시정지 중 timeScale 0).
     public class DisplaySettingsWindow
     {
+        // 창 글자 스타일 변형은 한 번만 만든다 (OnGUI마다 new GUIStyle 하지 않게)
+        private readonly DerivedStyle headStyle = new DerivedStyle();
+        private readonly DerivedStyle centerStyle = new DerivedStyle();
+        private readonly DerivedStyle noteStyle = new DerivedStyle();
         private const float OpenFade = 0.2f;      // 배경 어둠이 다 깔리는 시간
         private const float OpenPop = 0.22f;      // 창이 톡 커지는 시간
         private const float OpenScale = 0.9f;     // 처음 크기
@@ -102,9 +106,9 @@ namespace IBlameYou.Core
 
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
-            var head = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, fontSize = 22, fontStyle = FontStyle.Bold };
-            var center = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter };
-            var note = new GUIStyle(body) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
+            var head = headStyle.Get(body, s => { s.alignment = TextAnchor.MiddleCenter; s.fontSize = 22; s.fontStyle = FontStyle.Bold; });
+            var center = centerStyle.Get(body, s => s.alignment = TextAnchor.MiddleCenter);
+            var note = noteStyle.Get(body, s => { s.fontSize = 13; s.alignment = TextAnchor.MiddleCenter; });
             GUI.Label(new Rect(rect.x, rect.y + 12f, rect.width, 30f), "화면 설정", head);
 
             int current = DisplaySettings.Resolution;

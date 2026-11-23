@@ -47,6 +47,7 @@ namespace IBlameYou.Core
         private GUIStyle box;
         private GUIStyle line;
         private GUIStyle cell;
+        private readonly IBlameYou.UI.DerivedStyle lineCenter = new IBlameYou.UI.DerivedStyle();
 
         public void Initialize(GameObject playerObject, ChunkStreamer stageStreamer, StageData stageData,
             Func<StageEnemy, Vector3, Transform, HealthSystem> enemySpawner, Action<bool> restartRun)
@@ -427,7 +428,7 @@ namespace IBlameYou.Core
             string text = a ? "<b><color=#73d9ff>A 조작 중</color></b>  (` 전환)" : "<b><color=#ffa659>B 조작 중</color></b>  (` 전환)";
             var rect = new Rect(Screen.width / 2f - 110f, Screen.height - 74f, 220f, 28f);
             GUI.Box(rect, GUIContent.none, box);
-            var style = new GUIStyle(line) { alignment = TextAnchor.MiddleCenter };
+            var style = lineCenter.Get(line, s => s.alignment = TextAnchor.MiddleCenter);
             GUI.Label(rect, text, style);
         }
 
