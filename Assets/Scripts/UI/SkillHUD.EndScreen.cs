@@ -122,7 +122,7 @@ namespace IBlameYou.UI
 
             if (clear && newBestTime) DrawBestStamp(new Rect(rect.x + 14f, rect.y + 16f, 132f, 34f)); // 최고 기록! 도장
 
-            var center = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            var center = labelCenter;
             float y = rect.y + top;
             int row = 0;
             Color previous;
@@ -164,8 +164,7 @@ namespace IBlameYou.UI
             if (explore.Length > 0)
             {
                 lift = BeginRow(row, out previous);
-                var exploreStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
-                exploreStyle.normal.textColor = OutlinedLabel.Cream;
+                var exploreStyle = smallLineCenterCream;
                 GUI.Label(new Rect(rect.x, y + lift, rect.width, small22), explore, exploreStyle);
                 GUI.color = previous;
                 y += small22; row++;
@@ -174,8 +173,7 @@ namespace IBlameYou.UI
             if (events.Length > 0)
             {
                 lift = BeginRow(row, out previous);
-                var eventStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
-                eventStyle.normal.textColor = OutlinedLabel.Cream;
+                var eventStyle = smallLineCenterCream;
                 GUI.Label(new Rect(rect.x, y + lift, rect.width, small22), events, eventStyle);
                 GUI.color = previous;
                 y += small22; row++;
@@ -319,7 +317,7 @@ namespace IBlameYou.UI
         {
             string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms, StageEvents.SideRooms);
             if (string.IsNullOrEmpty(text)) return;
-            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
                 ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 목표보다 빠름
                 : new Color(1f, 0.62f, 0.25f);    // 주황: 목표보다 느림
@@ -372,7 +370,7 @@ namespace IBlameYou.UI
         private void DrawDefeatPlace(Rect rect)
         {
             string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, StageEvents.InSideRoom, defeatTime);
-            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(rect, text, style);
         }
@@ -384,7 +382,7 @@ namespace IBlameYou.UI
         {
             if (!HasDefeatCompare) return;
             int gap = ClearPace.DefeatGap(StageEvents.FarthestDistance, defeatUsualRooms);
-            var style = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = gap > 0 ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 평소보다 더 갔다
                 : gap < 0 ? new Color(1f, 0.62f, 0.25f)                          // 주황: 덜 갔다
                 : OutlinedLabel.Cream;
@@ -423,8 +421,7 @@ namespace IBlameYou.UI
             string text = FavoriteLine();
             if (string.IsNullOrEmpty(text)) return 0f;
             // 한 줄 높이(22)라 접히면 아랫줄이 잘린다: 줄바꿈 없이 그린다 (리뷰 LOW)
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, richText = true, wordWrap = false, clipping = TextClipping.Overflow };
-            style.normal.textColor = OutlinedLabel.Cream;
+            var style = smallLineCenterCream;
             GUI.Label(new Rect(x, y, width, 22f), text, style);
             return 22f;
         }

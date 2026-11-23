@@ -74,12 +74,12 @@ namespace IBlameYou.UI
         // 게임오버·클리어 창: 가운데 정렬로 [아이콘 이름] 줄. 넓이를 넘으면 이름은 빼고 아이콘만, 그래도 넘으면 글자 목록(RelicNames)으로.
         private void DrawEndRelics(Rect rect)
         {
-            var style = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0) };
+            var style = smallLine;
             bool anyIcon = false;
             for (int i = 0; i < RelicCount; i++) anyIcon |= RelicIcon(relics.Owned[i]) != null;
             if (RelicCount == 0 || !anyIcon)
             {
-                GUI.Label(rect, RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                GUI.Label(rect, RelicNames(), smallCenter);
                 return;
             }
 
@@ -101,7 +101,7 @@ namespace IBlameYou.UI
             float total = showNames ? withNames : iconsOnly;
             if (total > rect.width)
             {
-                GUI.Label(rect, RelicNames(), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                GUI.Label(rect, RelicNames(), smallCenter);
                 return;
             }
 
@@ -142,10 +142,9 @@ namespace IBlameYou.UI
         // 결과 창 유물 줄에 마우스를 올린 유물의 "이름 — 설명" 말풍선. 줄 바로 위, 가로는 유물 줄 칸 안으로 맞춘다.
         private void DrawEndRelicTip(RelicId id, Rect row, float centerX)
         {
-            var tip = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(8, 8, 3, 3) };
-            tip.normal.textColor = OutlinedLabel.Cream;
+            var tip = tipWrap;
             var content = new GUIContent(RelicLine(id));
-            float width = Mathf.Min(new GUIStyle(tip) { wordWrap = false }.CalcSize(content).x + 2f, row.width);
+            float width = Mathf.Min(tipLine.CalcSize(content).x + 2f, row.width);
             float height = tip.CalcHeight(content, width);
             float left = Mathf.Clamp(centerX - width * 0.5f, row.x, row.xMax - width);
             var box = new Rect(left, row.y - height - 2f, width, height);

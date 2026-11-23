@@ -109,7 +109,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            var style = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0), richText = true };
+            var style = smallLine;
             var header = new GUIContent("<color=#7fd8ff>장비</color>");
             float headerWidth = style.CalcSize(header).x;
             float width = headerWidth + items.Count * (EndEquipmentGap + RelicListIconSize);
@@ -133,8 +133,7 @@ namespace IBlameYou.UI
 
             if (hovered == null) return;
             // 마우스를 올린 장비 이름 (등급 색) 말풍선: 줄 바로 위
-            var tip = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(8, 8, 3, 3) };
-            tip.normal.textColor = OutlinedLabel.Cream;
+            var tip = tipLine;
             var content = new GUIContent($"<color={GradeColor(hovered.Grade)}>{hovered.Name}</color>");
             var size = tip.CalcSize(content);
             float left = Mathf.Clamp(hoveredCenter - size.x * 0.5f, rect.x, rect.xMax - size.x);

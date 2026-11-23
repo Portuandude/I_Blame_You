@@ -131,7 +131,7 @@ namespace IBlameYou.UI
 
             GUI.Label(new Rect(rect.x + 10f, rect.y + 352f, rect.width - 20f, 50f),
                 "볼륨은 저장된다. 스테이지 1은 15~30분이라 런 진행은 저장되지 않는다 (시작 화면으로 나가면 새로 시작)",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                smallCenter);
 
             DrawRunSummary(new Rect(rect.xMax + 12f, rect.y, PauseSideWidth, height));
             DrawPauseMap(new Rect(rect.x - 12f - PauseSideWidth, rect.y, PauseSideWidth, height));

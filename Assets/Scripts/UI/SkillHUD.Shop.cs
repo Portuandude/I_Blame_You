@@ -151,15 +151,16 @@ namespace IBlameYou.UI
             DrawVillageBackdrop();
             var previousMatrix = BeginCardPop(rect, villageOpenedAt, 0);
             DrawCard(rect, "공용");
-            var smallRich = new GUIStyle(small) { richText = true };
-            var labelRich = new GUIStyle(label) { richText = true };
-            var buttonRich = new GUIStyle(cardButton) { richText = true };
+            // label·small·cardButton은 처음부터 richText라 그대로 쓴다 (OnGUI마다 새 스타일을 만들지 않게)
+            var smallRich = small;
+            var labelRich = label;
+            var buttonRich = cardButton;
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비 상점", big);
             DrawVillageGold(rect);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
                 $"같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " + VillageKeysHint("1~4", "누르기") : VillageKeysHint("1~4"))}",
-                new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
+                smallCenter);
 
             int gold = SpendableGold;
             float rate = VillagePriceRate;
@@ -221,7 +222,7 @@ namespace IBlameYou.UI
             }
 
             if (!string.IsNullOrEmpty(villageMessage))
-                GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage, new GUIStyle(smallRich) { alignment = TextAnchor.MiddleCenter });
+                GUI.Label(new Rect(rect.x + 20f, y + 2f, rect.width - 40f, 22f), villageMessage, smallCenter);
             if (CuteButton.Button(new Rect(rect.center.x - 70f, rect.yMax - 44f, 140f, 32f), "닫기", cardButton)) CloseVillage(false, true);
             GUI.matrix = previousMatrix;
         }

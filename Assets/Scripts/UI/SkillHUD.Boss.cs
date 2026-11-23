@@ -58,7 +58,7 @@ namespace IBlameYou.UI
             int alive = BossEvents.AliveCount;
             string title = alive > 1 ? $"{BossEvents.Name} ×{alive}" : BossEvents.Name;
             GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
-                $"<b>{title}</b>  {BossEvents.Current:0} / {BossEvents.Max:0}", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                $"<b>{title}</b>  {BossEvents.Current:0} / {BossEvents.Max:0}", labelCenter);
 
             // 왕관 아이콘 + 캡슐 바 (SkillHUD.Bars.cs). 한 번에 크게 깎이면 아이콘과 바가 함께 잠깐 흔들린다 (바 x가 아이콘 기준).
             float ratio = BossEvents.Max > 0f ? Mathf.Clamp01(BossEvents.Current / BossEvents.Max) : 0f;
@@ -83,7 +83,7 @@ namespace IBlameYou.UI
 
             if (!string.IsNullOrEmpty(BossEvents.Notice))
                 GUI.Label(new Rect(rect.x, rect.yMax + 2f, rect.width, 22f), $"<color=#ffd84d>{BossEvents.Notice}</color>",
-                    new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                    smallCenter);
         }
     
         private static Rect BossBarRect()
@@ -105,7 +105,7 @@ namespace IBlameYou.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
-                $"<b>{BossDefeatFx.LastName}</b>  0 / {Mathf.Max(0f, lastBossMax):0}", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                $"<b>{BossDefeatFx.LastName}</b>  0 / {Mathf.Max(0f, lastBossMax):0}", labelCenter);
             var icon = new Rect(rect.x + 10f, rect.y + 26f, BarIconSize, BarIconSize);
             var bar = new Rect(icon.xMax + 4f, rect.y + 29f, rect.xMax - icon.xMax - 4f - 10f - BarGlow, BarHeight);
             var glow = BossGlowColor;

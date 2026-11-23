@@ -46,6 +46,17 @@ namespace IBlameYou.UI
         private GUIStyle label;
         private GUIStyle small;
         private GUIStyle smallCenter; // 마법진 아래 안내 줄
+        // OnGUI마다 new GUIStyle을 만들지 않도록 자주 쓰는 변형을 한 번만 만든다 (GUIStyle은 네이티브 객체라 프레임마다 만들면 쓰레기·종료자 부담)
+        private GUIStyle labelCenter;
+        private GUIStyle labelCenterTint;   // 글자색을 그릴 때마다 바꿔 쓰는 가운데 줄 (결과 창 기록 비교 줄)
+        private GUIStyle smallRight;
+        private GUIStyle smallRowLeft;      // 한 줄·왼쪽 (유물 창 가진 유물 줄)
+        private GUIStyle smallRowRight;
+        private GUIStyle smallLine;         // 한 줄·왼쪽·여백 없음 (결과 창 유물·장비 줄)
+        private GUIStyle smallLineCenterCream; // 한 줄·가운데·넘침 허용·크림색 (결과 창 탐험·사건·최애 줄)
+        private GUIStyle smallLineRightTint;   // 한 줄·오른쪽·넘침 허용, 글자색은 그릴 때 정함 (결과 창 골드 아래 줄)
+        private GUIStyle tipWrap;           // 결과 창 말풍선 (줄바꿈)
+        private GUIStyle tipLine;           // 결과 창 말풍선 (한 줄, 폭 재기·장비 이름)
         private GUIStyle big;
         private GUIStyle menuButton;  // 일시정지 메뉴 큰 버튼 (CuteButton.cs)
         private GUIStyle cardButton;  // 유물·특성 창 작은 버튼
@@ -241,6 +252,18 @@ namespace IBlameYou.UI
             small = new GUIStyle(label) { fontSize = 13, wordWrap = true };
             smallCenter = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
             big = new GUIStyle(label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            labelCenter = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+            labelCenterTint = new GUIStyle(labelCenter);
+            smallRight = new GUIStyle(small) { alignment = TextAnchor.MiddleRight };
+            smallRowLeft = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
+            smallRowRight = new GUIStyle(smallRowLeft) { alignment = TextAnchor.MiddleRight };
+            smallLine = new GUIStyle(small) { wordWrap = false, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(0, 0, 0, 0) };
+            smallLineCenterCream = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = false, clipping = TextClipping.Overflow };
+            smallLineCenterCream.normal.textColor = OutlinedLabel.Cream;
+            smallLineRightTint = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, wordWrap = false, clipping = TextClipping.Overflow };
+            tipWrap = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(8, 8, 3, 3) };
+            tipWrap.normal.textColor = OutlinedLabel.Cream;
+            tipLine = new GUIStyle(tipWrap) { wordWrap = false };
             menuButton = CuteButton.Create(20);
             cardButton = CuteButton.Create(15);
         }
