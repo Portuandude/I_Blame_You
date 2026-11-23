@@ -28,6 +28,7 @@ namespace IBlameYou.Enemies
         private enum Phase { None, Windup, Dash, Recover }
 
         private readonly HashSet<HealthSystem> struck = new HashSet<HealthSystem>();
+        private readonly List<Collider2D> overlaps = new List<Collider2D>(); // 돌진 중 물리 프레임마다 겹침 조회 (새 배열 대신)
         private SlimeController slime;
         private SlimeKnight knight;
         private Rigidbody2D rb;
@@ -220,7 +221,7 @@ namespace IBlameYou.Enemies
         private void StrikeOverlaps()
         {
             var bounds = body.bounds;
-            foreach (var hit in Physics2D.OverlapBoxAll(bounds.center, bounds.size, 0f))
+            foreach (var hit in OverlapQuery.Box(bounds.center, bounds.size, overlaps))
             {
                 var target = hit.GetComponentInParent<HealthSystem>();
                 if (target == null || target == health || target.GetComponent<EnemyController>() != null) continue;

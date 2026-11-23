@@ -37,16 +37,23 @@ namespace IBlameYou.Enemies
             return blob;
         }
 
-        // 겹친 것 중 플레이어 몸 (적·자기 자신 제외)
-        public static IEnumerable<HealthSystem> PlayersIn(Vector2 center, Vector2 size)
+        // 겹침 조회 결과 (PlayersIn 안에서만 쓰고 바로 비운다 — 피해 처리 전에 results로 옮기므로 겹쳐 불려도 안전)
+        private static readonly List<Collider2D> overlaps = new List<Collider2D>();
+
+        // 겹친 것 중 플레이어 몸 (적·자기 자신 제외)을 results에 담는다 (위험물마다 프레임마다 불려 새 배열·집합을 만들지 않게).
+        // results는 부르는 위험물이 따로 가진 목록 — 피해 처리 중 다른 위험물이 덮어쓰지 않게.
+        public static List<HealthSystem> PlayersIn(Vector2 center, Vector2 size, List<HealthSystem> results)
         {
-            var seen = new HashSet<HealthSystem>();
-            foreach (var hit in Physics2D.OverlapBoxAll(center, size, 0f))
+            results.Clear();
+            OverlapQuery.Box(center, size, overlaps);
+            foreach (var hit in overlaps)
             {
                 var target = hit.GetComponentInParent<HealthSystem>();
                 if (target == null || target.IsDead || target.GetComponent<PlayerCombat>() == null) continue;
-                if (seen.Add(target)) yield return target;
+                if (!results.Contains(target)) results.Add(target);
             }
+            overlaps.Clear();
+            return results;
         }
 
         // 주인 젤리가 사라졌거나 쓰러졌으면 위험물도 사라진다 (죽은 보스가 때리지 않게, 방이 치워져도)
@@ -72,6 +79,7 @@ namespace IBlameYou.Enemies
     // 출렁 착지 충격파: 착지점에서 한쪽으로 바닥을 타고 간다. 바닥에서 ShockwaveHeight 위까지만 맞는다 (점프로 피함).
     public class JellyShockwave : MonoBehaviour
     {
+        private readonly List<HealthSystem> players = new List<HealthSystem>(); // JellyHazards.PlayersIn 결과 (다시 씀)
         private const float DustGap = 0.07f;
         private readonly HashSet<HealthSystem> struck = new HashSet<HealthSystem>();
         private GameObject owner;
@@ -124,7 +132,7 @@ namespace IBlameYou.Enemies
             }
 
             float h = PrismJellyRules.ShockwaveHeight;
-            foreach (var target in JellyHazards.PlayersIn(new Vector2(pos.x, groundY + h * 0.5f), new Vector2(0.8f, h)))
+            foreach (var target in JellyHazards.PlayersIn(new Vector2(pos.x, groundY + h * 0.5f), new Vector2(0.8f, h), players))
             {
                 if (!struck.Add(target)) continue;
                 DamageCalculator.Strike(attacker, target, DamageKind.Magic, element, 0.9f);
@@ -135,6 +143,7 @@ namespace IBlameYou.Enemies
     // 젤리 방울: 포물선으로 날아가 땅에 닿으면 그 자리에 웅덩이. 날아가는 중에 플레이어에 닿으면 작은 피해 후 사라진다.
     public class JellyDroplet : MonoBehaviour
     {
+        private readonly List<HealthSystem> players = new List<HealthSystem>(); // JellyHazards.PlayersIn 결과 (다시 씀)
         private const float Gravity = 16f;
         private const float MaxLife = 3f;
         private GameObject owner;
@@ -185,7 +194,7 @@ namespace IBlameYou.Enemies
             }
             transform.position = pos + step;
 
-            foreach (var target in JellyHazards.PlayersIn(transform.position, new Vector2(0.3f, 0.3f)))
+            foreach (var target in JellyHazards.PlayersIn(transform.position, new Vector2(0.3f, 0.3f), players))
             {
                 DamageCalculator.Strike(attacker, target, DamageKind.Magic, element, 0.5f);
                 Destroy(gameObject);
@@ -199,6 +208,7 @@ namespace IBlameYou.Enemies
     [DefaultExecutionOrder(-100)]
     public class JellyPuddle : MonoBehaviour
     {
+        private readonly List<HealthSystem> players = new List<HealthSystem>(); // JellyHazards.PlayersIn 결과 (다시 씀)
         private const float Width = 1.6f;
         private const float Height = 0.6f;
         private const float WindPush = 3.5f;
@@ -249,7 +259,7 @@ namespace IBlameYou.Enemies
             var debuff = JellyHazards.DebuffFor(element);
             if (debuff == StatusDebuff.None) return;
             bool any = false;
-            foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height)))
+            foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height), players))
             {
                 StatusEffects.TryApply(target, debuff, attacker);
                 any = true;
@@ -260,7 +270,7 @@ namespace IBlameYou.Enemies
         private void FixedUpdate()
         {
             if (element != Element.Wind || JellyHazards.OwnerGone(owner)) return;
-            foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height)))
+            foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height), players))
             {
                 var mover = target.GetComponent<PlayerMovement>();
                 if (mover == null) continue;
@@ -276,6 +286,7 @@ namespace IBlameYou.Enemies
     // 높이는 예고를 시작할 때 플레이어 몸 높이로 묶는다 → P1이 위/아래 순간이동으로 층을 바꿔 피한다.
     public class PrismBeam : MonoBehaviour
     {
+        private readonly List<HealthSystem> players = new List<HealthSystem>(); // JellyHazards.PlayersIn 결과 (다시 씀)
         private const float Reach = 40f;
         private static readonly Color[] Rainbow =
         {
@@ -343,7 +354,7 @@ namespace IBlameYou.Enemies
             }
 
             float width = right - left;
-            foreach (var target in JellyHazards.PlayersIn(new Vector2((left + right) * 0.5f, y), new Vector2(width, PrismJellyRules.BeamHalfHeight * 2f)))
+            foreach (var target in JellyHazards.PlayersIn(new Vector2((left + right) * 0.5f, y), new Vector2(width, PrismJellyRules.BeamHalfHeight * 2f), players))
             {
                 if (!struck.Add(target)) continue;
                 DamageCalculator.Strike(attacker, target, DamageKind.Magic, element, 1.4f);

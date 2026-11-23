@@ -19,6 +19,8 @@ namespace IBlameYou.Player
         private float age;
         private float nextTick;
         private readonly HashSet<HealthSystem> burned = new HashSet<HealthSystem>();
+        private readonly HashSet<HealthSystem> hitThisTick = new HashSet<HealthSystem>();
+        private readonly List<Collider2D> overlaps = new List<Collider2D>();
         private System.Action<HealthSystem, bool> onHit; // (맞은 적, 처음 닿았는지)
 
         // rain: 불꽃 비 — 높이 zoneHeight의 넓은 구역에 위에서 불똥이 떨어지는 그림 (판정은 같은 상자).
@@ -61,8 +63,8 @@ namespace IBlameYou.Player
             {
                 nextTick += TickInterval;
                 var center = (Vector2)transform.position + new Vector2(0f, height / 2f);
-                var hitThisTick = new HashSet<HealthSystem>();
-                foreach (var col in Physics2D.OverlapBoxAll(center, new Vector2(halfWidth * 2f, height), 0f))
+                hitThisTick.Clear();
+                foreach (var col in OverlapQuery.Box(center, new Vector2(halfWidth * 2f, height), overlaps))
                 {
                     var health = col.GetComponentInParent<HealthSystem>();
                     if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;

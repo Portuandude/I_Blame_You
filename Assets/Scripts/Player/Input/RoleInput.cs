@@ -39,6 +39,9 @@ namespace IBlameYou.Player
         public static bool StorySkipBoth => Input.GetKey(KeyCode.F12);
         public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || StorySkipBoth;
         public static bool StoryButtonB => P2Input.GetMouseButton(0) || (P2Input.Remote && P2Input.GetKey(KeyCode.Space)) || StorySkipBoth; // 온라인이면 친구의 Space도
+        // 이번 프레임에 누른 순간 (짧게 톡 눌렀다 뗀 것을 놓치지 않게 — 온라인은 친구가 보낸 누름 횟수로 센다)
+        public static bool StoryButtonADown => Input.GetKeyDown(KeyCode.Space);
+        public static bool StoryButtonBDown => P2Input.GetMouseButtonDown(0) || (P2Input.Remote && P2Input.GetKeyDown(KeyCode.Space));
 
         // ---- 플레이어 A ----
 

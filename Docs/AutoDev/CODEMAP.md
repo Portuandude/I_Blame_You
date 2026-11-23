@@ -28,6 +28,7 @@
 | 적 공통 | `Enemies/EnemyController.cs`(체력·경직·접촉 피해), `EnemySpawner.cs`(조립 헬퍼) |
 | 적 종류 | `Enemies/Common/{Slime,Goblin,GoblinArcher}`, `Enemies/Elite/{MotherSlime,GoblinWarrior}`, 보스 `Enemies/Bosses/SlimeKing`, 중간보스 `Enemies/Bosses/SlimeKnights`·`Enemies/Bosses/PrismJelly`(패턴 `JellyPatterns`, 위험물 `JellyHazards`, 규칙 `Stats/Formula/PrismJellyRules`) — 각 폴더의 `*Spawner`가 구성의 단일 출처 |
 | 수치 | `Systems/Stats/StatTable.cs`(스탯 문서 값), `DamageCalculator.cs`(피해·`IDamageModifier`), `Formula/`(상성, 순수 C#) |
+| 겹침 조회 (프레임·틱마다) | `Systems/Combat/OverlapQuery`(OverlapBoxAll/CircleAll과 같은 결과를 부르는 쪽이 가진 `List`에 담음). 자주 부르는 곳에서 `*All` 새 배열 금지, 목록은 부르는 쪽마다 따로 |
 | 체력·마나·기력 | `Systems/Health/HealthSystem.cs` (피해 `TakeDamage`, 지속 피해 `TakeDotDamage`(무적·버티기 지킴), 자해 `Drain`, 시간 무적 `GrantGrace` — 짧은 무적은 공용 `Invulnerable` 대신 이것), `Systems/Mana/`, `Systems/Stamina/` |
 | 상태이상 | `Systems/StatusEffects/` |
 | 플레이어 이동·전투 | `Player/PlayerMovement.cs`, `PlayerCombat.cs`, 입력 `Player/Input/` |

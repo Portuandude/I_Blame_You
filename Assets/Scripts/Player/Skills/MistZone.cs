@@ -17,6 +17,8 @@ namespace IBlameYou.Player
         private float age;
         private float nextCheck;
         private readonly HashSet<MistMark> inside = new HashSet<MistMark>();
+        private readonly HashSet<MistMark> now = new HashSet<MistMark>(); // 이번 검사에 안에 있는 적 (검사마다 비워 다시 씀)
+        private readonly List<Collider2D> overlaps = new List<Collider2D>();
         private SpriteRenderer cloud;
 
         public void Begin(float zoneRadius, float lifetime)
@@ -49,8 +51,8 @@ namespace IBlameYou.Player
 
         private void Refresh()
         {
-            var now = new HashSet<MistMark>();
-            foreach (var col in Physics2D.OverlapCircleAll(transform.position, radius))
+            now.Clear();
+            foreach (var col in OverlapQuery.Circle(transform.position, radius, overlaps))
             {
                 var health = col.GetComponentInParent<HealthSystem>();
                 if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;
@@ -58,13 +60,21 @@ namespace IBlameYou.Player
                 if (mark == null) mark = health.gameObject.AddComponent<MistMark>();
                 if (now.Add(mark) && inside.Add(mark)) mark.Enter();
             }
-            inside.RemoveWhere(mark =>
+            inside.RemoveWhere(leftZone);
+        }
+
+        // RemoveWhere에 넘길 판정 (검사마다 람다를 새로 만들지 않게 한 번만 만든다)
+        private System.Predicate<MistMark> leftZone;
+
+        private void Awake()
+        {
+            leftZone = mark =>
             {
                 if (mark == null) return true;
                 if (now.Contains(mark)) return false;
                 mark.Exit();
                 return true;
-            });
+            };
         }
 
         private void OnDestroy()

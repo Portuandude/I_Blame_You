@@ -101,6 +101,7 @@ namespace IBlameYou.Enemies
         private float lastGlow = -999f;
 
         private readonly List<SlimeKingTentacle> tentacles = new List<SlimeKingTentacle>();
+        private readonly List<Collider2D> headbuttOverlaps = new List<Collider2D>(); // 박치기 중 물리 프레임마다 겹침 조회 (새 배열 대신)
         private GameObject shadow;
 
         // 패턴 예고 (그림만, 패턴 시간·피해·범위는 그대로). Interrupt·OnDestroy에서 ClearTelegraphs로 치운다.
@@ -587,7 +588,7 @@ namespace IBlameYou.Enemies
             for (float t = 0f; t < HeadbuttAir + 0.4f; t += Time.fixedDeltaTime)
             {
                 var bounds = BodyBounds;
-                foreach (var hit in Physics2D.OverlapBoxAll(bounds.center, bounds.size, 0f))
+                foreach (var hit in OverlapQuery.Box(bounds.center, bounds.size, headbuttOverlaps))
                 {
                     var health = hit.GetComponentInParent<HealthSystem>();
                     if (health == null || health == Health || health.GetComponent<EnemyController>() != null) continue;

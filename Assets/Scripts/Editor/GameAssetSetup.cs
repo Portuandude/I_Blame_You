@@ -65,7 +65,7 @@ namespace IBlameYou.EditorTools
                 AssetDatabase.CreateAsset(config, ConfigPath);
             }
 
-            config.groundTile = groundTile;
+            if (groundTile != null) config.groundTile = groundTile; // 타일셋이 없는 컴퓨터에서 다시 돌려도 있던 타일을 지우지 않게
             config.playerAnimatorController = playerController;
             config.playerDefaultSprite = playerDefaultSprite;
             config.slimeAnimatorController = slimeController;

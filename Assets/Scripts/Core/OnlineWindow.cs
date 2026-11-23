@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using IBlameYou.Net;
 using IBlameYou.Systems;
@@ -189,17 +190,35 @@ namespace IBlameYou.Core
         private static List<string> LocalAddresses()
         {
             var result = new List<string>();
+            // 네트워크 어댑터에서 바로 읽는다 (호스트 이름 DNS 조회는 VPN·가상 LAN이 있는 PC에서 몇 초씩 멈춰,
+            // 그 사이 친구 연결이 10초 끊김에 걸릴 수 있다 — 버그 점검 2026-11-23). 못 읽으면 예전처럼 DNS로.
             try
             {
-                foreach (var ip in Dns.GetHostAddresses(Dns.GetHostName()))
+                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    if (ip.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(ip)) continue;
-                    string text = ip.ToString();
-                    if (!result.Contains(text)) result.Add(text);
+                    if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    foreach (var unicast in nic.GetIPProperties().UnicastAddresses)
+                        AddAddress(result, unicast.Address);
                 }
             }
             catch (System.Exception) { }
+            if (result.Count == 0)
+            {
+                try
+                {
+                    foreach (var ip in Dns.GetHostAddresses(Dns.GetHostName())) AddAddress(result, ip);
+                }
+                catch (System.Exception) { }
+            }
             return AddressRanking.Sort(result); // 가상 LAN → 집 네트워크 → 나머지
+        }
+
+        private static void AddAddress(List<string> result, IPAddress ip)
+        {
+            if (ip == null || ip.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(ip)) return;
+            string text = ip.ToString();
+            if (text.StartsWith("169.254.")) return; // 주소를 못 받은 어댑터의 임시 주소 — 친구가 이걸로는 못 들어온다
+            if (!result.Contains(text)) result.Add(text);
         }
     }
 }

@@ -67,7 +67,7 @@ namespace IBlameYou.Net
 
         private void OnGUI()
         {
-            if (!showNote || Event.current.type != EventType.Repaint) return;
+            if (!showNote || !NetSession.IsHost || Event.current.type != EventType.Repaint) return; // 방을 닫았으면 "친구 끊김" 안내는 맞지 않다
             if (noteStyle == null)
                 noteStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter, richText = true, fontStyle = FontStyle.Bold };
             GUI.depth = -1100;

@@ -58,6 +58,7 @@ namespace IBlameYou.Enemies
         private const float ArrivalTolerance = 0.2f;
 
         private readonly HashSet<HealthSystem> attackedThisLeap = new HashSet<HealthSystem>();
+        private readonly List<Collider2D> leapOverlaps = new List<Collider2D>(); // 도약 중 물리 프레임마다 겹침 조회 (새 배열 대신)
 
         private float facing = -1f;
         private float moveDirection;
@@ -331,7 +332,7 @@ namespace IBlameYou.Enemies
         private void ApplyAttackDamage()
         {
             var bounds = BodyBounds;
-            foreach (var hit in Physics2D.OverlapBoxAll(bounds.center, bounds.size, 0f))
+            foreach (var hit in OverlapQuery.Box(bounds.center, bounds.size, leapOverlaps))
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();
                 if (targetHealth == null || targetHealth == Health) continue;

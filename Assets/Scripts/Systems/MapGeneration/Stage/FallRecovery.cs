@@ -72,6 +72,9 @@ namespace IBlameYou.Systems
         {
             var below = Physics2D.Raycast(transform.position, Vector2.down, 1.5f, groundMask);
             if (below.collider == null || below.collider.GetComponentInParent<UnsafeGround>() != null) return false;
+            // 전투 구역 문·천장/바닥 봉인은 돌파하면 치워지므로 복귀 자리로 쓰지 않는다 (구멍 위 허공으로 돌아오지 않게).
+            // UnsafeGround를 붙이면 순간이동이 발판으로 보고 봉인을 뚫으므로 여기서 따로 본다
+            if (below.collider.GetComponentInParent<ArenaZone>() != null) return false;
 
             foreach (var hit in Physics2D.OverlapCircleAll(transform.position, HazardRadius))
             {

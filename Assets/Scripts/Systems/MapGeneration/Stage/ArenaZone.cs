@@ -102,11 +102,25 @@ namespace IBlameYou.Systems
         }
 
         // 쓰러지지 않고 사라진 적(보스에게 흡수된 슬라임 등)은 목록에서 빼고 클리어 여부를 다시 본다.
+        // 구역 적은 ChunkStreamer의 낙사 정리(SweepEnemies)를 받지 않으므로, 넉백·구덩이로 낙사선 아래로 떨어진 적도 여기서 치운다 (문이 영영 잠기지 않게).
         private void Update()
         {
             if (active && !cleared && Ambush) ShowFastClearCountdown();
             if (!active || alive.Count == 0) return;
-            if (alive.RemoveWhere(enemy => enemy == null) > 0) CheckCleared();
+            if (goneOrFallen == null) goneOrFallen = GoneOrFallen;
+            if (alive.RemoveWhere(goneOrFallen) > 0) CheckCleared();
+        }
+
+        private System.Predicate<HealthSystem> goneOrFallen;
+
+        private static bool GoneOrFallen(HealthSystem enemy)
+        {
+            if (enemy == null) return true;
+            var position = enemy.transform.position;
+            if (position.y >= FallRecovery.FloorY + FallRecovery.KillY) return false;
+            VfxPlayer.Dust(new Vector3(position.x, FallRecovery.FloorY + FallRecovery.KillY, 0f), 0.6f);
+            Destroy(enemy.gameObject);
+            return true;
         }
 
         // 매복 빠른 돌파 남은 시간 (2026-11-14 자동 실행): 구역 위쪽 가운데에 10·5·3·2·1초를 금색으로 (AmbushRule.FastClearTime 안에 돌파하면 골드 더)
