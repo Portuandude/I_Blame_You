@@ -301,7 +301,7 @@ namespace IBlameYou.Tests
             Assert.AreEqual(0, outbox.Count);
             Assert.AreSame(Texture2D.whiteTexture, receiver.Texture(NetAssetSender.WhiteTexture));
         }
-    
+
         [Test]
         public void Assets_DeadCountSeesDestroyedTexturesAndSprites()
         {
@@ -319,5 +319,5 @@ namespace IBlameYou.Tests
             Assert.AreEqual(0, sender.Count);
             Assert.AreEqual(0, sender.DeadCount());
         }
-}
+    }
 }
