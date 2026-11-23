@@ -33,6 +33,13 @@ namespace IBlameYou.Systems
             watching = AnyAlive();
         }
 
+        // 깨운 뒤 적을 하나도 못 불렀으면 다시 잠든다 (깨어난 채 굳어 방 이벤트·유물이 영영 막히던 것)
+        public void Rest()
+        {
+            watching = false;
+            awake = false;
+        }
+
         private bool AnyAlive()
         {
             if (guards == null) return false;
@@ -67,7 +74,11 @@ namespace IBlameYou.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (awake || TrapCommon.PlayerFrom(other) == null) return;
+            if (awake || RunStats.Ended) return;
+            var player = TrapCommon.PlayerFrom(other);
+            if (player == null) return;
+            var health = player.GetComponent<HealthSystem>();
+            if (health != null && health.IsDead) return; // 쓰러진 몸이 닿아도 깨우지 않는다 (다른 보상들과 같음)
             awake = true;
             awakenedAt = Time.time;
             lastCount = -1;

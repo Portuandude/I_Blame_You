@@ -143,7 +143,7 @@ namespace IBlameYou.Systems
             bool opened = OpenRequested(item, equipment.Get(item.Slot), take =>
             {
                 waiting = false;
-                askedWhileTouching = true;
+                askedWhileTouching = touching != null; // 창이 열린 사이 떠났으면 다시 닿을 때 또 묻는다
                 if (!take || gone) return;
                 var old = equipment.Equip(item);
                 GameAudio.PlaySfx("RelicOpen", 0.5f);
