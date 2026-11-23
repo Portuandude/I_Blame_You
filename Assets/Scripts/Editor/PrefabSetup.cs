@@ -96,14 +96,19 @@ namespace IBlameYou.EditorTools
 
         private static GameObject Bake(GameObject instance, string prefabPath, PhysicsMaterial2D material)
         {
-            foreach (var collider in instance.GetComponentsInChildren<Collider2D>())
+            try
             {
-                collider.sharedMaterial = material;
-            }
+                foreach (var collider in instance.GetComponentsInChildren<Collider2D>())
+                {
+                    collider.sharedMaterial = material;
+                }
 
-            var prefab = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-            Object.DestroyImmediate(instance);
-            return prefab;
+                return PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance); // 저장 중 예외가 나도 씬에 임시 복사본이 남지 않게
+            }
         }
     }
 }
