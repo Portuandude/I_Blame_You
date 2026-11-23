@@ -34,19 +34,30 @@ namespace IBlameYou.Systems
             open = value;
             var color = visual.color;
             visual.color = new Color(color.r, color.g, color.b, value ? 1f : 0.2f);
+            // 열리는 순간 이미 출구 안에 가만히 서 있으면(Rigidbody 수면) Stay가 오지 않을 수 있어 한 번 직접 겹침을 본다 (RelicChest와 같음)
+            if (value && isActiveAndEnabled)
+            {
+                var box = GetComponent<BoxCollider2D>();
+                if (box != null)
+                    foreach (var hit in Physics2D.OverlapBoxAll((Vector2)transform.position + box.offset, box.size, 0f))
+                        if (TryUse(hit)) break;
+            }
         }
 
-        private void OnTriggerStay2D(Collider2D other)
+        private void OnTriggerStay2D(Collider2D other) => TryUse(other);
+
+        private bool TryUse(Collider2D other)
         {
-            if (!open || used) return;
+            if (!open || used) return false;
             var player = TrapCommon.PlayerFrom(other);
-            if (player == null) return;
+            if (player == null) return false;
 
             used = true;
             var control = player.GetComponent<PlayerControlState>();
             if (control != null) control.Locked = true;
             GameAudio.PlaySfx("Hit_Wind", 0.8f);
             StageEvents.RaiseCleared();
+            return true;
         }
     }
 }
