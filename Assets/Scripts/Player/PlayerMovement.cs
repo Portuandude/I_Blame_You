@@ -16,6 +16,8 @@ namespace IBlameYou.Player
         [SerializeField] private float walkSpeed = 5f;
         [SerializeField] private float runSpeed = 9f;
         [SerializeField] private float jumpForce = 12f;
+        // 점프 힘 배율 (수정 탑 점프력 강화, 2026-11-24 CrystalTowerRule.JumpMultiplier). 기본 1.
+        public float JumpMultiplier { get; set; } = 1f;
 
         [Header("Jump Feel")]
         [Tooltip("발판 끝에서 떨어진 뒤에도 점프할 수 있는 시간 (코요테 타임). 0.08초 × 달리기 9 = 0.7칸이라 최대 거리는 약 8칸")]
@@ -333,7 +335,7 @@ namespace IBlameYou.Player
 
             if (jumpQueued)
             {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce * JumpMultiplier);
                 jumpQueued = false;
                 jumpCutArmed = true;
                 jumpCutRequested = false;
