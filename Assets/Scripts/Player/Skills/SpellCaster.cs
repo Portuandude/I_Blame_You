@@ -494,6 +494,7 @@ namespace IBlameYou.Player
             }
 
             IBlameYou.Puzzles.ElementGate.NotifyNearby(self, facing, spell.Range, Element.Fire);
+            VineFloor.BurnNear(self, facing, spell.Range); // 숲 바닥 덩굴을 태운다 (스테이지 2)
 
             var go = new GameObject("Spell_FireWall");
             go.transform.position = point;

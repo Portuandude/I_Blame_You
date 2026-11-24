@@ -63,6 +63,7 @@ namespace IBlameYou.Systems
         public int TreeParentIndex = -1; // 시작 방 쪽으로 한 칸 (시작 방은 -1)
         public int Distance;         // 시작 방에서 문을 몇 번 지나야 오는지 (방 거리). 난이도 = 거리 / 보스 거리
         public MidBossKind MidBoss;  // 중간보스 방일 때 나올 중간보스 (RoomLayoutData.MidBoss와 같음, RoomShaper가 본다)
+        public int Stage = 1;        // 스테이지 번호 (RoomLayoutData.Stage와 같음). 방 배치는 같고 적·함정 구성만 바뀐다 (StageRoster)
         // 넓은 방 (2026-11-12 "큰 방"): 주 구간(Chunk) 앞, 들어오는 문 쪽에 이어 붙이는 이동 구간들. 비어 있으면 한 화면 방.
         public readonly List<ChunkKind> Leads = new List<ChunkKind>();
         public int Cols => (1 + Leads.Count) * ChunkData.Width; // 방 가로 칸 수
@@ -78,6 +79,7 @@ namespace IBlameYou.Systems
         public readonly List<RoomData> Rooms = new List<RoomData>();
         public int Seed;
         public MidBossKind MidBoss;  // 이번 판 중간보스 (후보 중 시드로 하나)
+        public int Stage = 1;        // 스테이지 번호 (1 = 슬라임·고블린, 2 = 숲)
 
         public int MinX, MaxX, MinY, MaxY;
 
@@ -183,7 +185,8 @@ namespace IBlameYou.Systems
         private static readonly DoorDir[] Dirs = { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down };
 
         // targetSeconds: 목표 시간 (15~30분으로 자른다). 방 수가 이것을 따라간다.
-        public static RoomLayoutData Generate(int seed, float targetSeconds)
+        // stage: 스테이지 번호 (StageRoster). 방 배치 자체는 스테이지와 상관없이 시드로만 정한다.
+        public static RoomLayoutData Generate(int seed, float targetSeconds, int stage = 1)
         {
             float target = Math.Max(MinSeconds, Math.Min(MaxSeconds, targetSeconds));
             var rng = new Random(seed);
@@ -191,6 +194,8 @@ namespace IBlameYou.Systems
             for (int attempt = 0; attempt < MaxAttempts && best == null; attempt++)
                 best = TryBuild(seed, rng, target);
             if (best == null) best = Snake(seed, target); // 이론상 오지 않는다 (테스트가 지킨다)
+            best.Stage = StageRoster.Clamp(stage);
+            foreach (var room in best.Rooms) room.Stage = best.Stage;
             return best;
         }
 

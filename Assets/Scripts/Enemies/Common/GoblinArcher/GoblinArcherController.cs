@@ -41,6 +41,15 @@ namespace IBlameYou.Enemies
             obstacleLayer = layer;
         }
 
+        // 그물 코볼트 (스테이지 2 숲): 화살 대신 그물(NetShot)을 던진다. 사거리는 짧게 (KoboldNetterSpawner가 켠다)
+        public bool ThrowsNets { get; set; }
+
+        public void ConfigureRange(float shoot, float preferredMin)
+        {
+            shootRange = shoot;
+            preferredMinDistance = preferredMin;
+        }
+
         private void Start()
         {
             SetFacing(facing);
@@ -171,6 +180,12 @@ namespace IBlameYou.Enemies
             Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
             var direction = aimAt - origin;
             if (direction.sqrMagnitude < 0.01f) direction = Vector2.right * facing;
+
+            if (ThrowsNets)
+            {
+                NetShot.Launch(Stats, origin, direction, shootRange * 1.4f);
+                return;
+            }
 
             var go = new GameObject("Arrow");
             go.transform.position = origin;

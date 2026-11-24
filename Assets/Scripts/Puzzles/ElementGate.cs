@@ -101,6 +101,18 @@ namespace IBlameYou.Puzzles
             return gate;
         }
 
+        // 숲 세로 덩굴 벽 (스테이지 2): 같은 불 봉인문을 덩굴 색으로 (임시 그림, 아트 규칙). 문양(불)은 그대로 둬서 "불로 태운다"가 보인다
+        private static readonly Color VineColor = new Color(0.3f, 0.55f, 0.22f, 0.95f);
+
+        private bool vines;
+
+        public void DressAsVines()
+        {
+            vines = true;
+            name = "VineWall";
+            if (barrier != null) barrier.color = VineColor;
+        }
+
         // 맞힌 문양은 어둡게 꺼진다.
         private static void Dim(SpriteRenderer sigil)
         {
@@ -165,7 +177,7 @@ namespace IBlameYou.Puzzles
             barrier.color = new Color(1f, 1f, 1f, barrier.color.a);
             yield return new WaitForSecondsRealtime(DeflectFlash);
             if (opened || barrier == null) yield break;
-            var color = ElementInfo.Color(sequence[step]); // 그사이 한 단계 풀렸으면 다음 속성 색
+            var color = vines ? VineColor : ElementInfo.Color(sequence[step]); // 그사이 한 단계 풀렸으면 다음 속성 색
             barrier.color = new Color(color.r, color.g, color.b, barrier.color.a);
         }
     }

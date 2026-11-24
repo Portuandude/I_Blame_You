@@ -128,7 +128,7 @@ namespace IBlameYou.Core
             var kind = Monsters[monsterIndex];
             var movement = player.GetComponent<PlayerMovement>();
             float facing = movement != null ? movement.Facing : 1f;
-            bool big = kind == StageEnemy.SlimeKing || kind == StageEnemy.SlimeKnightFire || kind == StageEnemy.SlimeKnightWater || kind == StageEnemy.PrismJelly;
+            bool big = kind == StageEnemy.SlimeKing || kind == StageEnemy.KoboldChief || kind == StageEnemy.SlimeKnightFire || kind == StageEnemy.SlimeKnightWater || kind == StageEnemy.PrismJelly;
             var position = player.transform.position + new Vector3(facing * (big ? 6f : 4f), big ? 2.5f : 1f, 0f);
             var health = spawner(kind, position, enemyRoot);
             StageEvents.PostNotice(health != null ? $"소환: {MonsterName(kind)}" : $"소환 실패: {MonsterName(kind)}");
@@ -379,6 +379,10 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKnightWater: return "슬라임 기사 물 (중간보스)";
                 case StageEnemy.TreasureGoblin: return "보물 고블린 (10초)";
                 case StageEnemy.PrismJelly: return "프리즘 젤리 (중간보스)";
+                case StageEnemy.Kobold: return "코볼트 돌격 (숲)";
+                case StageEnemy.KoboldNetter: return "그물 코볼트 (숲, A 묶음)";
+                case StageEnemy.KoboldChief: return "코볼트 족장 (숲 보스)";
+                case StageEnemy.Warg: return "와르그 (숲 보스 짝)";
                 default: return kind.ToString();
             }
         }

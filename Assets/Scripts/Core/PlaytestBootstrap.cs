@@ -103,6 +103,9 @@ namespace IBlameYou.Core
             int runSeed = resume != null ? resume.seed : randomSeedEachRun ? Random.Range(1, 1000000) : seed;
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
+            // 스테이지 번호: 이어하기면 저장값, 새 판이면 1 (개발자 모드는 시작 화면에서 고른 스테이지). 기능 테스트는 1
+            int stageNumber = StageRoster.Clamp(resume != null ? resume.stage : featureTest || !GameSession.DevMode ? 1 : GameSession.DevStartStage);
+            GameSession.Stage = stageNumber;
             StageEvents.TargetSeconds = targetSeconds;
             StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
@@ -119,7 +122,7 @@ namespace IBlameYou.Core
             }
             else if (roomGrid)
             {
-                var layout = RoomLayout.Generate(runSeed, targetSeconds);
+                var layout = RoomLayout.Generate(runSeed, targetSeconds, stageNumber);
                 StageEvents.RoomCount = layout.Rooms.Count;
                 var geometries = new System.Collections.Generic.List<RoomGeometry>();
                 int invalid = 0;
@@ -130,7 +133,7 @@ namespace IBlameYou.Core
                     geometries.Add(geometry);
                 }
 
-                Debug.Log($"[Stage] 시드 {runSeed}, 방 {layout.Rooms.Count}개 (격자 {layout.MaxX - layout.MinX + 1}×{layout.MaxY - layout.MinY + 1}), 검증 실패 {invalid}");
+                Debug.Log($"[Stage] 스테이지 {stageNumber}, 시드 {runSeed}, 방 {layout.Rooms.Count}개 (격자 {layout.MaxX - layout.MinX + 1}×{layout.MaxY - layout.MinY + 1}), 검증 실패 {invalid}");
                 streamer.InitializeRooms(layout, geometries, groundTile, spawner);
                 if (resume != null) streamer.SetCurrentRoom(resume.checkpointChunk);
             }
@@ -164,7 +167,7 @@ namespace IBlameYou.Core
                 minimap = gameObject.AddComponent<MinimapUI>();
                 minimap.Initialize(streamer, player);
             }
-            StageEvents.StageName = featureTest ? "기능 테스트" : "스테이지 1";
+            StageEvents.StageName = featureTest ? "기능 테스트" : StageTitle(stageNumber);
             if (featureTest)
             {
                 featureTools = gameObject.AddComponent<FeatureTestTools>();
@@ -178,9 +181,11 @@ namespace IBlameYou.Core
             }
             else
             {
-                StageEvents.PostNotice($"스테이지 1 시작 (시드 {runSeed})");
+                StageEvents.PostNotice($"{StageTitle(stageNumber)} 시작 (시드 {runSeed})");
             }
         }
+
+        private static string StageTitle(int stage) => StageRoster.IsForest(stage) ? $"스테이지 {stage} (숲)" : $"스테이지 {stage}";
 
         // 아카데미에서 배운 마법을 B의 마법 목록에 (SpellBook.Learn → 다이얼 2단계·숫자줄). 기능 테스트는 마법 다이얼을 시험하도록 모두 배운 채로.
         private static void ApplyLearnedSpells(bool featureTest)
@@ -249,6 +254,7 @@ namespace IBlameYou.Core
                 targetSeconds = currentTargetSeconds,
                 devMode = GameSession.DevMode,
                 checkpointChunk = checkpointChunk,
+                stage = GameSession.Stage,
                 roomGrid = streamer.IsRoomMode,
                 spawnX = point.x,
                 spawnY = point.y,
@@ -297,6 +303,14 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKnightWater: enemy = SlimeKnightSpawner.Spawn(position, Element.Water, artConfig); break;
                 case StageEnemy.TreasureGoblin: enemy = TreasureGoblinSpawner.Spawn(position, artConfig); break;
                 case StageEnemy.PrismJelly: enemy = PrismJellySpawner.Spawn(position, artConfig); break;
+                case StageEnemy.Kobold: enemy = KoboldSpawner.SpawnKobold(position, artConfig); break;
+                case StageEnemy.KoboldNetter: enemy = KoboldNetterSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.KoboldChief: enemy = KoboldChiefSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.Warg:
+                    var warg = KoboldSpawner.SpawnWarg(position, artConfig);
+                    KoboldChiefSpawner.JoinPack(warg); // 족장 무리 (보스 체력바·남은 몸 광폭화)
+                    enemy = warg;
+                    break;
                 default: enemy = SlimeSpawner.Spawn(position, artConfig); break;
             }
 

@@ -58,9 +58,14 @@ namespace IBlameYou.Systems
                 return null;
             }
         }
-        // 미니맵 자물쇠: 아직 안 연 두 속성 봉인문이 있는 보물 방 (RoomShaper.HasPairGate)
+        // 미니맵 자물쇠: 아직 안 연 두 속성 봉인문(숲은 덩굴 벽일 수도)이 있는 보물 방
         public bool HasClosedPairGate(int index) =>
-            rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
+            rooms != null && index >= 0 && index < rooms.Rooms.Count && HasTreasureGate(index) && !openedGates.Contains(index);
+
+        // 보물 방 상자 앞을 막는 것: 두 속성 봉인문(RoomShaper.HasPairGate) 또는 숲 덩굴 벽(ForestDressing)
+        private bool HasTreasureGate(int index) =>
+            rooms != null && index >= 0 && index < rooms.Rooms.Count && rooms.Rooms[index].Kind == RoomKind.Treasure
+            && (stage.Chunks[index].HasFeature(FeatureKind.ElementGate) || stage.Chunks[index].HasFeature(FeatureKind.VineWall));
         // 미니맵 돌파 체크: 그 방의 전투 구역을 돌파했는지 (방 격자 모드에서 청크 번호 = 방 번호)
         public bool HasClearedArena(int index) => rooms != null && clearedArenas.Contains(index);
         public event Action<int> RoomEntered;

@@ -121,6 +121,8 @@ namespace IBlameYou.Core
             GUILayout.Space(12f);
 
             devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
+            if (devMode) // 개발자 모드만: 숲 스테이지 2부터 바로 시작 (스테이지 사이 쉼터가 생기기 전 시험용)
+                GameSession.DevStartStage = GUILayout.Toggle(GameSession.DevStartStage >= 2, "  스테이지 2 (숲)부터 시작", toggle) ? 2 : 1;
             GUILayout.Space(8f);
             GUILayout.Label(devMode ? DevModeHelp : NormalModeHelp, body);
             GUILayout.Space(12f);

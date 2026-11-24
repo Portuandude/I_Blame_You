@@ -414,10 +414,11 @@ namespace IBlameYou.Systems
 
         private static bool IsElite(Spawn spawn) => spawn.Kind == StageEnemy.MotherSlime || spawn.Kind == StageEnemy.GoblinWarrior;
 
-        private static bool IsKing(Spawn spawn) => spawn.Kind == StageEnemy.SlimeKing;
+        // 스테이지 보스 (슬라임 킹·코볼트 족장, StageRoster.IsBoss) → 보스 곡
+        private static bool IsKing(Spawn spawn) => StageRoster.IsBoss(spawn.Kind);
 
         private static bool IsBoss(Spawn spawn) =>
-            spawn.Kind == StageEnemy.SlimeKing || RoomShaper.IsMidBossEnemy(spawn.Kind);
+            StageRoster.IsBoss(spawn.Kind) || RoomShaper.IsMidBossEnemy(spawn.Kind);
 
         // 보스 곡이 아직 나오고 있을 때만 스테이지 곡으로 (그사이 메뉴 곡 등으로 바뀌었으면 건드리지 않는다).
         private void LeaveBossMusic()

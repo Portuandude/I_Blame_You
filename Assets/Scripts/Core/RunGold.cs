@@ -40,6 +40,8 @@ namespace IBlameYou.Core
             if (enemy is SlimeKingController) return EnemyRank.Boss; // 2페이즈에 둘로 나뉜다: 한 마리당 표의 절반 (BossParts)
             if (enemy.GetComponent<SlimeKnight>() != null) return EnemyRank.MidBoss; // 쌍둥이 기사: 한 마리당 표의 절반
             if (enemy.GetComponent<PrismJelly>() != null) return EnemyRank.MidBoss;  // 프리즘 젤리: 한 마리가 중간보스 몫 전부 (MidBossShares)
+            var pack = enemy.GetComponent<KoboldPack>(); // 스테이지 2 보스 무리: 족장 = 보스, 와르그 = 정예
+            if (pack != null) return pack.IsChief ? EnemyRank.Boss : EnemyRank.Elite;
             if (enemy.GetComponent<EnrageAbility>() != null || enemy.GetComponent<SplitOnDeath>() != null) return EnemyRank.Elite;
             return EnemyRank.Normal;
         }

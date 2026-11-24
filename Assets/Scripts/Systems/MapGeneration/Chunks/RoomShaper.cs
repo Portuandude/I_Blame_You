@@ -63,6 +63,9 @@ namespace IBlameYou.Systems
             if (IsWallArcherAmbush(seed, room)) AddWallArchers(geometry.Chunk);
             if (HasPairGate(room)) AddPairGate(seed, room, geometry.Chunk);
             if (room.Kind == RoomKind.Puzzle) geometry.Chunk.Features.RemoveAll(f => f.Kind == FeatureKind.Enemy); // 퍼즐 방에는 몹이 없다 (2026-11-14 사람 결정)
+            geometry.Chunk.Stage = room.Stage;
+            if (room.Stage != 1) StageRoster.AdaptChunk(seed, geometry.Chunk); // 스테이지 2+: 적을 그 스테이지 구성으로 바꿔 끼운다 (지형 난수는 그대로)
+            ForestDressing.Dress(seed, room, geometry); // 숲: 가시 덤불·바닥 덩굴·통나무·보물 앞 덩굴 벽 (스테이지 1은 아무것도 안 함)
             return geometry;
         }
 
