@@ -248,7 +248,7 @@ namespace IBlameYou.Core
         }
 
         // 쉼터 저장 데이터: 지금 판을 다음 스테이지 첫 방에서 이어 가도록 (RunSave.Data.atStageStart). 저장은 부르는 쪽이 한다.
-        // 판을 치우기 전에 부른다. 아직 날아오는 보스 골드 동전(RunGold.InFlight)도 넣는다.
+        // 판을 치우기 전에 부른다. 아직 날아오는 보스 골드 동전도 RunStats.Gold에 이미 들어 있다 (InFlight는 화면 표시용).
         private RunSave.Data BuildRunData(int nextStage)
         {
             if (streamer == null || player == null || hud == null) return null;
@@ -263,7 +263,6 @@ namespace IBlameYou.Core
             var equipmentIds = new System.Collections.Generic.List<int>();
             var equipment = player.GetComponent<PlayerEquipment>();
             if (equipment != null) foreach (var item in equipment.All) equipmentIds.Add((int)item.Id);
-            int inFlight = RunGold.InFlight;
 
             return new RunSave.Data
             {
@@ -291,8 +290,8 @@ namespace IBlameYou.Core
                 damageTaken = RunStats.DamageTaken,
                 arenasCleared = RunStats.ArenasCleared,
                 gatesOpened = RunStats.GatesOpened,
-                gold = RunStats.Gold + inFlight,
-                goldEarned = RunStats.GoldEarned + inFlight,
+                gold = RunStats.Gold,             // 아직 날아오는 동전 몫(RunGold.InFlight)은 굴릴 때 이미 Gold에 들어 있다
+                goldEarned = RunStats.GoldEarned,
                 goldSpent = RunStats.GoldSpent,
                 heartDust = RunStats.HeartDust,
                 picks = RunStats.Picks,
