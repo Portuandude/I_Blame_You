@@ -45,12 +45,12 @@ namespace IBlameYou.Player
         // 칸을 비운다. 반환: 빠진 장비 (없으면 null).
         public EquipmentItem Unequip(EquipSlot slot) => Remove(slot, true);
 
-        // 낀 장비의 수식어가 바뀌었을 때 (상점 리롤) 능력치를 다시 맞춘다.
+        // 낀 장비 능력치를 다시 맞춘다 (옛 상점 리롤용, 2026-11-24 리롤 삭제 뒤 지금은 부르는 곳 없음 — 장비 능력치가 바뀌는 기능용으로 남김).
         public void Refresh(EquipSlot slot)
         {
             if (!equipped.TryGetValue(slot, out var item)) return;
             var stats = item.Stats();
-            Apply(stats, 1f); // 새 수식어 먼저 (Equip과 같은 까닭)
+            Apply(stats, 1f); // 새 능력치 먼저 (Equip과 같은 까닭)
             if (applied.TryGetValue(slot, out var old)) Apply(old, -1f);
             applied[slot] = stats;
             Changed?.Invoke(slot, item);
