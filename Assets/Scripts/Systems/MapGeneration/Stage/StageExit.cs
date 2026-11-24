@@ -51,6 +51,8 @@ namespace IBlameYou.Systems
             if (!open || used) return false;
             var player = TrapCommon.PlayerFrom(other);
             if (player == null) return false;
+            var health = player.GetComponent<HealthSystem>();
+            if ((health != null && health.IsDead) || IBlameYou.Core.RunStats.Ended) return false; // 쓰러진 몸이 겹쳐도 출구를 써 버리지 않게 (버그 점검 2026-11-24)
 
             used = true;
             var control = player.GetComponent<PlayerControlState>();
