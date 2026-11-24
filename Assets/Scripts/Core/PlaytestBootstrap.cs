@@ -240,6 +240,7 @@ namespace IBlameYou.Core
             if (data.relics != null)
                 foreach (int id in data.relics)
                     if (System.Enum.IsDefined(typeof(RelicId), id)) relics.Add((RelicId)id);
+            relics.RestoreLevelBonuses(data.acornLevels, data.candyLevels); // 레벨업으로 늘어난 최대치는 레벨업이 다시 안 일어나므로 횟수로
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
@@ -300,7 +301,9 @@ namespace IBlameYou.Core
                 spellCasts = (int[])RunStats.SpellCasts.Clone(),
                 newRelics = RunStats.NewRelics,
                 newRelicMask = RunStats.NewRelicMask,
-                codexCompleted = RunStats.CodexCompleted
+                codexCompleted = RunStats.CodexCompleted,
+                acornLevels = relics != null ? relics.AcornLevels : 0,
+                candyLevels = relics != null ? relics.CandyLevels : 0
             };
         }
 

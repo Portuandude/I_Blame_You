@@ -55,6 +55,8 @@ namespace IBlameYou.Core
             public int newRelics;           // 이번 판에 처음 도감에 오른 유물 (결과 창, 없던 저장은 0 — 버전은 그대로)
             public long newRelicMask;
             public bool codexCompleted;
+            public int acornLevels;         // 도토리 주머니·별사탕이 늘린 최대 체력·마나 횟수 (PlayerRelics.RestoreLevelBonuses)
+            public int candyLevels;
             public int[] equipment = new int[0]; // 낀 장비 EquipmentId
 
             public IBlameYou.Systems.StageRecords records = new IBlameYou.Systems.StageRecords();
