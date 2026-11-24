@@ -32,7 +32,7 @@ namespace IBlameYou.Player
         public int Volley = 1;            // 투사체를 몇 발 연달아 (칼바람 3)
         public float Height;              // 불꽃 비 구역 높이            // 불벽이 서 있는 시간 / 순풍이 이어지는 시간
         public bool DebuffAlways;         // 확률 판정 없이 반드시 건다 (얼음 족쇄)
-        // 아카데미에서 배우는 마법만 (Docs/CityDesign.md 5절): 저장 키·가루·설명
+        // 아카데미에서 배우는 마법만 (Docs/CityDesign.md 5절): 저장 키·영혼석·설명
         public string Id;
         public int DustCost;
         public string Description;

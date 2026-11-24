@@ -102,7 +102,7 @@ namespace IBlameYou.UI
             if (!RunStats.Ended) RunStats.Kills++;
             CountKillStreak(enemy); // "N연속!" (SkillHUD.KillStreak.cs)
             if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
-            // 마음 가루 (도시 화폐): 보스가 되풀이해 소환하는 적은 없음. 보스는 클리어와 같은 순간이라 판이 끝난 뒤에도 받는다 (골드와 같은 규칙)
+            // 영혼석 (도시 화폐): 보스가 되풀이해 소환하는 적은 없음. 보스는 클리어와 같은 순간이라 판이 끝난 뒤에도 받는다 (골드와 같은 규칙)
             if (enemy != null && enemy.GetComponent<BossSummon>() == null && (!RunStats.Ended || enemy is SlimeKingController))
                 RunStats.AddHeartDust(HeartDustRule.ForKill(RunGold.RankOf(enemy)) * RunGold.MidBossShares(enemy)); // 프리즘 젤리는 기사 둘 몫
         }
@@ -173,7 +173,7 @@ namespace IBlameYou.UI
             CloseVillage();
             CloseCodex();
             stageCleared = true;
-            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 마음 가루 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
+            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 영혼석 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
             RunStats.Ended = true;
             RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
