@@ -66,6 +66,12 @@ namespace IBlameYou.UI
             var equip = PlayerEquipment.For(health.gameObject);
             var item = shop.Stock[index];
             var current = equip.Get(item.Slot);
+            if (current != null && current.Id == item.Id)
+            {
+                villageMessage = "<color=#ffd84d>이미 끼고 있어요</color>"; // 같은 장비를 또 사면 값만 나간다 (버그 점검 2026-11-24)
+                GameAudio.PlaySfx("Switch_Tick", 0.5f);
+                return;
+            }
             int gold = SpendableGold;
             float rate = VillagePriceRate;
             if (!shop.CanBuy(index, current, gold, rate))
