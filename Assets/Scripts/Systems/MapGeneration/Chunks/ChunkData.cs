@@ -67,8 +67,13 @@ namespace IBlameYou.Systems
         LanternMural,   // 등불 순서 벽화: (X, Y)는 벽화 가운데 아래 서는 칸 (벽 장식, 몸 없음)
         PuzzleChest,    // 퍼즐을 풀면 유물 상자가 떨어지는 서는 칸 (몸 없음)
         MirrorMural,    // 거울 룬 퍼즐의 거울: (X, Y)는 거울 가운데 아래 바닥 칸 (거울은 그 위 높이 걸림, 몸 없음)
-        WindBox         // 바람 상자: (X, Y)는 상자가 처음 놓이는 서는 칸 (상자 몸 = 그 칸 1×1). 바람 마법에 맞으면 반대쪽으로 한 칸 (WindBoxRules).
+        WindBox,        // 바람 상자: (X, Y)는 상자가 처음 놓이는 서는 칸 (상자 몸 = 그 칸 1×1). 바람 마법에 맞으면 반대쪽으로 한 칸 (WindBoxRules).
                         // 씬에서만 생기는 몸이라 검증에서는 무시한다 (상자 없이도 방은 지나갈 수 있다). Direction = 선반 왼쪽 열, Width = 선반 폭
+        // 스테이지 2 숲 함정 (ForestDressing, 2026-11-24 사람 결정 C1·F2). 모두 몸이 없거나(검증 무시) 봉인문처럼 열린 것으로 본다
+        ThornBush,      // 가시 덤불: X ~ X + Width - 1 칸, Y = 서는 칸. 닿으면 피해만
+        VineFloor,      // 바닥 덩굴: X ~ X + Width - 1 칸, Y = 서는 칸. 밟으면 느려짐, 불로 태움
+        FallingLog,     // 떨어지는 통나무: (X, Y)는 매달린 칸 (나뭇가지). 아래로 오면 떨어진다 (종유석과 같은 동작)
+        VineWall        // 세로 덩굴 벽: X 열을 바닥(Y)부터 막는 불 전용 봉인문 (ElementGate와 같은 열 규칙). 보물 앞에만
     }
 
     public enum StageEnemy
