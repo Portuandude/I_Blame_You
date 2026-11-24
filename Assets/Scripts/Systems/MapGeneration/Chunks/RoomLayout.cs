@@ -38,7 +38,8 @@ namespace IBlameYou.Systems
         Boss,      // 마지막 방 + 출구
         Treasure,  // 보물 방: 유물 상자
         Spring,    // 샘 방: 회복 샘
-        Village    // NPC 마을 (식당·장비 상점, 적·함정 없음). 스테이지마다 하나, 방을 돌아다니며 찾는다 (2026-11-12 사람 결정)
+        Village,   // NPC 마을 (식당·장비 상점, 적·함정 없음). 스테이지마다 하나, 방을 돌아다니며 찾는다 (2026-11-12 사람 결정)
+        ManaSpring // 마나 샘 방 (2026-11-24): 처음 들어가면 3분 마나 재생 +10% (ManaSpringRule). 판마다 0~1개, 적 없음
     }
 
     // 중간보스 후보 (2026-11-14 23:30 사람 결정: "중간 보스는 둘 중 하나만 랜덤으로").
@@ -452,6 +453,23 @@ namespace IBlameYou.Systems
                 open.Remove(byReward[i]);
             }
 
+            // 마나 샘 방 0~1개 (2026-11-24, 1/ManaSpringRule.Chance): 일반 전투 방 MinCombatRooms개와 좌우 전투 방 MinSideCombatRooms개는 남긴다.
+            // 세로 방부터 (좌우 전투 방 자리를 덜 뺏게), 같은 쪽에서는 무작위.
+            if (open.Count > MinCombatRooms && rng.Next(ManaSpringRule.Chance) == 0)
+            {
+                int side = 0;
+                foreach (var r in open) if (!r.IsVertical) side++;
+                var candidates = open.FindAll(r => r.IsVertical);
+                if (candidates.Count == 0 && side > MinSideCombatRooms) candidates = open.FindAll(r => !r.IsVertical);
+                if (candidates.Count > 0)
+                {
+                    var spring = candidates[rng.Next(candidates.Count)];
+                    spring.Kind = RoomKind.ManaSpring;
+                    spring.Chunk = ChunkKind.Rest;
+                    open.Remove(spring);
+                }
+            }
+
             // 나머지는 모두 전투 방. 좌우 방 일부(깊이 0.3+, 1/3, 최대 2개)는 정예. 일반 전투 방이 MinCombatRooms개에 못 미치면 정예를 덜 둔다.
             // 좌우 일반 전투 방이 MinSideCombatRooms개 아래로 내려가게 하는 정예도 두지 않는다. 좌우 자리가 모자라면 다시 뽑는다.
             int spare = open.Count - MinCombatRooms;
@@ -559,9 +577,9 @@ namespace IBlameYou.Systems
             }
         }
 
-        // 위/아래 문을 가질 수 있는 방: 일반 전투 방(세로 전투 방)과 보물·샘 방. 퍼즐·마을·정예·보스 방은 좌우 문만 둔다.
+        // 위/아래 문을 가질 수 있는 방: 일반 전투 방(세로 전투 방)과 보물·샘·마나 샘 방. 퍼즐·마을·정예·보스 방은 좌우 문만 둔다.
         public static bool CanBeVertical(RoomKind kind) =>
-            kind == RoomKind.Combat || kind == RoomKind.Treasure || kind == RoomKind.Spring || kind == RoomKind.Travel || kind == RoomKind.Rest;
+            kind == RoomKind.Combat || kind == RoomKind.Treasure || kind == RoomKind.Spring || kind == RoomKind.ManaSpring || kind == RoomKind.Travel || kind == RoomKind.Rest;
 
         public static (int dx, int dy) Offset(DoorDir dir)
         {
