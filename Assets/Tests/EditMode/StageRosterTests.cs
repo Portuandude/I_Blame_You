@@ -124,5 +124,18 @@ namespace IBlameYou.Tests
             Assert.AreEqual(1, RoomLayout.Generate(3, TargetSeconds, 0).Stage);
             Assert.AreEqual(StageRoster.LastStage, RoomLayout.Generate(3, TargetSeconds, 99).Stage);
         }
+
+        [Test]
+        public void LaterStagesScaleEnemyHealthAndDamage()
+        {
+            Assert.AreEqual(1f, StageRoster.HealthScale(1));
+            Assert.AreEqual(1f, StageRoster.HealthScale(2), "숲 스테이지 2는 지금 수치 그대로");
+            Assert.AreEqual(1.25f, StageRoster.HealthScale(3), 1e-6);
+            Assert.AreEqual(1.75f, StageRoster.HealthScale(5), 1e-6);
+            Assert.AreEqual(1.75f, StageRoster.HealthScale(99), 1e-6, "범위 밖은 5로");
+            Assert.AreEqual(1f, StageRoster.DamageScale(0));
+            Assert.AreEqual(1.1f, StageRoster.DamageScale(3), 1e-6);
+            Assert.AreEqual(1.3f, StageRoster.DamageScale(5), 1e-6);
+        }
     }
 }
