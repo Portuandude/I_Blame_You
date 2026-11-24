@@ -303,6 +303,14 @@ namespace IBlameYou.Core
                 case StageEnemy.SlimeKnightWater: enemy = SlimeKnightSpawner.Spawn(position, Element.Water, artConfig); break;
                 case StageEnemy.TreasureGoblin: enemy = TreasureGoblinSpawner.Spawn(position, artConfig); break;
                 case StageEnemy.PrismJelly: enemy = PrismJellySpawner.Spawn(position, artConfig); break;
+                case StageEnemy.Kobold: enemy = KoboldSpawner.SpawnKobold(position, artConfig); break;
+                case StageEnemy.KoboldNetter: enemy = KoboldNetterSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.KoboldChief: enemy = KoboldChiefSpawner.Spawn(position, artConfig); break;
+                case StageEnemy.Warg:
+                    var warg = KoboldSpawner.SpawnWarg(position, artConfig);
+                    KoboldChiefSpawner.JoinPack(warg); // 족장 무리 (보스 체력바·남은 몸 광폭화)
+                    enemy = warg;
+                    break;
                 default: enemy = SlimeSpawner.Spawn(position, artConfig); break;
             }
 
