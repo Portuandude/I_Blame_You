@@ -409,7 +409,8 @@ namespace IBlameYou.Player
                 // 얼음 족쇄(반드시 거는 젖음): 정예·중간보스·보스는 둔화 20%, 일반 몹 40% (ShackleRules)
                 bool shackle = spell.DebuffAlways && spell.Debuff == StatusDebuff.Wet;
                 float wetSlow = shackle ? ShackleRules.Slow(IsStrong(target)) : StatusEffects.WetSlow;
-                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
+                if (!projectile.LastHitBlocked) // 무적(대시·순간이동 등)이라 피해가 막혔으면 상태이상도 막힌다 (버그 점검 2026-11-24)
+                    StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
             };
             projectile.Impact = point =>
             {
