@@ -183,6 +183,7 @@ namespace IBlameYou.Puzzles
             }
 
             lantern.SetLit(true, true);
+            lastResetFrame = -1; // 같은 프레임에 맞게 켠 뒤 또 틀리면 그때는 다시 끈다
             if (step < muralHeads.Count) muralHeads[step].color = MuralLit;
             step++;
             if (step < lanterns.Count) return;
