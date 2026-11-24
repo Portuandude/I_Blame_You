@@ -15,7 +15,7 @@ namespace IBlameYou.UI
             giveUp = deathHandled || stageCleared || health == null || health.IsDead;
             if (giveUp) return false;
             if (paused) return true;
-            if (control == null || control.ChantActive || control.MovementFrozen) return false; // MovementFrozen = 잠금 + (develop의) 방어막 미니게임
+            if (control == null || control.ChantActive || control.Locked) return false; // 조작 잠금 중 (그물 속박은 막지 않는다)
             if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return false;
 
             paused = true;

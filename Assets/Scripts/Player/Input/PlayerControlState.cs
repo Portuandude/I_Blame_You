@@ -12,7 +12,10 @@ namespace IBlameYou.Player
         // 방 이동 연출 등으로 조작 전체가 잠긴 상태.
         public bool Locked { get; set; }
 
-        public bool MovementFrozen => Locked;
+        // 코볼트 그물에 묶인 상태 (NetSnare, 스테이지 2 숲): A 이동만 막고 B 공격·창은 그대로.
+        public bool Snared { get; set; }
+
+        public bool MovementFrozen => Locked || Snared;
 
         // A 키보드가 막히는 때. 예전에는 B가 영창을 타이핑하는 동안에도 막았지만, 마법진은 마우스로 그리므로 이제는 조작 잠금 때만 (2026-11-16).
         public bool AKeyboardBlocked => Locked;
