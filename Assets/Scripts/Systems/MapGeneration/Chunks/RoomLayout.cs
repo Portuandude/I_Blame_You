@@ -454,8 +454,9 @@ namespace IBlameYou.Systems
             }
 
             // 마나 샘 방 0~1개 (2026-11-24, 1/ManaSpringRule.Chance): 일반 전투 방 MinCombatRooms개와 좌우 전투 방 MinSideCombatRooms개는 남긴다.
-            // 세로 방부터 (좌우 전투 방 자리를 덜 뺏게), 같은 쪽에서는 무작위.
-            if (open.Count > MinCombatRooms && rng.Next(ManaSpringRule.Chance) == 0)
+            // 세로 방부터 (좌우 전투 방 자리를 덜 뺏게), 같은 쪽에서는 무작위. 배치 난수(rng)와 따로 뽑아 정예 자리는 예전 판과 같게 둔다.
+            var springRng = new Random(unchecked(layout.Seed * 31 + 7));
+            if (open.Count > MinCombatRooms && springRng.Next(ManaSpringRule.Chance) == 0)
             {
                 int side = 0;
                 foreach (var r in open) if (!r.IsVertical) side++;
@@ -463,7 +464,7 @@ namespace IBlameYou.Systems
                 if (candidates.Count == 0 && side > MinSideCombatRooms) candidates = open.FindAll(r => !r.IsVertical);
                 if (candidates.Count > 0)
                 {
-                    var spring = candidates[rng.Next(candidates.Count)];
+                    var spring = candidates[springRng.Next(candidates.Count)];
                     spring.Kind = RoomKind.ManaSpring;
                     spring.Chunk = ChunkKind.Rest;
                     open.Remove(spring);
