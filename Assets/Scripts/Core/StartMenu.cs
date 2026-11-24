@@ -58,8 +58,8 @@ namespace IBlameYou.Core
             onStart = startCallback;
             onCity = cityCallback;
             onContinue = continueCallback;
+            SaveData.LoadSettings(); // 저장 슬롯도 여기서 읽으니 이어하기보다 먼저
             saved = continueCallback != null ? RunSave.Load() : null;
-            SaveData.LoadSettings();
             devMode = GameSession.DevMode;
             musicVolume = GameAudio.MusicVolume;
             sfxVolume = GameAudio.SfxVolume;
@@ -121,7 +121,7 @@ namespace IBlameYou.Core
             GUILayout.Space(12f);
 
             devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
-            if (devMode) // 개발자 모드만: 숲 스테이지 2부터 바로 시작 (스테이지 사이 쉼터가 생기기 전 시험용)
+            if (devMode) // 개발자 모드만: 숲 스테이지 2부터 바로 시작 (스테이지 1을 건너뛰고 숲 시험)
                 GameSession.DevStartStage = GUILayout.Toggle(GameSession.DevStartStage >= 2, "  스테이지 2 (숲)부터 시작", toggle) ? 2 : 1;
             GUILayout.Space(8f);
             GUILayout.Label(devMode ? DevModeHelp : NormalModeHelp, body);
@@ -140,6 +140,7 @@ namespace IBlameYou.Core
             if (IBlameYou.UI.CuteButton.LayoutButton("조작 키", recordSmall)) keys.Show();
             if (IBlameYou.UI.CuteButton.LayoutButton("화면 설정", recordSmall)) display.Show();
             GUILayout.EndHorizontal();
+            DrawSaveSlot();
             DrawTip(width - 48f);
             DrawRecords(width - 48f, height - 32f);
             GUILayout.FlexibleSpace();
@@ -147,7 +148,8 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                if (MenuButton(0, $"이어하기 — 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f) && !launching)
+                string where = saved.atStageStart ? $"스테이지 {saved.stage} 처음부터" : $"스테이지 {Mathf.Max(1, saved.stage)}";
+                if (MenuButton(0, $"이어하기 — {where} · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f) && !launching)
                 {
                     launching = true;
                     GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
@@ -202,6 +204,32 @@ namespace IBlameYou.Core
                 activateKeyHeld = true;
         }
 
+        // 저장 슬롯 1~99 (SaveSlotRule): ◀ 슬롯 NN ▶ · 그 슬롯 저장 요약. ←→ 키로도 바꾼다. 슬롯마다 이어하기·숨은 능력치가 따로.
+        private void DrawSaveSlot()
+        {
+            GUILayout.Space(4f);
+            GUILayout.BeginHorizontal();
+            int delta = 0;
+            if (IBlameYou.UI.CuteButton.LayoutButton("◀", recordSmall, GUILayout.Width(36f))) delta = -1;
+            GUILayout.Label(SaveSlotRule.Label(GameSession.SaveSlot), body, GUILayout.Width(80f));
+            if (IBlameYou.UI.CuteButton.LayoutButton("▶", recordSmall, GUILayout.Width(36f))) delta = 1;
+            string summary = saved != null ? $"쉼터 저장 — 스테이지 {saved.stage} · 레벨 {saved.level}" : "비어 있음 (새 판)";
+            GUILayout.Label(summary, body);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            if (delta != 0) ChangeSlot(delta);
+        }
+
+        private void ChangeSlot(int delta)
+        {
+            if (launching) return;
+            SaveData.SelectSaveSlot(SaveSlotRule.Step(GameSession.SaveSlot, delta));
+            saved = onContinue != null ? RunSave.Load() : null;
+            confirmNewRun = false;
+            keySelection = Mathf.Clamp(keySelection, 0, MenuButtonCount - 1);
+            GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+        }
+
         // 아래 큰 버튼 수: (이어하기) · 시작 · 기능 테스트 · 온라인 2인 · 게임 종료.
         private int StartSlot => saved != null ? 1 : 0;
         private int MenuButtonCount => StartSlot + 4;
@@ -224,6 +252,12 @@ namespace IBlameYou.Core
             if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
                 activateKeyHeld = false;
             if (e.type != EventType.KeyDown) return;
+            if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.RightArrow) // 저장 슬롯 바꾸기
+            {
+                ChangeSlot(e.keyCode == KeyCode.LeftArrow ? -1 : 1);
+                e.Use();
+                return;
+            }
             int step = 0;
             if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) step = -1;
             else if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) step = 1;
@@ -555,6 +589,7 @@ namespace IBlameYou.Core
             h += body.CalcHeight(new GUIContent(devMode ? DevModeHelp : NormalModeHelp), innerWidth) + 12f;
             h += 2f * 26f + 8f;                       // 음량 슬라이더 두 줄
             h += 22f;                                 // 유물 도감 줄
+            h += 26f + 4f;                            // 저장 슬롯 줄
             h += TipMaxHeight(innerWidth) + 4f;       // 오늘의 팁 (가장 긴 팁 기준)
             if (saved != null) h += 44f + 4f;         // 이어하기 버튼
             h += 48f + 4f + 40f + 40f;                // 시작·기능 테스트·온라인 버튼

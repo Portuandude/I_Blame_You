@@ -3,20 +3,22 @@ using UnityEngine;
 
 namespace IBlameYou.Core
 {
-    // 런 진행 저장: 시작 화면의 "이어하기"로 저장한 방에서 다시 시작한다. 쓰러지거나 클리어하거나 새 런을 시작하면 지운다.
-    // 2026-11-10 체크포인트 제거(사람 결정)로 지금은 저장하는 곳이 없다 (스테이지가 하나뿐이라 시작 지점 이어하기는 새 런과 같음).
-    // 스테이지 2가 생기면 스테이지 전환 때 저장하는 용도로 남긴다. Version 2: 옛 체크포인트 저장(1)은 읽지 않는다 → 이어하기 버튼 안 나옴.
+    // 런 진행 저장: 쉼터에서만 저장한다 (2026-11-24 사람 결정, Chunks/RestRule). 시작 화면 "이어하기"는 저장한 쉼터 다음 스테이지 첫 방에서 시작.
+    // 쓰러지거나 스테이지 5를 깨거나 새 런을 시작하면 지운다. 스테이지 도중에 나가도 쉼터 저장은 남는다 (그 스테이지 처음부터 다시).
+    // 저장 슬롯(GameSession.SaveSlot, SaveSlotRule)마다 키가 따로다. 슬롯 1은 예전 키 그대로.
     // PlayerPrefs 한 칸에 JSON으로 넣는다. 형식이 바뀌면 Version을 올리고, 버전이 다른 저장은 버린다.
     public static class RunSave
     {
-        public const int Version = 5; // 5: 방 구성 14~18방·마을 1(2026-11-14 23:37). 4: 방 구성 변경(2026-11-14, 5×4 격자·이동 방 삭제). 3: 넓은 방(2026-11-12)으로 같은 시드의 방 배치·원점 간격이 바뀌어 예전 저장은 읽지 않는다
-        private const string Key = "Run.Save";
+        public const int Version = 6; // 6: 쉼터 저장 (스테이지 시작·골드·장비·마법 집계를 넘긴다, 2026-11-24). 5 5: 방 구성 14~18방·마을 1(2026-11-14 23:37). 4: 방 구성 변경(2026-11-14, 5×4 격자·이동 방 삭제). 3: 넓은 방(2026-11-12)으로 같은 시드의 방 배치·원점 간격이 바뀌어 예전 저장은 읽지 않는다
+        private const string BaseKey = "Run.Save";
+        private static string Key => SaveData.SlotKey(BaseKey);
 
         [Serializable]
         public class Data
         {
             public int version;
-            public int seed;
+            public int seed;                // 판 시드 (스테이지 맵 시드는 RunFlowRule.StageSeed(seed, stage))
+            public bool atStageStart;       // 쉼터 저장: 그 스테이지 첫 방에서 시작 (방·위치·records는 쓰지 않는다)
             public float targetSeconds;
             public bool devMode;
             public int checkpointChunk;     // 방 격자 모드에서는 방 번호
@@ -41,6 +43,16 @@ namespace IBlameYou.Core
             public float damageTaken;
             public int arenasCleared;
             public int gatesOpened;
+
+            // 스테이지를 넘어 이어지는 판 기록 (쉼터 저장, Version 6)
+            public float maxHealth;         // 쉼터 창 표시용 (복원은 장비·유물·탑이 다시 만든 최대치를 쓴다)
+            public int gold;
+            public int goldEarned;
+            public int goldSpent;
+            public int heartDust;           // 이번 판에 얻은 영혼석 (결과 창 표시, 누적 저장은 이미 SaveData에)
+            public int picks;
+            public int[] spellCasts = new int[0];
+            public int[] equipment = new int[0]; // 낀 장비 EquipmentId
 
             public IBlameYou.Systems.StageRecords records = new IBlameYou.Systems.StageRecords();
         }

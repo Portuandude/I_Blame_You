@@ -10,9 +10,8 @@ namespace IBlameYou.Core
     // 빈 씬에 이 컴포넌트 하나만 두고 Play를 누르면: 시작 화면(개발자 모드 선택)을 띄우고, 시작하면
     // 시드로 스테이지 1(청크를 가로로 이어 붙인 약 15분 분량의 맵)을 만들고, 시작 지점에 플레이어와 카메라를 준비한다.
     // 청크는 ChunkStreamer가 플레이어 주변만 만들고 멀어지면 치운다. 쓰러지면 R로 새 맵 다시 시작, M으로 시작 화면.
-    // 런 진행 저장(RunSave)·이어하기: 체크포인트 제거(2026-11-10 사람 결정)로 지금은 저장하는 시점이 없다. 스테이지가 하나뿐이라
-    // "스테이지 시작 지점에서 이어하기"는 새 런과 다르지 않기 때문. 저장·복원 코드(SaveRun·ContinueWorld)는 스테이지 2가 생기면
-    // 스테이지 전환 때 저장하는 용도로 남긴다.
+    // 한 판 = 스테이지 1→5 (RunFlowRule). 스테이지 1~4를 깨면 결과 창 "쉼터로" → 쉼터(RestMenu, 들어갈 때 자동 저장) → 다음 스테이지.
+    // 레벨·특성·유물·장비·골드·체력·걸린 시간이 이어진다. 저장(RunSave)은 쉼터에서만 하고, 이어하기는 쉼터 다음 스테이지 첫 방에서 시작.
     public class PlaytestBootstrap : MonoBehaviour
     {
         [Header("Stage")]
@@ -24,6 +23,7 @@ namespace IBlameYou.Core
 
         private ChunkStreamer streamer;
         private float currentTargetSeconds; // 이번 런의 목표 시간 (저장해서 이어하기 때 같은 맵을 만든다)
+        private int currentRunSeed;         // 판 시드 (스테이지 맵 시드는 RunFlowRule.StageSeed로 여기서 만든다)
         private bool? settingsDevMode;      // 이어하기로 모드를 바꿨다면 원래 설정값
         private GameObject player;
         private SkillHUD hud;
@@ -92,7 +92,7 @@ namespace IBlameYou.Core
         private void BuildWorld(RunSave.Data resume)
         {
             // 이어하기면 저장된 방 깊이에 맞는 곡 (깊이 0.5+ → 후반 Dungeon2, ArenaZone.StageMusicFor). 새 런은 Dungeon.
-            GameAudio.PlayMusic(resume != null ? ArenaZone.StageMusicFor(resume.progress) : "Dungeon");
+            GameAudio.PlayMusic(resume != null && !resume.atStageStart ? ArenaZone.StageMusicFor(resume.progress) : "Dungeon");
             // Tools/I Blame You/Generate Sprites And Animations로 미리 생성해둔 아트 설정.
             // 아직 생성 전이면 null이며, 이 경우 각 스포너가 단색 사각형으로 대체한다.
             var artConfig = Resources.Load<LevelArtConfig>("LevelArtConfig");
@@ -106,6 +106,9 @@ namespace IBlameYou.Core
             // 스테이지 번호: 이어하기면 저장값, 새 판이면 1 (개발자 모드는 시작 화면에서 고른 스테이지). 기능 테스트는 1
             int stageNumber = StageRoster.Clamp(resume != null ? resume.stage : featureTest || !GameSession.DevMode ? 1 : GameSession.DevStartStage);
             GameSession.Stage = stageNumber;
+            currentRunSeed = runSeed;
+            runSeed = RunFlowRule.StageSeed(runSeed, stageNumber); // 이 스테이지 맵 시드 (스테이지 1은 판 시드 그대로)
+            bool resumeInStage = resume != null && !resume.atStageStart; // 예전 방식(방·위치) 이어하기. 쉼터 저장은 스테이지 첫 방에서
             StageEvents.TargetSeconds = targetSeconds;
             StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
@@ -135,7 +138,7 @@ namespace IBlameYou.Core
 
                 Debug.Log($"[Stage] 스테이지 {stageNumber}, 시드 {runSeed}, 방 {layout.Rooms.Count}개 (격자 {layout.MaxX - layout.MinX + 1}×{layout.MaxY - layout.MinY + 1}), 검증 실패 {invalid}");
                 streamer.InitializeRooms(layout, geometries, groundTile, spawner);
-                if (resume != null) streamer.SetCurrentRoom(resume.checkpointChunk);
+                if (resumeInStage) streamer.SetCurrentRoom(resume.checkpointChunk);
             }
             else
             {
@@ -144,9 +147,9 @@ namespace IBlameYou.Core
                 streamer.Initialize(stage, groundTile, spawner);
             }
 
-            if (resume != null) streamer.ImportRecords(resume.records); // 청크를 만들기 전에: 쓰러뜨린 적, 돌파한 구역 등
+            if (resumeInStage) streamer.ImportRecords(resume.records); // 청크를 만들기 전에: 쓰러뜨린 적, 돌파한 구역 등
 
-            var start = resume != null ? new Vector3(resume.spawnX, resume.spawnY, 0f) : streamer.PlayerStart;
+            var start = resumeInStage ? new Vector3(resume.spawnX, resume.spawnY, 0f) : streamer.PlayerStart;
             var movement = PlayerSpawner.Spawn(start, artConfig);
             player = movement.gameObject;
             if (player.GetComponent<FallRecovery>() == null) player.AddComponent<FallRecovery>(); // 프리팹을 다시 굽기 전 대비
@@ -162,6 +165,7 @@ namespace IBlameYou.Core
             cheats.Initialize(player);
             hud = gameObject.AddComponent<SkillHUD>();
             hud.Initialize(player, cheats, Restart);
+            if (!featureTest && streamer.IsRoomMode) hud.SetRestCallback(GoToRest); // 스테이지 1~4 클리어 → 쉼터
             if (streamer.IsRoomMode)
             {
                 minimap = gameObject.AddComponent<MinimapUI>();
@@ -177,11 +181,12 @@ namespace IBlameYou.Core
             else if (resume != null)
             {
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
-                StageEvents.PostNotice($"이어하기: 저장한 곳에서 다시 시작 (시드 {runSeed})");
+                RunStats.Restore(resume.gold, resume.goldEarned, resume.goldSpent, resume.heartDust, resume.picks, resume.spellCasts);
+                StageEvents.PostNotice(resume.atStageStart ? $"{StageTitle(stageNumber)} 시작 (시드 {currentRunSeed})" : $"이어하기: 저장한 곳에서 다시 시작 (시드 {currentRunSeed})");
             }
             else
             {
-                StageEvents.PostNotice($"{StageTitle(stageNumber)} 시작 (시드 {runSeed})");
+                StageEvents.PostNotice($"{StageTitle(stageNumber)} 시작 (시드 {currentRunSeed})");
             }
         }
 
@@ -221,6 +226,14 @@ namespace IBlameYou.Core
             var progression = player.GetComponent<PlayerProgression>();
             progression.RestoreProgress(data.level, data.experience, data.totalExperience, data.points, data.traitRanks);
 
+            // 장비 → 유물 → 체력 순서: 최대 체력이 다 붙은 뒤에 체력을 넣어야 잘리지 않는다
+            if (data.equipment != null)
+            {
+                var equipment = PlayerEquipment.For(player);
+                foreach (int id in data.equipment)
+                    if (System.Enum.IsDefined(typeof(EquipmentId), id)) equipment.Equip(new EquipmentItem((EquipmentId)id));
+            }
+
             var relics = PlayerRelics.For(player);
             if (data.relics != null)
                 foreach (int id in data.relics)
@@ -234,47 +247,98 @@ namespace IBlameYou.Core
             recovery.SetSafePoint(start);
         }
 
-        // 런 진행 저장. 체크포인트 제거(2026-11-10) 뒤로는 부르는 곳이 없다 — 스테이지 전환 저장(스테이지 2)에서 다시 쓴다.
-        // checkpointChunk: 다시 시작할 방 번호, point: 다시 시작할 위치.
-        private void SaveRun(int checkpointChunk, Vector3 point)
+        // 쉼터 저장 데이터: 지금 판을 다음 스테이지 첫 방에서 이어 가도록 (RunSave.Data.atStageStart). 저장은 부르는 쪽이 한다.
+        // 판을 치우기 전에 부른다. 아직 날아오는 보스 골드 동전(RunGold.InFlight)도 넣는다.
+        private RunSave.Data BuildRunData(int nextStage)
         {
-            if (streamer == null || player == null || hud == null || RunStats.Ended) return;
+            if (streamer == null || player == null || hud == null) return null;
             var health = player.GetComponent<HealthSystem>();
-            if (health == null || health.IsDead) return;
+            if (health == null || health.IsDead) return null;
 
             var progression = player.GetComponent<PlayerProgression>();
             var relics = player.GetComponent<PlayerRelics>();
             var recovery = player.GetComponent<FallRecovery>();
             var relicIds = new System.Collections.Generic.List<int>();
             if (relics != null) foreach (var id in relics.Owned) relicIds.Add((int)id);
+            var equipmentIds = new System.Collections.Generic.List<int>();
+            var equipment = player.GetComponent<PlayerEquipment>();
+            if (equipment != null) foreach (var item in equipment.All) equipmentIds.Add((int)item.Id);
+            int inFlight = RunGold.InFlight;
 
-            RunSave.Save(new RunSave.Data
+            return new RunSave.Data
             {
-                seed = streamer.Stage.Seed,
+                seed = currentRunSeed,
+                atStageStart = true,
                 targetSeconds = currentTargetSeconds,
                 devMode = GameSession.DevMode,
-                checkpointChunk = checkpointChunk,
-                stage = GameSession.Stage,
+                checkpointChunk = -1,
+                stage = StageRoster.Clamp(nextStage),
                 roomGrid = streamer.IsRoomMode,
-                spawnX = point.x,
-                spawnY = point.y,
                 elapsed = hud.RunElapsed,
-                progress = streamer.IsRoomMode ? StageEvents.Depth : Mathf.Clamp01(point.x / streamer.Stage.WidthTiles), // 깊이 (이어할 때 곡 고르기)
+                progress = 0f,
                 level = progression != null ? progression.Level : 1,
                 experience = progression != null ? progression.Experience : 0f,
                 totalExperience = progression != null ? progression.TotalExperience : 0f,
                 points = progression != null ? progression.Points : 0,
                 traitRanks = progression != null ? progression.RanksSnapshot() : new int[0],
                 relics = relicIds.ToArray(),
+                equipment = equipmentIds.ToArray(),
                 health = health.Current,
+                maxHealth = health.Max,
                 deathSaves = health.DeathSaves,
                 freeFalls = recovery != null ? recovery.FreeFalls : -1,
                 kills = RunStats.Kills,
                 damageTaken = RunStats.DamageTaken,
                 arenasCleared = RunStats.ArenasCleared,
                 gatesOpened = RunStats.GatesOpened,
-                records = streamer.ExportRecords()
+                gold = RunStats.Gold + inFlight,
+                goldEarned = RunStats.GoldEarned + inFlight,
+                goldSpent = RunStats.GoldSpent,
+                heartDust = RunStats.HeartDust,
+                picks = RunStats.Picks,
+                spellCasts = (int[])RunStats.SpellCasts.Clone()
+            };
+        }
+
+        // 스테이지 1~4 클리어 결과 창 버튼 (SkillHUD.SetRestCallback): 판을 치우고 쉼터에 들어가며 저장한다.
+        // toMenu: 저장하고 시작 화면으로 (이어하기로 쉼터 다음 스테이지부터).
+        private void GoToRest(bool toMenu)
+        {
+            var data = BuildRunData(RunFlowRule.NextStage(GameSession.Stage));
+            if (data == null) { Restart(toMenu); return; }
+            StartCoroutine(GoToRestRoutine(data, toMenu));
+        }
+
+        private IEnumerator GoToRestRoutine(RunSave.Data data, bool toMenu)
+        {
+            TeardownWorld();
+            yield return null; // Destroy가 끝난 다음 프레임에
+            RunSave.Save(data); // 쉼터에 들어오는 순간 저장 (앱이 꺼져도 남게)
+            if (toMenu)
+            {
+                RestoreSettingsDevMode();
+                ShowMenu();
+                yield break;
+            }
+            gameObject.AddComponent<RestMenu>().Initialize(data, d =>
+            {
+                RunSave.Save(d);
+                BuildWorld(d);
+            }, d =>
+            {
+                RunSave.Save(d);
+                RestoreSettingsDevMode();
+                ShowMenu();
             });
+        }
+
+        // 이어하기로 바꾼 개발자 모드를 시작 화면으로 돌아갈 때 원래 설정으로
+        private void RestoreSettingsDevMode()
+        {
+            if (!settingsDevMode.HasValue) return;
+            GameSession.DevMode = settingsDevMode.Value;
+            SaveData.SaveSettings();
+            settingsDevMode = null;
         }
 
         // 런 도중 앱을 꺼도: 이어 할 때 시간이 저장 시점으로 되감기지 않게 하고, 모드 설정은 원래대로 남긴다.
@@ -327,6 +391,23 @@ namespace IBlameYou.Core
 
         private IEnumerator RestartRoutine(bool backToMenu)
         {
+            TeardownWorld();
+            yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
+
+            if (backToMenu) RestoreSettingsDevMode();
+
+            if (backToMenu) ShowMenu();
+            else if (!GameSession.FeatureTest)
+            {
+                RunSave.Clear(); // 포기·끝난 판은 이어하기로 되살리지 않는다 (예전 다시 시작의 BuildWorld(null)와 같음, 리뷰 MEDIUM)
+                ShowCity(CityArrival.AfterRun); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
+            }
+            else BuildWorld(null);
+        }
+
+        // 지금 판(스테이지)의 플레이어·맵·HUD·남은 마법을 치운다. 다시 시작·쉼터 가기가 같이 쓴다.
+        private void TeardownWorld()
+        {
             if (hud != null) Destroy(hud);
             if (cheats != null) Destroy(cheats);
             if (minimap != null) Destroy(minimap);
@@ -338,23 +419,6 @@ namespace IBlameYou.Core
             foreach (var wall in FindObjectsByType<FireWall>(FindObjectsSortMode.None)) Destroy(wall.gameObject);
             foreach (var spike in FindObjectsByType<GroundSpike>(FindObjectsSortMode.None)) Destroy(spike.gameObject);
             foreach (var mist in FindObjectsByType<MistZone>(FindObjectsSortMode.None)) Destroy(mist.gameObject);
-
-            yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
-
-            if (settingsDevMode.HasValue && backToMenu)
-            {
-                GameSession.DevMode = settingsDevMode.Value;
-                SaveData.SaveSettings();
-                settingsDevMode = null;
-            }
-
-            if (backToMenu) ShowMenu();
-            else if (!GameSession.FeatureTest)
-            {
-                RunSave.Clear(); // 포기·끝난 판은 이어하기로 되살리지 않는다 (예전 다시 시작의 BuildWorld(null)와 같음, 리뷰 MEDIUM)
-                ShowCity(CityArrival.AfterRun); // 일반 판이 끝나거나 포기하면 도시로 (CityDesign.md 2절)
-            }
-            else BuildWorld(null);
         }
 
         // 플레이어를 쫓아다니는 카메라를 준비하고, 시야를 스테이지 안으로 제한한다 (전투 구역에서는 ArenaZone이 잠깐 좁힌다).
