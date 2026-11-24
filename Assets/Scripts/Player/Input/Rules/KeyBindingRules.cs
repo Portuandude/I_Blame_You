@@ -244,7 +244,7 @@ namespace IBlameYou.Player
             if (first == None) return "-";
             string firstName = DisplayName(first) ?? unknownName?.Invoke(first) ?? "#" + first;
             if (second == None) return firstName;
-            // 맞바꾸기로 둘째 칸이 남은 동작 (예: 점프에 L.Shift를 주면 달리기 = Space + R.Shift): 둘 다 보여 준다 (버그 점검 2026-11-24)
+            // 맞바꾸기로 둘째 칸이 남은 동작 (예: 점프에 L.Shift를 주면 달리기 = Space + R.Shift): 둘 다 '/'로 이어 보여 준다 (키 이름에는 '/'가 없어 묶음 구분과 같다, 버그 점검 2026-11-24)
             return firstName + "/" + (DisplayName(second) ?? unknownName?.Invoke(second) ?? "#" + second);
         }
 
