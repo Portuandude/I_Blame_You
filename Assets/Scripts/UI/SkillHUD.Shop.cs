@@ -8,7 +8,7 @@ using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/N
 namespace IBlameYou.UI
 {
     // 마을 장비 상점 창 (Docs/EquipmentDesign.md 5·6절, 규칙은 Player/Equipment/Data/EquipmentShop.cs).
-    // 위: 진열 4개 (1~4 또는 클릭으로 사기, 그 부위에 낀 장비는 판매가만큼 값을 깎고 팔린다). 아래: 낀 장비 3칸 (팔기·수식어 바꾸기, 클릭).
+    // 위: 진열 4개 (1~4 또는 클릭으로 사기, 그 부위에 낀 장비는 판매가만큼 값을 깎고 팔린다). 아래: 낀 장비 3칸 (팔기, 클릭).
     // 키보드: ↓·S로 고르기 시작 → ↑↓·W/S로 진열 4줄 + 지금 장비 3줄을 옮기고, 지금 장비 줄은 ←→·A/D로 팔기/바꾸기를 고른 뒤 Enter·Space (식당과 같은 방식).
     // 여닫기·게임 정지는 마을 창(SkillHUD.Village.cs)과 같다. 진열은 스테이지 시드 + 마을 방 번호로 정해 판 안에서 다시 들어와도 같다.
     public partial class SkillHUD

@@ -5,7 +5,7 @@ using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/N
 
 namespace IBlameYou.UI
 {
-    // 일시정지 요약의 장비 3칸 (Docs/EquipmentDesign.md 8절): 부위 아이콘 + 수식어 색 이름 + 능력치.
+    // 일시정지 요약의 장비 3칸 (Docs/EquipmentDesign.md 8절): 부위 아이콘 + 이름 + 능력치.
     // 그림: Tools/ArtGen/generate_equipment_icons.py → Resources/UI/HUD/Equipment/<EquipmentId>.png (24x24).
     public partial class SkillHUD
     {
