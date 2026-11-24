@@ -115,7 +115,7 @@ namespace IBlameYou.Enemies
             switch (phase)
             {
                 case Phase.Charge:
-                    if (WallAhead(facing)) { EndCharge(); Rb.linearVelocity = new Vector2(0f, Rb.linearVelocity.y); return; }
+                    if (WallAhead(facing) || (pounceSpeed > 0f && AirLedgeAhead(facing))) { EndCharge(); Rb.linearVelocity = new Vector2(0f, Rb.linearVelocity.y); return; }
                     Rb.linearVelocity = new Vector2(facing * chargeSpeed * Stats.TotalMoveMultiplier, Rb.linearVelocity.y);
                     StrikeAhead();
                     return;
@@ -226,6 +226,17 @@ namespace IBlameYou.Enemies
         {
             Vector2 origin = (Vector2)transform.position + new Vector2(0f, 0.4f);
             return LedgeAhead(direction, obstacleLayer) || Physics2D.Raycast(origin, new Vector2(direction, 0f), BodyBounds.extents.x + 0.3f, obstacleLayer);
+        }
+
+        // 덮치기로 뜬 동안에는 LedgeAhead(발밑에 땅이 있을 때만 봄)가 꺼지므로, 앞쪽 아래로 더 길게 바닥을 찾는다.
+        // 없으면 돌격을 멈춰 와르그가 낭떠러지 밖으로 날아가 떨어지지 않게 (버그 점검 2026-11-24)
+        private const float AirLedgeCheck = 6f;
+
+        private bool AirLedgeAhead(float direction)
+        {
+            var bounds = BodyBounds;
+            Vector2 ahead = new Vector2(bounds.center.x + direction * (bounds.extents.x + 0.25f), bounds.min.y + 0.1f);
+            return !Physics2D.Raycast(ahead, Vector2.down, AirLedgeCheck, obstacleLayer);
         }
 
         private void SetFacing(float direction)
