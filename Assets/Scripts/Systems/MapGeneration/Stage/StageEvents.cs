@@ -35,6 +35,13 @@ namespace IBlameYou.Systems
         public static bool RaiseVillageInteract(VillageService service) =>
             VillageInteractRequested != null && VillageInteractRequested(service);
 
+        // A·B 선택지 룰렛 창 (SkillHUD.Choice가 등록): (제목, 선택지 2~4개, 선택지별 선악도 변화, 실제로 일어난 선택지 번호를 받을 콜백).
+        // 창을 열었으면 true. NPC 방·선악도 방 이벤트가 부른다 (지금은 기능 테스트 도구만).
+        public static Func<string, string[], int[], Action<int>, bool> ChoiceRequested;
+
+        public static bool RaiseChoice(string title, string[] options, int[] alignment, Action<int> done) =>
+            ChoiceRequested != null && ChoiceRequested(title, options, alignment, done);
+
         // 마을 NPC 반응: 식당에서 사면 식당 주인, 상점에서 사고팔거나 리롤하면 상인이 말풍선 한 줄 + 톡 뛰기 (VillageNpc가 듣는다).
         public static event Action<VillageService, string> VillageNpcSay;
 
