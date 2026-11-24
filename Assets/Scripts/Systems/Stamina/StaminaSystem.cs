@@ -38,6 +38,9 @@ namespace IBlameYou.Systems
             SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
+        // 기력을 가득 채운다 (스테이지 시작 복원)
+        public void Fill() => SetCurrent(maxStamina);
+
         public bool TryConsume(float amount)
         {
             if (amount <= 0f) return true;
