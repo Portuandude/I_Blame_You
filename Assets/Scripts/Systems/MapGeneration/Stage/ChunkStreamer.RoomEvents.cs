@@ -108,7 +108,9 @@ namespace IBlameYou.Systems
                 var spot = FindStandSpot(index, chestColumn + CursedChestRule.SwarmOffsets[i], headroom: EnemyHeadroom) ?? chestPosition;
                 var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
                 EffectLibrary.PlayOneShot(position + Vector3.up * 0.4f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.7f), 1f);
-                var health = spawnEnemy(kinds[i], position, transform);
+                // 스테이지 2+는 그 스테이지 적으로 (숲: 슬라임 → 고블린·코볼트, StageRoster)
+                var kind = StageRoster.AdaptSpawn(kinds[i], stage.Chunks[index].Stage, RoomDepth(index), stage.Seed, index * 100 + 90 + i);
+                var health = spawnEnemy(kind, position, transform);
                 if (health == null) continue;
                 RegisterEnemy(health);
                 spawned.Add(health);
@@ -142,7 +144,8 @@ namespace IBlameYou.Systems
             var position = new Vector3(spot.x, spot.y + SpawnLift, 0f);
             EffectLibrary.PlayOneShot(position + Vector3.up * 0.6f, EffectLibrary.TeleportFrames, 20f, new Color(0.66f, 0.4f, 0.98f, 0.8f), 1.4f);
             GameAudio.PlaySfx("Summon", 0.7f);
-            var health = spawnEnemy(CursedChestRule.EliteFor(stage.Seed, index), position, transform);
+            var elite = StageRoster.AdaptSpawn(CursedChestRule.EliteFor(stage.Seed, index), stage.Chunks[index].Stage, RoomDepth(index), stage.Seed, index * 100 + 99);
+            var health = spawnEnemy(elite, position, transform);
             if (health == null) { if (chest != null) chest.Rest(); return; }
             cursedLeftAwake.Add(index); // 풀기 전에 방을 떠나면 다음에 올 때 "다시 잠들었다" (풀면 SpawnCursedReward에서 지운다)
             RegisterEnemy(health);
