@@ -44,7 +44,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (!Input.GetKeyDown(KeyCode.Tab) || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (!Input.GetKeyDown(KeyCode.Tab) || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathHandled || stageCleared || health.IsDead) return;
             if (control.ChantActive || control.Locked) return; // 마법진을 그리는 중에는 열지 않는다
 
             traitWindowOpen = true;

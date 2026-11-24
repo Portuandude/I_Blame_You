@@ -41,7 +41,7 @@ namespace IBlameYou.UI
 
         private bool CanOpenRelicWindow()
         {
-            if (relicWindowOpen || relicUnlockFrame >= 0 || equipCardOpen || equipCardUnlockFrame >= 0 || villageOpen || villageUnlockFrame >= 0) return false;
+            if (relicWindowOpen || relicUnlockFrame >= 0 || equipCardOpen || equipCardUnlockFrame >= 0 || villageOpen || choiceOpen || villageUnlockFrame >= 0) return false;
             if (paused || traitWindowOpen || deathHandled || stageCleared || health == null || health.IsDead) return false;
             return !control.ChantActive && !control.Locked;
         }
@@ -66,12 +66,44 @@ namespace IBlameYou.UI
             return true;
         }
 
+        // 고르는 메뉴 차례 (유물 상자·장비 카드, PickTurnRule): 아루(P1) = 키보드, 벨(P2) = 마우스. 개발자 모드는 둘 다.
+        private static bool PickKeyboardTurn => PickTurnRule.KeyboardAllowed(IBlameYou.Core.RunStats.Picks, IBlameYou.Core.GameSession.DevMode);
+        private static bool PickMouseTurn => PickTurnRule.MouseAllowed(IBlameYou.Core.RunStats.Picks, IBlameYou.Core.GameSession.DevMode);
+        // 이 컴퓨터 마우스로 누른 버튼: 온라인이면 호스트 마우스는 아루(P1) 것이라 벨 차례에도 받지 않는다 (벨은 친구 입력 PickRemote*로)
+        private static bool PickLocalMouseTurn => PickMouseTurn && !IBlameYou.Net.P2Input.Remote;
+        private static bool PickRemoteTurn => PickMouseTurn && IBlameYou.Net.P2Input.Remote;
+
+        // 온라인 친구(벨)가 이번 프레임에 누른 숫자 키(1부터, 없으면 0)
+        private static int PickRemoteNumber(int count)
+        {
+            for (int i = 0; i < count && i < 4; i++)
+                if (IBlameYou.Net.P2Input.GetKeyDown(KeyCode.Alpha1 + i)) return i + 1;
+            return 0;
+        }
+
+        // 온라인 친구(벨)가 이번 프레임에 왼쪽 클릭한 자리 (GUI 좌표, 위가 0). 안 눌렀으면 null
+        private static Vector2? PickRemoteClick()
+        {
+            if (!IBlameYou.Net.P2Input.GetMouseButtonDown(0)) return null;
+            var p = IBlameYou.Net.P2Input.mousePosition;
+            return new Vector2(p.x, Screen.height - p.y);
+        }
+
+        private readonly Rect[] relicCardRects = new Rect[4]; // 그린 카드 자리 (온라인 친구 클릭 판정용)
+
+        // 창 위 안내 줄: 차례인 사람 이름(아루 하늘색·벨 주황)과 그 사람의 조작법. keys = 키보드 조작 안내
+        private static string PickTurnText(string keys) =>
+            PickTurnRule.IsP1Turn(IBlameYou.Core.RunStats.Picks)
+                ? $"<color=#73d9ff>아루(P1) 차례</color> · {keys}"
+                : IBlameYou.Net.P2Input.Remote ? "<color=#ffa659>벨(P2) 차례</color> · 친구가 클릭하거나 숫자 키" : "<color=#ffa659>벨(P2) 차례</color> · 마우스로 클릭";
+
         private void ChooseRelic(int index)
         {
             if (!relicWindowOpen || relicOffer == null || index < 0 || index >= relicOffer.Length) return;
             var chosen = relicOffer[index];
             var callback = relicChosen;
             relicCancelled = null; // 골랐으니 취소 콜백은 부르지 않는다
+            IBlameYou.Core.RunStats.Picks++; // 다음 고르기는 다른 사람 차례 (PickTurnRule)
             CloseRelicWindow(true);
             callback?.Invoke(chosen);
             if (OwnsRelic(chosen)) StartRelicFly(chosen, index); // 아이콘이 HUD 유물 칸으로 날아간다 (SkillHUD.RelicFly.cs)
@@ -104,6 +136,18 @@ namespace IBlameYou.UI
 
             // 상자에 닿은 프레임에 누르고 있던 스킬 키로 후보를 보지도 않고 고르지 않게, 연 프레임의 입력은 버린다.
             if (!relicWindowOpen || Time.frameCount <= relicOpenedFrame) return;
+            if (PickRemoteTurn && Time.unscaledTime - relicWindowOpenedAt >= RelicKeysDelay)
+            {
+                // 온라인 벨 차례: 친구 컴퓨터의 숫자 키나 카드 클릭으로 고른다 (친구 화면 버튼은 그림뿐이라 여기서 판정)
+                int count = relicOffer.Length;
+                int number = PickRemoteNumber(count);
+                if (number > 0) { ChooseRelic(number - 1); return; }
+                var click = PickRemoteClick();
+                if (click.HasValue)
+                    for (int i = 0; i < count && i < relicCardRects.Length; i++)
+                        if (relicCardRects[i].Contains(click.Value)) { GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); ChooseRelic(i); return; }
+            }
+            if (!PickKeyboardTurn) return; // 벨(P2) 차례: 키보드는 받지 않는다 (마우스로 고른다)
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) ChooseRelic(0);
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) ChooseRelic(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
@@ -219,8 +263,10 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
+            string keys = $"{(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter";
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter 또는 클릭",
+                IBlameYou.Core.GameSession.DevMode ? $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {keys} 또는 클릭"
+                    : $"하나만 고를 수 있다 · {PickTurnText(keys)}",
                 smallCenter);
 
             for (int i = 0; i < count; i++)
@@ -228,16 +274,13 @@ namespace IBlameYou.UI
                 var id = relicOffer[i];
                 int col = i % columns, row = i / columns;
                 var card = new Rect(rect.x + 20f + col * (cardWidth + gap), rect.y + 80f + row * (cardHeight + gap), cardWidth, cardHeight);
+                if (i < relicCardRects.Length) relicCardRects[i] = card;
                 var previousMatrix = BeginCardPop(card, relicWindowOpenedAt, i);
-                string owner = RelicBook.Owner(id);
-                DrawCard(card, owner);
-
-                string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
+                DrawCard(card, "공용"); // 유물은 A·B 공용이라 주인 색 없이 크림색 테두리 (2026-11-24 주인 표시 삭제)
                 var iconRect = new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f);
                 if (i < relicCardIcons.Length) relicCardIcons[i] = iconRect; // 고르면 여기서 날아간다 (SkillHUD.RelicFly.cs)
                 DrawRelicIcon(id, iconRect); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
-                GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW
                     GUI.Label(new Rect(card.xMax - 56f, card.y + 46f, 46f, 18f), "<b><color=#7dff7a>NEW</color></b>",
                         smallCenter);
@@ -245,7 +288,7 @@ namespace IBlameYou.UI
 
                 var buttonRect = new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f);
                 if (relicKeyboard && i == relicSelection) CuteButton.DrawSelection(card); // 키보드로 고른 카드 둘레 금색 테두리
-                bool chosen = CuteButton.Button(buttonRect, "고르기", cardButton);
+                bool chosen = CuteButton.Button(buttonRect, PickMouseTurn ? "고르기" : "아루가 고르는 중", cardButton) && PickLocalMouseTurn; // 아루(P1) 차례·온라인 호스트 마우스는 받지 않는다
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {

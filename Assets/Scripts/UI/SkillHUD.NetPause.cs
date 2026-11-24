@@ -16,7 +16,7 @@ namespace IBlameYou.UI
             if (giveUp) return false;
             if (paused) return true;
             if (control == null || control.ChantActive || control.MovementFrozen) return false; // MovementFrozen = 잠금 + (develop의) 방어막 미니게임
-            if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return false;
+            if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return false;
 
             paused = true;
             pauseOpenedAt = Time.unscaledTime;

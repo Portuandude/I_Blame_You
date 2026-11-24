@@ -18,15 +18,12 @@ namespace IBlameYou.Systems
         public static string StageName { get; set; } = "스테이지 1";
         // 이번 런의 목표 시간과 방 수 (클리어 결과 창의 목표 시간 비교, ClearPace). 외길 청크 스테이지면 방 수 0.
         public static float TargetSeconds { get; set; }
-        public static int MainRooms { get; set; }
-        public static int SideRooms { get; set; }
+        public static int RoomCount { get; set; }
         // 마을 방에 들어온 횟수 (식당 "한 방문에 종류별 한 번"의 방문 번호, ChunkStreamer가 마을 방에 들어올 때 올린다).
         public static int VillageVisit { get; set; }
         // 마지막으로 들어온 마을 방 번호와 스테이지 시드 (장비 상점 진열 시드, ChunkStreamer).
         public static int VillageRoom { get; set; } = -1;
         public static int StageSeed { get; set; }
-        // 지금 방이 곁방인지 (게임오버 결과 창 "쓰러진 곳").
-        public static bool InSideRoom { get; set; }
 
         public static void PostNotice(string text) => Notice?.Invoke(text);
 
@@ -37,6 +34,13 @@ namespace IBlameYou.Systems
 
         public static bool RaiseVillageInteract(VillageService service) =>
             VillageInteractRequested != null && VillageInteractRequested(service);
+
+        // A·B 선택지 룰렛 창 (SkillHUD.Choice가 등록): (제목, 선택지 2~4개, 선택지별 선악도 변화, 실제로 일어난 선택지 번호를 받을 콜백).
+        // 창을 열었으면 true. NPC 방·선악도 방 이벤트가 부른다 (지금은 기능 테스트 도구만).
+        public static Func<string, string[], int[], Action<int>, bool> ChoiceRequested;
+
+        public static bool RaiseChoice(string title, string[] options, int[] alignment, Action<int> done) =>
+            ChoiceRequested != null && ChoiceRequested(title, options, alignment, done);
 
         // 마을 NPC 반응: 식당에서 사면 식당 주인, 상점에서 사고팔거나 리롤하면 상인이 말풍선 한 줄 + 톡 뛰기 (VillageNpc가 듣는다).
         public static event Action<VillageService, string> VillageNpcSay;

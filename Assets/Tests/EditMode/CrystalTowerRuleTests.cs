@@ -20,7 +20,7 @@ namespace IBlameYou.Tests
         [Test]
         public void TotalCost_AboutThirteenHundred()
         {
-            Assert.AreEqual(2 * 300 + 2 * 325, CrystalTowerRule.TotalCost());
+            Assert.AreEqual(2 * 300 + 4 * 325, CrystalTowerRule.TotalCost());
         }
 
         [Test]
@@ -34,6 +34,17 @@ namespace IBlameYou.Tests
             Assert.AreEqual("+8%", CrystalTowerRule.BonusText(TowerStat.CircleEase, 2));
             Assert.AreEqual("마법진 여유", CrystalTowerRule.Name(TowerStat.CircleEase));
             Assert.AreEqual("+8", CrystalTowerRule.BonusText(TowerStat.MaxHealth, 2));
+            // 2026-11-24 순간이동·점프력 강화
+            Assert.AreEqual(25, CrystalTowerRule.Cost(TowerStat.Teleport, 0));
+            Assert.AreEqual(115, CrystalTowerRule.Cost(TowerStat.Jump, 4));
+            Assert.AreEqual("-12%", CrystalTowerRule.BonusText(TowerStat.Teleport, 3));
+            Assert.AreEqual("+10%", CrystalTowerRule.BonusText(TowerStat.Jump, 5));
+            Assert.AreEqual(0.8f, CrystalTowerRule.TeleportCostMultiplier(5), 1e-4);
+            Assert.AreEqual(1f, CrystalTowerRule.TeleportCostMultiplier(0), 1e-4);
+            Assert.AreEqual(1.1f, CrystalTowerRule.JumpMultiplier(5), 1e-4);
+            Assert.AreEqual(1.1f, CrystalTowerRule.JumpMultiplier(8), 1e-4, "5단계 넘게는 안 오른다");
+            Assert.AreEqual("순간이동 마나", CrystalTowerRule.Name(TowerStat.Teleport));
+            Assert.AreEqual("점프력", CrystalTowerRule.Name(TowerStat.Jump));
         }
 
         [Test]

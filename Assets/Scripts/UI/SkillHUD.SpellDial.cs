@@ -24,7 +24,7 @@ namespace IBlameYou.UI
             if (!dial.IsOpen) return;
             if (caster == null || control == null) return; // 개발자 모드도 다이얼을 쓴다 (배운 마법 고르기)
             if (caster.CircleOpen || caster.WindingUp || control.Locked || health.IsDead || deathHandled || stageCleared) return;
-            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return;
+            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return;
             if (dialName == null)
             {
                 dialName = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = false, fontStyle = FontStyle.Bold, fontSize = 13 };
@@ -96,7 +96,7 @@ namespace IBlameYou.UI
             DrawShadowed(label, text, dialName, new Color(1f, 1f, 1f, (empty ? 0.5f : 1f) * alpha));
         }
 
-        // 지금 마나로 쓸 수 있는 마법인지 (장비 수식어 마나 배율 포함, 개발자 모드 무한 마나 치트면 늘 됨)
+        // 지금 마나로 쓸 수 있는 마법인지 (장비 마나 소모 배율 포함, 개발자 모드 무한 마나 치트면 늘 됨)
         private float Cost(SpellDefinition spell) => spell.ManaCost * (mana != null ? mana.TotalCostMultiplier : 1f);
 
         private bool Affordable(SpellDefinition spell) =>

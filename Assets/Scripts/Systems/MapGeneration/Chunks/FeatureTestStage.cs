@@ -93,7 +93,7 @@ namespace IBlameYou.Systems
             chunk.SetRow(RoomShaper.TowerSniperX0, RoomShaper.TowerSniperX1, stand1 - 1, StageTile.Platform);
         }
 
-        // 봉인문을 두 속성 봉인문으로: B 마법 두 속성을 차례로 (RoomShaper 보물 곁방 문과 같은 규칙).
+        // 봉인문을 두 속성 봉인문으로: B 마법 두 속성을 차례로 (RoomShaper 보물 방 문과 같은 규칙).
         private static void MakePairGate(ChunkData chunk)
         {
             for (int i = 0; i < chunk.Features.Count; i++)

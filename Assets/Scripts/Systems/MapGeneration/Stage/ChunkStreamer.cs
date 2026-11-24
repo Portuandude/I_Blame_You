@@ -283,7 +283,7 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.Reward:
                         // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
-                        // 바람 상자 선반의 구슬은 주우면 그 퍼즐을 푼 것으로 친다 (마음 가루 + 결과 창 퍼즐 N/M)
+                        // 바람 상자 선반의 구슬은 주우면 그 퍼즐을 푼 것으로 친다 (영혼석 + 결과 창 퍼즐 N/M)
                         int rewardChunk = index;
                         System.Action solvedByOrb = chunk.Kind == ChunkKind.WindBoxPuzzle
                             ? () =>
@@ -401,17 +401,17 @@ namespace IBlameYou.Systems
             return list;
         }
 
-        // 방 격자 모드의 곁방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
+        // 방 격자 모드의 보상 방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
             RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms, HasVisited);
-            // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
+            // 좌우 방은 평평한 휴식 지형 가운데, 세로 방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
                 ? new Vector2(origin.x + floorSpot.Value.x + 2.5f, origin.y + floorSpot.Value.y)
                 : new Vector2(origin.x + RoomCols(index) / 2f, origin.y + stage.Chunks[index].EntryHeight);
-            // 협동 봉인문이 선 세로 곁방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
+            // 두 속성 봉인문이 선 세로 보물 방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
             if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (IsCursedChestRoom(index)) PlaceCursedChest(root, index);
@@ -458,14 +458,15 @@ namespace IBlameYou.Systems
             };
         }
 
-        // 용사의 훈장으로 회복했으면 true. 보스·중간보스 구역은 그쪽 알림에 훈장 회복을 합쳐 한 줄로 띄운다.
+        // 용사의 훈장으로 회복했으면 true. 2026-11-24부터 중간보스·보스를 잡았을 때만 (정예 구역 돌파는 아님).
+        // 보스·중간보스 구역은 그쪽 알림에 훈장 회복을 합쳐 한 줄로 띄운다.
         private bool OnArenaCleared(int chunkIndex, bool boss, bool midBoss)
         {
             clearedArenas.Add(chunkIndex);
             IBlameYou.Core.RunStats.AddArenaCleared();
             var relics = player != null ? IBlameYou.Player.PlayerRelics.For(player.gameObject) : null;
-            bool medalHealed = relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 돌파 보상 회복 + 머리 위 금 메달
-                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, boss || midBoss ? null : $"용사의 훈장: 체력 +{MedalPercent}%");
+            bool medalHealed = (boss || midBoss) && relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 회복 + 머리 위 금 메달
+                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, null);
             if (medalHealed) VfxPlayer.MedalGlint(player, MedalGlintOffset);
             if (!boss) return medalHealed;
 
@@ -658,7 +659,6 @@ namespace IBlameYou.Systems
             var entered = rooms.Rooms[index];
             StageEvents.RoomDistance = entered.Distance; // 게임오버 창 "쓰러진 곳: 시작 방에서 N칸"
             StageEvents.FarthestDistance = Math.Max(StageEvents.FarthestDistance, entered.Distance);
-            StageEvents.InSideRoom = !entered.MainPath;
             if (entered.Kind == RoomKind.Village)
             {
                 StageEvents.VillageVisit++; // 식당 새 방문
@@ -672,13 +672,24 @@ namespace IBlameYou.Systems
             if (entered.Kind == RoomKind.Village && firstVisit)
             {
                 // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
-                int interest = IBlameYou.Core.RunGold.OnVillageFound(player); // 돼지 저금통 이자 (없으면 0)
-                StageEvents.PostNotice(interest > 0 ? $"마을 발견! 저금통 이자 +{interest}" : "마을 발견! 식당·장비 상점");
+                StageEvents.PostNotice("마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
+            }
+            else if (firstVisit && entered.Kind == RoomKind.ManaSpring)
+            {
+                // 마나 샘 방을 처음 찾았을 때: 3분 동안 마나 재생 +10% (샘물 반지와 중첩) + 파란 마나 고리 (그림은 기존 연출만)
+                var spring = player != null ? player.GetComponent<ManaSystem>() : null;
+                if (spring != null)
+                {
+                    spring.StartSpring();
+                    VfxPlayer.ManaRing(player, new Vector3(0f, 0.7f, 0f), new Color(0.43f, 0.66f, 1f));
+                }
+                StageEvents.PostNotice($"마나 샘 발견! {ManaSpringRule.RegenSeconds / 60f:0}분 동안 마나 재생 +{ManaSpringRule.RegenBonus * 100f:0}%");
+                GameAudio.PlaySfx("Pickup", 0.6f, 0f);
             }
             else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))
             {
-                // 막다른 곁방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
+                // 보물·샘 방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
                 StageEvents.PostNotice(entered.Kind == RoomKind.Treasure ? "보물 방 발견!" : "회복 샘 발견!");
                 GameAudio.PlaySfx("Pickup", 0.6f, 0f);
             }
@@ -730,7 +741,7 @@ namespace IBlameYou.Systems
             return false;
         }
 
-        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 5×4 격자). 어느 방이든 자기 거리로 잰다.
         private float RoomDepth(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()

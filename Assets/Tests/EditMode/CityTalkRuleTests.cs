@@ -27,11 +27,11 @@ namespace IBlameYou.Tests
         [Test]
         public void Cracks_FillWithTowerLevels()
         {
-            Assert.AreEqual(20, CityTalkRule.Cracks(0));
-            Assert.AreEqual(13, CityTalkRule.Cracks(7));
-            Assert.AreEqual(0, CityTalkRule.Cracks(20));
-            Assert.AreEqual(0, CityTalkRule.Cracks(25));
-            Assert.AreEqual(20, CityTalkRule.Cracks(-1));
+            Assert.AreEqual(30, CityTalkRule.Cracks(0));
+            Assert.AreEqual(23, CityTalkRule.Cracks(7));
+            Assert.AreEqual(0, CityTalkRule.Cracks(30));
+            Assert.AreEqual(0, CityTalkRule.Cracks(35));
+            Assert.AreEqual(30, CityTalkRule.Cracks(-1));
         }
     }
 }

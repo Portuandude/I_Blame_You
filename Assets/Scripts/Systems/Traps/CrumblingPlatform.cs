@@ -95,10 +95,10 @@ namespace IBlameYou.Systems
             return health != null && !health.IsDead;
         }
 
-        // 젤리 방석을 가진 플레이어가 밟으면 더 오래 흔들린다 (적이 밟으면 늘 기본 시간).
+        // 솜구름 방석(2026-11-24 젤리 방석과 합침)을 가진 플레이어가 밟으면 더 오래 흔들린다 (적이 밟으면 늘 기본 시간).
         private static float ShakeTimeFor(Collider2D other)
         {
-            return HasJellyCushion(other) ? IBlameYou.Player.RelicBook.JellyCushionShakeTime : ShakeTime;
+            return HasJellyCushion(other) ? IBlameYou.Player.RelicBook.CushionShakeTime : ShakeTime;
         }
 
         private static bool HasJellyCushion(Collider2D other)
@@ -106,7 +106,7 @@ namespace IBlameYou.Systems
             var player = TrapCommon.PlayerFrom(other);
             if (player == null) return false;
             var relics = player.GetComponent<IBlameYou.Player.PlayerRelics>();
-            return relics != null && relics.Has(IBlameYou.Player.RelicId.JellyCushion);
+            return relics != null && relics.Has(IBlameYou.Player.RelicId.CottonCloud);
         }
 
         private const float JellyDripDelay = 0.2f;

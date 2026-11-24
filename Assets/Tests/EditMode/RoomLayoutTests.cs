@@ -139,30 +139,36 @@ namespace IBlameYou.Tests
             }
         }
 
+        // 2026-11-24 사람 결정: 주 경로·곁방 개념 없음. 보스 방 = 시작에서 가장 먼 방 (문 하나, 좌우 방).
         [Test]
-        public void BossIsFarthestAndMainPathIsTreePath()
+        public void BossIsTheFarthestRoom()
         {
             foreach (var layout in Layouts())
             {
-                var main = new List<RoomData>(layout.MainPathRooms());
-                var boss = main[main.Count - 1];
-                Assert.AreEqual(RoomKind.Boss, boss.Kind, $"seed {layout.Seed}");
+                var boss = layout.Find(RoomKind.Boss);
+                Assert.IsNotNull(boss, $"seed {layout.Seed}");
+                Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Boss).Count);
                 Assert.AreEqual(ChunkKind.Boss, boss.Chunk);
                 Assert.IsFalse(boss.IsVertical);
-                Assert.AreEqual(boss.EntryDoor, boss.Doors, $"seed {layout.Seed}: 보스 방은 막다른 방");
+                Assert.AreEqual(1, boss.DoorCount, $"seed {layout.Seed}: 보스 방은 문 하나");
+                Assert.AreEqual(boss.EntryDoor, boss.Doors);
                 Assert.GreaterOrEqual(boss.Distance, RoomLayout.MinBossDistance);
                 foreach (var room in layout.Rooms) Assert.LessOrEqual(room.Distance, boss.Distance, $"seed {layout.Seed}: 보스가 가장 멀다");
-                Assert.AreEqual(1, layout.Rooms.FindAll(r => r.Kind == RoomKind.Boss).Count);
-                for (int i = 0; i < main.Count; i++)
+                Assert.AreEqual(1f, boss.Difficulty, 1e-6f);
+            }
+        }
+
+        // 방 번호는 시작 방에서 가까운 순 (시작 방 0번).
+        [Test]
+        public void RoomsAreIndexedByDistance()
+        {
+            foreach (var layout in Layouts())
+            {
+                Assert.AreEqual(RoomKind.Start, layout.Rooms[0].Kind);
+                for (int i = 0; i < layout.Rooms.Count; i++)
                 {
-                    Assert.AreEqual(i, main[i].PathIndex, $"seed {layout.Seed}");
-                    Assert.AreEqual(i, main[i].Distance, $"seed {layout.Seed}");
-                    if (i > 0) Assert.AreEqual(RoomLayout.Opposite(main[i - 1].ExitDoor), main[i].EntryDoor, $"seed {layout.Seed}");
-                }
-                foreach (var room in layout.Rooms)
-                {
-                    if (room.MainPath) continue;
-                    Assert.IsTrue(layout.Rooms[room.ParentIndex].MainPath, $"seed {layout.Seed}: 곁가지의 ParentIndex는 주 경로 방");
+                    Assert.AreEqual(i, layout.Rooms[i].Index);
+                    if (i > 0) Assert.LessOrEqual(layout.Rooms[i - 1].Distance, layout.Rooms[i].Distance, $"seed {layout.Seed}");
                 }
             }
         }
@@ -172,7 +178,7 @@ namespace IBlameYou.Tests
         {
             foreach (var layout in Layouts())
             {
-                float boss = new List<RoomData>(layout.MainPathRooms()).FindLast(r => true).Distance;
+                float boss = layout.Find(RoomKind.Boss).Distance;
                 foreach (var room in layout.Rooms)
                     Assert.AreEqual(room.Distance / boss, room.Difficulty, 1e-4f, $"seed {layout.Seed} room {room.Index}");
             }
@@ -215,22 +221,64 @@ namespace IBlameYou.Tests
                 }
         }
 
+        // 중간보스 방 = 보스 다음으로 먼 좌우 방. 보스 방으로 가는 길목(보스의 조상)은 아니다 (중간보스가 보스 관문이 되지 않게).
         [Test]
-        public void MidBossSitsNearFiftyFivePercentOfThePath()
+        public void MidBossIsTheNextFarthestRoomOffTheBossLine()
         {
             foreach (var layout in Layouts())
             {
-                var main = new List<RoomData>(layout.MainPathRooms());
                 var mids = layout.Rooms.FindAll(r => r.Kind == RoomKind.MidBoss);
                 Assert.AreEqual(1, mids.Count, $"seed {layout.Seed}");
                 var mid = mids[0];
-                Assert.IsTrue(mid.MainPath);
+                var boss = layout.Find(RoomKind.Boss);
                 Assert.IsFalse(mid.IsVertical);
-                Assert.AreEqual(layout.MidBossPathIndex, mid.PathIndex);
-                Assert.That(mid.PathIndex, Is.InRange(2, main.Count - 3), $"seed {layout.Seed}: 시작·보스와 붙지 않음");
-                float progress = mid.PathIndex / (float)(main.Count - 1);
-                Assert.LessOrEqual(Math.Abs(progress - RoomLayout.MidBossDepth), 1f / (main.Count - 1) + 1e-4f, $"seed {layout.Seed}: {progress}");
+                Assert.AreEqual(ChunkKind.EliteArena, mid.Chunk);
+                Assert.GreaterOrEqual(mid.Distance, RoomLayout.MinMidBossDistance);
+                var bossLine = new HashSet<RoomData>();
+                for (var r = boss; r.TreeParentIndex >= 0;)
+                {
+                    r = layout.Rooms[r.TreeParentIndex];
+                    bossLine.Add(r);
+                }
+                Assert.IsFalse(bossLine.Contains(mid), $"seed {layout.Seed}: 중간보스가 보스로 가는 길목");
+                foreach (var r in layout.Rooms)
+                {
+                    if (r == boss || r == mid || r.Index == 0 || bossLine.Contains(r) || r.IsVertical) continue;
+                    Assert.LessOrEqual(r.Distance, mid.Distance, $"seed {layout.Seed}: 중간보스보다 먼 좌우 방 {r.Index}");
+                }
             }
+        }
+
+        // 마나 샘 방 (2026-11-24): 판마다 0~1개, 대략 절반의 판에. 있어도 일반 전투 방 5개·좌우 전투 방 2개는 그대로.
+        [Test]
+        public void ManaSpringIsZeroOrOnePerStage()
+        {
+            int with = 0, total = 0;
+            foreach (var layout in Layouts())
+            {
+                total++;
+                int springs = layout.Rooms.FindAll(r => r.Kind == RoomKind.ManaSpring).Count;
+                Assert.That(springs, Is.InRange(0, 1), $"seed {layout.Seed}");
+                if (springs == 0) continue;
+                with++;
+                var spring = layout.Find(RoomKind.ManaSpring);
+                Assert.AreEqual(ChunkKind.Rest, spring.Chunk);
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat).Count, RoomLayout.MinCombatRooms, $"seed {layout.Seed}");
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat && !r.IsVertical).Count, RoomLayout.MinSideCombatRooms, $"seed {layout.Seed}");
+            }
+            Assert.That(with, Is.InRange(total / 4, total * 3 / 4), $"마나 샘이 있는 판 {with}/{total}");
+        }
+
+        [Test]
+        public void ManaSpringRuleLastsThreeMinutes()
+        {
+            Assert.AreEqual(0.1f, ManaSpringRule.RegenBonus, 1e-6);
+            Assert.AreEqual(180f, ManaSpringRule.RegenSeconds);
+            Assert.AreEqual(0.1f, ManaSpringRule.Bonus(10f, 10f + ManaSpringRule.RegenSeconds), 1e-6);
+            Assert.AreEqual(0f, ManaSpringRule.Bonus(200f, 190f));
+            Assert.AreEqual(0f, ManaSpringRule.Bonus(0f, -1f), "안 걸렸으면 0");
+            Assert.AreEqual(30f, ManaSpringRule.Remaining(150f, 180f), 1e-6);
+            Assert.AreEqual(0f, ManaSpringRule.Remaining(200f, 180f));
         }
 
         [Test]
@@ -241,14 +289,14 @@ namespace IBlameYou.Tests
                 foreach (var room in layout.Rooms)
                 {
                     if (!room.IsVertical) continue;
-                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring,
+                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring || room.Kind == RoomKind.ManaSpring,
                         $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
                 }
             }
         }
 
         [Test]
-        public void RewardRoomsAreDeadEndsOffThePath()
+        public void RewardRoomCountAndKinds()
         {
             foreach (var layout in Layouts())
             {
@@ -258,8 +306,7 @@ namespace IBlameYou.Tests
                     if (room.Kind != RoomKind.Treasure && room.Kind != RoomKind.Spring) continue;
                     rewards++;
                     if (room.Kind == RoomKind.Treasure) treasure++;
-                    Assert.IsFalse(room.MainPath, $"seed {layout.Seed}");
-                    Assert.AreEqual(room.EntryDoor, room.Doors, $"seed {layout.Seed}: 보상 곁방은 문이 하나뿐");
+                    Assert.AreEqual(ChunkKind.Rest, room.Chunk);
                 }
 
                 Assert.That(rewards, Is.InRange(RoomLayout.MinRewardRooms, RoomLayout.MaxRewardRooms), $"seed {layout.Seed}");
@@ -267,10 +314,43 @@ namespace IBlameYou.Tests
             }
         }
 
-        // NPC 마을 (2026-11-12, 2026-11-14 23:30 1개 고정): 판마다(목표 15·20·30분) 하나, 주 경로 밖 문 하나짜리 좌우 방, 시작 방에서 2칸 이상,
+        // 주 경로·막다른 방 개념이 없으니 마을·퍼즐·보상 방도 문이 둘 이상일 수 있다 (2026-11-24). 여러 판 중 한 번은 나온다.
+        // 이중 스위치 발판 퍼즐은 건너가는 퍼즐이라 늘 왼쪽·오른쪽 문이 다 있다. 마을·퍼즐은 좌우 방.
+        [Test]
+        public void SpecialRoomsAreNotTiedToDeadEnds()
+        {
+            bool village2 = false, puzzle1 = false, reward2 = false, village1 = false;
+            for (int seed = 0; seed < 300; seed++)
+            {
+                var layout = RoomLayout.Generate(seed, TargetSeconds);
+                foreach (var room in layout.Rooms)
+                {
+                    if (room.Kind == RoomKind.Village)
+                    {
+                        if (room.DoorCount >= 2) village2 = true;
+                        else village1 = true;
+                    }
+                    if (room.Kind == RoomKind.Puzzle)
+                    {
+                        Assert.IsFalse(room.IsVertical, $"seed {seed}");
+                        if (room.Chunk == ChunkKind.SwitchBridge)
+                            Assert.AreEqual(DoorDir.Left | DoorDir.Right, room.Doors, $"seed {seed}: 이중 스위치 방은 양쪽 문");
+                        else if (room.DoorCount == 1) puzzle1 = true;
+                    }
+                    if ((room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring) && room.DoorCount >= 2) reward2 = true;
+                }
+            }
+
+            Assert.IsTrue(village2, "문 둘 이상인 마을이 한 번은 나온다");
+            Assert.IsTrue(village1, "문 하나인 마을도 나온다");
+            Assert.IsTrue(puzzle1, "문 하나인 추리 퍼즐 방도 나온다");
+            Assert.IsTrue(reward2, "문 둘 이상인 보상 방도 나온다");
+        }
+
+        // NPC 마을 (2026-11-12, 2026-11-14 23:30 1개 고정): 판마다(목표 15·20·30분) 하나, 좌우 방, 시작 방에서 2칸 이상,
         // 보스 방과 격자로 붙지 않음, 문이 잠기지 않고 한 화면 평지(휴식 청크).
         [Test]
-        public void VillageIsOneDeadEndSideRoom()
+        public void VillageIsOneSideRoom()
         {
             foreach (float minutes in new[] { 15f, 20f, 30f })
                 for (int seed = -40; seed < 300; seed++)
@@ -282,8 +362,6 @@ namespace IBlameYou.Tests
                     Assert.AreEqual(RoomLayout.Villages, villages.Count, at);
                     foreach (var village in villages)
                     {
-                        Assert.IsFalse(village.MainPath, at);
-                        Assert.AreEqual(village.EntryDoor, village.Doors, $"{at}: 마을은 문이 하나뿐");
                         Assert.IsFalse(village.IsVertical, at);
                         Assert.GreaterOrEqual(village.Distance, RoomLayout.VillageMinDistance, at);
                         Assert.Greater(Math.Abs(village.X - boss.X) + Math.Abs(village.Y - boss.Y), 1, $"{at}: 보스 방 옆");

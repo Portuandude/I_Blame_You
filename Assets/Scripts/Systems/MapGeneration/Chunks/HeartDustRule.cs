@@ -1,6 +1,6 @@
 namespace IBlameYou.Systems
 {
-    // 마음 가루 (2026-11-14, Docs/CityDesign.md 3절): 판 밖 도시에서 쓰는 화폐. 쓰러져도 모두 남는다.
+    // 영혼석 (2026-11-14, Docs/CityDesign.md 3절): 판 밖 도시에서 쓰는 화폐. 쓰러져도 모두 남는다.
     // 양은 가안 — 한 판 평균 40~70. 중간보스(쌍둥이 기사)·최종보스(슬라임 킹 2페이즈 둘)는 나뉘어 죽으므로 한 마리 몫.
     public static class HeartDustRule
     {

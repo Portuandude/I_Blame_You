@@ -104,11 +104,9 @@ namespace IBlameYou.Core
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
             StageEvents.TargetSeconds = targetSeconds;
-            StageEvents.MainRooms = 0;
-            StageEvents.SideRooms = 0;
+            StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
             StageEvents.FarthestDistance = -1;
-            StageEvents.InSideRoom = false;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             StageData featureStage = null;
@@ -122,8 +120,7 @@ namespace IBlameYou.Core
             else if (roomGrid)
             {
                 var layout = RoomLayout.Generate(runSeed, targetSeconds);
-                StageEvents.MainRooms = System.Linq.Enumerable.Count(layout.MainPathRooms());
-                StageEvents.SideRooms = layout.Rooms.Count - StageEvents.MainRooms;
+                StageEvents.RoomCount = layout.Rooms.Count;
                 var geometries = new System.Collections.Generic.List<RoomGeometry>();
                 int invalid = 0;
                 foreach (var room in layout.Rooms)
@@ -206,6 +203,11 @@ namespace IBlameYou.Core
             if (mana != null && mp > 0f) mana.AddMax(mp, true);
             if (mana != null) mana.RegenMultiplier += CrystalTowerRule.Bonus(TowerStat.ManaRegen, SaveData.TowerLevel(TowerStat.ManaRegen, dev));
             if (caster != null) caster.CircleEase = CrystalTowerRule.Bonus(TowerStat.CircleEase, SaveData.TowerLevel(TowerStat.CircleEase, dev));
+            // 순간이동 강화·점프력 강화 (2026-11-24, OpenDecisions G1). 유물 배율(종이비행기)과는 곱한다.
+            var teleport = player.GetComponent<TeleportSkill>();
+            if (teleport != null) teleport.CostMultiplier *= CrystalTowerRule.TeleportCostMultiplier(SaveData.TowerLevel(TowerStat.Teleport, dev));
+            var movement = player.GetComponent<PlayerMovement>();
+            if (movement != null) movement.JumpMultiplier = CrystalTowerRule.JumpMultiplier(SaveData.TowerLevel(TowerStat.Jump, dev));
         }
 
         // 저장된 레벨·특성·유물·체력을 새로 만든 플레이어에 되살린다.

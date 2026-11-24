@@ -4,6 +4,9 @@ using System.Collections.Generic;
 namespace IBlameYou.Player
 {
     // 유물: 한 런 동안만 가지는 아이템. 정예 전투 구역을 돌파하면 나오는 유물 상자에서 3개 중 하나를 고른다.
+    // 2026-11-24 사람 결정 (Docs/RelicList.md): 31종 → 26종. 5종 삭제(깃털 부적·되감기 모래시계·말굽 자석·단골 도장·돼지 저금통),
+    // 2쌍 합침(탐험가의 나침반 → 보물 지도, 젤리 방석 → 솜구름 방석), 새 2종(메아리 수정·속성 공명석), 주인(A·B·공용) 표시 삭제.
+    // 빠진 유물의 번호는 저장(RunSave)이 번호로 기억하므로 enum에 남기고 All(후보)에서만 뺀다. 효과도 없다.
     // 효과는 특성 4포인트 정도의 작은 능력치 보너스이고, 한 런에 같은 유물은 한 번만 나온다.
     // 이 파일은 UnityEngine 없는 별도 어셈블리(IBlameYou.Relics)라 EditMode 테스트로 후보 고르기를 검증한다.
     public enum RelicId
@@ -13,32 +16,34 @@ namespace IBlameYou.Player
         SwiftBoots,  // 바람 장화: 이동속도 +8%
         WrathCharm,  // 분노의 부적: 주는 피해 +12%
         LifeSeed,    // 생명의 씨앗: 최대 체력 +20
-        SpringRing,  // 샘물 반지: 마나 재생 +25%
+        SpringRing,  // 샘물 반지: 마나 재생 +10% (마나 샘 방과 중첩)
         HawkEye,     // 매의 눈: 치명타 확률 +8%
-        Featherfall, // 깃털 부적: 낭떠러지 낙하 피해 15% → 5%
+        Featherfall, // (2026-11-24 삭제) 깃털 부적
         VampireFang, // 흡혈 송곳니: 적 처치 시 체력 +3
         FocusBead,   // 집중 구슬: 실패로 날린 마나 25% 돌려받기 (신비 10과 합산)
         ShadowVeil,  // 그림자 베일: 대쉬가 끝난 뒤 0.5초 더 무적
-        BloodPact,   // 피의 계약: 마나가 모자라면 모자란 만큼 체력으로 대신 낸다 (40초에 한 번, 체력 1은 남긴다)
+        BloodPact,   // 피의 계약: 마나가 모자라면 필요한 마나의 절반만큼 체력으로 대신 낸다 (횟수 제한 없음, 체력 1은 남긴다)
         PhoenixFeather, // 불사조 깃털: 쓰러질 피해를 한 번 버티고 최대 체력 30%로 (특성 버티기와 합산)
-        Hourglass,   // 되감기 모래시계: 낭떠러지에 떨어져도 2번은 피해 없이 돌아온다
+        Hourglass,   // (2026-11-24 삭제) 되감기 모래시계
         TwinRing,    // 쌍둥이 반지: B가 마법진을 PerfectAt(90%) 이상으로 그리면 마나 +5 (2026-11-16 방어막이 빠지며 바뀜. 예전: A 방어막 발동)
-        Compass,     // 탐험가의 나침반: 미니맵에 안 가 본 방도 흐린 칸으로 보인다 (MinimapRules.Look)
+        Compass,     // (2026-11-24 보물 지도로 합침) 탐험가의 나침반. 예전 저장에 있으면 보물 지도처럼 친다 (PlayerRelics.Has)
         Clover,      // 네잎 클로버: 다음 유물 상자부터 후보가 OfferSize → CloverOfferSize개
         CheerRibbon, // 응원 리본: B의 공격 마법이 발동하면 마나 +CheerRibbonMana
-        StarShard,   // 별똥 조각: 적을 처치하면 StarShardChance 확률로 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
-        HeroMedal,   // 용사의 훈장: 정예 구역(전투 구역)을 돌파하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
-        AcornPouch,  // 도토리 주머니: 레벨이 오를 때마다 체력 +AcornPouchHeal (PlayerProgression.LeveledUp)
-        HoneyJar,    // 꿀단지: 전투 구역 보상 구슬의 체력 회복 +HoneyJarHealBonus (비율, ArenaReward)
-        JellyCushion, // 젤리 방석: 플레이어가 밟은 무너지는 발판이 JellyCushionShakeTime초 버틴다 (CrumblingPlatform)
-        StarCandy,   // 별사탕: 레벨이 오를 때마다 마나 +StarCandyMana (PlayerProgression.LeveledUp, 도토리 주머니의 마나 짝)
-        HorseshoeMagnet, // 말굽 자석: 전투 구역 보상 구슬이 끌려오는 거리 MagnetRadius → HorseshoeMagnetRadius (ArenaReward)
+        StarShard,   // 별똥 조각: 적을 처치하면 늘 마나 +StarShardMana (흡혈 송곳니의 마나 짝)
+        HeroMedal,   // 용사의 훈장: 중간보스·보스를 처치하면 최대 체력의 HeroMedalHealRatio만큼 회복 (ChunkStreamer.OnArenaCleared)
+        AcornPouch,  // 도토리 주머니: 레벨이 오를 때마다 최대 체력 +AcornPouchMaxHealth (PlayerProgression.LeveledUp)
+        HoneyJar,    // 꿀단지: 보상 구슬을 얻으면 체력 회복량 +HoneyJarHealBonus (비율, ArenaReward)
+        JellyCushion, // (2026-11-24 솜구름 방석으로 합침) 젤리 방석. 예전 저장에 있으면 솜구름 방석처럼 친다
+        StarCandy,   // 별사탕: 레벨이 오를 때마다 최대 마나 +StarCandyMaxMana (PlayerProgression.LeveledUp, 도토리 주머니의 마나 짝)
+        HorseshoeMagnet, // (2026-11-24 삭제) 말굽 자석
         PaperPlane,  // 종이비행기: 순간이동 마나 × PaperPlaneTeleportCost (A, TeleportSkill.CostMultiplier). 순간이동은 재사용 대기가 없어 백로그 원안(대기 -20%) 대신 마나
         LuckyPouch,  // 복주머니: 몬스터가 떨어뜨리는 골드 × (1 + LuckyPouchGoldBonus), 반올림 (공용, Core/RunGold.OnEnemyKilled)
-        RegularStamp, // 단골 도장: 마을 식당·장비 상점에서 사는 값 × RegularStampPriceRate (공용, UI/SkillHUD.Village·Shop). 팔기·리롤 값은 그대로
-        PiggyBank,   // 돼지 저금통: 판에서 마을에 처음 들어가면 가진 골드 × PiggyBankRate (최대 PiggyBankMax) 이자 (공용, Core/RunGold.OnVillageFound)
-        TreasureMap, // 보물 지도: 미니맵에 안 가 본 마을 방이 흐린 칸·흐린 집 아이콘으로 보인다 (공용, UI/MinimapUI.IsCharted, MinimapRules.Look charted)
-        CottonCloud, // 솜구름: 깜빡 발판이 사라진 뒤에도 CottonCloudGrace초 더 밟힌다 (공용, Traps/BlinkPlatform)
+        RegularStamp, // (2026-11-24 삭제) 단골 도장
+        PiggyBank,   // (2026-11-24 삭제) 돼지 저금통
+        TreasureMap, // 보물 지도 (2026-11-24 탐험가의 나침반과 합침): 미니맵에 안 가 본 방이 흐리게, 마을·보스 방은 아이콘까지 (UI/MinimapUI)
+        CottonCloud, // 솜구름 방석 (2026-11-24 젤리 방석과 합침): 무너지는 발판이 CushionShakeTime초 버티고(CrumblingPlatform), 깜빡 발판은 사라진 뒤에도 CottonCloudGrace초 더 밟힌다 (Traps/BlinkPlatform)
+        EchoCrystal, // 메아리 수정 (2026-11-24 새): 같은 속성 공격 마법을 연달아 쓰면 두 번째는 마나 × EchoCrystalCostRate (SpellCaster)
+        ElementResonance, // 속성 공명석 (2026-11-24 새): 적의 약점 속성으로 맞히면 피해 × (1 + ResonanceDamageBonus) (CombatStats.WeaknessDamageBonus)
         // 새 유물은 맨 뒤에만 더한다: 저장(RunSave)이 번호로 기억한다.
     }
 
@@ -53,46 +58,55 @@ namespace IBlameYou.Player
         public const float SwiftBootsSpeed = 0.08f;
         public const float WrathCharmDamage = 0.12f;
         public const float LifeSeedHealth = 20f;
-        public const float SpringRingRegen = 0.25f;
+        public const float SpringRingRegen = 0.10f; // 2026-11-24: 25% → 10% (마나 샘 방 +10%와 중첩)
         public const float HawkEyeCrit = 0.08f;
-        public const float FeatherfallDamageRatio = 0.05f;
         public const float VampireFangHeal = 3f;
         public const float FocusBeadRefund = 0.25f;
         public const float ShadowVeilGrace = 0.5f;
-        public const float BloodPactHealthPerMana = 1f;
-        public const float BloodPactCooldown = 40f;
+        public const float BloodPactHealthPerMana = 0.5f; // 필요한 마나의 절반만큼 체력 (2026-11-24, 예: 40마나 → 체력 20). 횟수 제한 없음
         public const float BloodPactMinHealthLeft = 1f;
         public const int PhoenixFeatherSaves = 1;
-        public const int HourglassFreeFalls = 2;
         public const float TwinRingMana = 5f;
         public const int TwinRingPercent = 90; // MagicCircleRules.PerfectAt과 같게 ("완벽!")
         public const float CheerRibbonMana = 4f;
-        public const float StarShardChance = 0.15f;
-        public const float StarShardMana = 6f;
+        public const float StarShardMana = 10f; // 2026-11-24: 15% 확률 +6 → 늘 +10
         public const float HeroMedalHealRatio = 0.15f;
-        public const float AcornPouchHeal = 10f;
-        public const float JellyCushionShakeTime = 0.9f; // 무너지는 발판 흔들림 0.55초 → 0.9초
-        public const float StarCandyMana = 30f;
-        public const float MagnetRadius = 1.5f;          // 보상 구슬 자석 기본 거리 (유닛, ArenaReward)
-        public const float HorseshoeMagnetRadius = 4f;   // 말굽 자석이 있으면
+        public const float AcornPouchMaxHealth = 1f; // 2026-11-24: 체력 +10 회복 → 최대 체력 +1
+        public const float CushionShakeTime = 0.9f; // 솜구름 방석: 무너지는 발판 흔들림 0.55초 → 0.9초 (옛 젤리 방석)
+        public const float StarCandyMaxMana = 1f;   // 2026-11-24: 마나 +30 회복 → 최대 마나 +1
+        public const float MagnetRadius = 1.5f;          // 보상 구슬 자석 거리 (유닛, ArenaReward). 말굽 자석은 2026-11-24 삭제
         public const float PaperPlaneTeleportCost = 0.75f; // 순간이동 마나 20 → 15
-        public const float LuckyPouchGoldBonus = 0.5f;     // 몬스터 골드 +50%
-        public const float RegularStampPriceRate = 0.8f;   // 마을에서 사는 값 -20%
-        public const float PiggyBankRate = 0.25f;          // 마을에 처음 들어갈 때 가진 골드의 25%
-        public const float CottonCloudGrace = 0.5f;        // 깜빡 발판(사라짐 1.4초) 중 처음 0.5초는 솜구름이 받쳐 준다
-        public const int PiggyBankMax = 50;                // 이자 최대 (중간보스 골드 50~100의 절반 아래)
+        public const float LuckyPouchGoldBonus = 0.25f;    // 몬스터 골드 +25% (2026-11-24: +50%에서 줄임)
+        public const float CottonCloudGrace = 0.5f;        // 깜빡 발판(사라짐 1.4초) 중 처음 0.5초는 솜구름 방석이 받쳐 준다
+        public const float EchoCrystalCostRate = 0.5f;     // 메아리 수정: 같은 속성 두 번째 마법 마나 절반
+        public const float ResonanceDamageBonus = 0.2f;    // 속성 공명석: 약점 속성 피해 +20%
         public const float HoneyJarHealBonus = 0.15f; // 보상 구슬 30% → 45% (생명 5 특성 45%와 합하면 60%)
 
+        // 상자 후보 26종 (2026-11-24 RelicList.md 순서: 능력치 9 · 회복 6 · 안전 3 · 탐험 2 · 골드 1 · 특수 5)
         public static readonly RelicId[] All =
         {
-            RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm,
-            RelicId.LifeSeed, RelicId.SpringRing, RelicId.HawkEye, RelicId.Featherfall, RelicId.VampireFang, RelicId.FocusBead,
-            RelicId.ShadowVeil, RelicId.BloodPact, RelicId.PhoenixFeather, RelicId.Hourglass, RelicId.TwinRing,
-            RelicId.Compass, RelicId.Clover, RelicId.CheerRibbon, RelicId.StarShard, RelicId.HeroMedal,
-            RelicId.AcornPouch, RelicId.HoneyJar, RelicId.JellyCushion, RelicId.StarCandy,
-            RelicId.HorseshoeMagnet, RelicId.PaperPlane, RelicId.LuckyPouch, RelicId.RegularStamp,
-            RelicId.PiggyBank, RelicId.TreasureMap, RelicId.CottonCloud
+            RelicId.ManaCrystal, RelicId.IronCloak, RelicId.SwiftBoots, RelicId.WrathCharm, RelicId.LifeSeed,
+            RelicId.SpringRing, RelicId.HawkEye, RelicId.AcornPouch, RelicId.StarCandy,
+            RelicId.VampireFang, RelicId.StarShard, RelicId.TwinRing, RelicId.CheerRibbon, RelicId.HeroMedal, RelicId.HoneyJar,
+            RelicId.FocusBead, RelicId.ShadowVeil, RelicId.PhoenixFeather,
+            RelicId.TreasureMap, RelicId.CottonCloud,
+            RelicId.LuckyPouch,
+            RelicId.BloodPact, RelicId.Clover, RelicId.PaperPlane, RelicId.EchoCrystal, RelicId.ElementResonance
         };
+
+        // 빠진 유물 (2026-11-24). 예전 저장에서만 나올 수 있다. 합친 둘(나침반·젤리 방석)은 합쳐진 유물로 친다 (Merged).
+        public static bool IsRetired(RelicId id) => Array.IndexOf(All, id) < 0;
+
+        // 합친 유물: 예전 저장의 나침반 = 보물 지도, 젤리 방석 = 솜구름 방석. 나머지는 그대로.
+        public static RelicId Merged(RelicId id)
+        {
+            switch (id)
+            {
+                case RelicId.Compass: return RelicId.TreasureMap;
+                case RelicId.JellyCushion: return RelicId.CottonCloud;
+                default: return id;
+            }
+        }
 
         public static string Name(RelicId id)
         {
@@ -127,7 +141,9 @@ namespace IBlameYou.Player
                 case RelicId.RegularStamp: return "단골 도장";
                 case RelicId.PiggyBank: return "돼지 저금통";
                 case RelicId.TreasureMap: return "보물 지도";
-                case RelicId.CottonCloud: return "솜구름";
+                case RelicId.CottonCloud: return "솜구름 방석";
+                case RelicId.EchoCrystal: return "메아리 수정";
+                case RelicId.ElementResonance: return "속성 공명석";
                 default: return "집중 구슬";
             }
         }
@@ -143,51 +159,32 @@ namespace IBlameYou.Player
                 case RelicId.LifeSeed: return $"최대 체력 +{LifeSeedHealth:0}";
                 case RelicId.SpringRing: return $"마나 재생 +{SpringRingRegen * 100f:0}%";
                 case RelicId.HawkEye: return $"치명타 확률 +{HawkEyeCrit * 100f:0}%";
-                case RelicId.Featherfall: return $"낭떠러지 낙하 피해 15% → {FeatherfallDamageRatio * 100f:0}%";
+                case RelicId.Featherfall: return "(빠진 유물)";
                 case RelicId.VampireFang: return $"적 처치 시 체력 +{VampireFangHeal:0}";
                 case RelicId.ShadowVeil: return $"대쉬가 끝난 뒤 {ShadowVeilGrace:0.0}초 더 무적";
-                case RelicId.BloodPact: return $"마나가 모자라면 체력으로 대신 내기 ({BloodPactCooldown:0}초에 한 번)";
+                case RelicId.BloodPact: return $"마나가 모자라면 필요한 마나의 {BloodPactHealthPerMana * 100f:0}%만큼 체력으로 대신 내기";
                 case RelicId.PhoenixFeather: return "쓰러질 피해를 한 번 버티고 체력 30%로";
-                case RelicId.Hourglass: return $"낭떠러지에 떨어져도 {HourglassFreeFalls}번은 피해 없이 복귀";
+                case RelicId.Hourglass: return "(빠진 유물)";
                 case RelicId.TwinRing: return $"마법진을 {TwinRingPercent}% 이상으로 그리면 마나 +{TwinRingMana:0}";
-                case RelicId.Compass: return "미니맵에 안 가 본 방도 흐리게 보인다";
+                case RelicId.Compass: return "(보물 지도로 합쳐짐)";
                 case RelicId.Clover: return $"유물 상자 후보 {OfferSize}개 → {CloverOfferSize}개";
                 case RelicId.CheerRibbon: return $"B의 공격 마법이 발동하면 마나 +{CheerRibbonMana:0}";
-                case RelicId.StarShard: return $"적 처치 시 {StarShardChance * 100f:0}% 확률로 마나 +{StarShardMana:0}";
-                case RelicId.HeroMedal: return $"정예 구역을 돌파하면 체력 {HeroMedalHealRatio * 100f:0}% 회복";
-                case RelicId.AcornPouch: return $"레벨이 오를 때마다 체력 +{AcornPouchHeal:0}";
-                case RelicId.HoneyJar: return $"보상 구슬 체력 회복 +{HoneyJarHealBonus * 100f:0}%";
-                case RelicId.JellyCushion: return $"무너지는 발판이 {JellyCushionShakeTime:0.0}초 버틴다";
-                case RelicId.StarCandy: return $"레벨이 오를 때마다 마나 +{StarCandyMana:0}";
-                case RelicId.HorseshoeMagnet: return $"보상 구슬이 {HorseshoeMagnetRadius:0}칸 밖에서도 끌려온다";
-                case RelicId.RegularStamp: return $"마을에서 사는 값 -{Math.Round((1f - RegularStampPriceRate) * 100f)}%";
-                case RelicId.TreasureMap: return "미니맵에 마을 위치가 미리 보인다";
-                case RelicId.CottonCloud: return $"깜빡 발판이 사라진 뒤에도 {CottonCloudGrace:0.0}초 더 밟힌다";
-                case RelicId.PiggyBank: return $"마을에 처음 들어가면 가진 골드의 {Math.Round(PiggyBankRate * 100f)}% 이자 (최대 {PiggyBankMax})";
+                case RelicId.StarShard: return $"적 처치 시 마나 +{StarShardMana:0}";
+                case RelicId.HeroMedal: return $"중간보스나 보스를 처치하면 체력 {HeroMedalHealRatio * 100f:0}% 회복";
+                case RelicId.AcornPouch: return $"레벨이 오를 때마다 최대 체력 +{AcornPouchMaxHealth:0}";
+                case RelicId.HoneyJar: return $"보상 구슬을 얻으면 체력 회복량 +{HoneyJarHealBonus * 100f:0}%";
+                case RelicId.JellyCushion: return "(솜구름 방석으로 합쳐짐)";
+                case RelicId.StarCandy: return $"레벨이 오를 때마다 최대 마나 +{StarCandyMaxMana:0}";
+                case RelicId.HorseshoeMagnet: return "(빠진 유물)";
+                case RelicId.RegularStamp: return "(빠진 유물)";
+                case RelicId.TreasureMap: return "미니맵에 안 가 본 방이 흐리게, 마을·보스 방은 아이콘까지 보인다";
+                case RelicId.CottonCloud: return $"무너지는 발판이 {CushionShakeTime:0.0}초 버티고, 깜빡 발판은 사라진 뒤에도 {CottonCloudGrace:0.0}초 더 밟힌다";
+                case RelicId.EchoCrystal: return $"같은 속성 마법을 연달아 쓰면 두 번째는 마나 {EchoCrystalCostRate * 100f:0}%";
+                case RelicId.ElementResonance: return $"적의 약점 속성으로 맞히면 피해 +{ResonanceDamageBonus * 100f:0}%";
+                case RelicId.PiggyBank: return "(빠진 유물)";
                 case RelicId.LuckyPouch: return $"몬스터가 떨어뜨리는 골드 +{Math.Round(LuckyPouchGoldBonus * 100f)}%";
                 case RelicId.PaperPlane: return $"순간이동 마나 -{Math.Round((1f - PaperPlaneTeleportCost) * 100f)}%";
                 default: return $"실패로 날린 마나 {FocusBeadRefund * 100f:0}% 돌려받기";
-            }
-        }
-
-        // 이 유물을 주로 반기는 쪽 (특성 창과 같은 표기: A / B / 공용).
-        public static string Owner(RelicId id)
-        {
-            switch (id)
-            {
-                case RelicId.IronCloak:
-                case RelicId.SwiftBoots:
-                case RelicId.Featherfall:
-                case RelicId.ShadowVeil:
-                case RelicId.Hourglass:
-                case RelicId.PaperPlane: return "A";
-                case RelicId.TwinRing:
-                case RelicId.WrathCharm:
-                case RelicId.HawkEye:
-                case RelicId.VampireFang:
-                case RelicId.CheerRibbon:
-                case RelicId.StarCandy: return "B";
-                default: return "공용";
             }
         }
 
@@ -195,20 +192,19 @@ namespace IBlameYou.Player
         public static int LuckyPouchGold(int amount) =>
             amount <= 0 ? amount : (int)Math.Round(amount * (1.0 + LuckyPouchGoldBonus), MidpointRounding.AwayFromZero);
 
-        // 돼지 저금통: 가진 골드(gold)에 붙는 이자. 내림이라 3골드 이하는 0, 200골드부터는 최대값.
-        public static int PiggyBankInterest(int gold) =>
-            gold <= 0 ? 0 : Math.Min(PiggyBankMax, (int)Math.Floor(gold * (double)PiggyBankRate));
-
-        // 별똥 조각: 0~1 난수(roll)가 확률 밑이면 터진다. 난수는 부르는 쪽이 넘긴다 (테스트 고정용).
-        public static bool StarShardProcs(float roll) => roll < StarShardChance;
-
-        // 피의 계약: 모자란 마나(shortfall)를 체력으로 낼 수 있으면 true와 그 체력 값을 돌려준다.
-        // 낸 뒤에도 체력이 BloodPactMinHealthLeft 이상 남아야 한다 (이 유물로 쓰러지지 않는다). 재사용 대기는 부르는 쪽이 본다.
-        public static bool BloodPactCost(float health, float shortfall, out float cost)
+        // 피의 계약: 마나가 모자란 마법(필요한 마나 required)을 체력으로 낼 수 있으면 true와 그 체력 값을 돌려준다.
+        // 체력 = 필요한 마나 × BloodPactHealthPerMana (절반). 마나는 쓰지 않는다. 낸 뒤에도 체력이 BloodPactMinHealthLeft 이상 남아야 한다.
+        public static bool BloodPactCost(float health, float required, out float cost)
         {
-            cost = Math.Max(0f, shortfall) * BloodPactHealthPerMana;
-            return shortfall > 0f && health - cost >= BloodPactMinHealthLeft;
+            cost = Math.Max(0f, required) * BloodPactHealthPerMana;
+            return required > 0f && health - cost >= BloodPactMinHealthLeft;
         }
+
+        // 메아리 수정: 바로 전에 발동한 마법(lastElement, 없으면 -1)과 속성이 같으면 이번 마법은 마나 × EchoCrystalCostRate.
+        // 할인받아 발동하면 사슬이 끊겨(-1) 셋째는 다시 제값이다 (불·불·불 = 온값·절반·온값). 실패하면 사슬은 끊긴다.
+        public static bool EchoDiscounted(int lastElement, int element) => lastElement >= 0 && lastElement == element;
+
+        public static int EchoAfterCast(int lastElement, int element) => EchoDiscounted(lastElement, element) ? -1 : element;
 
         // 상자 하나가 보여 줄 후보. 시드와 상자가 놓인 청크로 정해지므로 같은 맵·같은 보유 유물이면 늘 같은 후보가 나온다.
         // 이미 가진 유물은 빼고, 남은 게 OfferSize보다 적으면 남은 것만 돌려준다 (다 가졌으면 빈 배열).

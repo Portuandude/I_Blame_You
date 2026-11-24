@@ -48,7 +48,7 @@ namespace IBlameYou.Player
             b[(int)action, 1] = second;
         }
 
-        // P1이 쓸 수 없는 키: Esc(일시정지·창 닫기), 숫자줄 1~0(P2 공격 스킬), 백틱(기능 테스트 A/B 전환), F1~F15(개발자·시험 키, F12 스토리 건너뛰기),
+        // P1이 쓸 수 없는 키: Esc(일시정지·창 닫기), 숫자줄 1~0(P2 공격 스킬), 백틱(기능 테스트 A/B 전환), F1~F15(개발자·시험 키),
         // Tab(특성 창), C(도감), R·M(결과 창 다시 시작), 마우스·패드 버튼, 키가 아닌 값.
         public static bool IsForbidden(int code)
         {

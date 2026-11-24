@@ -8,7 +8,7 @@ namespace IBlameYou.UI
     // 방 격자 모드의 미니맵 (Docs/LevelDesign.md). 화면 오른쪽 아래에 지금 방 주변을, ` 키(백쿼트)로 방 전체 지도를 크게 펼친다.
     // 던그리드 방식 (MinimapRules, 사람 결정 2026-11-10): 가 본 방만 칸으로 그리고, 안 가 본 방은 칸 없이 가 본 방에서
     // 뻗은 통로 실선만 보여 "그쪽에 방이 더 있다"는 것만 알린다. 방 종류 아이콘·룬 점·자물쇠도 가 본 방에만. 지금 방은 깜빡이는 흰 테두리.
-    // 탐험가의 나침반 유물이 있으면 안 가 본 방도 흐린 칸 + 흐린 종류 아이콘으로 보이고 통로 실선이 지도 전체를 잇는다 (MinimapRules.Look).
+    // 보물 지도 유물(2026-11-24 탐험가의 나침반과 합침)이 있으면 안 가 본 방도 흐린 칸으로(마을·보스 방은 흐린 아이콘까지) 보이고 통로 실선이 지도 전체를 잇는다 (MinimapRules.Look).
     // 보물 지도 유물이 있으면 안 가 본 마을 방만 흐린 칸 + 흐린 집 아이콘으로 보인다.
     // 방 종류 색: 보스 빨강, 중간보스 주황, 정예 보라, 보물 금색, 샘 하늘색, 시작 초록.
     // 귀엽게 (그림이 있으면): 둥근 보라 패널 위에 둥근 방 칸, 방 종류는 아이콘 (보스 왕관, 중간보스 투구, 정예 보라 별,
@@ -21,7 +21,7 @@ namespace IBlameYou.UI
         private const float Margin = 12f;
 
         private static readonly Color Visited = new Color(0.78f, 0.74f, 0.9f, 0.95f);
-        private static readonly Color Faint = new Color(0.78f, 0.74f, 0.9f, 0.3f);  // 나침반으로 보이는 안 가 본 방
+        private static readonly Color Faint = new Color(0.78f, 0.74f, 0.9f, 0.3f);  // 보물 지도로 보이는 안 가 본 방
         private const float FaintIconAlpha = 0.45f;
         private static readonly Color Link = new Color(0.95f, 0.92f, 1f, 0.85f);
         private static readonly Color Frame = new Color(0.094f, 0.078f, 0.102f, 0.7f); // ArtStyle outline
@@ -30,6 +30,7 @@ namespace IBlameYou.UI
         private static readonly Color EliteColor = new Color(0.75f, 0.45f, 1f);
         private static readonly Color TreasureColor = new Color(1f, 0.85f, 0.3f);   // gold
         private static readonly Color RestColor = new Color(0.5f, 0.97f, 1f);       // aqua
+        private static readonly Color ManaSpringColor = new Color(0.45f, 0.62f, 1f); // 마나 샘: 샘 아이콘을 파랗게 물들인다 (새 그림 없이)
         private static readonly Color StartColor = new Color(0.6f, 1f, 0.45f);
         private static readonly Color CoinColor = new Color(1f, 0.82f, 0.25f);      // 동전 무더기 점 (금색)
         private static readonly Color CurseColor = new Color(0.66f, 0.4f, 0.98f);   // 저주받은 상자 점 (보라, CursedChest와 같은 색)
@@ -42,7 +43,7 @@ namespace IBlameYou.UI
         public ChunkStreamer Streamer => streamer; // 일시정지 창 탐험 줄 (SkillHUD.Pause.cs)
         private PlayerControlState control;
         private GameObject playerObject;
-        private PlayerRelics relics; // 탐험가의 나침반 확인용 (늦게 붙을 수 있어 처음 쓸 때 찾는다)
+        private PlayerRelics relics; // 보물 지도 확인용 (늦게 붙을 수 있어 처음 쓸 때 찾는다)
         private bool expanded;
 
         // 큰 지도 펼침·접힘 연출 (2026-11-13): 작은 지도 쪽(오른쪽 아래)에서 톡 커지며 펼쳐지고, 접을 땐 그쪽으로 쏙 줄어든다.
@@ -78,7 +79,7 @@ namespace IBlameYou.UI
         private int lastRoom = -1;
         private float slideStart = -10f;
 
-        // 나침반 획득 연출: 나침반을 얻은 뒤 게임이 다시 흐르는 순간 큰 지도가 CompassShowTime 동안 저절로 펼쳐지고,
+        // 보물 지도 획득 연출 (2026-11-24 나침반과 합침, 이름은 Compass 그대로): 지도를 얻은 뒤 게임이 다시 흐르는 순간 큰 지도가 CompassShowTime 동안 저절로 펼쳐지고,
         // 안 가 본 방의 흐린 칸이 지금 방에서 가까운 순서로 하나씩 "톡" 나타난다 (발견 연출 RevealScale 재사용).
         private const float CompassShowTime = 1.5f;
         private const float CompassFirstDelay = 0.15f;
@@ -224,7 +225,7 @@ namespace IBlameYou.UI
             var layout = streamer.Rooms;
             var current = layout.Rooms[streamer.CurrentRoom];
             var faint = new System.Collections.Generic.List<RoomData>();
-            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index && !IsCharted(room.Index)) faint.Add(room); // 보물 지도로 이미 보이던 마을은 다시 숨겼다 띄우지 않는다
+            foreach (var room in layout.Rooms) if (!streamer.HasVisited(room.Index) && room.Index != current.Index) faint.Add(room);
             faint.Sort((a, b) => (Mathf.Abs(a.X - current.X) + Mathf.Abs(a.Y - current.Y))
                 .CompareTo(Mathf.Abs(b.X - current.X) + Mathf.Abs(b.Y - current.Y)));
             float step = faint.Count > 1 ? Mathf.Min(0.08f, CompassSpread / (faint.Count - 1)) : 0f;
@@ -267,10 +268,10 @@ namespace IBlameYou.UI
                 DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
                 if (expanded) DrawPing(CellRect(current.X, current.Y, layout.MinX, layout.MaxY, area, cell));
                 EnsureStyle();
-                // 나침반이 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다 (탐험가의 나침반)
+                // 보물 지도가 있으면 제목 줄에 흐린 칸 뜻을 덧붙인다
                 string title = CompassShowing && !expanded
-                    ? "탐험가의 나침반! 안 가 본 방이 흐리게 보인다"
-                    : (HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (나침반)" : "지도 (` 키로 닫기)") + " · " + FoundText(layout);
+                    ? "보물 지도! 안 가 본 방이 흐리게, 마을·보스 방은 아이콘까지 보인다"
+                    : (HasCompass() ? "지도 (` 키로 닫기) · 흐린 칸 = 안 가 본 방 (보물 지도)" : "지도 (` 키로 닫기)") + " · " + FoundText(layout);
                 GUI.Label(new Rect(area.x - 120f, area.y - 30f, area.width + 240f, 24f), title, legend);
                 DrawLegend(new Rect(area.x - 16f, area.yMax + 8f, area.width + 32f, 24f));
                 GUI.matrix = screenMatrix;
@@ -466,7 +467,7 @@ namespace IBlameYou.UI
                 {
                     float s = body.width * 0.82f;
                     var previous = GUI.color;
-                    GUI.color = Color.white;
+                    GUI.color = IconTint(room.Kind);
                     GUI.DrawTexture(new Rect(body.center.x - s / 2f, body.center.y - s / 2f, s, s), icon, ScaleMode.ScaleToFit, true);
                     GUI.color = previous;
                 }
@@ -620,6 +621,9 @@ namespace IBlameYou.UI
             return style;
         }
 
+        // 아이콘 색: 마나 샘은 회복 샘 아이콘을 파랗게, 나머지는 그대로
+        private static Color IconTint(RoomKind kind) => kind == RoomKind.ManaSpring ? ManaSpringColor : Color.white;
+
         private static Texture2D KindIcon(RoomKind kind)
         {
             switch (kind)
@@ -629,6 +633,7 @@ namespace IBlameYou.UI
                 case RoomKind.Elite: return art.Elite;
                 case RoomKind.Treasure: return art.Treasure;
                 case RoomKind.Spring: return art.Rest; // 숨 고르기 방(Rest)은 체크포인트 제거(2026-11-10)로 표시 없음
+                case RoomKind.ManaSpring: return art.Rest; // 샘 아이콘을 파랗게 (IconTint)
                 case RoomKind.Start: return art.Start;
                 case RoomKind.Village: return art.Village;
                 default: return null;
@@ -663,7 +668,7 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비  <color=#ff9940>●</color> 퍼즐", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#739eff>■</color> 마나 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비  <color=#ff9940>●</color> 퍼즐", legend);
                 return;
             }
 
@@ -722,30 +727,23 @@ namespace IBlameYou.UI
 
         private RoomLook LookOf(int index, RoomData current)
         {
-            var look = MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass(), IsCharted(index));
+            var look = MinimapRules.Look(streamer.HasVisited(index), index == current.Index, HasCompass());
             return look == RoomLook.Faint && WaitingReveal(index) ? RoomLook.Hidden : look;
         }
 
-        // 보물 지도: 마을 방은 안 가 봤어도 흐린 칸 + 흐린 집 아이콘 (나침반 획득 연출은 없음)
-        private bool IsCharted(int index)
-        {
-            if (relics == null && playerObject != null) relics = playerObject.GetComponent<PlayerRelics>();
-            if (relics == null || !relics.Has(RelicId.TreasureMap)) return false;
-            var rooms = streamer.Rooms.Rooms;
-            return index >= 0 && index < rooms.Count && rooms[index].Kind == RoomKind.Village;
-        }
-
+        // 보물 지도 (2026-11-24 탐험가의 나침반과 합침): 안 가 본 방이 흐리게 보인다
         private bool HasCompass()
         {
             if (relics == null && playerObject != null) relics = playerObject.GetComponent<PlayerRelics>();
-            return relics != null && relics.Has(RelicId.Compass);
+            return relics != null && relics.Has(RelicId.TreasureMap);
         }
 
-        // 나침반으로 보이는 안 가 본 방: 흐린 칸 + 흐린 방 종류 아이콘(색 네모). 자물쇠·룬 점·발견 연출은 가 본 뒤에.
+        // 보물 지도로 보이는 안 가 본 방: 흐린 칸. 마을·보스 방만 흐린 방 종류 아이콘(색 네모)까지. 자물쇠·룬 점·발견 연출은 가 본 뒤에.
         private void DrawFaintRoom(RoomData room, Rect body)
         {
             if (art.Tile != null) DrawTile(body, Faint);
             else Fill(body, Faint);
+            if (!MinimapRules.ChartedIcon(room.Kind)) return;
 
             var icon = KindIcon(room.Kind);
             var mark = KindColor(room.Kind);
@@ -791,6 +789,7 @@ namespace IBlameYou.UI
                 case RoomKind.Elite: return EliteColor;
                 case RoomKind.Treasure: return TreasureColor;
                 case RoomKind.Spring: return RestColor; // 숨 고르기 방(Rest)은 표시 없음
+                case RoomKind.ManaSpring: return ManaSpringColor;
                 case RoomKind.Start: return StartColor;
                 case RoomKind.Village: return VillageColor;
                 default: return null;

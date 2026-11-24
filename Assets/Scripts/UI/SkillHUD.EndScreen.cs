@@ -96,11 +96,11 @@ namespace IBlameYou.UI
             return (1f - Mathf.SmoothStep(0f, 1f, k)) * EndRowLift;
         }
 
-        // 결과 창 방 이벤트 줄 끝에 이번 판 마음 가루 (도시 화폐, 쓰러져도 남는다 — Docs/CityDesign.md). 얻은 게 없으면 그대로.
+        // 결과 창 방 이벤트 줄 끝에 이번 판 영혼석 (도시 화폐, 쓰러져도 남는다 — Docs/CityDesign.md). 얻은 게 없으면 그대로.
         private static string WithHeartDust(string events)
         {
             if (RunStats.HeartDust <= 0) return events;
-            string dust = $"<color=#f0b8ff>마음 가루 +{RunStats.HeartDust}</color>";
+            string dust = $"<color=#f0b8ff>영혼석 +{RunStats.HeartDust}</color>";
             return string.IsNullOrEmpty(events) ? dust : events + " · " + dust;
         }
 
@@ -108,7 +108,7 @@ namespace IBlameYou.UI
         {
             bool compare = !clear && HasDefeatCompare;
             string explore = ExploreText(true);           // 방 N/M 탐험 · 동전 무더기 a/b · 마을 (SkillHUD.Pause.cs)
-            string events = WithHeartDust(RoomEventText()); // 매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f · 퍼즐 g/h (만난 것만) · 마음 가루 +N
+            string events = WithHeartDust(RoomEventText()); // 매복 돌파 a/b · 저주 상자 해제 c/d · 보물 고블린 e/f · 퍼즐 g/h (만난 것만) · 영혼석 +N
             bool favorite = !string.IsNullOrEmpty(FavoriteLine());
             const float top = 60f, line = 26f, summary = 28f, small22 = 22f, relics = 30f;
             float height = top + line * 2f + (compare ? 24f : 0f) + summary + (explore.Length > 0 ? small22 : 0f) + (events.Length > 0 ? small22 : 0f)
@@ -315,7 +315,7 @@ namespace IBlameYou.UI
         // 클리어 결과 창: 목표 시간(15분) 대비 걸린 시간과 이번 시드의 방 수 한 줄. 빠르면 초록, 느리면 주황 (Chunks/ClearPace).
         private void DrawClearPace(Rect rect)
         {
-            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms, StageEvents.SideRooms);
+            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.RoomCount);
             if (string.IsNullOrEmpty(text)) return;
             var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
@@ -366,10 +366,10 @@ namespace IBlameYou.UI
             GUI.matrix = previous;
         }
 
-        // 게임오버 결과 창: 쓰러진 곳(시작 방에서 몇 칸·곁방·가장 멀리 간 거리)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
+        // 게임오버 결과 창: 쓰러진 곳(시작 방에서 몇 칸·가장 멀리 간 거리)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
         private void DrawDefeatPlace(Rect rect)
         {
-            string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, StageEvents.InSideRoom, defeatTime);
+            string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, defeatTime);
             var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(rect, text, style);

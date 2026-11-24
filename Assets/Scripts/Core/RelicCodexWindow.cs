@@ -154,7 +154,6 @@ namespace IBlameYou.Core
                     GUI.DrawTexture(new Rect(cellRect.center.x - drawn / 2f, cellRect.y + 4f + iconSize - drawn, drawn, drawn), icon, ScaleMode.ScaleToFit);
                     GUI.color = previous;
                 }
-                if (known) DrawOwnerBadge(IBlameYou.Player.RelicBook.Owner(id), new Vector2(cellRect.center.x - iconSize / 2f, cellRect.y + 4f + iconSize));
                 if (OwnedNow(id)) DrawOwnedDot(new Vector2(cellRect.center.x + iconSize / 2f, cellRect.y + 4f));
                 GUI.Label(new Rect(cellRect.x + 2f, cellRect.y + iconSize + 6f, cellRect.width - 4f, 32f),
                     known ? IBlameYou.Player.RelicBook.Name(id) : "???", name);
@@ -170,14 +169,14 @@ namespace IBlameYou.Core
             if (hovered >= 0)
                 DrawCellFrame(new Rect(rect.x + 20f + (hovered % columns) * cell, rect.y + 70f + (hovered / columns) * cellHeight, cell, cellHeight), previous);
 
-            // 고른 칸의 설명 한 줄: 모은 유물이면 "[A] 설명", 아직이면 "아직 모르는 유물". 안 골랐으면 안내 문구.
-            // 안 골랐으면 주인별 모은 수("A 3/8 · B 2/9 · 공용 4/10", 색 글자)와 안내를 두 줄로.
-            string info = hovered < 0 ? OwnerTally(all, mask) + "\n방향키·마우스로 고르면 설명 · Tab: 다른 모드"
+            // 고른 칸의 설명 한 줄: 모은 유물이면 "이름 — 설명", 아직이면 "아직 모르는 유물". 안 골랐으면 안내 문구.
+            // 안 골랐으면 모은 수("모은 유물 7/26")와 안내를 두 줄로. 주인(A·B·공용) 표시는 2026-11-24 삭제.
+            string info = hovered < 0 ? KnownTally(all, mask) + "\n방향키·마우스로 고르면 설명 · Tab: 다른 모드"
                 : RelicCodex.Has(mask, (int)all[hovered])
-                    ? $"[{IBlameYou.Player.RelicBook.Owner(all[hovered])}] {IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
+                    ? $"{IBlameYou.Player.RelicBook.Name(all[hovered])} — {IBlameYou.Player.RelicBook.Description(all[hovered])}"
                       + (OwnedNow(all[hovered]) ? " (이번 판 보유)" : "")
                     : "아직 모르는 유물 — 상자에서 골라 보면 도감에 오른다";
-            // 색 글자는 주인별 줄에만 (유물 설명은 그대로 찍는다)
+            // 리치 텍스트는 모은 수 줄에만 (유물 설명은 그대로 찍는다)
             var infoStyle = hovered < 0
                 ? infoRich.Get(recordSmall, s => { s.alignment = TextAnchor.MiddleCenter; s.wordWrap = true; s.clipping = TextClipping.Clip; s.richText = true; })
                 : infoPlain.Get(recordSmall, s => { s.alignment = TextAnchor.MiddleCenter; s.wordWrap = true; s.clipping = TextClipping.Clip; s.richText = false; });
@@ -191,8 +190,6 @@ namespace IBlameYou.Core
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.center.x + 20f, rect.yMax - 48f, 130f, 36f), "닫기 (C)", button)) Close(true);
         }
 
-        // 모은 유물 아이콘 왼쪽 아래에 주인 배지: A는 하늘색, B는 주황 글자 (공용은 표시 없음). corner = 아이콘 왼쪽 아래.
-        private GUIStyle ownerBadge;
         // 창 스타일 변형은 한 번만 만든다 (OnGUI마다 new GUIStyle 하지 않게)
         private readonly DerivedStyle headStyle = new DerivedStyle();
         private readonly DerivedStyle summaryStyle = new DerivedStyle();
@@ -201,33 +198,12 @@ namespace IBlameYou.Core
         private readonly DerivedStyle infoPlain = new DerivedStyle();
         private readonly DerivedStyle smallButton = new DerivedStyle();
 
-        private void DrawOwnerBadge(string owner, Vector2 corner)
+        // 모은 수: "모은 유물 7/26" (후보 26종 기준, 빠진 유물은 세지 않는다)
+        private static string KnownTally(IBlameYou.Player.RelicId[] all, long mask)
         {
-            if (owner != "A" && owner != "B") return;
-            if (ownerBadge == null)
-                ownerBadge = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 0) };
-            var rect = new Rect(corner.x - 6f, corner.y - 12f, 14f, 14f);
-            var previous = GUI.color;
-            GUI.color = new Color(0.12f, 0.08f, 0.22f, 0.85f * previous.a); // 진한 바탕 사각
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = previous;
-            ownerBadge.normal.textColor = owner == "A" ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.65f, 0.3f);
-            GUI.Label(rect, owner, ownerBadge);
-        }
-
-        // 주인별 모은 수: "A 3/8 · B 2/9 · 공용 4/10" (A 하늘색, B 주황 — 주인 배지와 같은 색). 리치 텍스트.
-        private static string OwnerTally(IBlameYou.Player.RelicId[] all, long mask)
-        {
-            int aHave = 0, aAll = 0, bHave = 0, bAll = 0, sHave = 0, sAll = 0;
-            for (int i = 0; i < all.Length; i++)
-            {
-                bool known = RelicCodex.Has(mask, (int)all[i]);
-                string owner = IBlameYou.Player.RelicBook.Owner(all[i]);
-                if (owner == "A") { aAll++; if (known) aHave++; }
-                else if (owner == "B") { bAll++; if (known) bHave++; }
-                else { sAll++; if (known) sHave++; }
-            }
-            return $"<color=#80d9ff>A {aHave}/{aAll}</color> · <color=#ffa64d>B {bHave}/{bAll}</color> · 공용 {sHave}/{sAll}";
+            int have = 0;
+            for (int i = 0; i < all.Length; i++) if (RelicCodex.Has(mask, (int)all[i])) have++;
+            return $"모은 유물 {have}/{all.Length}";
         }
 
         // 모은 수 진행 막대: 진한 바탕 + 금색 채움. 다 모았으면 밝은 띠가 1.6초마다 왼쪽에서 오른쪽으로 지나간다.

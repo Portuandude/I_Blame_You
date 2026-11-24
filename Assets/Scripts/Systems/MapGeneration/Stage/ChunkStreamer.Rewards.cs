@@ -56,9 +56,8 @@ namespace IBlameYou.Systems
             RelicChest.Create(root, position, stage.Seed, chunkIndex, dropped, () =>
             {
                 takenRelics.Add(chunkIndex);
-                // 유물 상자를 열면 옆에 장비 하나 (Docs/EquipmentDesign.md 7절). 중간보스 상자는 수식어 한 등급 위.
-                int bonus = RoomShaper.IsMidBossArena(stage.Chunks[chunkIndex]) ? IBlameYou.Player.EquipmentOffer.MidBossGradeBonus : 0;
-                var item = IBlameYou.Player.EquipmentOffer.Roll(stage.Seed, chunkIndex, bonus);
+                // 유물 상자를 열면 옆에 장비 하나 (Docs/EquipmentDesign.md 7절).
+                var item = IBlameYou.Player.EquipmentOffer.Roll(stage.Seed, chunkIndex);
                 groundEquipment[chunkIndex] = item;
                 if (root != null) SpawnEquipment(root, chunkIndex, equipmentPosition, item, true);
             });

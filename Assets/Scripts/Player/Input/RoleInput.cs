@@ -36,10 +36,9 @@ namespace IBlameYou.Player
         // P1(A)·P2(B) 각자의 "다음/건너뛰기" 버튼. 둘이 동시에 꾹 누르면 건너뛴다.
         // 지금은 한 키보드를 같이 써서 둘이 같은 Space를 따로 누를 수 없으므로 P2는 마우스 왼쪽(평타 버튼)이다.
         // 입력 장치가 나뉘면(패드·온라인) 여기만 P2의 Space로 바꾸면 된다.
-        // F12(임시, 2026-11-14 사람 지시): 혼자 시험할 때 두 사람이 동시에 누른 것으로 친다 — 꾹 누르면 건너뛰기 게이지가 찬다.
-        public static bool StorySkipBoth => Input.GetKey(KeyCode.F12);
-        public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || KeyBindings.Get(P1Action.Jump) || StorySkipBoth; // 점프 키를 바꿨으면 그 키도
-        public static bool StoryButtonB => P2Input.GetMouseButton(0) || (P2Input.Remote && P2Input.GetKey(KeyCode.Space)) || StorySkipBoth; // 온라인이면 친구의 Space도
+        // 임시 F12 "둘이 같이 건너뛰기"는 2026-11-24 인트로를 끄면서 뺐다 (F12는 기능 테스트 장비 창).
+        public static bool StoryButtonA => Input.GetKey(KeyCode.Space) || KeyBindings.Get(P1Action.Jump); // 점프 키를 바꿨으면 그 키도
+        public static bool StoryButtonB => P2Input.GetMouseButton(0) || (P2Input.Remote && P2Input.GetKey(KeyCode.Space)); // 온라인이면 친구의 Space도
         // 이번 프레임에 누른 순간 (짧게 톡 눌렀다 뗀 것을 놓치지 않게 — 온라인은 친구가 보낸 누름 횟수로 센다)
         public static bool StoryButtonADown => Input.GetKeyDown(KeyCode.Space) || KeyBindings.GetDown(P1Action.Jump);
         public static bool StoryButtonBDown => P2Input.GetMouseButtonDown(0) || (P2Input.Remote && P2Input.GetKeyDown(KeyCode.Space));

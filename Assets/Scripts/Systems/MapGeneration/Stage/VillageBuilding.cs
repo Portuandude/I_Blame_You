@@ -8,7 +8,7 @@ namespace IBlameYou.Systems
     public enum VillageService
     {
         Restaurant, // 식당: 체력·마나 음식
-        Shop        // 장비 상점: 구매·판매·수식어 변경
+        Shop        // 장비 상점: 구매·판매
     }
 
     // 건물 앞에 서서 W(또는 ↑)를 누르면 StageEvents.RaiseVillageInteract로 창을 열어 달라고 알린다.

@@ -49,6 +49,15 @@ namespace IBlameYou.Player
         public SpellDefinition WindupSpell { get; private set; }
         public Vector2 WindupLanding { get; private set; }
         public event System.Action<Element> Casted;  // 공격 마법이 실제로 발동한 순간 (마법진 성공·개발자 모드 즉시 발동). 응원 리본 유물
+        // 유물 메아리 수정: 같은 속성 마법을 연달아 쓰면 두 번째는 마나 절반 (RelicBook.EchoDiscounted). echoElement = 바로 전에 발동한 속성, 없으면 -1
+        public bool EchoCrystal { get; set; }
+        private int echoElement = -1;
+
+        // 이번 마법의 마나 (TotalCostMultiplier 곱하기 전). 메아리 수정이 있고 바로 전 마법과 속성이 같으면 절반.
+        private bool EchoApplies(SpellDefinition spell) => EchoCrystal && RelicBook.EchoDiscounted(echoElement, (int)spell.Element);
+        private float CostOf(SpellDefinition spell) => spell.ManaCost * (EchoApplies(spell) ? RelicBook.EchoCrystalCostRate : 1f);
+
+        private void AfterCast(SpellDefinition spell) => echoElement = RelicBook.EchoAfterCast(echoElement, (int)spell.Element);
         private const float SpikeDefaultDistance = 4f;  // 앞에 적이 없을 때 바위 가시가 솟는 거리
         private SpriteRenderer charge;               // 선딜 중 캐릭터 위에 보이는 기 모으기 표시
 
@@ -101,12 +110,14 @@ namespace IBlameYou.Player
             }
             if (GameSession.DevMode)
             {
-                if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
+                float devCost = CostOf(spell);
+                if (!mana.TryConsume(devCost, ManaUser.PlayerB))
                 {
-                    SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
+                    SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {devCost * mana.TotalCostMultiplier:0})", true);
                     return;
                 }
 
+                AfterCast(spell);
                 Cast(spell, 1f, -1);
                 return;
             }
@@ -132,9 +143,10 @@ namespace IBlameYou.Player
         {
             // 마나가 모자라면 열지 않는다: 6초 동안 다 그린 뒤에야 "마나 부족"을 알게 되지 않게 (버그 점검 2026-11-22)
             // 피의 계약처럼 모자란 마나를 대신 내는 유물이 있으면 판정 때 TryConsume에 맡긴다
-            if (mana.ShortfallCover == null && !mana.HasEnough(spell.ManaCost * mana.TotalCostMultiplier))
+            float cost = CostOf(spell);
+            if (mana.ShortfallCover == null && !mana.HasEnough(cost * mana.TotalCostMultiplier))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {cost * mana.TotalCostMultiplier:0})", true);
                 return;
             }
             PendingSpell = spell;
@@ -230,9 +242,10 @@ namespace IBlameYou.Player
             LastJudgedAt = Time.unscaledTime;
             LastElement = spell.Element;
 
-            if (!mana.TryConsume(spell.ManaCost, ManaUser.PlayerB))
+            float cost = CostOf(spell);
+            if (!mana.TryConsume(cost, ManaUser.PlayerB))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {spell.ManaCost * mana.TotalCostMultiplier:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {cost * mana.TotalCostMultiplier:0})", true);
                 return;
             }
             // 판정 알림(쌍둥이 반지 마나 보상 등)은 마나를 낸 뒤에: 보상 마나로 모자란 마나를 메워 시전하지 않게 (버그 점검 2026-11-22)
@@ -240,11 +253,13 @@ namespace IBlameYou.Player
 
             if (result.Failed)
             {
-                mana.MarkWasted(ManaUser.PlayerB, spell.ManaCost);
-                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {spell.ManaCost * mana.TotalCostMultiplier:0} 날림", true);
+                mana.MarkWasted(ManaUser.PlayerB, cost);
+                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {cost * mana.TotalCostMultiplier:0} 날림", true);
+                echoElement = -1; // 메아리 수정: 실패하면 사슬이 끊긴다
                 return;
             }
 
+            AfterCast(spell);
             Cast(spell, result.Power, result.Percent);
         }
 

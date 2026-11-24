@@ -7,6 +7,7 @@ using UnityEngine;
 namespace IBlameYou.Player
 {
     // 이번 런에서 얻은 유물 목록과 효과 적용. 유물은 A/B 공용이고, 효과는 얻는 순간 한 번 적용된다 (RelicBook 참고).
+    // 예전 저장의 합친 유물(나침반·젤리 방석)은 얻을 때 합쳐진 유물(보물 지도·솜구름 방석)로 바꾼다. 빠진 유물은 효과 없이 목록에만 남는다.
     public class PlayerRelics : MonoBehaviour
     {
         private readonly List<RelicId> owned = new List<RelicId>();
@@ -67,7 +68,7 @@ namespace IBlameYou.Player
 
         private static readonly Vector3 RingOffset = new Vector3(0f, 0.7f, 0f); // 마나 고리 가운데 (몸통 높이, 플레이어 로컬)
 
-        // 레벨이 오를 때: 도토리 주머니(체력)·별사탕(마나). 한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 회복하지 않는다.
+        // 레벨이 오를 때: 도토리 주머니(최대 체력 +1)·별사탕(최대 마나 +1). 한 번에 여러 레벨이 오르면 레벨마다, 쓰러진 뒤에는 늘지 않는다.
         private void OnLeveledUp(int level)
         {
             var health = GetComponent<HealthSystem>();
@@ -79,13 +80,12 @@ namespace IBlameYou.Player
         private int candyFrame = -1;
         private int candyStack;
 
-        // 별사탕: 레벨이 오를 때마다 마나. 같은 프레임 여러 레벨이면 고리는 한 번, 글자는 위로 쌓는다 (도토리 글자보다 조금 아래).
+        // 별사탕: 레벨이 오를 때마다 최대 마나 +1 (그만큼 채운다). 같은 프레임 여러 레벨이면 고리는 한 번, 글자는 위로 쌓는다 (도토리 글자보다 조금 아래).
         private void StarCandyMana()
         {
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
-            float before = mana.Current;
-            mana.Restore(RelicBook.StarCandyMana);
+            mana.AddMax(RelicBook.StarCandyMaxMana);
             candyStack = candyFrame == Time.frameCount ? candyStack + 1 : 0;
             candyFrame = Time.frameCount;
             var color = new Color(0.43f, 0.83f, 1f);
@@ -95,24 +95,21 @@ namespace IBlameYou.Player
                 // 머리 위로 별사탕이 톡. 도토리 주머니도 같이 튀면 별사탕은 왼쪽, 도토리는 가운데 (겹치지 않게)
                 VfxPlayer.StarCandyGlint(transform, Has(RelicId.AcornPouch) ? StarCandyGlintAsideOffset : AcornGlintOffset);
             }
-            float gained = mana.Current - before;
-            if (gained > 0.5f)
-                DamageNumbers.ShowText(transform.position + Vector3.up * (1.2f + 0.3f * candyStack), $"마나 +{gained:0}", color, 0.8f);
+            DamageNumbers.ShowText(transform.position + Vector3.up * (1.2f + 0.3f * candyStack), $"최대 마나 +{RelicBook.StarCandyMaxMana:0}", color, 0.8f);
         }
 
         private void AcornHeal(HealthSystem health)
         {
-            float before = health.Current;
-            health.Heal(RelicBook.AcornPouchHeal);
+            health.AddMax(RelicBook.AcornPouchMaxHealth);
             // 한 번에 여러 레벨이 오르면 도토리 연출은 한 번만, 글자는 레벨마다 조금씩 위로 쌓는다 (겹치지 않게, 리뷰 LOW)
             acornStack = acornFrame == Time.frameCount ? acornStack + 1 : 0;
             acornFrame = Time.frameCount;
             if (acornStack == 0) VfxPlayer.AcornGlint(transform, AcornGlintOffset); // 레벨업 빛기둥 위로 도토리 주머니가 톡
-            DamageNumbers.ShowHeal(transform.position, health.Current - before, "체력 "); // 실제 찬 만큼, 같은 프레임이면 위로 쌓인다
+            DamageNumbers.ShowText(transform.position + Vector3.up * (1.5f + 0.3f * acornStack), $"최대 체력 +{RelicBook.AcornPouchMaxHealth:0}", new Color(0.55f, 0.95f, 0.45f), 0.8f); // 같은 프레임이면 위로 쌓인다
         }
 
         // 흡혈 송곳니: 적을 쓰러뜨리면 붉은 하트가 날아와 닿을 때 체력 회복 (쓰러진 뒤에는 회복하지 않는다).
-        // 별똥 조각: 적을 쓰러뜨리면 가끔 금별이 적 자리에서 날아와 닿을 때 마나 회복 (노란 글자).
+        // 별똥 조각: 적을 쓰러뜨리면 늘 금별이 적 자리에서 날아와 닿을 때 마나 회복 (노란 글자).
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
             var health = GetComponent<HealthSystem>();
@@ -123,7 +120,7 @@ namespace IBlameYou.Player
                 Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
                 VfxPlayer.VampireHeart(from, transform, Vector3.up * 0.8f, OnVampireHeartArrived);
             }
-            if (Has(RelicId.StarShard) && RelicBook.StarShardProcs(UnityEngine.Random.value))
+            if (Has(RelicId.StarShard))
             {
                 Vector3 from = enemy != null ? enemy.transform.position + Vector3.up * 0.5f : transform.position;
                 if (Has(RelicId.VampireFang)) from += Vector3.right * 0.25f; // 흡혈 하트와 같이 나오면 별은 살짝 옆에서 (겹치지 않게)
@@ -154,22 +151,19 @@ namespace IBlameYou.Player
             DamageNumbers.ShowHeal(transform.position, health.Current - before);
         }
 
-        // 피의 계약: 모자란 마나를 체력으로 대신 낸다. 재사용 대기 중이거나 내면 체력이 1 밑으로 내려가면 거절.
-        // 체력은 Drain으로 깎는다 (경직·피해 숫자 없이, 버티기도 쓰지 않음).
-        private float bloodPactReadyAt;
-
-        private bool PayWithHealth(ManaUser user, float shortfall)
+        // 피의 계약: 마나가 모자라면 마법값(required) 전체를 마나 대신 그 절반의 체력으로 낸다 (마나는 그대로). 횟수 제한 없음.
+        // 내면 체력이 1 밑으로 내려가면 거절. 체력은 Drain으로 깎는다 (경직·피해 숫자 없이, 버티기도 쓰지 않음).
+        private bool PayWithHealth(ManaUser user, float required)
         {
             var health = GetComponent<HealthSystem>();
-            if (health == null || health.IsDead || Time.time < bloodPactReadyAt) return false;
-            if (!RelicBook.BloodPactCost(health.Current, shortfall, out float cost)) return false;
+            if (health == null || health.IsDead) return false;
+            if (!RelicBook.BloodPactCost(health.Current, required, out float cost)) return false;
 
             health.Drain(cost);
-            bloodPactReadyAt = Time.time + RelicBook.BloodPactCooldown;
             // 연출: berry 글자 + 작은 별·하트 펑 (체력이 마나로 바뀐 느낌)
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"체력 {cost:0} → 마나", new Color(1f, 0.44f, 0.68f), 0.9f);
             VfxPlayer.DeathPop(transform.position + Vector3.up * 0.8f, 0.6f);
-            SkillMessages.Post(user, $"피의 계약: 체력 {cost:0}으로 모자란 마나를 냈다 ({RelicBook.BloodPactCooldown:0}초 뒤 다시)");
+            SkillMessages.Post(user, $"피의 계약: 마나 대신 체력 {cost:0}을 냈다");
             return true;
         }
 
@@ -183,6 +177,7 @@ namespace IBlameYou.Player
 
         public bool Add(RelicId id)
         {
+            id = RelicBook.Merged(id); // 예전 저장의 나침반·젤리 방석
             if (Has(id)) return false;
             owned.Add(id);
             Apply(id);
@@ -219,10 +214,6 @@ namespace IBlameYou.Player
                 case RelicId.HawkEye:
                     if (stats != null) stats.Stats.critChance += RelicBook.HawkEyeCrit; // 장비·특성처럼 자르지 않는다 (잘리면 장비를 뺄 때 확률이 원래보다 낮아짐). 1 넘으면 늘 치명타
                     break;
-                case RelicId.Featherfall:
-                    var fall = GetComponent<FallRecovery>();
-                    if (fall != null) fall.DamageRatio = Mathf.Min(fall.DamageRatio, RelicBook.FeatherfallDamageRatio);
-                    break;
                 case RelicId.VampireFang:
                 case RelicId.StarShard:
                     if (!listeningKills)
@@ -249,10 +240,6 @@ namespace IBlameYou.Player
                 case RelicId.PhoenixFeather:
                     if (health != null) health.DeathSaves += RelicBook.PhoenixFeatherSaves;
                     break;
-                case RelicId.Hourglass:
-                    var recovery = GetComponent<FallRecovery>();
-                    if (recovery != null) recovery.FreeFalls += RelicBook.HourglassFreeFalls;
-                    break;
                 case RelicId.TwinRing:
                     var circleCaster = GetComponent<SpellCaster>();
                     if (circleCaster != null && !listeningCircles)
@@ -269,6 +256,13 @@ namespace IBlameYou.Player
                         progression.LeveledUp += OnLeveledUp;
                         listeningLevels = true;
                     }
+                    break;
+                case RelicId.EchoCrystal:
+                    var echoCaster = GetComponent<SpellCaster>();
+                    if (echoCaster != null) echoCaster.EchoCrystal = true;
+                    break;
+                case RelicId.ElementResonance:
+                    if (stats != null) stats.WeaknessDamageBonus += RelicBook.ResonanceDamageBonus;
                     break;
                 case RelicId.CheerRibbon:
                     var caster = GetComponent<SpellCaster>();

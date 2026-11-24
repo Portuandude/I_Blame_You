@@ -68,6 +68,16 @@ namespace IBlameYou.UI
             decided?.Invoke(take);
         }
 
+        // 사람이 고른 경우만 (쓰러져 닫히는 것은 아님): 다음 고르기는 다른 사람 차례 (PickTurnRule)
+        private Rect equipTakeRect, equipLeaveRect; // 그린 버튼 자리 (온라인 친구 클릭 판정용)
+
+        private void DecideEquipCard(bool take, bool keepLockThisFrame = false)
+        {
+            if (!equipCardOpen) return;
+            IBlameYou.Core.RunStats.Picks++;
+            CloseEquipCard(take, keepLockThisFrame);
+        }
+
         private void UpdateEquipCardInput()
         {
             if (equipCardUnlockFrame >= 0 && Time.frameCount >= equipCardUnlockFrame)
@@ -77,8 +87,18 @@ namespace IBlameYou.UI
             }
 
             if (!equipCardOpen || Time.frameCount <= equipCardOpenedFrame) return;
-            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) CloseEquipCard(true, true);
-            else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) CloseEquipCard(false, true);
+            if (PickRemoteTurn && Time.unscaledTime - equipCardOpenedAt >= EquipCardKeysDelay)
+            {
+                // 온라인 벨 차례: 친구 컴퓨터의 1·2 키나 버튼 클릭 (친구 화면 버튼은 그림뿐이라 여기서 판정)
+                int number = PickRemoteNumber(2);
+                if (number > 0) { DecideEquipCard(number == 1, true); return; }
+                var click = PickRemoteClick();
+                if (click.HasValue && equipTakeRect.Contains(click.Value)) { DecideEquipCard(true, true); return; }
+                if (click.HasValue && equipLeaveRect.Contains(click.Value)) { DecideEquipCard(false, true); return; }
+            }
+            if (!PickKeyboardTurn) return; // 벨(P2) 차례: 키보드는 받지 않는다 (마우스로 고른다)
+            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) DecideEquipCard(true, true);
+            else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) DecideEquipCard(false, true);
             else if (Time.unscaledTime - equipCardOpenedAt >= EquipCardKeysDelay)
             {
                 bool left = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A);
@@ -92,7 +112,7 @@ namespace IBlameYou.UI
                 else if (equipCardKeyboard && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space)))
                 {
                     GameAudio.PlaySfx("UiClick", 0.7f, 0.04f); // 마우스로 누를 때와 같은 소리
-                    CloseEquipCard(equipCardChoice == 0, true);
+                    DecideEquipCard(equipCardChoice == 0, true);
                 }
             }
         }
@@ -117,8 +137,9 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비", big);
-            GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f), equipCardKeyboard ? "A와 B가 함께 쓰는 한 벌 · ←→ 고르기 · Enter 누르기" : "A와 B가 함께 쓰는 한 벌 · 1 바꿔 끼기 · 2 두고 가기 · ←→ 고르기",
-                smallCenter);
+            string equipKeys = equipCardKeyboard ? "←→ 고르기 · Enter 누르기" : "1 바꿔 끼기 · 2 두고 가기 · ←→ 고르기";
+            GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
+                IBlameYou.Core.GameSession.DevMode ? $"A와 B가 함께 쓰는 한 벌 · {equipKeys}" : PickTurnText(equipKeys), smallCenter);
 
             var oldStats = equipCardOld != null ? equipCardOld.Stats() : new List<StatValue>();
             var newStats = equipCardNew.Stats();
@@ -132,8 +153,11 @@ namespace IBlameYou.UI
             var takeRect = new Rect(rect.center.x - 170f, by, 160f, 34f);
             var leaveRect = new Rect(rect.center.x + 10f, by, 160f, 34f);
             if (equipCardKeyboard) CuteButton.DrawSelection(equipCardChoice == 0 ? takeRect : leaveRect);
-            if (CuteButton.Button(takeRect, "1. 바꿔 끼기", cardButton)) CloseEquipCard(true);
-            else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton)) CloseEquipCard(false);
+            // 아루(P1) 차례엔 버튼을 그리기만 하고 클릭은 받지 않는다
+            equipTakeRect = takeRect;
+            equipLeaveRect = leaveRect;
+            if (CuteButton.Button(takeRect, "1. 바꿔 끼기", cardButton) && PickLocalMouseTurn) DecideEquipCard(true);
+            else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton) && PickLocalMouseTurn) DecideEquipCard(false);
         }
 
         // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에).
@@ -152,7 +176,7 @@ namespace IBlameYou.UI
 
             var icon = EquipmentIcon(item.Id);
             if (icon != null) GUI.DrawTexture(new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f), icon, ScaleMode.ScaleToFit);
-            GUI.Label(new Rect(card.x + 10f, card.y + 30f, card.width - 60f, 26f), $"<b><color={GradeColor(item.Grade)}>{item.Name}</color></b>", label);
+            GUI.Label(new Rect(card.x + 10f, card.y + 30f, card.width - 60f, 26f), $"<b><color={ItemNameColor}>{item.Name}</color></b>", label);
 
             var text = new System.Text.StringBuilder();
             foreach (var s in stats)
@@ -176,7 +200,7 @@ namespace IBlameYou.UI
             GUI.matrix = previousMatrix;
         }
 
-        // 능력치 한 줄 글. 수식어가 주는 마법 공격·마나 소모(EquipmentModifier, 장비 기본 능력치에는 없음)는 좋으면 초록, 나쁘면 빨강으로 (2026-11-14).
+        // 능력치 한 줄 글. 마법 공격·마나 소모(옛 수식어 능력치, 지금은 주는 장비 없음)는 좋으면 초록, 나쁘면 빨강으로 (2026-11-14).
         // 상점 진열·비교 카드·일시정지 장비 줄이 같이 쓴다.
         private static string StatLineText(StatValue s)
         {

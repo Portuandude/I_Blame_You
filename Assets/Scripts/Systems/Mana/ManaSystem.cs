@@ -24,15 +24,20 @@ namespace IBlameYou.Systems
 
         // 레벨업 특성용 배율: 재생 속도, 소모량, 헛되이 날린 마나 중 돌려받는 비율.
         public float RegenMultiplier { get; set; } = 1f;
+        // 마나 샘 방 (2026-11-24): 이 시각(Time.time)까지 재생 +ManaSpringRule.RegenBonus. RegenMultiplier(샘물 반지 등)에 더해진다 (중첩)
+        public float SpringUntil { get; private set; } = -1f;
+        public float SpringRemaining => ManaSpringRule.Remaining(Time.time, SpringUntil);
+        public void StartSpring() => SpringUntil = Time.time + ManaSpringRule.RegenSeconds;
         public float CostMultiplier { get; set; } = 1f;
-        // 장비 수식어 "마나 소모" 합 (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
+        // 장비 "마나 소모" 능력치 합 (옛 수식어용, 지금 주는 장비 없음) (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
         public float EquipCostBonus { get; set; }
         // 실제로 곱하는 마나 소모 배율 (장비로 0.4 아래로는 내려가지 않음).
         public float TotalCostMultiplier => CostMultiplier * Mathf.Max(0.4f, 1f + EquipCostBonus);
         public float WastedRefundRatio { get; set; }
         public float Current => current;
         public bool Infinite { get; set; } // 개발자 모드 치트
-        // 마나가 모자랄 때 (쓰는 사람, 모자란 만큼)을 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약). 없으면 그냥 실패.
+        // 마나가 모자랄 때 (쓰는 사람, 마법값 전체)를 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약: 절반만큼 체력). 없으면 그냥 실패.
+        // 대신 냈으면 마나는 그대로 둔다.
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
         public event Action<float, float> ManaChanged;
 
@@ -57,7 +62,7 @@ namespace IBlameYou.Systems
         {
             if (current < maxMana)
             {
-                SetCurrent(current + regenPerSecond * RegenMultiplier * Time.deltaTime);
+                SetCurrent(current + regenPerSecond * (RegenMultiplier + ManaSpringRule.Bonus(Time.time, SpringUntil)) * Time.deltaTime);
             }
         }
 
@@ -84,8 +89,8 @@ namespace IBlameYou.Systems
             amount *= TotalCostMultiplier;
             if (!HasEnough(amount))
             {
-                if (ShortfallCover == null || !ShortfallCover(user, amount - current)) return false;
-                SetCurrent(0f); // 있던 마나는 다 쓰고 모자란 만큼은 대신 냈다
+                if (ShortfallCover == null || !ShortfallCover(user, amount)) return false;
+                // 마법값 전체를 대신 냈다 (있던 마나는 그대로, 2026-11-24 피의 계약)
             }
             else if (!Infinite)
             {

@@ -42,7 +42,7 @@ namespace IBlameYou.Systems
             IBlameYou.Puzzles.LanternPuzzle.Create(root, specs, mural, solved, () =>
             {
                 solvedPuzzles.Add(index);
-                IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle); // 퍼즐을 풀면 마음 가루
+                IBlameYou.Core.RunStats.AddHeartDust(HeartDustRule.Puzzle); // 퍼즐을 풀면 영혼석
                 if (root != null) SpawnRelicChest(root, index, chestAt, true);
             }, mirror);
             if (solved) SpawnRelicChest(root, index, chestAt, false);

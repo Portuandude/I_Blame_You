@@ -798,7 +798,7 @@ namespace IBlameYou.Tests
         // BounceMushroom.LaunchHeight(7.5) + 갓 높이(0.95). 테스트 어셈블리가 MonoBehaviour 쪽을 참조하지 않아 값을 옮겨 둔다
         private const float BounceMushroom_LaunchReach = 7.5f + 0.95f;
 
-        // 두 속성 봉인문: 진행도 기준을 넘은 보물 곁방에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
+        // 두 속성 봉인문: 진행도 기준을 넘은 보물 방 중 상자를 문들과 갈라놓을 수 있는 방(좌우 문 하나 / 왼쪽 문 없는 세로 방)에만 하나, 문·도착 칸과 상자 사이를 바닥부터 천장 아래까지 비운 열에.
         // 두 속성(둘 다 B 마법)은 서로 다른 투사체 속성이고, 봉인문 열을 메우면 상자 칸에 못 간다(우회 불가).
         [Test]
         public void PairGatesGuardLateTreasureRooms()
@@ -810,12 +810,13 @@ namespace IBlameYou.Tests
                 {
                     var geometry = RoomShaper.Build(seed, room);
                     var chunk = geometry.Chunk;
-                    // 다른 방(정예 방 등)의 두 속성 봉인문과 섞이지 않게 보물 곁방만 본다 (예전에는 협동 봉인문 표시로 골랐다)
+                    // 다른 방(정예 방 등)의 두 속성 봉인문과 섞이지 않게 보물 방만 본다 (예전에는 협동 봉인문 표시로 골랐다)
                     var gates = room.Kind == RoomKind.Treasure
                         ? chunk.Features.FindAll(f => f.Kind == FeatureKind.ElementGate && f.HasSecondElement)
                         : new List<ChunkFeature>();
                     string where = $"seed {seed} room {room.Index} ({room.Kind}, {room.Doors}, {room.Difficulty:0.00})";
-                    bool expected = room.Kind == RoomKind.Treasure && room.Difficulty >= RoomShaper.PairGateMinDifficulty;
+                    bool expected = room.Kind == RoomKind.Treasure && room.Difficulty >= RoomShaper.PairGateMinDifficulty
+                        && (room.IsVertical ? (room.Doors & DoorDir.Left) == 0 : room.DoorCount == 1);
                     Assert.AreEqual(expected ? 1 : 0, gates.Count, where);
                     Assert.AreEqual(expected, RoomShaper.HasPairGate(room), where);
                     if (!expected) continue;
@@ -839,7 +840,7 @@ namespace IBlameYou.Tests
                     {
                         sideGates++;
                         chest = (ChunkData.Width / 2, chunk.EntryHeight);
-                        Assert.That(room.Doors, Is.EqualTo(DoorDir.Right).Or.EqualTo(DoorDir.Left), $"{where}: 좌우 곁방은 문 하나");
+                        Assert.That(room.Doors, Is.EqualTo(DoorDir.Right).Or.EqualTo(DoorDir.Left), $"{where}: 좌우 보물 방은 문 하나일 때만 봉인문");
                         Assert.That(gate.X, Is.InRange(2, ChunkData.Width - 3), $"{where}: 문 칸과 겹침");
                     }
                     if (room.Doors == DoorDir.Left) Assert.Greater(chest.x, gate.X, $"{where}: 상자는 봉인문 안쪽 (왼쪽 문)");
@@ -860,8 +861,8 @@ namespace IBlameYou.Tests
                 }
             }
 
-            Assert.Greater(shaftGates, 0, "세로 곁방 협동 봉인문이 한 번도 안 나옴");
-            Assert.Greater(sideGates + shaftGates, 5, "협동 봉인문이 너무 드묾");
+            Assert.Greater(shaftGates, 0, "세로 보물 방 봉인문이 한 번도 안 나옴");
+            Assert.Greater(sideGates + shaftGates, 5, "두 속성 봉인문이 너무 드묾");
         }
 
         // 봉인문 벽은 방 안 좌표로 잰 빈 열만 막는다: 바닥 칸부터 첫 막힌 칸 아래까지, 지형 칸과 겹치지 않는다.

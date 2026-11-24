@@ -95,6 +95,7 @@ namespace IBlameYou.UI
             InitializeRelics();
             InitializeEquipmentCard();
             InitializeVillage();
+            InitializeChoice(); // A·B 선택지 룰렛 (SkillHUD.Choice.cs)
         }
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
@@ -102,7 +103,7 @@ namespace IBlameYou.UI
             if (!RunStats.Ended) RunStats.Kills++;
             CountKillStreak(enemy); // "N연속!" (SkillHUD.KillStreak.cs)
             if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
-            // 마음 가루 (도시 화폐): 보스가 되풀이해 소환하는 적은 없음. 보스는 클리어와 같은 순간이라 판이 끝난 뒤에도 받는다 (골드와 같은 규칙)
+            // 영혼석 (도시 화폐): 보스가 되풀이해 소환하는 적은 없음. 보스는 클리어와 같은 순간이라 판이 끝난 뒤에도 받는다 (골드와 같은 규칙)
             if (enemy != null && enemy.GetComponent<BossSummon>() == null && (!RunStats.Ended || enemy is SlimeKingController))
                 RunStats.AddHeartDust(HeartDustRule.ForKill(RunGold.RankOf(enemy)) * RunGold.MidBossShares(enemy)); // 프리즘 젤리는 기사 둘 몫
         }
@@ -151,8 +152,9 @@ namespace IBlameYou.UI
             ShutdownRelics();
             ShutdownEquipmentCard();
             ShutdownVillage();
+            ShutdownChoice();
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -171,14 +173,15 @@ namespace IBlameYou.UI
             CloseRelicWindow();
             CloseEquipCard();
             CloseVillage();
+            CloseChoice();
             CloseCodex();
             stageCleared = true;
-            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 마음 가루 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
+            RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 영혼석 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
             RunStats.Ended = true;
             RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
             newBestTime = SaveData.RecordClearTime(clearTime);
-            SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms + StageEvents.SideRooms); // 시작 화면 최근 5판 평균
+            SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.RoomCount); // 시작 화면 최근 5판 평균
             if (progression != null) SaveData.RecordLevel(progression.Level);
             RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs)
             control.Locked = true;
@@ -205,6 +208,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 CloseEquipCard();
                 CloseVillage();
+                CloseChoice();
                 CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
@@ -212,6 +216,7 @@ namespace IBlameYou.UI
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
                 if (!stageCleared) SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
                 if (!stageCleared) RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs), 클리어 뒤 쓰러짐은 이미 기록
+                if (!stageCleared) SaveData.RecordRevival(); // 숨은 능력치 인과율: 쓰러지면 도시에서 다시 깨어난다 (개발자·기능 테스트 모드, 클리어 뒤 쓰러짐은 안 셈)
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
@@ -224,6 +229,7 @@ namespace IBlameYou.UI
             {
                 UpdateRelicWindowInput();
                 UpdateEquipCardInput();
+                UpdateChoiceInput();
                 if (!UpdateVillageInput()) UpdatePauseInput(); // 마을 창이 열려 있으면 Esc는 마을 창 몫 (SkillHUD.Village.cs) // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
                 UpdateTraitWindowInput();
             }
@@ -296,6 +302,7 @@ namespace IBlameYou.UI
             DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)
             DrawEquipCard();
             DrawVillageWindow();
+            DrawChoice();
             DrawPauseMenu();
             DrawCodexWindow();
             DrawDeathFade();

@@ -281,6 +281,19 @@ namespace IBlameYou.Core
                 Launch(onStart);
                 return;
             }
+            if (!StoryIntro.Enabled)
+            {
+                // 2026-11-24: 인트로를 꺼 둔 동안은 바로 도시 메뉴 (없으면 바로 출발)
+                if (onCity != null)
+                {
+                    var toCity = onCity;
+                    Destroy(this);
+                    toCity(); // 도시 메뉴의 "출발"이 판을 시작한다
+                    return;
+                }
+                Launch(onStart);
+                return;
+            }
             // 일반 판은 먼저 웹툰식 스토리 소개 (2026-11-14 사람 지시). 끝나거나 둘이 같이 건너뛰면 출발한다.
             var start = onStart;
             var city = onCity;

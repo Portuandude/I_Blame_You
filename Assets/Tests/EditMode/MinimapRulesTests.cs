@@ -31,6 +31,14 @@ namespace IBlameYou.Tests
             Assert.AreEqual(RoomLook.Faint, MinimapRules.Look(false, false, true, true));
         }
 
+        // 보물 지도 (2026-11-24 나침반과 합침): 흐린 방 가운데 마을·보스 방만 아이콘까지
+        [Test]
+        public void TreasureMapShowsIconsOnlyForVillageAndBoss()
+        {
+            foreach (RoomKind kind in System.Enum.GetValues(typeof(RoomKind)))
+                Assert.AreEqual(kind == RoomKind.Village || kind == RoomKind.Boss, MinimapRules.ChartedIcon(kind), kind.ToString());
+        }
+
         [Test]
         public void LinkKindDependsOnWhichSideWasVisited()
         {

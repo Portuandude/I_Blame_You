@@ -25,7 +25,7 @@ namespace IBlameYou.UI
             }
 
             if (!Input.GetKeyDown(KeyCode.C)) return false;
-            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return false;
+            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathHandled || stageCleared || health.IsDead) return false;
             if (control.ChantActive || control.Locked) return false;
 
             codexWindow.Show(GameSession.DevMode, relics != null ? relics.Owned : null); // 이번 판에 가진 유물에 "보유" 점

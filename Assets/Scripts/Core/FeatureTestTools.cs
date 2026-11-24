@@ -28,7 +28,6 @@ namespace IBlameYou.Core
         // 다시 만드는 동안 고른 유물·몬스터·미니게임 설정을 들고 있으려고 static으로 둔다.
         private static readonly List<RelicId> keptRelics = new List<RelicId>();
         private static readonly List<EquipmentItem> keptEquipment = new List<EquipmentItem>(); // F12 장비 (맵을 다시 만들어도 다시 낀다)
-        private static int equipGrade; // F12 창에서 새로 낄 장비의 수식어 등급
         private static bool rebuilding;
         private static int monsterIndex;
         private static bool? menuDevMode; // 시험 중 F5로 바꾸기 전 시작 화면 설정 (나갈 때 되돌린다)
@@ -71,7 +70,7 @@ namespace IBlameYou.Core
             var relics = PlayerRelics.For(player);
             foreach (var id in keptRelics) relics.Add(id);
             var equipment = PlayerEquipment.For(player);
-            foreach (var item in keptEquipment) equipment.Equip(new EquipmentItem(item.Id, item.Grade));
+            foreach (var item in keptEquipment) equipment.Equip(new EquipmentItem(item.Id));
         }
 
         private void OnDestroy()
@@ -476,10 +475,7 @@ namespace IBlameYou.Core
             GUI.Box(rect, GUIContent.none, box);
             GUI.Box(rect, GUIContent.none, box);
             GUI.Label(new Rect(rect.x + 12f, rect.y + 8f, rect.width - 160f, 40f),
-                "<b>장비 끼기·빼기</b> — 누르면 그 칸에 끼고, ★을 누르면 뺀다. 오른쪽 버튼으로 새로 낄 수식어. F12/Esc 닫기", line);
-            string gradeName = EquipmentModifier.Name(equipGrade);
-            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.xMax - 144f, rect.y + 10f, 132f, 30f), "수식어: " + (gradeName.Length == 0 ? "보통" : gradeName), cell))
-                equipGrade = equipGrade >= EquipmentModifier.MaxGrade ? EquipmentModifier.MinGrade : equipGrade + 1;
+                "<b>장비 끼기·빼기</b> — 누르면 그 칸에 끼고, ★을 누르면 뺀다. F12/Esc 닫기", line);
 
             var slots = (EquipSlot[])Enum.GetValues(typeof(EquipSlot));
             float colWidth = (rect.width - 24f - 8f * (slots.Length - 1)) / slots.Length;
@@ -493,7 +489,7 @@ namespace IBlameYou.Core
                 {
                     var def = defs[i];
                     bool worn = current != null && current.Id == def.Id;
-                    var shown = worn ? current : new EquipmentItem(def.Id, equipGrade);
+                    var shown = worn ? current : new EquipmentItem(def.Id);
                     var tip = new List<string>();
                     foreach (var stat in shown.Stats()) tip.Add(EquipmentBook.Describe(stat));
                     var r = new Rect(rect.x + 12f + c * (colWidth + 8f), rect.y + 52f + i * 40f, colWidth, 36f);
@@ -509,7 +505,7 @@ namespace IBlameYou.Core
 
             // 마을 시험 (2026-11-12): 시험 맵에는 마을 방이 없어서 골드를 채우고 식당·상점 창을 바로 연다.
             float by = rect.y + 52f + maxRows * 40f + 8f;
-            float bw = (rect.width - 24f - 16f) / 3f;
+            float bw = (rect.width - 24f - 24f) / 4f;
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f, by, bw, 30f), $"골드 +{TestGold} (지금 {RunStats.Gold})", cell))
                 RunStats.AddGold(TestGold);
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + bw + 8f, by, bw, 30f), "식당 창 열기", cell))
@@ -519,6 +515,15 @@ namespace IBlameYou.Core
             }
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
                 OpenVillageWindow(VillageService.Shop);
+            // A·B 선택지 룰렛 시험 (2026-11-24): NPC 방이 생기기 전 창만 시험한다. 선악도는 일반 모드에서만 바뀐다 (기능 테스트 모드는 안 바뀜)
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 3f * (bw + 8f), by, bw, 30f), "선택지 룰렛", cell))
+            {
+                equipWindowOpen = false;
+                bool opened = StageEvents.RaiseChoice("길 잃은 슬라임",
+                    new[] { "집까지 데려다준다", "모른 척 지나간다", "가진 젤리를 빼앗는다" }, new[] { 2, 0, -3 },
+                    result => StageEvents.PostNotice($"선택지 결과: {result + 1}번"));
+                if (!opened) StageEvents.PostNotice("선택지 창을 열 수 없다");
+            }
 
             if (!string.IsNullOrEmpty(GUI.tooltip))
                 GUI.Label(new Rect(rect.x + 12f, rect.yMax - 30f, rect.width - 24f, 24f), GUI.tooltip, line);

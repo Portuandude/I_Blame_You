@@ -67,6 +67,7 @@ namespace IBlameYou.Systems
                 damage = Magic(raw, defenderStats.Stats.ElementDefense(element));
                 if (defenderStats.HasBodyElement) affinity = ElementAffinity.Multiplier(element, defenderStats.BodyElement);
                 damage *= affinity;
+                if (affinity > 1f && attacker != null) damage *= 1f + Mathf.Max(0f, attacker.WeaknessDamageBonus); // 속성 공명석
             }
 
             bool critical = attack != null && attack.critChance > 0f && Random.value < attack.critChance;

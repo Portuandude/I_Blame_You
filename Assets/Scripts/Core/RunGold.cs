@@ -14,9 +14,10 @@ namespace IBlameYou.Core
         public const int Stage = 1;                       // 스테이지가 늘면 지금 스테이지 번호로
         private const float CoinScale = 0.42f;            // 48px 그림 → 약 0.2유닛
         private const float CoinSfxGap = 0.05f;           // 동전 소리는 이 간격보다 촘촘하게 겹치지 않는다
+        private const float CoinSfxVolume = 0.55f;        // 하나만 닿을 때 크기. 겹치면 CoinSoundRule로 겹친 수에 비례해 작게 (2026-11-24)
+        private static readonly System.Collections.Generic.Queue<float> recentCoins = new System.Collections.Generic.Queue<float>();
         private static readonly Vector3 TargetOffset = Vector3.up * 0.8f;
         private static readonly Vector3 PouchGlintOffset = new Vector3(0.55f, 1.4f, 0f); // 복주머니 (도토리·훈장 머리 위와 안 겹치게 오른쪽)
-        private static readonly Vector3 PiggyGlintOffset = new Vector3(-0.55f, 1.4f, 0f); // 돼지 저금통 (복주머니 반대쪽)
         private const float PouchGlintGap = 0.6f;         // 여럿을 한꺼번에 잡아도 복주머니는 이 간격보다 자주 뜨지 않는다
         private static float lastPouchGlint = -10f;
 
@@ -31,6 +32,7 @@ namespace IBlameYou.Core
             generation++;
             InFlight = 0;
             lastPouchGlint = -10f; // 새 판: 지난 판 간격 기록을 지운다 (도메인 리로드를 꺼도)
+            recentCoins.Clear();
         }
 
         public static EnemyRank RankOf(EnemyController enemy)
@@ -42,7 +44,7 @@ namespace IBlameYou.Core
             return EnemyRank.Normal;
         }
 
-        // 골드 표·마음 가루의 중간보스 몫은 쌍둥이 기사 한 마리 기준(절반)이다. 혼자 나오는 프리즘 젤리는 그 몫을 두 번 받는다.
+        // 골드 표·영혼석의 중간보스 몫은 쌍둥이 기사 한 마리 기준(절반)이다. 혼자 나오는 프리즘 젤리는 그 몫을 두 번 받는다.
         public static int MidBossShares(EnemyController enemy) =>
             enemy != null && enemy.GetComponent<PrismJelly>() != null ? 2 : 1;
 
@@ -61,7 +63,7 @@ namespace IBlameYou.Core
             var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
             if (relics != null && relics.Has(RelicId.LuckyPouch))
             {
-                int boosted = RelicBook.LuckyPouchGold(amount); // 복주머니 +50%
+                int boosted = RelicBook.LuckyPouchGold(amount); // 복주머니 +25%
                 if (boosted > amount && target != null && Time.time - lastPouchGlint >= PouchGlintGap)
                 {
                     lastPouchGlint = Time.time;
@@ -78,21 +80,6 @@ namespace IBlameYou.Core
                 StageEvents.PostNotice($"보물 고블린을 잡았다! 골드 +{amount}");
                 GameAudio.PlaySfx("CoinPile", 0.9f, 0f);
             }
-        }
-
-        // 돼지 저금통 (2026-11-12): 판에서 처음 찾은 마을에 들어갈 때 (ChunkStreamer.EnterRoom). 화면에 보이는 골드(아직 날아오는 몫 제외)의
-        // 25%(최대 50)를 이자로 받는다. 머리 위에 저금통이 톡 뜨고 동전이 저금통 자리에서 튀어 빨려 온다. 받은 이자를 돌려준다 (없으면 0).
-        public static int OnVillageFound(Transform player)
-        {
-            if (player == null || RunStats.Ended) return 0;
-            var relics = PlayerRelics.For(player.gameObject);
-            if (relics == null || !relics.Has(RelicId.PiggyBank)) return 0;
-            int interest = RelicBook.PiggyBankInterest(Mathf.Max(0, RunStats.Gold - InFlight));
-            if (interest <= 0) return 0;
-            RunStats.AddGold(interest);
-            VfxPlayer.PiggyBankGlint(player, PiggyGlintOffset);
-            LaunchCoins(player.position + PiggyGlintOffset, player, interest);
-            return interest;
         }
 
         // 보물 고블린을 맞혔을 때 (TreasureGoblinController.Hit → SkillHUD): 자루에서 금화 TreasureGoblinRule.HitGold가 흘러 플레이어에게 온다. 복주머니는 안 붙는다.
@@ -134,10 +121,13 @@ namespace IBlameYou.Core
         {
             if (gen != generation) return;
             InFlight = Mathf.Max(0, InFlight - value);
+            // 겹친 수: CoinSoundRule.Window 안에 닿은 동전 (이번 것 포함). 소리 간격(CoinSfxGap)과 상관없이 모두 센다.
+            recentCoins.Enqueue(Time.time);
+            while (recentCoins.Count > 0 && Time.time - recentCoins.Peek() > CoinSoundRule.Window) recentCoins.Dequeue();
             if (Time.time - lastCoinSfx >= CoinSfxGap)
             {
                 lastCoinSfx = Time.time;
-                GameAudio.PlaySfx("Coin", 0.55f, 0.08f);
+                GameAudio.PlaySfx("Coin", CoinSoundRule.Volume(CoinSfxVolume, recentCoins.Count), 0.08f);
             }
             Arrived?.Invoke(value);
         }

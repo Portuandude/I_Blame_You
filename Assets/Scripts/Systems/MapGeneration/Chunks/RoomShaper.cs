@@ -66,10 +66,10 @@ namespace IBlameYou.Systems
             return geometry;
         }
 
-        // 두 속성 봉인문 (B 마법 두 속성을 차례로): 깊이 PairGateMinDifficulty 이후의 보물 곁방에서 상자 앞을 막는다.
+        // 두 속성 봉인문 (B 마법 두 속성을 차례로): 깊이 PairGateMinDifficulty 이후의 보물 방에서 상자 앞을 막는다.
         // (예전엔 첫 속성을 A 방어막으로 푸는 협동 봉인문이었다. 방어막은 2026-11-16 사람 결정으로 빠졌다)
-        // - 좌우 곁방: 늘 오른쪽 문 하나뿐이고(부모의 왼쪽에 붙음) 바닥이 평평한 휴식 지형. 문(31열)과 상자(가운데 16열) 사이 24열.
-        // - 세로 곁방: 바닥 왼쪽 8열 (지그재그 10~21, 양 갈래 3~7·9~12 발판 사이, 옆 선반은 4~7로 당김). 상자는 그 왼쪽 ShaftPairChestX열.
+        // - 좌우 보물 방(문 하나): 바닥이 평평한 휴식 지형. 문(31열)과 상자(가운데 16열) 사이 24열.
+        // - 세로 보물 방: 바닥 왼쪽 8열 (지그재그 10~21, 양 갈래 3~7·9~12 발판 사이, 옆 선반은 4~7로 당김). 상자는 그 왼쪽 ShaftPairChestX열.
         //   위·아래 문(14~16열)과 도착 칸(11열)은 봉인문 오른쪽이다.
         // 문 쪽은 막지 않으므로 못 열어도 갇히지 않는다 (검증기는 봉인문을 열린 것으로 본다).
         public const float PairGateMinDifficulty = 0.25f;
@@ -77,10 +77,13 @@ namespace IBlameYou.Systems
         public const int ShaftPairGateX = 8;
         public const int ShaftPairChestX = 4;
 
+        // 봉인문은 상자를 문들과 갈라놓을 수 있을 때만 둔다 (2026-11-24 보물 방이 막다른 방이 아니게 된 뒤):
+        // 좌우 방은 문 하나일 때(문 둘이면 상자가 통로 가운데라 한쪽이 늘 열림), 세로 방은 왼쪽 문이 없을 때(문·도착 칸이 모두 봉인문 오른쪽).
         public static bool HasPairGate(RoomData room) =>
-            room.Kind == RoomKind.Treasure && room.Difficulty >= PairGateMinDifficulty;
+            room.Kind == RoomKind.Treasure && room.Difficulty >= PairGateMinDifficulty
+            && (room.IsVertical ? (room.Doors & DoorDir.Left) == 0 : room.DoorCount == 1);
 
-        // 좌우 곁방은 4×3 격자에서 문이 왼쪽에 날 수도 있다: 그때는 봉인문을 거울 자리(왼쪽 문과 가운데 상자 사이)에
+        // 좌우 보물 방은 문이 왼쪽일 수도 있다: 그때는 봉인문을 거울 자리(왼쪽 문과 가운데 상자 사이)에
         public static int PairGateX(RoomData room) =>
             room.IsVertical ? ShaftPairGateX : (room.Doors & DoorDir.Left) != 0 ? W - 1 - SidePairGateX : SidePairGateX;
 
@@ -345,7 +348,7 @@ namespace IBlameYou.Systems
             if ((room.Doors & DoorDir.Left) != 0) geometry.Arrivals[DoorDir.Left] = geometry.Exits[DoorDir.Left] = (0, g);
             if ((room.Doors & DoorDir.Right) != 0) geometry.Arrivals[DoorDir.Right] = geometry.Exits[DoorDir.Right] = (W - 1, g);
             if (up) geometry.Arrivals[DoorDir.Up] = geometry.Exits[DoorDir.Up] = ((HoleX0 + HoleX1 + 1) / 2, TopPlatformRow + 1);
-            // 바닥도 어느 문에서든 오갈 수 있어야 한다 (위 문 하나뿐인 곁방도 바닥까지 내려갔다 돌아올 수 있게)
+            // 바닥도 어느 문에서든 오갈 수 있어야 한다 (위 문 하나뿐인 세로 방도 바닥까지 내려갔다 돌아올 수 있게)
             geometry.Floor = (6, g);
             if (down)
             {

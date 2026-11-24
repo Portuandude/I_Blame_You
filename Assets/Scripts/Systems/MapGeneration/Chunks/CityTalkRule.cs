@@ -12,14 +12,14 @@ namespace IBlameYou.Systems
         public static readonly string[] FirstVisitLines =
         {
             "역사상 가장 시끄러운 입학생들이군. 한 몸에 둘이라니, 악신도 참 심심했나 보지.",
-            "괴물을 물리치면 영혼에 마음 가루가 붙는다. 쓰러져도 남으니 걱정 말고.",
-            "가루는 수정 탑에 바치거나 아카데미에서 주문을 배우는 데 쓴다. 자, 성문 밖으로!",
+            "괴물을 물리치면 영혼석이 떨어진다. 쓰러져도 남으니 걱정 말고.",
+            "영혼석은 수정 탑에 바치거나 아카데미에서 주문을 배우는 데 쓴다. 자, 성문 밖으로!",
         };
 
         private static readonly string[] AfterRunLines =
         {
             "수정 핵이 또 새 몸을 빚어 줬구나. 어서 일어나거라.",
-            "가루가 반짝이는구나. 탑에 바치면 금이 하나 메워진단다.",
+            "영혼석이 반짝이는구나. 탑에 바치면 금이 하나 메워진단다.",
             "여신께서 쓰러지기 전, 이 탑은 도시 전체를 감쌌지.",
             "악신이 웃는 소리가 들리는 것 같구나. 다음엔 더 멀리 가 보거라.",
             "둘이 싸우지 말고 숨을 맞추면, 몸도 마법도 훨씬 가벼워진단다.",
@@ -45,7 +45,7 @@ namespace IBlameYou.Systems
             return lines[i];
         }
 
-        // 수정 탑 금: 처음 20개, 탑 단계 하나마다 하나씩 메워진다 (20단계 = 금 없음).
-        public static int Cracks(int totalTowerLevels) => System.Math.Max(0, 20 - System.Math.Max(0, totalTowerLevels));
+        // 수정 탑 금: 처음 CrystalTowerRule.TotalLevels(30)개, 탑 단계 하나마다 하나씩 메워진다 (모두 사면 금 없음).
+        public static int Cracks(int totalTowerLevels) => System.Math.Max(0, CrystalTowerRule.TotalLevels - System.Math.Max(0, totalTowerLevels));
     }
 }
