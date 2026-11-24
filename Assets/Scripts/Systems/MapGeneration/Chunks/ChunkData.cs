@@ -83,7 +83,12 @@ namespace IBlameYou.Systems
         SlimeKnightFire,  // 중간보스 쌍둥이 슬라임 기사 (불: 돌진)
         SlimeKnightWater, // 중간보스 쌍둥이 슬라임 기사 (물: 방패)
         TreasureGoblin,   // 방 이벤트 보물 고블린 (도망침, 2026-11-14). 청크 지형에는 놓지 않고 ChunkStreamer가 방에 처음 들어갈 때 부른다
-        PrismJelly        // 중간보스 프리즘 젤리 (색 = 속성이 8초마다 바뀌는 수정 젤리 슬라임, Docs/MidBossDraft.md 후보 D)
+        PrismJelly,       // 중간보스 프리즘 젤리 (색 = 속성이 8초마다 바뀌는 수정 젤리 슬라임, Docs/MidBossDraft.md 후보 D)
+        // 스테이지 2 숲 (2026-11-24 사람 결정 C1·F1~F6). 청크 지형은 스테이지 1 적으로 만들고 StageRoster.Adapt가 바꿔 끼운다
+        Kobold,           // 코볼트 근접 돌격형 (고블린보다 상위)
+        KoboldNetter,     // 코볼트 그물 던지기형: 맞으면 A(이동)만 5초 묶임, A 키 연타마다 -0.5초 (NetSnareRules)
+        KoboldChief,      // 스테이지 2 보스 코볼트 족장 (와르그 둘과 함께)
+        Warg              // 스테이지 2 보스 방 와르그 (족장의 늑대)
     }
 
     public struct ChunkFeature
@@ -126,6 +131,7 @@ namespace IBlameYou.Systems
         public int EntryHeight;   // 왼쪽 끝 바닥 높이 (= 서 있는 칸의 y)
         public int ExitHeight;    // 오른쪽 끝 바닥 높이 (다음 청크의 EntryHeight)
         public int Attempts = 1;  // 검증을 통과할 때까지 다시 만든 횟수
+        public int Stage = 1;     // 스테이지 번호 (1 = 슬라임·고블린, 2 = 숲). 방 격자에서는 RoomShaper.Build가 RoomData.Stage로 채운다
 
         public StageTile Get(int x, int y)
         {
@@ -197,7 +203,7 @@ namespace IBlameYou.Systems
             foreach (var part in parts) cols += part.Cols;
             var chunk = new ChunkData(cols)
             {
-                Index = main.Index, Kind = main.Kind, Difficulty = main.Difficulty, Attempts = main.Attempts,
+                Index = main.Index, Kind = main.Kind, Difficulty = main.Difficulty, Attempts = main.Attempts, Stage = main.Stage,
                 EntryHeight = parts[0].EntryHeight, ExitHeight = parts[parts.Count - 1].ExitHeight
             };
             int offset = 0;
