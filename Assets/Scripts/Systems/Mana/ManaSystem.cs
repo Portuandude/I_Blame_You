@@ -24,6 +24,10 @@ namespace IBlameYou.Systems
 
         // 레벨업 특성용 배율: 재생 속도, 소모량, 헛되이 날린 마나 중 돌려받는 비율.
         public float RegenMultiplier { get; set; } = 1f;
+        // 마나 샘 방 (2026-11-24): 이 시각(Time.time)까지 재생 +ManaSpringRule.RegenBonus. RegenMultiplier(샘물 반지 등)에 더해진다 (중첩)
+        public float SpringUntil { get; private set; } = -1f;
+        public float SpringRemaining => ManaSpringRule.Remaining(Time.time, SpringUntil);
+        public void StartSpring() => SpringUntil = Time.time + ManaSpringRule.RegenSeconds;
         public float CostMultiplier { get; set; } = 1f;
         // 장비 "마나 소모" 능력치 합 (옛 수식어용, 지금 주는 장비 없음) (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
         public float EquipCostBonus { get; set; }
@@ -58,7 +62,7 @@ namespace IBlameYou.Systems
         {
             if (current < maxMana)
             {
-                SetCurrent(current + regenPerSecond * RegenMultiplier * Time.deltaTime);
+                SetCurrent(current + regenPerSecond * (RegenMultiplier + ManaSpringRule.Bonus(Time.time, SpringUntil)) * Time.deltaTime);
             }
         }
 

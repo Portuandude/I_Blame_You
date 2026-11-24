@@ -675,6 +675,18 @@ namespace IBlameYou.Systems
                 StageEvents.PostNotice("마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
             }
+            else if (firstVisit && entered.Kind == RoomKind.ManaSpring)
+            {
+                // 마나 샘 방을 처음 찾았을 때: 3분 동안 마나 재생 +10% (샘물 반지와 중첩) + 파란 마나 고리 (그림은 기존 연출만)
+                var spring = player != null ? player.GetComponent<ManaSystem>() : null;
+                if (spring != null)
+                {
+                    spring.StartSpring();
+                    VfxPlayer.ManaRing(player, new Vector3(0f, 0.7f, 0f), new Color(0.43f, 0.66f, 1f));
+                }
+                StageEvents.PostNotice($"마나 샘 발견! {ManaSpringRule.RegenSeconds / 60f:0}분 동안 마나 재생 +{ManaSpringRule.RegenBonus * 100f:0}%");
+                GameAudio.PlaySfx("Pickup", 0.6f, 0f);
+            }
             else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))
             {
                 // 보물·샘 방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
