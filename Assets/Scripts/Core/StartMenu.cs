@@ -165,7 +165,7 @@ namespace IBlameYou.Core
             if (saved != null)
             {
                 string mode = saved.devMode ? "개발자 모드" : "일반 모드";
-                string where = saved.atStageStart ? $"스테이지 {saved.stage} 처음부터" : $"스테이지 {Mathf.Max(1, saved.stage)}";
+                string where = saved.atStageStart ? (saved.stage > 1 ? $"스테이지 {saved.stage} 앞 쉼터" : $"스테이지 {saved.stage} 처음부터") : $"스테이지 {Mathf.Max(1, saved.stage)}";
                 if (MenuButton(0, $"이어하기 — {where} · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f) && !launching)
                 {
                     launching = true;
