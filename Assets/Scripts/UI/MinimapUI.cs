@@ -596,7 +596,7 @@ namespace IBlameYou.UI
 
         private static MapArt art;
         private static (Texture2D icon, string name, Color tint)[] legendItems; // 범례 항목 (art를 읽은 뒤 한 번)
-        private const float LegendMinItem = 56f;
+        private const float LegendMinItem = 72f; // 라벨 50px: "중간보스"·"묘한 방"이 잘리지 않게 (14칸 ≈ 1008px)
 
         private static void LoadArt()
         {
@@ -686,7 +686,7 @@ namespace IBlameYou.UI
                     (art.Check, "돌파", Color.white)
                 };
             int count = legendItems.Length + 4; // 마지막 네 칸은 동전 점·저주 상자 점·장비 점·퍼즐 점 (그림이 아니라 색 점)
-            // 좁은 지도(초반 방 두세 칸)에서는 칸이 8px까지 줄어 아이콘이 겹치던 것: 칸 폭은 최소 56px, 범례가 지도보다 넓으면 가운데 기준으로 넘친다
+            // 좁은 지도(초반 방 두세 칸)에서는 칸이 8px까지 줄어 아이콘이 겹치던 것: 칸 폭은 최소 LegendMinItem, 범례가 지도보다 넓으면 가운데 기준으로 넘친다
             float itemWidth = Mathf.Clamp(rect.width / count, LegendMinItem, 92f);
             float x = rect.center.x - itemWidth * count / 2f;
             var tintBefore = GUI.color;
