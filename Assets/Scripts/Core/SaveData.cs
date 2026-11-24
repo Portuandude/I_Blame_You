@@ -21,6 +21,8 @@ namespace IBlameYou.Core
         private const string KeyCityVisited = "City.Visited";       // 도시에 한 번이라도 왔는지 (처음만 선생님 긴 설명, 모드 상관없음)
         private const string KeySpell = "City.Spell.";           // 아카데미에서 배운 마법 (뒤에 SpellDefinition.Id, 모드별)
         private const string KeyTower = "City.Tower.";           // 수정 탑 항목별 단계 (뒤에 TowerStat 이름, 모드별)
+        private const string KeyRevivals = "Hidden.Revivals";     // 숨은 능력치: 부활 횟수 (인과율 = HiddenStatsRule.Causality). 일반 모드만
+        private const string KeyAlignment = "Hidden.Align.";      // 숨은 능력치: 선악도 (뒤에 A/B). 일반 모드만
 
         private static bool settingsLoaded;
 
@@ -157,6 +159,29 @@ namespace IBlameYou.Core
             if (GameSession.FeatureTest || farthest < 0) return;
             string key = ModeKey(KeyRecentDefeats, GameSession.DevMode);
             PlayerPrefs.SetString(key, ClearPace.AddRecentDefeat(PlayerPrefs.GetString(key, ""), farthest));
+            PlayerPrefs.Save();
+        }
+
+        // 숨은 능력치 (2026-11-24, HiddenStatsRule). 화면에 보이지 않는다. 저장 슬롯(99개)이 생기면 슬롯별 키로 옮긴다.
+        // 부활: 쓰러져 도시에서 다시 깨어날 때 한 번. 개발자 모드·기능 테스트 모드는 세지 않는다.
+        public static void RecordRevival()
+        {
+            if (GameSession.DevMode || GameSession.FeatureTest) return;
+            PlayerPrefs.SetInt(KeyRevivals, Revivals() + 1);
+            PlayerPrefs.Save();
+        }
+
+        public static int Revivals() => PlayerPrefs.GetInt(KeyRevivals, 0);
+
+        public static int Causality() => HiddenStatsRule.Causality(Revivals());
+
+        // 선악도: player = "A"(아루) 또는 "B"(벨). 처음은 HiddenStatsRule.StartAlignment
+        public static int Alignment(string player) => PlayerPrefs.GetInt(KeyAlignment + player, HiddenStatsRule.StartAlignment);
+
+        public static void AddAlignment(string player, int delta)
+        {
+            if (GameSession.DevMode || GameSession.FeatureTest || delta == 0) return;
+            PlayerPrefs.SetInt(KeyAlignment + player, Alignment(player) + delta);
             PlayerPrefs.Save();
         }
 
