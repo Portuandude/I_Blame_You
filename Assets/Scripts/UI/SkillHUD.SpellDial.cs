@@ -24,7 +24,7 @@ namespace IBlameYou.UI
             if (!dial.IsOpen) return;
             if (caster == null || control == null) return; // 개발자 모드도 다이얼을 쓴다 (배운 마법 고르기)
             if (caster.CircleOpen || caster.WindingUp || control.Locked || health.IsDead || deathHandled || stageCleared) return;
-            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return;
+            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return;
             if (dialName == null)
             {
                 dialName = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = false, fontStyle = FontStyle.Bold, fontSize = 13 };

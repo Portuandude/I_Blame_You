@@ -95,6 +95,7 @@ namespace IBlameYou.UI
             InitializeRelics();
             InitializeEquipmentCard();
             InitializeVillage();
+            InitializeChoice(); // A·B 선택지 룰렛 (SkillHUD.Choice.cs)
         }
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
@@ -151,8 +152,9 @@ namespace IBlameYou.UI
             ShutdownRelics();
             ShutdownEquipmentCard();
             ShutdownVillage();
+            ShutdownChoice();
             if (paused) SaveData.SaveVolume(); // 일시정지 메뉴를 연 채로 끝나도 볼륨은 남긴다
-            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
+            if (traitWindowOpen || paused || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathSlowMotion || codexLocked) Time.timeScale = 1f;
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
 
@@ -171,6 +173,7 @@ namespace IBlameYou.UI
             CloseRelicWindow();
             CloseEquipCard();
             CloseVillage();
+            CloseChoice();
             CloseCodex();
             stageCleared = true;
             RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 영혼석 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
@@ -205,6 +208,7 @@ namespace IBlameYou.UI
                 CloseRelicWindow();
                 CloseEquipCard();
                 CloseVillage();
+                CloseChoice();
                 CloseCodex();
                 deathHandled = true;
                 defeatTime = Time.time - runStartTime; // 게임오버 창 "버틴 시간" (SkillHUD.EndScreen.cs)
@@ -225,6 +229,7 @@ namespace IBlameYou.UI
             {
                 UpdateRelicWindowInput();
                 UpdateEquipCardInput();
+                UpdateChoiceInput();
                 if (!UpdateVillageInput()) UpdatePauseInput(); // 마을 창이 열려 있으면 Esc는 마을 창 몫 (SkillHUD.Village.cs) // 특성 창보다 먼저: 특성 창이 열려 있으면 Esc는 특성 창을 닫는다
                 UpdateTraitWindowInput();
             }
@@ -297,6 +302,7 @@ namespace IBlameYou.UI
             DrawRelicFly(); // 고른 유물 아이콘이 HUD 칸으로 (SkillHUD.RelicFly.cs)
             DrawEquipCard();
             DrawVillageWindow();
+            DrawChoice();
             DrawPauseMenu();
             DrawCodexWindow();
             DrawDeathFade();

@@ -17,7 +17,7 @@ namespace IBlameYou.UI
         {
             if (GameSession.DevMode || caster == null || control == null) return;
             if (caster.CircleOpen || control.Locked || health.IsDead || deathHandled || stageCleared) return;
-            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen) return; // 창 위에는 안 띄운다
+            if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return; // 창 위에는 안 띄운다
             if (RoleInput.Focus == ControlFocus.A) return; // 기능 테스트 A만 조작 중이면 B 표시는 뺀다
             if (RoleInput.Dial.IsOpen) return; // 다이얼이 열리면 다이얼이 대신 보여 준다 (SkillHUD.SpellDial.cs)
 

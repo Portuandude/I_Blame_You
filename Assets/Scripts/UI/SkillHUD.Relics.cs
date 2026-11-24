@@ -41,7 +41,7 @@ namespace IBlameYou.UI
 
         private bool CanOpenRelicWindow()
         {
-            if (relicWindowOpen || relicUnlockFrame >= 0 || equipCardOpen || equipCardUnlockFrame >= 0 || villageOpen || villageUnlockFrame >= 0) return false;
+            if (relicWindowOpen || relicUnlockFrame >= 0 || equipCardOpen || equipCardUnlockFrame >= 0 || villageOpen || choiceOpen || villageUnlockFrame >= 0) return false;
             if (paused || traitWindowOpen || deathHandled || stageCleared || health == null || health.IsDead) return false;
             return !control.ChantActive && !control.Locked;
         }

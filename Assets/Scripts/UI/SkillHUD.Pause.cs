@@ -51,7 +51,7 @@ namespace IBlameYou.UI
                 return;
             }
 
-            if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || deathHandled || stageCleared || health.IsDead) return;
+            if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathHandled || stageCleared || health.IsDead) return;
             if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
             if (pauseMap != null && pauseMap.Expanded)
             {
