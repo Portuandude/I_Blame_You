@@ -46,8 +46,8 @@ namespace IBlameYou.Player
         WaterDefense,
         WindDefense,
         EarthDefense,
-        MagicPower,       // CombatStats.MagicDamageMultiplier에 더함 (비율, 수식어 전용)
-        ManaCost          // ManaSystem.EquipCostBonus에 더함 (비율, 음수가 좋음, 수식어 전용)
+        MagicPower,       // CombatStats.MagicDamageMultiplier에 더함 (비율). 옛 수식어가 쓰던 능력치, 지금은 주는 장비 없음 (새 장비용)
+        ManaCost          // ManaSystem.EquipCostBonus에 더함 (비율, 음수가 좋음). 위와 같이 지금은 주는 장비 없음
     }
 
     public struct StatValue
