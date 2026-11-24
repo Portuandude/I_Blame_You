@@ -248,6 +248,11 @@ namespace IBlameYou.Core
             var restoredMana = player.GetComponent<ManaSystem>();
             if (restoredMana != null && data.foodManaRegen > 0f) restoredMana.RegenMultiplier += data.foodManaRegen;
 
+            // 마나·기력은 스테이지마다 가득: 장비·유물이 최대치만 올린(AddMax(v, false)) 몫까지 채운다 (버그 점검 2026-11-24)
+            if (restoredMana != null) restoredMana.Restore(restoredMana.Max);
+            var restoredStamina = player.GetComponent<StaminaSystem>();
+            if (restoredStamina != null) restoredStamina.Fill();
+
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
             if (health != null && data.deathSaves >= 0) health.DeathSaves = data.deathSaves; // 특성 다시 찍기로 되살아난 버티기를 저장값으로
