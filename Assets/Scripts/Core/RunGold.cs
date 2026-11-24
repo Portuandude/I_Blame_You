@@ -39,16 +39,22 @@ namespace IBlameYou.Core
         {
             if (enemy is SlimeKingController) return EnemyRank.Boss; // 2페이즈에 둘로 나뉜다: 한 마리당 표의 절반 (BossParts)
             if (enemy.GetComponent<SlimeKnight>() != null) return EnemyRank.MidBoss; // 쌍둥이 기사: 한 마리당 표의 절반
-            if (enemy.GetComponent<PrismJelly>() != null) return EnemyRank.MidBoss;  // 프리즘 젤리: 한 마리가 중간보스 몫 전부 (MidBossShares)
+            if (enemy.GetComponent<PrismJelly>() != null) return EnemyRank.MidBoss;  // 프리즘 젤리: 한 마리가 중간보스 몫 전부 (Shares)
             var pack = enemy.GetComponent<KoboldPack>(); // 스테이지 2 보스 무리: 족장 = 보스, 와르그 = 정예
             if (pack != null) return pack.IsChief ? EnemyRank.Boss : EnemyRank.Elite;
             if (enemy.GetComponent<EnrageAbility>() != null || enemy.GetComponent<SplitOnDeath>() != null) return EnemyRank.Elite;
             return EnemyRank.Normal;
         }
 
-        // 골드 표·영혼석의 중간보스 몫은 쌍둥이 기사 한 마리 기준(절반)이다. 혼자 나오는 프리즘 젤리는 그 몫을 두 번 받는다.
-        public static int MidBossShares(EnemyController enemy) =>
-            enemy != null && enemy.GetComponent<PrismJelly>() != null ? 2 : 1;
+        // 골드 표·영혼석의 중간보스 몫은 쌍둥이 기사 한 마리 기준(절반), 최종보스 몫은 슬라임 킹 반쪽 기준(절반)이다.
+        // 한 몸으로 나오는 프리즘 젤리(중간보스)와 코볼트 족장(스테이지 2 보스)은 그 몫을 두 번 받는다.
+        public static int Shares(EnemyController enemy)
+        {
+            if (enemy == null) return 1;
+            if (enemy.GetComponent<PrismJelly>() != null) return 2;
+            var pack = enemy.GetComponent<KoboldPack>();
+            return pack != null && pack.IsChief ? 2 : 1;
+        }
 
         // 적이 죽었을 때 (SkillHUD.OnEnemyKilled). target: 동전이 날아갈 플레이어.
         public static void OnEnemyKilled(EnemyController enemy, Transform target)
@@ -60,7 +66,7 @@ namespace IBlameYou.Core
             int amount = 0;
             if (treasure) amount = TreasureGoblinRule.Gold(UnityEngine.Random.value);
             else
-                for (int share = MidBossShares(enemy); share > 0; share--) // 프리즘 젤리: 기사 둘 몫을 한 번에 (합이 50~100)
+                for (int share = Shares(enemy); share > 0; share--) // 프리즘 젤리·코볼트 족장: 둘 몫을 한 번에
                     amount += GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
             var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
             if (relics != null && relics.Has(RelicId.LuckyPouch))

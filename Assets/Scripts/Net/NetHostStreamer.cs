@@ -56,7 +56,13 @@ namespace IBlameYou.Net
             sentEmptyHud = false;
             Send(new[] { (byte)MsgType.ResetView });
             var music = GameAudio.CurrentMusic;
-            if (!string.IsNullOrEmpty(music)) NetAudio.RecordMusic(music);
+            if (!string.IsNullOrEmpty(music))
+            {
+                NetAudio.RecordMusic(music);
+                // 광폭화로 빨라진 곡·보스 방 앞에서 줄인 크기도 이어 받게 (곡 이름만 보내면 친구는 1로 듣던 것, 버그 점검 2026-11-24)
+                if (!Mathf.Approximately(GameAudio.MusicPitch, 1f)) NetAudio.Record(AudioOp.MusicPitch, GameAudio.MusicPitch);
+            }
+            if (!Mathf.Approximately(GameAudio.MusicDuck, 1f)) NetAudio.Record(AudioOp.MusicDuck, GameAudio.MusicDuck);
         }
 
         private static void Send(byte[] message)
@@ -116,9 +122,9 @@ namespace IBlameYou.Net
                 nextDeadCheck = Time.unscaledTime + DeadCheckInterval;
                 if (assets.DeadCount() >= DeadAssetLimit)
                 {
-                    // 이번 프레임 HUD는 이미 보냈다. 다시 보내기 뒤 HUD 스타일은 다음 프레임 기록부터 새 표로 정의된다
+                    // 이번 프레임 HUD는 이미 보냈다. 다시 보내기 뒤 HUD 스타일은 다음 프레임 기록부터 새 표로 정의된다.
+                    // 월드는 아래에서 같은 프레임에 전체를 다시 보낸다 (return하면 친구 화면이 한 프레임 비어 깜빡이던 것, 버그 점검 2026-11-24)
                     ResetStream();
-                    return;
                 }
             }
 

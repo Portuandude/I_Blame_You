@@ -115,7 +115,7 @@ namespace IBlameYou.UI
             if (health != null) RunGold.OnEnemyKilled(enemy, health.transform); // 골드 동전 (Core/RunGold.cs)
             // 영혼석 (도시 화폐): 보스가 되풀이해 소환하는 적은 없음. 보스는 클리어와 같은 순간이라 판이 끝난 뒤에도 받는다 (골드와 같은 규칙)
             if (enemy != null && enemy.GetComponent<BossSummon>() == null && (!RunStats.Ended || enemy is SlimeKingController))
-                RunStats.AddHeartDust(HeartDustRule.ForKill(RunGold.RankOf(enemy)) * RunGold.MidBossShares(enemy)); // 프리즘 젤리는 기사 둘 몫
+                RunStats.AddHeartDust(HeartDustRule.ForKill(RunGold.RankOf(enemy)) * RunGold.Shares(enemy)); // 프리즘 젤리·코볼트 족장은 둘 몫
         }
 
         private void OnTreasureGoblinHit(TreasureGoblinController goblin)
