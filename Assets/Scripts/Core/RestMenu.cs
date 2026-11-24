@@ -98,6 +98,7 @@ namespace IBlameYou.Core
             GUILayout.BeginArea(new Rect(area.x + 28f, area.y + 16f, width - 56f, height - 32f));
             GUILayout.Label($"쉼터 — 스테이지 {data.stage} 앞", title, GUILayout.Height(48f));
             GUILayout.Label(line, small);
+            if (IBlameYou.Net.NetSession.RemoteP2Active) GUILayout.Label("<color=#9fd8ff>온라인: 쉼터는 호스트(아루) 화면에서 고른다</color>", small); // 친구 화면에도 같은 글이 간다 (버그 점검 2026-11-24)
             GUILayout.Space(8f);
             float max = Mathf.Max(data.maxHealth, data.health);
             GUILayout.Label($"체력 {data.health:0}/{max:0}  ·  <color=#ffd84d><b>골드 {data.gold}</b></color>  ·  레벨 {data.level}", body);
