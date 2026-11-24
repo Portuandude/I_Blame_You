@@ -83,7 +83,7 @@ namespace IBlameYou.Core
         // 영혼석: 이번 판 집계 + 저장된 누적에 바로 더한다 (쓰러져도 남는다). 보스 처치·클리어는 판이 끝나는 순간과 겹쳐서 Ended여도 받는다.
         public static void AddHeartDust(int amount)
         {
-            if (amount <= 0) return;
+            if (amount <= 0 || GameSession.FeatureTest) return; // 기능 테스트는 저장도 안 하므로 결과 창에도 안 보인다 (버그 점검 2026-11-24)
             HeartDust += amount;
             SaveData.AddHeartDust(amount);
         }
