@@ -48,7 +48,7 @@ namespace IBlameYou.Core
         private int talkIndex;        // 처음 방문은 선생님 세 줄을 말풍선을 눌러 넘긴다
         private int talkSeed;
         private int lastScrollSelection = -1;
-        private int runDust;          // 방금 끝난 판에 얻은 가루 (말풍선 아래)
+        private int runDust;          // 방금 끝난 판에 얻은 영혼석 (말풍선 아래)
 
         public void Initialize(Action departCallback, Action backCallback, CityArrival cameFrom = CityArrival.FromStart)
         {
@@ -106,12 +106,12 @@ namespace IBlameYou.Core
 
             GUILayout.BeginArea(new Rect(area.x + 28f, area.y + 18f, width - 56f, height - 36f));
             GUILayout.Label(towerOpen ? "수정 탑" : academyOpen ? "아카데미" : "마법 도시 클라리온", title, GUILayout.Height(52f));
-            GUILayout.Label(towerOpen ? "마음 가루를 바치면 몸이 튼튼해진다. 바칠수록 수정의 금이 메워진다."
-                : academyOpen ? "\"역사상 가장 시끄러운 입학생들이군.\" 가루를 내면 이 세계의 주문을 가르쳐 준다."
+            GUILayout.Label(towerOpen ? "영혼석을 바치면 몸이 튼튼해진다. 바칠수록 수정의 금이 메워진다."
+                : academyOpen ? "\"역사상 가장 시끄러운 입학생들이군.\" 영혼석을 내면 이 세계의 주문을 가르쳐 준다."
                 : "금이 간 수정 탑 아래 광장. 성문 밖에는 괴물이 다가오고 있다.", small);
             GUILayout.Space(10f);
             string mode = dev ? "개발자 모드" : "일반 모드";
-            GUILayout.Label($"<color=#f0b8ff><b>마음 가루 {SaveData.HeartDust(dev)}</b></color>  <size=12>({mode}{(dev ? " · F1 +100" : "")})</size>", body);
+            GUILayout.Label($"<color=#f0b8ff><b>영혼석 {SaveData.HeartDust(dev)}</b></color>  <size=12>({mode}{(dev ? " · F1 +100" : "")})</size>", body);
             if (!SubOpen) DrawTalk();
             GUILayout.Space(14f);
 
@@ -144,7 +144,7 @@ namespace IBlameYou.Core
             if (e.type == EventType.KeyUp && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Space))
                 activateKeyHeld = false;
             if (e.type != EventType.KeyDown) return -1;
-            if (e.keyCode == KeyCode.F1 && GameSession.DevMode) // 개발자 모드 치트: 수정 탑·아카데미 시험용 가루 (개발자 모드 저장에만)
+            if (e.keyCode == KeyCode.F1 && GameSession.DevMode) // 개발자 모드 치트: 수정 탑·아카데미 시험용 영혼석 (개발자 모드 저장에만)
             {
                 e.Use();
                 SaveData.AddHeartDust(100);
@@ -218,7 +218,7 @@ namespace IBlameYou.Core
             bool more = arrival == CityArrival.FirstVisit && talkIndex < CityTalkRule.FirstVisitLines.Length - 1;
             string text = $"<color=#ffd98a><b>{speaker}</b></color>  {line}{(more ? "  <size=11>▶ 누르기</size>" : "")}";
             if (GUILayout.Button(text, small, GUILayout.MinHeight(36f)) && more) talkIndex++;
-            if (runDust > 0) GUILayout.Label($"<color=#f0b8ff>이번 판 마음 가루 +{runDust}</color>", small);
+            if (runDust > 0) GUILayout.Label($"<color=#f0b8ff>이번 판 영혼석 +{runDust}</color>", small);
         }
 
         // 수정 탑 그림: 가운데 수정에 남은 금(20 - 산 단계)이 실금으로, 단계가 오를수록 빛이 밝아진다.
@@ -299,12 +299,12 @@ namespace IBlameYou.Core
         {
             if (!SaveData.BuyTowerLevel(stat, dev))
             {
-                GameAudio.PlaySfx("UiClick", 0.3f, 0.02f); // 가루가 모자라거나 최대 (Enter로 눌렀을 때만 여기 온다)
+                GameAudio.PlaySfx("UiClick", 0.3f, 0.02f); // 영혼석이 모자라거나 최대 (Enter로 눌렀을 때만 여기 온다)
                 return;
             }
             towerFlashAt = Time.unscaledTime;
             towerFlashRow = row;
-            GameAudio.PlaySfx("RunStart", 0.5f); // 맑은 "따-링" — 수정에 가루가 스며드는 소리
+            GameAudio.PlaySfx("RunStart", 0.5f); // 맑은 "따-링" — 수정에 영혼석이 스며드는 소리
         }
 
         // ---- 아카데미 창 (Docs/CityDesign.md 5절): 배울 수 있는 마법 줄마다 속성 색 이름·설명·배우기 버튼 ----

@@ -17,7 +17,7 @@ namespace IBlameYou.Core
         private const string KeyRecentDefeats = "Recent.DefeatRooms"; // 2026-11-12 진행도(%) "Recent.Defeats" → 방 거리. 예전 키는 읽지 않는다
         private const string KeyRelicCodex = "Codex.Relics";      // 0~30번 (예전 int 저장 그대로)
         private const string KeyRelicCodexHigh = "Codex.Relics2"; // 31~61번 (2026-11-12 유물 31종 한도 풀기)
-        private const string KeyHeartDust = "City.HeartDust";     // 마음 가루 누적 (도시 화폐, Docs/CityDesign.md)
+        private const string KeyHeartDust = "City.HeartDust";     // 영혼석 누적 (도시 화폐, Docs/CityDesign.md)
         private const string KeyCityVisited = "City.Visited";       // 도시에 한 번이라도 왔는지 (처음만 선생님 긴 설명, 모드 상관없음)
         private const string KeySpell = "City.Spell.";           // 아카데미에서 배운 마법 (뒤에 SpellDefinition.Id, 모드별)
         private const string KeyTower = "City.Tower.";           // 수정 탑 항목별 단계 (뒤에 TowerStat 이름, 모드별)
@@ -59,7 +59,7 @@ namespace IBlameYou.Core
         // 지금까지 도달한 가장 높은 레벨. 기록이 없으면 0.
         public static int BestLevel(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyBestLevel, devMode), 0);
 
-        // 마음 가루 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
+        // 영혼석 (도시 화폐): 모드별 누적. 기능 테스트 모드는 쌓지 않는다.
         public static int HeartDust(bool devMode) => PlayerPrefs.GetInt(ModeKey(KeyHeartDust, devMode), 0);
 
         public static bool CityVisited() => PlayerPrefs.GetInt(KeyCityVisited, 0) != 0;
@@ -74,7 +74,7 @@ namespace IBlameYou.Core
         // 아카데미에서 배운 마법 (Docs/CityDesign.md 5절). 판 시작 때 SpellBook.Learn으로 다이얼·숫자줄에 나온다.
         public static bool SpellLearned(string id, bool devMode) => PlayerPrefs.GetInt(ModeKey(KeySpell + id, devMode), 0) != 0;
 
-        // 가루를 내고 배운다. 이미 배웠거나 가루가 모자라면 false.
+        // 영혼석을 내고 배운다. 이미 배웠거나 영혼석이 모자라면 false.
         public static bool LearnSpell(string id, int cost, bool devMode)
         {
             int dust = HeartDust(devMode);
@@ -89,7 +89,7 @@ namespace IBlameYou.Core
         public static int TowerLevel(TowerStat stat, bool devMode) =>
             Mathf.Clamp(PlayerPrefs.GetInt(ModeKey(KeyTower + stat, devMode), 0), 0, CrystalTowerRule.MaxLevel);
 
-        // 가루를 내고 한 단계 올린다. 가루가 모자라거나 최대면 false (아무것도 안 바뀜).
+        // 영혼석을 내고 한 단계 올린다. 영혼석이 모자라거나 최대면 false (아무것도 안 바뀜).
         public static bool BuyTowerLevel(TowerStat stat, bool devMode)
         {
             int level = TowerLevel(stat, devMode);
@@ -106,7 +106,7 @@ namespace IBlameYou.Core
             if (amount <= 0 || GameSession.FeatureTest) return;
             bool dev = GameSession.DevMode;
             PlayerPrefs.SetInt(ModeKey(KeyHeartDust, dev), HeartDust(dev) + amount);
-            PlayerPrefs.Save(); // 쓰러져 끝난 판도 바로 저장 (게임이 꺼지면 가루를 잃지 않게)
+            PlayerPrefs.Save(); // 쓰러져 끝난 판도 바로 저장 (게임이 꺼지면 영혼석을 잃지 않게)
         }
 
         // 한 판에 모은 골드(쓴 것 포함, RunStats.GoldEarned) 최고. 기록이 없으면 0.
