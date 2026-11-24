@@ -35,6 +35,8 @@ namespace IBlameYou.Enemies
         private Color flashColor;
         private float flashUntil;
         private bool fallen;
+        private bool pendingLink; // 쓰러졌고 짝 광폭화·처치 연출 판정이 남았다 (LateUpdate)
+        private int lastNoticeSeconds = -1; // 광폭화 남은 초 글을 초가 바뀔 때만 만든다 (매 프레임 문자열 할당)
         private float killY = float.NegativeInfinity; // 나타난 방 기준 낙사선 (방을 떠나는 프레임에 FloorY가 바뀌어도 낙사로 치지 않게, 버그 점검 2026-11-24)
         private SpriteRenderer body;
         private Rigidbody2D rb;
@@ -83,12 +85,25 @@ namespace IBlameYou.Enemies
             fallen = true;
             if (recolor != null) recolor.Tint = Color.white;
             ReleaseBossNotice();
+            // 짝 광폭화·처치 연출은 이번 프레임 끝(LateUpdate)에 판정한다: 광역 마법으로 둘이 같은 프레임에 쓰러지면
+            // 먼저 쓰러진 쪽이 곧 쓰러질 짝을 광폭화시키고 "광폭화했다!"·히트스톱을 내던 것 (버그 점검 2026-11-24)
+            pendingLink = true;
+        }
 
+        private void LateUpdate()
+        {
+            if (pendingLink) ResolveFall();
+        }
+
+        private void ResolveFall()
+        {
+            pendingLink = false;
             bool enraged = false;
             bool partnerAlive = false;
             foreach (var other in knights)
             {
                 if (other == this || other.fallen || other.transform.parent != transform.parent) continue;
+                if (other.health != null && other.health.IsDead) continue; // 같은 프레임에 쓰러진 짝
                 partnerAlive = true;
                 if (other.enrage == null || other.enrage.Active) continue;
                 other.enrage.Trigger();
@@ -109,6 +124,8 @@ namespace IBlameYou.Enemies
             if (!partnerAlive)
             {
                 BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
+                foreach (var other in knights) // 같은 프레임에 함께 쓰러진 짝이 처치 연출을 한 번 더 내지 않게
+                    if (other != this && other.transform.parent == transform.parent) other.pendingLink = false;
                 // 광폭화로 빨라진 곡을 되돌린다 (쓰러진 뒤엔 Update가 돌지 않아 UpdateEnrageFx의 되돌리기가 오지 않던 것, 버그 점검 2026-11-22)
                 if (GameAudio.CurrentMusic == MidBossMusicName) GameAudio.SetMusicPitch(1f);
             }
@@ -152,8 +169,13 @@ namespace IBlameYou.Enemies
                     nextGhost = Time.time + GhostInterval;
                     KnightEnrageFx.Ghost(body, GhostColor);
                 }
-                bossNoticeOwner = this;
-                BossEvents.Notice = $"광폭화! {Mathf.CeilToInt(enrage.Remaining)}초";
+                int seconds = Mathf.CeilToInt(enrage.Remaining);
+                if (bossNoticeOwner != this || seconds != lastNoticeSeconds || BossEvents.Notice == null)
+                {
+                    bossNoticeOwner = this;
+                    lastNoticeSeconds = seconds;
+                    BossEvents.Notice = $"광폭화! {seconds}초";
+                }
             }
             else if (wasEnraged)
             {
@@ -177,6 +199,7 @@ namespace IBlameYou.Enemies
 
         private void OnDestroy()
         {
+            if (pendingLink) ResolveFall(); // 낙사로 치워지는 프레임: LateUpdate 전에 사라져도 판정은 한다
             ReleaseBossNotice();
             knights.Remove(this);
             if (health != null)

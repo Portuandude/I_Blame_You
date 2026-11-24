@@ -83,6 +83,11 @@ namespace IBlameYou.Enemies
                         Begin();
                     break;
                 case Phase.Windup:
+                    if (TargetGone()) // 웅크린 사이 플레이어가 쓰러지거나 사라지면 빈 곳으로 돌진하지 않는다 (버그 점검 2026-11-24)
+                    {
+                        End();
+                        break;
+                    }
                     if (Time.time >= phaseEnd)
                     {
                         RemoveDashLine();
@@ -207,6 +212,13 @@ namespace IBlameYou.Enemies
             if (Mathf.Abs(dx) > Range || Mathf.Abs(dx) < 0.5f || Mathf.Abs(dy) > MaxHeightGap) return false;
             direction = Mathf.Sign(dx);
             return true;
+        }
+
+        private bool TargetGone()
+        {
+            if (player == null) return true;
+            var playerHealth = player.GetComponent<HealthSystem>();
+            return playerHealth != null && playerHealth.IsDead;
         }
 
         private bool Grounded() => Mathf.Abs(rb.linearVelocity.y) < 0.1f;

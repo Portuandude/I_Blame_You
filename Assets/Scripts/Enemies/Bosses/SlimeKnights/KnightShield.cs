@@ -236,7 +236,7 @@ namespace IBlameYou.Enemies
             if (stun != null) stun.Immune = false;
             if (bubble != null)
             {
-                if (broken || !bubble.gameObject.activeSelf)
+                if (broken || !bubble.gameObject.activeSelf || (health != null && health.IsDead)) // 쓰러지는 순간엔 "뽁" 없이 바로 숨긴다
                 {
                     shrinking = false;
                     bubble.gameObject.SetActive(false);
