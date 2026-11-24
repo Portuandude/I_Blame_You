@@ -170,6 +170,25 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void Labels_ShowLeftoverSecondKeyAfterSwap()
+        {
+            var b = KeyBindingRules.Defaults();
+            KeyBindingRules.Assign(b, P1Action.Jump, KeyBindingRules.LeftShift, out var swapped);
+            Assert.AreEqual(P1Action.Run, swapped);
+            Assert.AreEqual("L.Shift", KeyBindingRules.Label(b, P1Action.Jump));
+            Assert.AreEqual("Space/R.Shift", KeyBindingRules.Label(b, P1Action.Run), "남은 R.Shift도 달리기라고 보여 준다");
+        }
+
+        [Test]
+        public void OsKeysAreForbidden()
+        {
+            Assert.IsTrue(KeyBindingRules.IsForbidden(311), "LeftWindows");
+            Assert.IsTrue(KeyBindingRules.IsForbidden(319), "Menu");
+            Assert.IsFalse(KeyBindingRules.IsForbidden(KeyBindingRules.KeypadEnter), "키패드 Enter는 순간이동 기본 키");
+            Assert.IsFalse(KeyBindingRules.IsForbidden(KeyBindingRules.LeftAlt));
+        }
+
+        [Test]
         public void DisplayName_NeverHasPlus_UnknownUsesFallback()
         {
             for (int code = KeyBindingRules.MinKey; code < KeyBindingRules.FirstMouseOrJoystick; code++)

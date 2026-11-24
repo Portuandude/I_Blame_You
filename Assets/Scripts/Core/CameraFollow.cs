@@ -105,7 +105,12 @@ namespace IBlameYou.Core
 
         private void LateUpdate()
         {
-            if (target == null) return;
+            if (target == null)
+            {
+                // 흔들리던 중에 대상이 사라지면(쓰러져 치워짐 등) 흔들린 자리에 멈추지 않게 제자리로 (버그 점검 2026-11-24)
+                if (shakeTimeRemaining > 0f) { shakeTimeRemaining = 0f; transform.position = followPosition; }
+                return;
+            }
 
             UpdateLook();
             Vector3 unclamped = Vector3.SmoothDamp(followPosition, DesiredPosition(), ref velocity, smoothTime);

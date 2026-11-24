@@ -24,6 +24,7 @@ namespace IBlameYou.Player
         public const int Keypad0 = 256, Keypad9 = 265, KeypadEnter = 271;
         public const int UpArrow = 273, DownArrow = 274, RightArrow = 275, LeftArrow = 276;
         public const int F1 = 282, F15 = 296;
+        public const int FirstOsKey = 309, LastOsKey = 319; // 오른·왼 Command/Windows, AltGr, Help, Print, SysReq, Break, Menu: OS가 가로챈다
         public const int RightShift = 303, LeftShift = 304, RightControl = 305, LeftControl = 306, RightAlt = 307, LeftAlt = 308;
         public const int FirstMouseOrJoystick = 323; // Mouse0부터 마우스·패드 버튼
         public const int MinKey = 8;                  // Backspace보다 작은 값은 키가 아니다
@@ -55,6 +56,7 @@ namespace IBlameYou.Player
             if (code < MinKey || code >= FirstMouseOrJoystick) return true;
             if (code >= Alpha0 && code <= Alpha9) return true;
             if (code >= F1 && code <= F15) return true;
+            if (code >= FirstOsKey && code <= LastOsKey) return true; // Windows 키 등을 누르면 시작 메뉴가 열려 창 포커스를 잃는다
             switch (code)
             {
                 case Escape: case BackQuote: case Tab: case C: case R: case M:
@@ -240,7 +242,10 @@ namespace IBlameYou.Player
             if ((first == LeftShift && second == RightShift) || (first == RightShift && second == LeftShift)) return "Shift";
             if (first == Return && second == KeypadEnter) return "Enter";
             if (first == None) return "-";
-            return DisplayName(first) ?? unknownName?.Invoke(first) ?? "#" + first;
+            string firstName = DisplayName(first) ?? unknownName?.Invoke(first) ?? "#" + first;
+            if (second == None) return firstName;
+            // 맞바꾸기로 둘째 칸이 남은 동작 (예: 점프에 L.Shift를 주면 달리기 = Space + R.Shift): 둘 다 '/'로 이어 보여 준다 (키 이름에는 '/'가 없어 묶음 구분과 같다, 버그 점검 2026-11-24)
+            return firstName + "/" + (DisplayName(second) ?? unknownName?.Invoke(second) ?? "#" + second);
         }
 
         public static string ActionName(P1Action action)

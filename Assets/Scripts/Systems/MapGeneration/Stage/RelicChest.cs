@@ -239,6 +239,7 @@ namespace IBlameYou.Systems
             waiting = true;
             bool opened = OpenRequested(offer, chosen =>
             {
+                if (this == null) return; // 창이 열린 사이 상자가 치워졌으면 (방 정리 등)
                 waiting = false;
                 if (taken || relics == null || !relics.Add(chosen)) return;
                 bool firstTime = SaveData.RecordRelic((int)chosen); // 유물 도감 (시작 화면 "유물 도감 N/M", 카드 NEW, 결과 창 새 유물·도감 완성)
