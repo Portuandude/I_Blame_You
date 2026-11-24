@@ -41,6 +41,7 @@ namespace IBlameYou.Enemies
         // 바깥(족장 그물 등)이 돌격 중인지 보고 다른 기술을 미룬다
         public bool Busy => phase != Phase.None;
         public float Facing => facing;
+        public bool Stunned => IsStunned; // 족장 그물이 경직 중에는 던지지 않게
 
         protected override bool ContactDamageActive => phase == Phase.None || phase == Phase.Recover;
 
