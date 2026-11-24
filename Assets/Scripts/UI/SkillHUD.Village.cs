@@ -214,10 +214,12 @@ namespace IBlameYou.UI
                     break;
                 case FoodEffect.MaxHealth:
                     health.AddMax(food.Value, true);
+                    RunStats.FoodMaxHealth += food.Value; // 다음 스테이지에도 남게 (쉼터 저장)
                     DamageNumbers.ShowHeal(at, food.Value, "최대 체력 ");
                     break;
                 case FoodEffect.ManaRegen:
                     mana.RegenMultiplier += food.Value;
+                    RunStats.FoodManaRegen += food.Value;
                     break;
                 case FoodEffect.DamageCut:
                     LunchboxGuard.Grant(health.gameObject, food.Value);

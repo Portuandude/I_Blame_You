@@ -39,6 +39,8 @@ namespace IBlameYou.Systems
             if (Time.time < nextHitTime) return;
             var player = TrapCommon.PlayerFrom(other);
             if (player == null) return;
+            var playerHealth = player.GetComponent<HealthSystem>();
+            if (playerHealth == null || playerHealth.IsDead || playerHealth.IsInvulnerable) return; // 무적 중엔 쿨다운·소리 없이 (가시 함정과 같게, 버그 점검 2026-11-24)
             if (TrapCommon.Strike(player, DamageKind.Physical, Element.Neutral, DamageMultiplier) <= 0f) return;
             nextHitTime = Time.time + Cooldown;
             GameAudio.PlaySfx("Hit_Neutral", 0.5f);

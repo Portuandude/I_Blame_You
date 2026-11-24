@@ -272,7 +272,7 @@ namespace IBlameYou.Systems
                         // 세로 덩굴 벽 = 불 한 번이면 열리는 봉인문 (덩굴 색). 연 기록은 봉인문과 같은 방 번호 기록 (한 방에 하나뿐)
                         int vineWallChunk = index;
                         var vineWall = IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.GateHeight(f.X, f.Y),
-                            new[] { Element.Fire }, openedGates.Contains(index), () => openedGates.Add(vineWallChunk));
+                            new[] { Element.Fire }, openedGates.Contains(index), () => { openedGates.Add(vineWallChunk); IBlameYou.Core.RunStats.AddGateOpened(); }); // 결과 창 "연 봉인문"에도 센다
                         if (vineWall != null) vineWall.DressAsVines();
                         break;
                     case FeatureKind.FlameJet:

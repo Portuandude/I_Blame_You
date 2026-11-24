@@ -24,6 +24,15 @@ namespace IBlameYou.Systems
 
         public static bool IsForest(int stage) => Clamp(stage) >= ForestStage;
 
+        // 스테이지 3~5는 테마가 정해질 때까지 숲 구성을 그대로 쓰므로, 적 체력·공격력을 스테이지마다 올려 난이도가 평탄하지 않게 한다 (가안, 플레이 테스트 뒤 조정).
+        // 스테이지 1·2는 1배 (지금 맞춘 수치 그대로). 3 = 체력 1.25배·공격 1.1배, 4 = 1.5·1.2, 5 = 1.75·1.3.
+        public const float HealthScalePerStage = 0.25f;
+        public const float DamageScalePerStage = 0.1f;
+
+        public static float HealthScale(int stage) => 1f + HealthScalePerStage * Math.Max(0, Clamp(stage) - ForestStage);
+
+        public static float DamageScale(int stage) => 1f + DamageScalePerStage * Math.Max(0, Clamp(stage) - ForestStage);
+
         public static float KoboldChance(float difficulty)
         {
             float d = Math.Max(0f, Math.Min(1f, difficulty));

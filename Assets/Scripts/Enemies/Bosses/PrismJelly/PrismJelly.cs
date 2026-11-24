@@ -75,6 +75,12 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             if (fallen || !started) return;
+            // 낙사선 아래로 떨어지면 전투 구역이 체력 0 없이 치운다: 그때도 처치 연출이 나오게 (SlimeKnight와 같음, 버그 점검 2026-11-24)
+            if (transform.position.y < FallRecovery.FloorY + FallRecovery.KillY)
+            {
+                OnHealthChanged(0f, 0f);
+                return;
+            }
 
             if (Time.time >= nextShiftAt)
             {

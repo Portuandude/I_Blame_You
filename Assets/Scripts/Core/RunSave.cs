@@ -52,6 +52,13 @@ namespace IBlameYou.Core
             public int heartDust;           // 이번 판에 얻은 영혼석 (결과 창 표시, 누적 저장은 이미 SaveData에)
             public int picks;
             public int[] spellCasts = new int[0];
+            public int newRelics;           // 이번 판에 처음 도감에 오른 유물 (결과 창, 없던 저장은 0 — 버전은 그대로)
+            public long newRelicMask;
+            public bool codexCompleted;
+            public int acornLevels;         // 도토리 주머니·별사탕이 늘린 최대 체력·마나 횟수 (PlayerRelics.RestoreLevelBonuses)
+            public int candyLevels;
+            public float foodMaxHealth;     // 마을 음식으로 늘어난 최대 체력·마나 재생 배율 (RunStats.Food*)
+            public float foodManaRegen;
             public int[] equipment = new int[0]; // 낀 장비 EquipmentId
 
             public IBlameYou.Systems.StageRecords records = new IBlameYou.Systems.StageRecords();
@@ -90,7 +97,8 @@ namespace IBlameYou.Core
         {
             if (GameSession.FeatureTest) return; // 기능 테스트 모드는 이어하던 런을 건드리지 않는다
             var data = Load();
-            if (data == null || elapsed <= data.elapsed) return;
+            // 쉼터 저장(스테이지 시작)은 이어 하면 그 스테이지를 처음부터 다시 하므로, 버린 시도의 시간을 더하지 않는다
+            if (data == null || data.atStageStart || elapsed <= data.elapsed) return;
             data.elapsed = elapsed;
             Save(data);
         }

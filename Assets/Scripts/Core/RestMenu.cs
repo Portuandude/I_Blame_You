@@ -98,6 +98,7 @@ namespace IBlameYou.Core
             GUILayout.BeginArea(new Rect(area.x + 28f, area.y + 16f, width - 56f, height - 32f));
             GUILayout.Label($"쉼터 — 스테이지 {data.stage} 앞", title, GUILayout.Height(48f));
             GUILayout.Label(line, small);
+            if (IBlameYou.Net.NetSession.RemoteP2Active) GUILayout.Label("<color=#9fd8ff>온라인: 쉼터는 호스트(아루) 화면에서 고른다</color>", small); // 친구 화면에도 같은 글이 간다 (버그 점검 2026-11-24)
             GUILayout.Space(8f);
             float max = Mathf.Max(data.maxHealth, data.health);
             GUILayout.Label($"체력 {data.health:0}/{max:0}  ·  <color=#ffd84d><b>골드 {data.gold}</b></color>  ·  레벨 {data.level}", body);
@@ -156,6 +157,12 @@ namespace IBlameYou.Core
         {
             var item = shop.Stock[index];
             var current = Equipped(item.Slot);
+            if (current != null && current.Id == item.Id)
+            {
+                feedback = "<color=#ffd84d>이미 끼고 있다.</color>"; // 이어하기로 진열이 처음으로 돌아와도 같은 장비를 또 사지 않게 (버그 점검 2026-11-24)
+                GameAudio.PlaySfx("UiClick", 0.4f, 0.02f);
+                return;
+            }
             var got = shop.Buy(index, current, data.gold, out int cost);
             if (got == null)
             {
@@ -172,6 +179,7 @@ namespace IBlameYou.Core
             ids.Add((int)got.Id);
             data.equipment = ids.ToArray();
             data.maxHealth += MaxHealthOf(got) - MaxHealthOf(current); // 샘이 새 최대 체력까지 채우게 (체력 자체는 판에서 다시 맞춘다)
+            data.health = Mathf.Min(data.health, data.maxHealth);     // 최대 체력이 낮은 장비로 바꾸면 창의 체력도 맞춘다
             feedback = $"{got.Name}을(를) 꼈다" + (current != null ? $" ({current.Name}은(는) 상인에게)" : "") + $" · -{cost}G";
             GameAudio.PlaySfx("Coin", 0.7f, 0.05f);
             RunSave.Save(data);

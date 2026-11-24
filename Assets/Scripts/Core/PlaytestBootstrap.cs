@@ -50,6 +50,7 @@ namespace IBlameYou.Core
             foreach (var menu in GetComponents<StartMenu>()) Destroy(menu);
             foreach (var city in GetComponents<CityMenu>()) Destroy(city);
             foreach (var intro in GetComponents<StoryIntro>()) Destroy(intro);
+            foreach (var rest in GetComponents<RestMenu>()) Destroy(rest);
             GameAudio.StopMusic(); // 곡은 호스트가 보내 준다
         }
 
@@ -182,6 +183,8 @@ namespace IBlameYou.Core
             {
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
                 RunStats.Restore(resume.gold, resume.goldEarned, resume.goldSpent, resume.heartDust, resume.picks, resume.spellCasts);
+                RunStats.RestoreCodex(resume.newRelics, resume.newRelicMask, resume.codexCompleted);
+                RunStats.RestoreFood(resume.foodMaxHealth, resume.foodManaRegen);
                 StageEvents.PostNotice(resume.atStageStart ? $"{StageTitle(stageNumber)} 시작 (시드 {currentRunSeed})" : $"이어하기: 저장한 곳에서 다시 시작 (시드 {currentRunSeed})");
             }
             else
@@ -238,6 +241,12 @@ namespace IBlameYou.Core
             if (data.relics != null)
                 foreach (int id in data.relics)
                     if (System.Enum.IsDefined(typeof(RelicId), id)) relics.Add((RelicId)id);
+            relics.RestoreLevelBonuses(data.acornLevels, data.candyLevels); // 레벨업으로 늘어난 최대치는 레벨업이 다시 안 일어나므로 횟수로
+            // 마을 음식으로 늘어난 최대 체력·마나 재생 (판 동안 남는다). 집계는 HUD 초기화 뒤 RunStats.RestoreFood가 되살린다
+            var restoredHealth = player.GetComponent<HealthSystem>();
+            if (restoredHealth != null && data.foodMaxHealth > 0f) restoredHealth.AddMax(data.foodMaxHealth);
+            var restoredMana = player.GetComponent<ManaSystem>();
+            if (restoredMana != null && data.foodManaRegen > 0f) restoredMana.RegenMultiplier += data.foodManaRegen;
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
@@ -273,7 +282,7 @@ namespace IBlameYou.Core
                 checkpointChunk = -1,
                 stage = StageRoster.Clamp(nextStage),
                 roomGrid = streamer.IsRoomMode,
-                elapsed = hud.RunElapsed,
+                elapsed = hud.RunElapsedForSave,
                 progress = 0f,
                 level = progression != null ? progression.Level : 1,
                 experience = progression != null ? progression.Experience : 0f,
@@ -295,7 +304,14 @@ namespace IBlameYou.Core
                 goldSpent = RunStats.GoldSpent,
                 heartDust = RunStats.HeartDust,
                 picks = RunStats.Picks,
-                spellCasts = (int[])RunStats.SpellCasts.Clone()
+                spellCasts = (int[])RunStats.SpellCasts.Clone(),
+                newRelics = RunStats.NewRelics,
+                newRelicMask = RunStats.NewRelicMask,
+                codexCompleted = RunStats.CodexCompleted,
+                acornLevels = relics != null ? relics.AcornLevels : 0,
+                candyLevels = relics != null ? relics.CandyLevels : 0,
+                foodMaxHealth = RunStats.FoodMaxHealth,
+                foodManaRegen = RunStats.FoodManaRegen
             };
         }
 
@@ -351,6 +367,18 @@ namespace IBlameYou.Core
             }
         }
 
+        // 스테이지 3~5 적 체력·공격력 배율 (StageRoster.HealthScale·DamageScale, 스테이지 1·2와 기능 테스트는 1배). 막 만든 적이라 체력은 가득.
+        private static void ScaleForStage(EnemyController enemy, HealthSystem enemyHealth)
+        {
+            if (GameSession.FeatureTest) return;
+            int stage = GameSession.Stage;
+            float hp = StageRoster.HealthScale(stage);
+            if (enemyHealth != null && hp != 1f) enemyHealth.SetValues(enemyHealth.Max * hp, enemyHealth.Max * hp);
+            var stats = enemy.GetComponent<CombatStats>();
+            float damage = StageRoster.DamageScale(stage);
+            if (stats != null && damage != 1f) stats.DamageMultiplier *= damage;
+        }
+
         private static HealthSystem SpawnEnemy(StageEnemy kind, Vector3 position, Transform parent, LevelArtConfig artConfig)
         {
             EnemyController enemy;
@@ -379,7 +407,9 @@ namespace IBlameYou.Core
 
             if (enemy == null) return null;
             enemy.transform.SetParent(parent, true);
-            return enemy.GetComponent<HealthSystem>();
+            var enemyHealth = enemy.GetComponent<HealthSystem>();
+            ScaleForStage(enemy, enemyHealth);
+            return enemyHealth;
         }
 
         // 지금 런을 치우고 다시 시작한다. 씬을 다시 불러오지 않아 빌드 설정에 씬을 등록하지 않아도 된다.

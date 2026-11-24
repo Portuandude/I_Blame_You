@@ -8,6 +8,7 @@ using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/N
 namespace IBlameYou.Core
 {
     // 시작 전 웹툰식 스토리 소개 (2026-11-14 사람 지시, 줄거리 Docs/Story.md 5장 프롤로그).
+    // 악신 이름은 2026-11-24 사람 결정(B2)으로 트릭스 → 바알제 (enum Who.Tricks는 이름만 옛것).
     // 2026-11-24 사람 결정(DesignDecisionsTodo E4): 사람이 인트로 그림을 구할 때까지 꺼 둔다 (Enabled = false). 코드는 그대로 두어
     // 그림이 오면 Enabled만 켜고 컷 그림·글을 바꾸면 된다. 꺼져 있으면 시작 화면이 이 창 없이 바로 도시 메뉴로 간다 (StartMenu.StartRun).
     // 시작 화면 "플레이 테스트 시작"을 누르면 게임 월드를 만들기 전에 띄운다 (기능 테스트·이어하기·다시 시작은 건너뜀).
@@ -44,7 +45,7 @@ namespace IBlameYou.Core
             },
             new[]
             {
-                new Line(Who.Narration, "그걸 우연히 구경한 이가 있었으니 — 이 세계의 악신, 트릭스.", 0.5f, 0.1f),
+                new Line(Who.Narration, "그걸 우연히 구경한 이가 있었으니 — 이 세계의 악신, 바알제.", 0.5f, 0.1f),
                 new Line(Who.Tricks, "오호? 둘이 같이 죽었네?", 0.24f, 0.4f),
                 new Line(Who.Tricks, "이거… 재밌겠는데?", 0.78f, 0.4f),
             },
@@ -386,7 +387,7 @@ namespace IBlameYou.Core
             {
                 case Who.A: name = "아루 (A)"; color = AColor; break;
                 case Who.B: name = "벨 (B)"; color = BColor; break;
-                case Who.Tricks: name = "트릭스"; color = TricksColor; break;
+                case Who.Tricks: name = "바알제"; color = TricksColor; break;
                 default: name = "아루 & 벨"; color = OutlinedLabel.Gold; break;
             }
             var nameRect = new Rect(r.x + 8f * k, r.y - 20f * k, r.width, 22f * k);

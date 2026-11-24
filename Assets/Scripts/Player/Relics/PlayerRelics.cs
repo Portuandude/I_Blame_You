@@ -59,6 +59,22 @@ namespace IBlameYou.Player
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.6f, $"마나 +{RelicBook.TwinRingMana:0}", color, 0.8f);
         }
 
+        // 도토리 주머니·별사탕으로 실제로 늘어난 횟수 (= 최대 체력·마나 +1을 받은 레벨 수). 스테이지를 넘거나 쉼터 저장을 이어 할 때
+        // 새 플레이어에는 레벨업이 다시 일어나지 않으므로 이 횟수로 늘어난 최대치를 되살린다 (RestoreLevelBonuses, RunSave).
+        public int AcornLevels { get; private set; }
+        public int CandyLevels { get; private set; }
+
+        // 새로 만든 플레이어에 앞 스테이지까지 쌓인 도토리 주머니·별사탕 최대치를 되살린다 (유물을 Add한 뒤, 체력 넣기 전에 부른다)
+        public void RestoreLevelBonuses(int acornLevels, int candyLevels)
+        {
+            AcornLevels = Mathf.Max(0, acornLevels);
+            CandyLevels = Mathf.Max(0, candyLevels);
+            var health = GetComponent<HealthSystem>();
+            var mana = GetComponent<ManaSystem>();
+            if (health != null && AcornLevels > 0) health.AddMax(RelicBook.AcornPouchMaxHealth * AcornLevels);
+            if (mana != null && CandyLevels > 0) mana.AddMax(RelicBook.StarCandyMaxMana * CandyLevels);
+        }
+
         private int acornFrame = -1;
         private int acornStack;
 
@@ -86,6 +102,7 @@ namespace IBlameYou.Player
             var mana = GetComponent<ManaSystem>();
             if (mana == null) return;
             mana.AddMax(RelicBook.StarCandyMaxMana);
+            CandyLevels++;
             candyStack = candyFrame == Time.frameCount ? candyStack + 1 : 0;
             candyFrame = Time.frameCount;
             var color = new Color(0.43f, 0.83f, 1f);
@@ -101,6 +118,7 @@ namespace IBlameYou.Player
         private void AcornHeal(HealthSystem health)
         {
             health.AddMax(RelicBook.AcornPouchMaxHealth);
+            AcornLevels++;
             // 한 번에 여러 레벨이 오르면 도토리 연출은 한 번만, 글자는 레벨마다 조금씩 위로 쌓는다 (겹치지 않게, 리뷰 LOW)
             acornStack = acornFrame == Time.frameCount ? acornStack + 1 : 0;
             acornFrame = Time.frameCount;

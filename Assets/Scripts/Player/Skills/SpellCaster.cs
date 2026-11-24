@@ -253,8 +253,14 @@ namespace IBlameYou.Player
 
             if (result.Failed)
             {
-                mana.MarkWasted(ManaUser.PlayerB, cost);
-                SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {cost * mana.TotalCostMultiplier:0} 날림", true);
+                // 피의 계약으로 체력을 냈으면 마나는 그대로다: 날린 마나 기록·집중 구슬 환급 없음 (버그 점검 2026-11-24)
+                if (mana.LastPaidByCover)
+                    SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 피의 계약 체력만 날림", true);
+                else
+                {
+                    mana.MarkWasted(ManaUser.PlayerB, cost);
+                    SkillMessages.Post(ManaUser.PlayerB, $"마법진 실패 (일치율 {result.Percent}%) — 마나 {cost * mana.TotalCostMultiplier:0} 날림", true);
+                }
                 echoElement = -1; // 메아리 수정: 실패하면 사슬이 끊긴다
                 return;
             }
@@ -346,7 +352,7 @@ namespace IBlameYou.Player
             float cost = Mathf.Max(0f, bolt.ManaCost - BoltCostReduction);
             if (!mana.TryConsume(cost, ManaUser.PlayerB))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {cost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {cost * mana.TotalCostMultiplier:0})", true);
                 return false;
             }
 

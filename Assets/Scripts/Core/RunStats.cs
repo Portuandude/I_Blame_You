@@ -22,10 +22,16 @@ namespace IBlameYou.Core
         // 이번 판에 유물·장비를 고른 횟수. 고르는 메뉴는 P1·P2가 번갈아 고른다 (PickTurnRule, 2026-11-24)
         public static int Picks { get; set; }
 
+        // 마을 식당에서 먹은 판 동안 남는 음식 효과 합 (최대 체력 +·마나 재생 배율 +). 스테이지를 넘을 때 새 플레이어에 다시 붙인다 (RunSave, 버그 점검 2026-11-24)
+        public static float FoodMaxHealth { get; set; }
+        public static float FoodManaRegen { get; set; }
+
         public static void Reset()
         {
             Kills = 0;
             Picks = 0;
+            FoodMaxHealth = 0f;
+            FoodManaRegen = 0f;
             DamageTaken = 0f;
             ArenasCleared = 0;
             GatesOpened = 0;
@@ -53,6 +59,21 @@ namespace IBlameYou.Core
                 for (int i = 0; i < SpellCasts.Length && i < casts.Length; i++) SpellCasts[i] = System.Math.Max(0, casts[i]);
         }
 
+        // 쉼터를 넘어 이어지는 마을 음식 집계 (Reset 뒤에 부른다, 플레이어 몫은 PlaytestBootstrap.RestorePlayer가 붙인다)
+        public static void RestoreFood(float maxHealth, float manaRegen)
+        {
+            FoodMaxHealth = System.Math.Max(0f, maxHealth);
+            FoodManaRegen = System.Math.Max(0f, manaRegen);
+        }
+
+        // 쉼터를 넘어 이어지는 도감 집계 (결과 창 "새로 도감에 오른 유물"·NEW 점·"유물 도감 완성!"이 판 전체 몫이 되게). Reset 뒤에 부른다.
+        public static void RestoreCodex(int newRelics, long newRelicMask, bool codexCompleted)
+        {
+            NewRelics = System.Math.Max(0, newRelics);
+            NewRelicMask = newRelicMask;
+            CodexCompleted = codexCompleted;
+        }
+
         // 골드는 판이 끝난 뒤(보스 처치 → 클리어)에도 받는다: 보스 골드가 클리어와 같은 순간에 들어오기 때문.
         public static void AddGold(int amount)
         {
@@ -75,7 +96,7 @@ namespace IBlameYou.Core
         // 영혼석: 이번 판 집계 + 저장된 누적에 바로 더한다 (쓰러져도 남는다). 보스 처치·클리어는 판이 끝나는 순간과 겹쳐서 Ended여도 받는다.
         public static void AddHeartDust(int amount)
         {
-            if (amount <= 0) return;
+            if (amount <= 0 || GameSession.FeatureTest) return; // 기능 테스트는 저장도 안 하므로 결과 창에도 안 보인다 (버그 점검 2026-11-24)
             HeartDust += amount;
             SaveData.AddHeartDust(amount);
         }
