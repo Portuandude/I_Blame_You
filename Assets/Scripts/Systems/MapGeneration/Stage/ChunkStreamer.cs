@@ -283,7 +283,7 @@ namespace IBlameYou.Systems
                         break;
                     case FeatureKind.Reward:
                         // 순간이동 지름길 선반의 회복 구슬. 전투 구역 보상과 같은 기록(방 번호)을 쓴다: 세로 방에는 전투 구역이 없다
-                        // 바람 상자 선반의 구슬은 주우면 그 퍼즐을 푼 것으로 친다 (마음 가루 + 결과 창 퍼즐 N/M)
+                        // 바람 상자 선반의 구슬은 주우면 그 퍼즐을 푼 것으로 친다 (영혼석 + 결과 창 퍼즐 N/M)
                         int rewardChunk = index;
                         System.Action solvedByOrb = chunk.Kind == ChunkKind.WindBoxPuzzle
                             ? () =>
