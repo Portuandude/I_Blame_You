@@ -218,7 +218,10 @@ namespace IBlameYou.Player
             transform.position = to;
             var movement = GetComponent<PlayerMovement>();
             if (movement != null) movement.ResetAirborne();
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, 0f));
+            // 낙하 속도는 그대로 이어 간다: 예전에는 떨어지던 속도를 0으로 지워, 순간이동 뒤에는 0부터 다시 떨어져
+            // 점프 뒤 착지보다 느리게(중력이 약한 것처럼) 내려왔다 (사람 요청 2026-11-24: 점프 착지 속도로 통일).
+            // 위로 순간이동할 때만 떨어지던 속도를 지운다: 그대로 두면 올라간 자리에서 바로 다시 빠르게 떨어져 낭떠러지에서 위로 피할 수 없다.
+            if (direction.y > 0f) rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, 0f));
             EffectLibrary.PlayOneShot(to, EffectLibrary.TeleportFrames, 20f, new Color(0.8f, 0.6f, 1f, 0.7f), 1.2f);
             GameAudio.PlaySfx("Blink", 0.8f); // 위로 오르는 반짝 "슝" (Tools/AudioGen)
 
