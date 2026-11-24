@@ -50,6 +50,7 @@ namespace IBlameYou.Core
             foreach (var menu in GetComponents<StartMenu>()) Destroy(menu);
             foreach (var city in GetComponents<CityMenu>()) Destroy(city);
             foreach (var intro in GetComponents<StoryIntro>()) Destroy(intro);
+            foreach (var rest in GetComponents<RestMenu>()) Destroy(rest);
             GameAudio.StopMusic(); // 곡은 호스트가 보내 준다
         }
 
@@ -182,6 +183,7 @@ namespace IBlameYou.Core
             {
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
                 RunStats.Restore(resume.gold, resume.goldEarned, resume.goldSpent, resume.heartDust, resume.picks, resume.spellCasts);
+                RunStats.RestoreCodex(resume.newRelics, resume.newRelicMask, resume.codexCompleted);
                 StageEvents.PostNotice(resume.atStageStart ? $"{StageTitle(stageNumber)} 시작 (시드 {currentRunSeed})" : $"이어하기: 저장한 곳에서 다시 시작 (시드 {currentRunSeed})");
             }
             else
@@ -273,7 +275,7 @@ namespace IBlameYou.Core
                 checkpointChunk = -1,
                 stage = StageRoster.Clamp(nextStage),
                 roomGrid = streamer.IsRoomMode,
-                elapsed = hud.RunElapsed,
+                elapsed = hud.RunElapsedForSave,
                 progress = 0f,
                 level = progression != null ? progression.Level : 1,
                 experience = progression != null ? progression.Experience : 0f,
@@ -295,7 +297,10 @@ namespace IBlameYou.Core
                 goldSpent = RunStats.GoldSpent,
                 heartDust = RunStats.HeartDust,
                 picks = RunStats.Picks,
-                spellCasts = (int[])RunStats.SpellCasts.Clone()
+                spellCasts = (int[])RunStats.SpellCasts.Clone(),
+                newRelics = RunStats.NewRelics,
+                newRelicMask = RunStats.NewRelicMask,
+                codexCompleted = RunStats.CodexCompleted
             };
         }
 

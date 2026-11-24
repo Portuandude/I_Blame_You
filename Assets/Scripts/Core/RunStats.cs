@@ -53,6 +53,14 @@ namespace IBlameYou.Core
                 for (int i = 0; i < SpellCasts.Length && i < casts.Length; i++) SpellCasts[i] = System.Math.Max(0, casts[i]);
         }
 
+        // 쉼터를 넘어 이어지는 도감 집계 (결과 창 "새로 도감에 오른 유물"·NEW 점·"유물 도감 완성!"이 판 전체 몫이 되게). Reset 뒤에 부른다.
+        public static void RestoreCodex(int newRelics, long newRelicMask, bool codexCompleted)
+        {
+            NewRelics = System.Math.Max(0, newRelics);
+            NewRelicMask = newRelicMask;
+            CodexCompleted = codexCompleted;
+        }
+
         // 골드는 판이 끝난 뒤(보스 처치 → 클리어)에도 받는다: 보스 골드가 클리어와 같은 순간에 들어오기 때문.
         public static void AddGold(int amount)
         {

@@ -172,6 +172,7 @@ namespace IBlameYou.Core
             ids.Add((int)got.Id);
             data.equipment = ids.ToArray();
             data.maxHealth += MaxHealthOf(got) - MaxHealthOf(current); // 샘이 새 최대 체력까지 채우게 (체력 자체는 판에서 다시 맞춘다)
+            data.health = Mathf.Min(data.health, data.maxHealth);     // 최대 체력이 낮은 장비로 바꾸면 창의 체력도 맞춘다
             feedback = $"{got.Name}을(를) 꼈다" + (current != null ? $" ({current.Name}은(는) 상인에게)" : "") + $" · -{cost}G";
             GameAudio.PlaySfx("Coin", 0.7f, 0.05f);
             RunSave.Save(data);
