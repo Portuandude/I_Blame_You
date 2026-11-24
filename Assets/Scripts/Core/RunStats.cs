@@ -19,9 +19,13 @@ namespace IBlameYou.Core
         // 속성별(불/물/바람/땅/무) 사용 횟수: B 공격 마법 발동. 결과 창 "최애" 줄 (Chunks/RunTally).
         public static readonly int[] SpellCasts = new int[5];
 
+        // 이번 판에 유물·장비를 고른 횟수. 고르는 메뉴는 P1·P2가 번갈아 고른다 (PickTurnRule, 2026-11-24)
+        public static int Picks { get; set; }
+
         public static void Reset()
         {
             Kills = 0;
+            Picks = 0;
             DamageTaken = 0f;
             ArenasCleared = 0;
             GatesOpened = 0;
