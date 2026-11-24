@@ -76,7 +76,21 @@ namespace IBlameYou.Player
         private static float interactWDownAt = -1f;
         private static bool interactEnterDuringW;
 
+        // 같은 프레임에 여러 곳(겹친 마을 건물)이 불러도 W 기록은 한 번만 갱신하고 같은 답을 준다 (먼저 부른 곳이 GetUp에서 기록을 지워 뒤는 톡을 놓치던 것, 버그 점검 2026-11-24)
+        private static int interactFrame = -1;
+        private static bool interactTap;
+
         public static bool InteractDown(PlayerControlState state)
+        {
+            if (interactFrame != Time.frameCount)
+            {
+                interactFrame = Time.frameCount;
+                interactTap = UpdateInteractTap(state);
+            }
+            return !ABlocked(state) && !state.MovementFrozen && (interactTap || (Input.GetKeyDown(KeyCode.UpArrow) && !KeyBindings.Uses(KeyCode.UpArrow))); // ↑를 P1 키로 바꿨으면 그 키는 위 톡으로만 (누르자마자 들어가지 않게)
+        }
+
+        private static bool UpdateInteractTap(PlayerControlState state)
         {
             if (KeyBindings.GetDown(P1Action.Up))
             {
@@ -87,7 +101,7 @@ namespace IBlameYou.Player
             bool tap = KeyBindings.GetUp(P1Action.Up) && interactWDownAt >= 0f && !interactEnterDuringW
                 && Time.unscaledTime - interactWDownAt <= InteractTapSeconds;
             if (KeyBindings.GetUp(P1Action.Up)) interactWDownAt = -1f;
-            return !ABlocked(state) && !state.MovementFrozen && (tap || (Input.GetKeyDown(KeyCode.UpArrow) && !KeyBindings.Uses(KeyCode.UpArrow))); // ↑를 P1 키로 바꿨으면 그 키는 위 톡으로만 (누르자마자 들어가지 않게)
+            return tap;
         }
 
         // 바람 구멍 기둥 안에서 S를 누르고 있으면 천천히 내려간다 (WindVent). 순간이동은 Enter를 눌러야 하므로 겹치지 않는다.
