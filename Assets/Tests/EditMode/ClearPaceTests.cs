@@ -10,7 +10,7 @@ namespace IBlameYou.Tests.EditMode
         {
             Assert.IsTrue(ClearPace.IsFast(817f, 900f));
             Assert.AreEqual("목표 15분 00초보다 1분 23초 빠름 · 방 22개",
-                ClearPace.Describe(817.6f, 900f, 19, 3));
+                ClearPace.Describe(817.6f, 900f, 22));
         }
 
         [Test]
@@ -18,28 +18,28 @@ namespace IBlameYou.Tests.EditMode
         {
             Assert.IsFalse(ClearPace.IsFast(965f, 900f));
             Assert.AreEqual("목표 15분 00초보다 1분 05초 느림 · 방 20개",
-                ClearPace.Describe(965f, 900f, 18, 2));
+                ClearPace.Describe(965f, 900f, 20));
         }
 
         [Test]
         public void SameSecond_CountsAsOnTime()
         {
             Assert.IsTrue(ClearPace.IsFast(900f, 900f));
-            StringAssert.StartsWith("목표 15분 00초 딱 맞춤", ClearPace.Describe(900.4f, 900f, 19, 3));
+            StringAssert.StartsWith("목표 15분 00초 딱 맞춤", ClearPace.Describe(900.4f, 900f, 22));
         }
 
         [Test]
         public void Defeat_ShowsRoomDistanceSideRoomFarthestAndTime()
         {
             Assert.AreEqual("쓰러진 곳: 시작 방에서 3칸 · 가장 멀리 4칸 · 버틴 시간 5분 12초",
-                ClearPace.DescribeDefeat(3, 4, true, 312.9f));
+                ClearPace.DescribeDefeat(3, 4, 312.9f));
             // 가장 먼 곳이 지금 방이면 "가장 멀리"는 뺀다. 시간이 0이면 시간도 뺀다.
-            Assert.AreEqual("쓰러진 곳: 시작 방에서 5칸", ClearPace.DescribeDefeat(5, 5, false, 0f));
-            Assert.AreEqual("쓰러진 곳: 시작 방 · 가장 멀리 2칸 · 버틴 시간 1분 00초", ClearPace.DescribeDefeat(0, 2, false, 60f));
+            Assert.AreEqual("쓰러진 곳: 시작 방에서 5칸", ClearPace.DescribeDefeat(5, 5, 0f));
+            Assert.AreEqual("쓰러진 곳: 시작 방 · 가장 멀리 2칸 · 버틴 시간 1분 00초", ClearPace.DescribeDefeat(0, 2, 60f));
             // 방 격자가 아니면(-1) 방 부분 없이 시간만, 둘 다 없으면 빈 문자열. 진행도(%)는 어디에도 없다.
-            Assert.AreEqual("버틴 시간 1분 00초", ClearPace.DescribeDefeat(-1, -1, false, 60f));
-            Assert.AreEqual("", ClearPace.DescribeDefeat(-1, -1, false, 0f));
-            StringAssert.DoesNotContain("%", ClearPace.DescribeDefeat(3, 4, true, 312.9f));
+            Assert.AreEqual("버틴 시간 1분 00초", ClearPace.DescribeDefeat(-1, -1, 60f));
+            Assert.AreEqual("", ClearPace.DescribeDefeat(-1, -1, 0f));
+            StringAssert.DoesNotContain("%", ClearPace.DescribeDefeat(3, 4, 312.9f));
         }
 
         [Test]
@@ -102,8 +102,8 @@ namespace IBlameYou.Tests.EditMode
         [Test]
         public void NoRooms_OmitsRoomPart_NoTarget_IsEmpty()
         {
-            Assert.AreEqual("목표 15분 00초보다 0분 10초 느림", ClearPace.Describe(910f, 900f, 0, 0));
-            Assert.AreEqual("", ClearPace.Describe(910f, 0f, 19, 3));
+            Assert.AreEqual("목표 15분 00초보다 0분 10초 느림", ClearPace.Describe(910f, 900f, 0));
+            Assert.AreEqual("", ClearPace.Describe(910f, 0f, 22));
             Assert.IsFalse(ClearPace.IsFast(10f, 0f));
         }
     }
