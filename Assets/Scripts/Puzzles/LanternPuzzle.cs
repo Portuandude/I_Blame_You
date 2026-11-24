@@ -175,6 +175,9 @@ namespace IBlameYou.Puzzles
 
             if (lantern.Order != step)
             {
+                // 다발 사격 여러 발이 같은 프레임에 틀린 등불을 맞히면 연기·소리가 겹쳐 나던 것 (버그 점검 2026-11-24)
+                if (Time.frameCount == lastResetFrame) return;
+                lastResetFrame = Time.frameCount;
                 ResetAll(lantern);
                 return;
             }
@@ -189,6 +192,8 @@ namespace IBlameYou.Puzzles
             GameAudio.PlaySfx("GateOpen", 0.9f, 0f);
             onSolved?.Invoke();
         }
+
+        private int lastResetFrame = -1;
 
         // 차례가 아닌 등불: 켜진 등불이 모두 꺼지고, 맞힌 등불에서도 연기가 난다.
         private void ResetAll(LanternLight wrong)
