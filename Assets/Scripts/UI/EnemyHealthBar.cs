@@ -69,13 +69,21 @@ namespace IBlameYou.UI
                 return;
             }
 
-            Follow();
             float since = Time.time - lastHitTime;
             float alpha = since <= VisibleTime ? 1f : Mathf.Clamp01(1f - (since - VisibleTime) / FadeTime);
+            // 다 사라진 바는 다시 맞을 때까지 따라가기·메시 갱신을 쉰다 (맞은 적이 많이 남은 방에서 매 프레임 렌더러 3개 갱신, 버그 점검 2026-11-24)
+            if (alpha <= 0f)
+            {
+                if (!faded) { bar.SetAlpha(0f); faded = true; }
+                return;
+            }
+            faded = false;
+            Follow();
             bar.SetAlpha(alpha);
             bar.Tick(Time.time, Time.deltaTime);
         }
 
+        private bool faded; // 알파 0을 한 번 적용하고 쉬는 중
         private float topOffset = 1f; // 마지막으로 유효했던 bounds 기준 높이 (물리가 멈춘 동안 바가 튀지 않게)
         private float xOffset;
 
