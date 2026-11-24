@@ -240,10 +240,12 @@ namespace IBlameYou.Core
         private void ChangeSlot(int delta)
         {
             if (launching) return;
+            int oldStart = StartSlot;
             SaveData.SelectSaveSlot(SaveSlotRule.Step(GameSession.SaveSlot, delta));
             saved = onContinue != null ? RunSave.Load() : null;
             confirmNewRun = false;
-            keySelection = Mathf.Clamp(keySelection, 0, MenuButtonCount - 1);
+            // 이어하기 버튼이 생기거나 없어지면 고른 버튼이 한 칸 밀린다: 같은 버튼(새로 시작 등)을 계속 가리키게 (빈 슬롯으로 가면 Enter가 기능 테스트를 시작하던 것)
+            keySelection = Mathf.Clamp(keySelection + StartSlot - oldStart, 0, MenuButtonCount - 1);
             GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
         }
 
@@ -271,7 +273,7 @@ namespace IBlameYou.Core
             if (e.type != EventType.KeyDown) return;
             if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.RightArrow) // 저장 슬롯 바꾸기
             {
-                ChangeSlot(e.keyCode == KeyCode.LeftArrow ? -1 : 1);
+                pendingSlotDelta = e.keyCode == KeyCode.LeftArrow ? -1 : 1; // ◀▶ 클릭처럼 다음 Layout에서 바꾼다 (키 이벤트 도중 이어하기 버튼 수가 바뀌면 IMGUI 오류, 버그 점검 2026-11-24)
                 e.Use();
                 return;
             }
