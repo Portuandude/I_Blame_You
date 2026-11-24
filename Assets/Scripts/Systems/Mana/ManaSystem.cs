@@ -25,7 +25,7 @@ namespace IBlameYou.Systems
         // 레벨업 특성용 배율: 재생 속도, 소모량, 헛되이 날린 마나 중 돌려받는 비율.
         public float RegenMultiplier { get; set; } = 1f;
         public float CostMultiplier { get; set; } = 1f;
-        // 장비 수식어 "마나 소모" 합 (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
+        // 장비 "마나 소모" 능력치 합 (옛 수식어용, 지금 주는 장비 없음) (+0.1 = 10% 더 듦). 끼고 빼며 더하고 빼므로 곱하는 CostMultiplier와 따로 둔다.
         public float EquipCostBonus { get; set; }
         // 실제로 곱하는 마나 소모 배율 (장비로 0.4 아래로는 내려가지 않음).
         public float TotalCostMultiplier => CostMultiplier * Mathf.Max(0.4f, 1f + EquipCostBonus);

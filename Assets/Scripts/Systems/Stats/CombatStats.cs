@@ -25,7 +25,7 @@ namespace IBlameYou.Systems
         // 주는 피해 배율 (레벨업 특성 등). 방어 계산 전 공격 수치에 곱한다.
         public float DamageMultiplier { get; set; } = 1f;
 
-        // 마법 피해에만 곱하는 배율 (장비 수식어 "마법 공격", 끼고 빼며 더하고 뺀다). 0.1 아래로는 내려가지 않게 쓸 때 자른다.
+        // 마법 피해에만 곱하는 배율 (장비 "마법 공격" 능력치 — 옛 수식어용, 지금 주는 장비 없음. 끼고 빼며 더하고 뺀다). 0.1 아래로는 내려가지 않게 쓸 때 자른다.
         public float MagicDamageMultiplier { get; set; } = 1f;
 
         // 이동속도(유닛/초) = 문서 이동속도 × 2 × 버프 배율 × 둔화 배율.
