@@ -21,7 +21,8 @@
    - 컴포넌트 구성이 바뀐 커밋(예: 경직 추가)을 받은 뒤에는 이 메뉴를 한 번 다시 실행해 프리팹을 갱신할 것
    - 컨트롤러를 매번 새로 만들기 때문에, `GameAssetSetup.cs`를 수정했다면 반드시 다시 실행해야 결과물에 반영된다.
 4. 빈 씬에 GameObject를 만들고 `PlaytestBootstrap` 컴포넌트를 붙인 뒤 Play. (`Assets/Scenes/testScene.unity`가 이렇게 구성되어 있음)
-5. (선택) 에디터 없이 실행할 게임 파일: `Tools > I Blame You > Windows 빌드 만들기` → `Builds/Windows/IBlameYou.exe` (`Editor/WindowsBuild`, `Builds/`는 커밋하지 않음). 친구와 컴퓨터 두 대로 하는 법(시작 화면 "온라인 2인", 호스트 방식)과 스팀 출시 계획은 [Docs/OnlinePlay.md](Docs/OnlinePlay.md).
+5. 내 PC에서 최신 버전을 받아 테스트하는 순서(쉬운 말): [Docs/LocalTest.md](Docs/LocalTest.md).
+6. (선택) 에디터 없이 실행할 게임 파일: `Tools > I Blame You > Windows 빌드 만들기` → `Builds/Windows/IBlameYou.exe` (`Editor/WindowsBuild`, `Builds/`는 커밋하지 않음). 친구와 컴퓨터 두 대로 하는 법(시작 화면 "온라인 2인", 호스트 방식)과 스팀 출시 계획은 [Docs/OnlinePlay.md](Docs/OnlinePlay.md).
 
 헤드리스로 실행하려면 (Unity 에디터를 모두 닫은 상태에서):
 
