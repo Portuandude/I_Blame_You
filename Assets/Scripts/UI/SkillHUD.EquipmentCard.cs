@@ -69,6 +69,8 @@ namespace IBlameYou.UI
         }
 
         // 사람이 고른 경우만 (쓰러져 닫히는 것은 아님): 다음 고르기는 다른 사람 차례 (PickTurnRule)
+        private Rect equipTakeRect, equipLeaveRect; // 그린 버튼 자리 (온라인 친구 클릭 판정용)
+
         private void DecideEquipCard(bool take, bool keepLockThisFrame = false)
         {
             if (!equipCardOpen) return;
@@ -85,6 +87,15 @@ namespace IBlameYou.UI
             }
 
             if (!equipCardOpen || Time.frameCount <= equipCardOpenedFrame) return;
+            if (PickRemoteTurn && Time.unscaledTime - equipCardOpenedAt >= EquipCardKeysDelay)
+            {
+                // 온라인 벨 차례: 친구 컴퓨터의 1·2 키나 버튼 클릭 (친구 화면 버튼은 그림뿐이라 여기서 판정)
+                int number = PickRemoteNumber(2);
+                if (number > 0) { DecideEquipCard(number == 1, true); return; }
+                var click = PickRemoteClick();
+                if (click.HasValue && equipTakeRect.Contains(click.Value)) { DecideEquipCard(true, true); return; }
+                if (click.HasValue && equipLeaveRect.Contains(click.Value)) { DecideEquipCard(false, true); return; }
+            }
             if (!PickKeyboardTurn) return; // 벨(P2) 차례: 키보드는 받지 않는다 (마우스로 고른다)
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) DecideEquipCard(true, true);
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) DecideEquipCard(false, true);
@@ -143,8 +154,10 @@ namespace IBlameYou.UI
             var leaveRect = new Rect(rect.center.x + 10f, by, 160f, 34f);
             if (equipCardKeyboard) CuteButton.DrawSelection(equipCardChoice == 0 ? takeRect : leaveRect);
             // 아루(P1) 차례엔 버튼을 그리기만 하고 클릭은 받지 않는다
-            if (CuteButton.Button(takeRect, "1. 바꿔 끼기", cardButton) && PickMouseTurn) DecideEquipCard(true);
-            else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton) && PickMouseTurn) DecideEquipCard(false);
+            equipTakeRect = takeRect;
+            equipLeaveRect = leaveRect;
+            if (CuteButton.Button(takeRect, "1. 바꿔 끼기", cardButton) && PickLocalMouseTurn) DecideEquipCard(true);
+            else if (CuteButton.Button(leaveRect, "2. 두고 가기", cardButton) && PickLocalMouseTurn) DecideEquipCard(false);
         }
 
         // compare가 있으면 줄마다 지금 장비와의 차이를 붙인다 (새 장비에만 있는 능력치는 전부 +, 빠지는 능력치는 아래에).
