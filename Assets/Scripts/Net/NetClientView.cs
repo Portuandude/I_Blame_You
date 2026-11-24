@@ -101,7 +101,7 @@ namespace IBlameYou.Net
                 NetSession.Stop();
                 return;
             }
-            SendInput();
+            if (NetSession.IsClient) SendInput(); // 다시 붙는 중에는 호스트가 어차피 버리니 보내지 않는다 (송신 큐가 쌓이지 않게, 버그 점검 2026-11-24)
         }
 
         private void SendInput()

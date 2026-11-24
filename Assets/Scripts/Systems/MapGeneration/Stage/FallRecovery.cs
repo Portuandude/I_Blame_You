@@ -86,9 +86,10 @@ namespace IBlameYou.Systems
 
         private void Recover()
         {
-            bool free = FreeFalls > 0;
+            bool shielded = health.IsInvulnerable; // 무적(대쉬·경직·직전 복귀·치트) 중이면 피해도 모래시계도 쓰지 않는다 (버그 점검 2026-11-24)
+            bool free = !shielded && FreeFalls > 0;
             if (free) FreeFalls--;
-            else health.TakeDamage(health.Max * DamageRatio); // 무적(대쉬/치트) 중이면 피해 없이 돌아오기만 한다
+            else if (!shielded) health.TakeDamage(health.Max * DamageRatio);
             if (health.IsDead) return;
 
             rb.linearVelocity = Vector2.zero;
@@ -98,8 +99,8 @@ namespace IBlameYou.Systems
             if (movement != null) movement.ResetAirborne();
             // 시간 무적으로 준다: 공유 Invulnerable을 켜고 끄면 경직·대쉬·순간이동이 끝나며 이 1초를 먼저 꺼 버린다 (버그 점검 2026-11-22)
             health.GrantGrace(InvulnerableTime);
-            StageEvents.PostNotice(free
-                ? $"모래시계가 시간을 되감았다! 피해 없음 (남은 {FreeFalls}번)"
+            StageEvents.PostNotice(shielded ? "낭떠러지! 무적이라 피해 없음"
+                : free ? $"모래시계가 시간을 되감았다! 피해 없음 (남은 {FreeFalls}번)"
                 : $"낭떠러지! 체력 -{DamageRatio * 100f:0}%");
 
             var follow = Camera.main != null ? Camera.main.GetComponent<Core.CameraFollow>() : null;

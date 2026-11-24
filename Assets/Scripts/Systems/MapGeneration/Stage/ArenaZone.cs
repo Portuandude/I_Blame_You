@@ -113,12 +113,14 @@ namespace IBlameYou.Systems
 
         private System.Predicate<HealthSystem> goneOrFallen;
 
-        private static bool GoneOrFallen(HealthSystem enemy)
+        private float killY = float.NegativeInfinity;
+
+        private bool GoneOrFallen(HealthSystem enemy)
         {
             if (enemy == null) return true;
             var position = enemy.transform.position;
-            if (position.y >= FallRecovery.FloorY + FallRecovery.KillY) return false;
-            VfxPlayer.Dust(new Vector3(position.x, FallRecovery.FloorY + FallRecovery.KillY, 0f), 0.6f);
+            if (position.y >= killY) return false;
+            VfxPlayer.Dust(new Vector3(position.x, killY, 0f), 0.6f);
             Destroy(enemy.gameObject);
             return true;
         }
@@ -146,6 +148,7 @@ namespace IBlameYou.Systems
         private IEnumerator Begin()
         {
             active = true;
+            killY = FallRecovery.FloorY + FallRecovery.KillY; // 이 방 기준 낙사선 (방을 떠나는 프레임에 FloorY가 새 방 값으로 바뀌어도 옛 적을 낙사로 치지 않게)
             spawning = true;
             lockedAt = Time.time;
             pendingSpawns = spawns.Count;

@@ -25,7 +25,7 @@ namespace IBlameYou.Enemies
             }
             var net = go.AddComponent<Projectile>();
             net.Launch(owner, false, DamageKind.Physical, Element.Neutral, direction, Speed, HitRadius, range, false, DamageMultiplier);
-            net.Hit = health => { if (health != null) NetSnare.Apply(health.gameObject); };
+            net.Hit = health => { if (health != null && !net.LastHitBlocked) NetSnare.Apply(health.gameObject); }; // 무적 중이면 피해처럼 그물도 피한다 (버그 점검 2026-11-24)
             GameAudio.PlaySfx("Dash", 0.35f, 0.15f);
             return net;
         }

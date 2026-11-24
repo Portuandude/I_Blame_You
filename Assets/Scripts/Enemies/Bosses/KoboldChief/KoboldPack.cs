@@ -20,6 +20,7 @@ namespace IBlameYou.Enemies
         private Color baseColor = Color.white;
         private int rage;
         private bool fallen;
+        private float killY = float.NegativeInfinity; // 나타난 방 기준 낙사선 (방을 떠나는 프레임에 FloorY가 바뀌어도 낙사로 치지 않게, 버그 점검 2026-11-24)
 
         public bool IsChief { get; set; }
 
@@ -37,6 +38,7 @@ namespace IBlameYou.Enemies
 
         private void Start()
         {
+            killY = FallRecovery.FloorY + FallRecovery.KillY;
             BossEvents.Register(DisplayName, health);
             if (Time.time - lastNoticeTime > 2f)
             {
@@ -49,7 +51,7 @@ namespace IBlameYou.Enemies
         {
             if (fallen) return;
             // 넉백으로 낙사선 아래로 떨어져 치워져도 쓰러진 것으로 친다 (SlimeKnight와 같음)
-            if (transform.position.y < FallRecovery.FloorY + FallRecovery.KillY) Fall();
+            if (transform.position.y < killY) Fall();
         }
 
         private void OnHealthChanged(float current, float max)

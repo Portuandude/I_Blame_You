@@ -35,6 +35,7 @@ namespace IBlameYou.Enemies
         private Color flashColor;
         private float flashUntil;
         private bool fallen;
+        private float killY = float.NegativeInfinity; // 나타난 방 기준 낙사선 (방을 떠나는 프레임에 FloorY가 바뀌어도 낙사로 치지 않게, 버그 점검 2026-11-24)
         private SpriteRenderer body;
         private Rigidbody2D rb;
         private bool wasEnraged;
@@ -66,6 +67,7 @@ namespace IBlameYou.Enemies
 
         private void Start()
         {
+            killY = FallRecovery.FloorY + FallRecovery.KillY;
             BossEvents.Register(DisplayName, health);
             // 두 몸이 0.3초 간격으로 나오므로 알림은 한 번만
             if (Time.time - lastNoticeTime > NoticeInterval)
@@ -117,7 +119,7 @@ namespace IBlameYou.Enemies
             if (fallen) return;
             // 넉백 등으로 낙사선 아래로 떨어지면 전투 구역이 체력 0 없이 치운다(Destroy). 그때도 쓰러진 것으로 쳐서
             // 남은 짝이 광폭화하고, 마지막 기사면 처치 연출·곡 빠르기 되돌리기가 나오게 한다 (Destroy는 프레임 끝이라 이번 Update는 돈다)
-            if (transform.position.y < FallRecovery.FloorY + FallRecovery.KillY)
+            if (transform.position.y < killY)
             {
                 OnHealthChanged(0f, 0f);
                 return;

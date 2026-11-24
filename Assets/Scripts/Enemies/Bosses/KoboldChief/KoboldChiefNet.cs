@@ -68,6 +68,8 @@ namespace IBlameYou.Enemies
             float fraction = health.Max > 0f ? health.Current / health.Max : 1f;
             nextNetTime = Time.time + KoboldChiefRules.NetIntervalFor(fraction);
             if (target == null) return;
+            var targetHealth = target.GetComponent<HealthSystem>();
+            if (targetHealth != null && targetHealth.IsDead) return; // 예고 중에 쓰러졌으면 안 던진다 (버그 점검 2026-11-24)
             Vector2 from = Hand();
             NetShot.Launch(stats, from, (Vector2)target.position + Vector2.up * 0.5f - from, KoboldChiefRules.NetMaxRange * 1.5f);
         }

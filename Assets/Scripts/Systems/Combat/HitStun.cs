@@ -113,7 +113,9 @@ namespace IBlameYou.Systems
         private void EndStun()
         {
             IsStunned = false;
-            if (invulnerableWhileStunned) health.Invulnerable = false;
+            // 대시 중에 걸린 경직이 대시보다 먼저 끝나면 대시 무적은 대시가 끝낼 때까지 둔다 (EndDash의 HoldsInvulnerability와 짝, 버그 점검 2026-11-24)
+            var movement = GetComponent<IBlameYou.Player.PlayerMovement>();
+            if (invulnerableWhileStunned && (movement == null || !movement.IsDashing)) health.Invulnerable = false;
         }
 
         private void OnDestroy()

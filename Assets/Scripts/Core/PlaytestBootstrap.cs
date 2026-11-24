@@ -408,7 +408,8 @@ namespace IBlameYou.Core
             if (enemy == null) return null;
             enemy.transform.SetParent(parent, true);
             var enemyHealth = enemy.GetComponent<HealthSystem>();
-            ScaleForStage(enemy, enemyHealth);
+            // 보물 고블린은 제한 시간 안에 잡는 이벤트 적이라 배율을 받지 않는다 (버그 점검 2026-11-24)
+            if (kind != StageEnemy.TreasureGoblin) ScaleForStage(enemy, enemyHealth);
             return enemyHealth;
         }
 
