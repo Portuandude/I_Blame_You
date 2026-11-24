@@ -249,6 +249,7 @@ namespace IBlameYou.Enemies
             switch (phase)
             {
                 case AttackPhase.Windup:
+                    if (target == null) { EndAttack(startCooldown: true); break; } // 웅크린 사이 플레이어가 쓰러졌으면 허공으로 뛰지 않는다 (버그 점검 2026-11-24)
                     BeginLeap(target);
                     EnemySquash.For(gameObject).Release(); // 뛰어오르며 늘어난다
                     EnterPhase(AttackPhase.Air, AirTime);
