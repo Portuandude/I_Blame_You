@@ -92,7 +92,7 @@ namespace IBlameYou.Core
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
             const float width = 560f;
-            float height = Mathf.Min(academyOpen ? 640f : 520f, Screen.height - 20f);
+            float height = Mathf.Min(academyOpen || towerOpen ? 640f : 520f, Screen.height - 20f); // 수정 탑 6항목 (2026-11-24)
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
             var screenMatrix = GUI.matrix;
@@ -227,7 +227,7 @@ namespace IBlameYou.Core
             if (Event.current.type != EventType.Repaint) return;
             var previous = GUI.color;
             var matrix = GUI.matrix;
-            float glow = Mathf.Lerp(0.35f, 1f, totalLevels / 20f) * (0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 2.5f));
+            float glow = Mathf.Lerp(0.35f, 1f, totalLevels / (float)CrystalTowerRule.TotalLevels) * (0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 2.5f));
             var center = rect.center;
             GUI.color = new Color(0.75f, 0.6f, 1f, 0.25f * glow); // 둘레 빛
             GUI.DrawTexture(new Rect(center.x - rect.width * 0.7f, center.y - rect.height * 0.55f, rect.width * 1.4f, rect.height * 1.1f), Texture2D.whiteTexture);

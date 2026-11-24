@@ -203,6 +203,11 @@ namespace IBlameYou.Core
             if (mana != null && mp > 0f) mana.AddMax(mp, true);
             if (mana != null) mana.RegenMultiplier += CrystalTowerRule.Bonus(TowerStat.ManaRegen, SaveData.TowerLevel(TowerStat.ManaRegen, dev));
             if (caster != null) caster.CircleEase = CrystalTowerRule.Bonus(TowerStat.CircleEase, SaveData.TowerLevel(TowerStat.CircleEase, dev));
+            // 순간이동 강화·점프력 강화 (2026-11-24, OpenDecisions G1). 유물 배율(종이비행기)과는 곱한다.
+            var teleport = player.GetComponent<TeleportSkill>();
+            if (teleport != null) teleport.CostMultiplier *= CrystalTowerRule.TeleportCostMultiplier(SaveData.TowerLevel(TowerStat.Teleport, dev));
+            var movement = player.GetComponent<PlayerMovement>();
+            if (movement != null) movement.JumpMultiplier = CrystalTowerRule.JumpMultiplier(SaveData.TowerLevel(TowerStat.Jump, dev));
         }
 
         // 저장된 레벨·특성·유물·체력을 새로 만든 플레이어에 되살린다.
