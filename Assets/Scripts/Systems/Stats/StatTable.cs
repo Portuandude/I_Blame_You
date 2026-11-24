@@ -102,6 +102,47 @@ namespace IBlameYou.Systems
             attackSpeed = 0.25f, physicalDamage = 30, experience = 600
         };
 
+        // 스테이지 2 숲 (스탯 문서에 없는 가안, 2026-11-24 자동 개발). 코볼트는 고블린보다 상위 (C1·F6).
+        // 코볼트 근접 돌격형: 고블린보다 단단하고 아프다. 공격 속도 = 돌격 사이 간격 (0.4 → 2.5초)
+        public static StatBlock Kobold => new StatBlock
+        {
+            maxHealth = 110, maxMana = 0, maxStamina = 100, moveSpeed = 2.2f,
+            debuffResistance = 20, defense = 12, critChance = 0.05f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 0 },
+            elementDefense = new float[] { 0, 0, 0, 0, 10 },
+            attackSpeed = 0.4f, physicalDamage = 26, experience = 60
+        };
+
+        // 코볼트 그물 던지기형: 그물 피해는 약하고(속박이 본체) 4초마다 던진다
+        public static StatBlock KoboldNetter => new StatBlock
+        {
+            maxHealth = 70, maxMana = 0, maxStamina = 60, moveSpeed = 1.6f,
+            debuffResistance = 15, defense = 8, critChance = 0f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 0 },
+            elementDefense = new float[] { 0, 0, 0, 0, 0 },
+            attackSpeed = 0.25f, physicalDamage = 15, experience = 64
+        };
+
+        // 스테이지 2 보스 코볼트 족장 (와르그 둘과 함께, F5). 돌격 + 그물. 슬라임 킹보다 조금 단단하다
+        public static StatBlock KoboldChief => new StatBlock
+        {
+            maxHealth = 1400, maxMana = 100, maxStamina = 100, moveSpeed = 1.8f,
+            debuffResistance = 40, defense = 25, critChance = 0.05f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 0 },
+            elementDefense = new float[] { 10, 10, 10, 10, 25 },
+            attackSpeed = 0.5f, physicalDamage = 36, experience = 1200
+        };
+
+        // 족장의 늑대 와르그 (보스 방에 둘). 빠르게 달려와 덮친다. 불에 약하다
+        public static StatBlock Warg => new StatBlock
+        {
+            maxHealth = 260, maxMana = 0, maxStamina = 100, moveSpeed = 3.2f,
+            debuffResistance = 20, defense = 15, critChance = 0.1f, critDamage = 1.5f,
+            elementDamage = new float[] { 0, 0, 0, 0, 0 },
+            elementDefense = new float[] { -15, 10, 10, 10, 15 },
+            attackSpeed = 0.5f, physicalDamage = 28, experience = 300
+        };
+
         // 함정 (스탯 문서에 없는 가안). 플레이어 방어력 10 기준 가시 약 18, 화살 약 15, 불기둥 한 번 약 12 + 화상.
         public static StatBlock Trap => new StatBlock
         {
