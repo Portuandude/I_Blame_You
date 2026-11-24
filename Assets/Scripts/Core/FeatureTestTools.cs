@@ -505,7 +505,7 @@ namespace IBlameYou.Core
 
             // 마을 시험 (2026-11-12): 시험 맵에는 마을 방이 없어서 골드를 채우고 식당·상점 창을 바로 연다.
             float by = rect.y + 52f + maxRows * 40f + 8f;
-            float bw = (rect.width - 24f - 16f) / 3f;
+            float bw = (rect.width - 24f - 24f) / 4f;
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f, by, bw, 30f), $"골드 +{TestGold} (지금 {RunStats.Gold})", cell))
                 RunStats.AddGold(TestGold);
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + bw + 8f, by, bw, 30f), "식당 창 열기", cell))
@@ -515,6 +515,15 @@ namespace IBlameYou.Core
             }
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
                 OpenVillageWindow(VillageService.Shop);
+            // A·B 선택지 룰렛 시험 (2026-11-24): NPC 방이 생기기 전 창만 시험한다. 선악도는 일반 모드에서만 바뀐다 (기능 테스트 모드는 안 바뀜)
+            if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 3f * (bw + 8f), by, bw, 30f), "선택지 룰렛", cell))
+            {
+                equipWindowOpen = false;
+                bool opened = StageEvents.RaiseChoice("길 잃은 슬라임",
+                    new[] { "집까지 데려다준다", "모른 척 지나간다", "가진 젤리를 빼앗는다" }, new[] { 2, 0, -3 },
+                    result => StageEvents.PostNotice($"선택지 결과: {result + 1}번"));
+                if (!opened) StageEvents.PostNotice("선택지 창을 열 수 없다");
+            }
 
             if (!string.IsNullOrEmpty(GUI.tooltip))
                 GUI.Label(new Rect(rect.x + 12f, rect.yMax - 30f, rect.width - 24f, 24f), GUI.tooltip, line);
