@@ -8,13 +8,17 @@ using GUI = IBlameYou.Net.NetGUI; // HUD를 온라인 친구 화면에도 (Net/N
 namespace IBlameYou.Core
 {
     // 시작 전 웹툰식 스토리 소개 (2026-11-14 사람 지시, 줄거리 Docs/Story.md 5장 프롤로그).
+    // 2026-11-24 사람 결정(DesignDecisionsTodo E4): 사람이 인트로 그림을 구할 때까지 꺼 둔다 (Enabled = false). 코드는 그대로 두어
+    // 그림이 오면 Enabled만 켜고 컷 그림·글을 바꾸면 된다. 꺼져 있으면 시작 화면이 이 창 없이 바로 도시 메뉴로 간다 (StartMenu.StartRun).
     // 시작 화면 "플레이 테스트 시작"을 누르면 게임 월드를 만들기 전에 띄운다 (기능 테스트·이어하기·다시 시작은 건너뜀).
     // 컷이 세로로 이어지고 한 컷씩 아래로 넘어가며, 컷마다 말풍선이 차례로 톡 나온다.
     //   - 다음: P1(A) Space 또는 P2(B) 마우스 왼쪽을 짧게 누름 (말풍선이 남았으면 먼저 다 보여 줌, 마지막 컷이면 시작)
-    //   - 건너뛰기: P1과 P2가 동시에 꾹 (0.8초) — 한쪽만으로는 건너뛸 수 없다 (RoleInput.StoryButtonA/B). 임시로 F12를 꾹 누르면 둘이 같이 누른 것과 같다
+    //   - 건너뛰기: P1과 P2가 동시에 꾹 (0.8초) — 한쪽만으로는 건너뛸 수 없다 (RoleInput.StoryButtonA/B)
     // 컷 그림은 Tools/ArtGen/generate_story.py가 만든 Resources/Story/Panel01~07, 글은 여기서 IMGUI로 얹는다.
     public class StoryIntro : MonoBehaviour
     {
+        public static readonly bool Enabled = false; // 2026-11-24: 인트로 그림이 올 때까지 끔
+
         private enum Who { Narration, A, B, Tricks, Both, Sfx }
 
         private struct Line
@@ -410,7 +414,7 @@ namespace IBlameYou.Core
             string dotB = b ? "<color=#ffa659>●</color>" : "<color=#ffa65980>○</color>";
             string next = current + 1 >= Panels.Length ? "시작" : "다음";
             GUI.Label(new Rect(0f, bar.y + 4f, Screen.width, 26f),
-                $"<b>Space</b> 또는 <b>클릭</b>: {next}      건너뛰기: {dotA} <b><color=#73d9ff>P1 Space</color></b> + {dotB} <b><color=#ffa659>P2 클릭</color></b> 동시에 꾹   <color=#ffffffa0>(임시: F12 꾹 = 둘이 같이)</color>", hintStyle);
+                $"<b>Space</b> 또는 <b>클릭</b>: {next}      건너뛰기: {dotA} <b><color=#73d9ff>P1 Space</color></b> + {dotB} <b><color=#ffa659>P2 클릭</color></b> 동시에 꾹", hintStyle);
 
             float fill = Mathf.Clamp01(skipHeld / SkipHoldSeconds);
             var gauge = new Rect(Screen.width / 2f - 120f, bar.y + 36f, 240f, 10f);
