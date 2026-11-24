@@ -249,6 +249,38 @@ namespace IBlameYou.Tests
             }
         }
 
+        // 마나 샘 방 (2026-11-24): 판마다 0~1개, 대략 절반의 판에. 있어도 일반 전투 방 5개·좌우 전투 방 2개는 그대로.
+        [Test]
+        public void ManaSpringIsZeroOrOnePerStage()
+        {
+            int with = 0, total = 0;
+            foreach (var layout in Layouts())
+            {
+                total++;
+                int springs = layout.Rooms.FindAll(r => r.Kind == RoomKind.ManaSpring).Count;
+                Assert.That(springs, Is.InRange(0, 1), $"seed {layout.Seed}");
+                if (springs == 0) continue;
+                with++;
+                var spring = layout.Find(RoomKind.ManaSpring);
+                Assert.AreEqual(ChunkKind.Rest, spring.Chunk);
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat).Count, RoomLayout.MinCombatRooms, $"seed {layout.Seed}");
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat && !r.IsVertical).Count, RoomLayout.MinSideCombatRooms, $"seed {layout.Seed}");
+            }
+            Assert.That(with, Is.InRange(total / 4, total * 3 / 4), $"마나 샘이 있는 판 {with}/{total}");
+        }
+
+        [Test]
+        public void ManaSpringRuleLastsThreeMinutes()
+        {
+            Assert.AreEqual(0.1f, ManaSpringRule.RegenBonus, 1e-6);
+            Assert.AreEqual(180f, ManaSpringRule.RegenSeconds);
+            Assert.AreEqual(0.1f, ManaSpringRule.Bonus(10f, 10f + ManaSpringRule.RegenSeconds), 1e-6);
+            Assert.AreEqual(0f, ManaSpringRule.Bonus(200f, 190f));
+            Assert.AreEqual(0f, ManaSpringRule.Bonus(0f, -1f), "안 걸렸으면 0");
+            Assert.AreEqual(30f, ManaSpringRule.Remaining(150f, 180f), 1e-6);
+            Assert.AreEqual(0f, ManaSpringRule.Remaining(200f, 180f));
+        }
+
         [Test]
         public void OnlyCombatAndRewardRoomsUseVerticalDoors()
         {
@@ -257,7 +289,7 @@ namespace IBlameYou.Tests
                 foreach (var room in layout.Rooms)
                 {
                     if (!room.IsVertical) continue;
-                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring,
+                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring || room.Kind == RoomKind.ManaSpring,
                         $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
                 }
             }
