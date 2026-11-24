@@ -106,6 +106,10 @@ namespace IBlameYou.Systems
         // 지금 배경음악 이름 (아직 아무것도 안 틀었거나 종료 중이면 null). 보스 곡에서 돌아갈 때 확인용.
         public static string CurrentMusic => instance != null ? instance.currentMusicName : null;
 
+        // 지금 곡의 목표 빠르기·크기 조절 (온라인 친구가 새로 붙을 때 곡과 함께 다시 보낸다 — NetHostStreamer.ResetStream)
+        public static float MusicPitch => instance != null ? instance.musicPitch : 1f;
+        public static float MusicDuck => instance != null ? instance.musicDuck : 1f;
+
         // 효과음 한 번. pitchJitter만큼 음높이를 무작위로 흔들어 반복해도 덜 단조롭게 한다.
         public static void PlaySfx(string name, float volume = 1f, float pitchJitter = 0.06f) =>
             Instance.PlayOneShot(name, volume, pitchJitter, 0f);
