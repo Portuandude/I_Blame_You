@@ -519,13 +519,14 @@ namespace IBlameYou.Core
             }
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 2f * (bw + 8f), by, bw, 30f), "장비 상점 창 열기", cell))
                 OpenVillageWindow(VillageService.Shop);
-            // A·B 선택지 룰렛 시험 (2026-11-24): NPC 방이 생기기 전 창만 시험한다. 선악도는 일반 모드에서만 바뀐다 (기능 테스트 모드는 안 바뀜)
+            // A·B 선택지 룰렛 시험 (2026-11-24): 선악도 방 이벤트 글로 창만 시험한다. 선악도는 일반 모드에서만 바뀐다 (기능 테스트 모드는 안 바뀜)
             if (IBlameYou.UI.CuteButton.Button(new Rect(rect.x + 12f + 3f * (bw + 8f), by, bw, 30f), "선택지 룰렛", cell))
             {
                 equipWindowOpen = false;
-                bool opened = StageEvents.RaiseChoice("길 잃은 슬라임",
-                    new[] { "집까지 데려다준다", "모른 척 지나간다", "가진 젤리를 빼앗는다" }, new[] { 2, 0, -3 },
-                    result => StageEvents.PostNotice($"선택지 결과: {result + 1}번"));
+                // 선악도 방 이벤트 중 하나를 무작위로 (골드·체력 결과는 알림 글만, 실제로 바꾸지 않는다)
+                var e = AlignmentRoomRule.Events[UnityEngine.Random.Range(0, AlignmentRoomRule.Events.Length)];
+                bool opened = StageEvents.RaiseChoice(e.Title, AlignmentRoomRule.Texts(e), AlignmentRoomRule.Alignments(e),
+                    result => StageEvents.PostNotice($"선택지 결과 (시험): {AlignmentRoomRule.Summary(e.Options[result], e.Options[result].Gold, 0f)}"));
                 if (!opened) StageEvents.PostNotice("선택지 창을 열 수 없다");
             }
 

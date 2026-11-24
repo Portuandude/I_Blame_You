@@ -165,7 +165,9 @@ namespace IBlameYou.Systems
         private void Steer(Vector2 position)
         {
             retargetTimer -= Time.fixedDeltaTime;
-            if (homingTarget == null || homingTarget.IsDead || alreadyHit.Contains(homingTarget) || retargetTimer <= 0f)
+            if (homingTarget != null && (homingTarget.IsDead || alreadyHit.Contains(homingTarget))) homingTarget = null;
+            // 대상이 없어도 RetargetInterval마다만 찾는다 (적이 없을 때 물리 프레임마다 Overlap을 돌던 것, 버그 점검 2026-11-24)
+            if (retargetTimer <= 0f)
             {
                 homingTarget = FindTarget(position);
                 retargetTimer = RetargetInterval;

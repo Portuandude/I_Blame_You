@@ -56,7 +56,7 @@ namespace IBlameYou.Player
         private void Update()
         {
             if (!RoleInput.TeleportDown(control)) return;
-            if (health.IsDead || movement.IsDashing || (hitStun != null && hitStun.IsStunned)) return;
+            if (movement == null || health.IsDead || movement.IsDashing || (hitStun != null && hitStun.IsStunned)) return;
 
             var input = RoleInput.TeleportDirection();
             TeleportRules.Cardinal(input.x, input.y, movement.Facing >= 0f ? 1 : -1, out int dx, out int dy);

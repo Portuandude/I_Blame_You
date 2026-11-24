@@ -2,6 +2,12 @@
 
 `LOG.md`에서 밀려난 오래된 실행 기록. 최신이 위.
 
+## 2026-11-24 01:50 UTC
+- 브랜치/PR: `claude/project-thread-fs4pgc` → #140 (develop 대상, 자동 머지 켬)
+- 완료 (2026-11-24 사람 결정 반영): ① 장비 수식어·상점 수식어 바꾸기 삭제 (`EquipmentModifier` → Trash/, 같은 장비 = 늘 같은 값) ② 방 배치 재작업 — 주 경로·곁방 개념 삭제, 보스 = 가장 먼 방, 중간보스 = 보스 길목 밖 그다음 먼 방, 마을·퍼즐·보상 방은 거리·문 수와 상관없이 (12,000판 통계·4,650판 지형 검사) ③ 웹툰 인트로 끔 (`StoryIntro.Enabled = false`, F12 안내 삭제) ④ 마음 가루 → 영혼석 이름(글자만, 저장 키 그대로), 동전 소리 겹치면 겹친 수에 비례해 작게 (`CoinSoundRule`) ⑤ 수정 탑 순간이동 마나·점프력 강화 (6항목 30단계) ⑥ 유물 31 → 26종 ([RelicList.md](../RelicList.md): 5종 삭제·아이콘 Trash/, 나침반 → 보물 지도·젤리 방석 → 솜구름 방석, 수치 고침, 메아리 수정·속성 공명석, 주인 표시 삭제, 예전 저장은 `RelicBook.Merged`) ⑦ 마나 샘 방 0~1개 (3분 마나 재생 +10%, `ManaSpringRule`) ⑧ 숨은 능력치 기초 (`HiddenStatsRule`, 게임오버 때 부활 +1, 일반 모드·클리어 전만) ⑨ 유물 상자·장비 카드 P1·P2 번갈아 고르기 (`PickTurnRule`, 아루 = 키보드·벨 = 마우스, 온라인 벨 차례는 친구 숫자 키·클릭, 호스트 마우스는 안 받음 — 리뷰 HIGH 고침). ⑩ A·B 선택지 룰렛 규칙·창 (`ChoiceRouletteRule`, `SkillHUD.Choice`, 기능 테스트 F12 창에서 시험). 각 단계 적대적 리뷰 APPROVE (LOW 고침). 로컬 테스트 319/319
+- 실패/보류: 드랍 그림(영혼석·동전), 새 유물 둘 아이콘, NPC 방, 숲 스테이지 그림 = 아트 규칙으로 BLOCKED (사람 확인). 인과율로 어두워지는 연출·선악도 선택지는 아직
+- 다음 실행 메모: 남은 TODO — 숲 스테이지 2(임시 그림만), 스테이지 사이 쉼터·저장 슬롯 99개, A·B 선택지 룰렛, 메뉴 P1·P2 번갈아 고르기
+
 ## 2026-11-23 15:33 UTC
 - 브랜치/PR: `claude/project-thread-mb8ozo` → #137 (develop 대상, 자동 머지 켬)
 - 완료 (백로그는 사람 확인 대기뿐 → 스팀 출시 준비 설정·편의): ① P1(A) 조작 키 바꾸기 — 순수 규칙 `Player/Input/Rules/KeyBindingRules`(새 어셈블리 InputRules: 맞바꾸기·금지 키·저장 문자열 복구, EditMode 테스트 16개 + EditModeUnity KeyCode 값 일치), `KeyBindings`(PlayerPrefs `Settings.P1Keys`), `RoleInput`·`PlayerMovement`·마을 창 닫기 교체, 시작 화면·일시정지 "조작 키" 창(`Core/KeyBindingsWindow`), 도움말·시작 화면 안내·팁이 지금 키 이름. 기본값은 이전과 같음. 적대적 리뷰 APPROVE (LOW: 키 이름에 '/' → "Slash"로 고침) ② 눈 편의: 화면 설정 창에 화면 흔들림·번쩍임 0~100% (`Systems/Effects/ComfortSettings`, 가장자리 경고는 최소 40%). 리뷰 APPROVE ③ 시작 화면 "게임 종료" 버튼 (3초 안에 두 번, 온라인 2인 버튼 옆). 리뷰 APPROVE ④ 화면 설정 창에 프레임 제한 (기본·수직 동기화·60/120/144·제한 없음, `DisplayRules.FrameSettings` 테스트). 리뷰 APPROVE. 로컬 테스트 320/320. CI 첫 회 실패: 마을 창 if 조건 가운데 넣은 주석이 닫는 괄호를 가림 → 고침 (줄 끝 주석은 문장 끝 `;`·`)` 뒤에)

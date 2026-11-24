@@ -22,7 +22,7 @@ namespace IBlameYou.UI
         private void DrawMagicCircle()
         {
             if (caster == null) return;
-            bool open = caster.CircleOpen && caster.CirclePath != null;
+            bool open = caster.CircleOpen && caster.CirclePath != null && caster.CirclePath.Count > 0; // 빈 길이면 path[0]에서 OnGUI가 매 프레임 터지지 않게
             float sinceResult = Time.unscaledTime - caster.LastJudgedAt;
             if (!open && sinceResult > CircleResultShow) return;
             EnsureCircleAssets();
@@ -136,6 +136,7 @@ namespace IBlameYou.UI
         // 꺾은선: 마디마다 둥근 점 + 마디 사이 회전한 막대 (둥근 이음새)
         private static void DrawPolyline(List<CirclePoint> path, Vector2 center, float r, float width, Color color)
         {
+            if (path == null || path.Count == 0) return;
             var previousColor = GUI.color;
             GUI.color = color;
             var a = ToGui(path[0], center, r);
@@ -158,14 +159,22 @@ namespace IBlameYou.UI
 
         private static void DrawRing(Vector2 center, float radius, float width, Color color, int segments)
         {
-            var ring = new List<CirclePoint>(segments + 1);
-            for (int i = 0; i <= segments; i++)
+            if (segments < 3) segments = 3;
+            if (!unitRings.TryGetValue(segments, out var ring))
             {
-                float a = i * Mathf.PI * 2f / segments;
-                ring.Add(new CirclePoint(Mathf.Cos(a), Mathf.Sin(a)));
+                // 단위 원 마디는 마디 수별로 한 번만 만든다 (마법진이 열린 동안 매 Repaint마다 새 목록을 만들던 것, 버그 점검 2026-11-24)
+                ring = new List<CirclePoint>(segments + 1);
+                for (int i = 0; i <= segments; i++)
+                {
+                    float a = i * Mathf.PI * 2f / segments;
+                    ring.Add(new CirclePoint(Mathf.Cos(a), Mathf.Sin(a)));
+                }
+                unitRings[segments] = ring;
             }
             DrawPolyline(ring, center, radius, width, color);
         }
+
+        private static readonly Dictionary<int, List<CirclePoint>> unitRings = new Dictionary<int, List<CirclePoint>>();
 
         private static void DrawDot(Vector2 at, float size, Color color) => DrawTexture(softDot, at, size, color);
 
