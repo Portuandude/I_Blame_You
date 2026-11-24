@@ -34,6 +34,9 @@ namespace IBlameYou.Systems
         // 피해를 준 직후 대상마다 한 번 호출된다 (속성 디버프 부여 등).
         public System.Action<HealthSystem> Hit;
 
+        // 방금 Hit을 부른 적중이 무적(대시·순간이동·경직 무적 등)에 막혔는지. 맞은 뒤 Strike가 켠 경직 무적과 구분하려고 Strike 전에 잰다.
+        public bool LastHitBlocked { get; private set; }
+
         // 벽/바닥에 부딪혀 사라질 때 그 위치로 한 번 호출된다 (적중 이펙트 등).
         public System.Action<Vector2> Impact;
 
@@ -145,6 +148,7 @@ namespace IBlameYou.Systems
                     continue;
                 }
 
+                LastHitBlocked = health.IsInvulnerable;
                 DamageCalculator.Strike(owner, health, kind, element, multiplier);
                 Hit?.Invoke(health);
                 if (!piercing)
