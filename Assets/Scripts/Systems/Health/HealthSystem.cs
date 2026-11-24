@@ -40,7 +40,8 @@ namespace IBlameYou.Systems
 
         public void TakeDamage(float amount)
         {
-            if (amount <= 0f || IsInvulnerable) return;
+            // 쓰러진 뒤 같은 프레임에 또 맞으면 HealthChanged(0)·Damaged가 다시 나가 쓰러짐 처리가 두 번 돌던 것, NaN 피해가 체력을 NaN으로 만들던 것 (버그 점검 2026-11-24)
+            if (!(amount > 0f) || IsDead || IsInvulnerable) return;
             if (current - amount <= 0f && DeathSaves > 0 && current > 0f)
             {
                 DeathSaves--;
@@ -53,6 +54,8 @@ namespace IBlameYou.Systems
             SetCurrent(current - amount);
             Damaged?.Invoke(amount);
         }
+
+        private const float DotDeathSaveGrace = 1f; // 지속 피해로 버티기를 쓴 뒤 무적 (화상 틱 간격 1초)
 
         // 지금부터 seconds초 동안 피해를 받지 않는다 (이미 더 긴 무적이 남아 있으면 그대로).
         public void GrantGrace(float seconds)
@@ -77,7 +80,7 @@ namespace IBlameYou.Systems
         // 경직/화면 흔들림 없이 체력만 깎는다 (광폭화의 지속 체력 감소 같은 자해 효과용).
         public void Drain(float amount)
         {
-            if (amount <= 0f || IsDead) return;
+            if (!(amount > 0f) || IsDead) return;
             SetCurrent(current - amount);
         }
 
@@ -85,11 +88,12 @@ namespace IBlameYou.Systems
         // Drain을 쓰던 때는 화상이 대쉬·순간이동 무적, 무적 치트, 불사조 깃털·생명 20을 뚫고 쓰러뜨렸다 (버그 점검 2026-11-22). 깎았으면 true.
         public bool TakeDotDamage(float amount)
         {
-            if (amount <= 0f || IsDead || IsInvulnerable) return false;
+            if (!(amount > 0f) || IsDead || IsInvulnerable) return false;
             if (current - amount <= 0f && DeathSaves > 0)
             {
                 DeathSaves--;
                 SetCurrent(maxHealth * DeathSaveRatio);
+                GrantGrace(DotDeathSaveGrace); // 화상 다음 틱이 바로 버티기를 또 쓰거나 쓰러뜨리지 않게 (TakeDamage 쪽은 경직 무적이 있다)
                 DeathPrevented?.Invoke();
                 return true;
             }
@@ -100,7 +104,7 @@ namespace IBlameYou.Systems
         // 쓰러진 뒤에는 회복하지 않는다 (체력이 0에서 올라가면 IsDead가 풀려 다시 사는 것처럼 보인다, 버그 점검 2026-11-22).
         public void Heal(float amount)
         {
-            if (amount <= 0f || IsDead) return;
+            if (!(amount > 0f) || IsDead) return;
             SetCurrent(current + amount);
         }
 
