@@ -36,7 +36,7 @@ namespace IBlameYou.Systems
             VillageInteractRequested != null && VillageInteractRequested(service);
 
         // A·B 선택지 룰렛 창 (SkillHUD.Choice가 등록): (제목, 선택지 2~4개, 선택지별 선악도 변화, 실제로 일어난 선택지 번호를 받을 콜백).
-        // 창을 열었으면 true. NPC 방·선악도 방 이벤트가 부른다 (지금은 기능 테스트 도구만).
+        // 창을 열었으면 true. 선악도 방 이벤트(AlignmentRoomRule)와 기능 테스트 도구가 부른다 (NPC 방은 나중에).
         public static Func<string, string[], int[], Action<int>, bool> ChoiceRequested;
 
         public static bool RaiseChoice(string title, string[] options, int[] alignment, Action<int> done) =>

@@ -15,6 +15,43 @@ namespace IBlameYou.Systems
             if (SpawnTreasureGoblin(currentRoom)) goblinWaiting.Remove(currentRoom); // 못 불렀으면(설 자리 없음) 다음 프레임에 다시: 먼저 지우면 그 판엔 영영 안 나왔다 (버그 점검 2026-11-22)
         }
 
+        // 선악도 방 (AlignmentRoomRule): 판에서 처음 들어간 뒤 문 쿨다운이 지나면 A·B 선택지 룰렛 창을 한 번 연다.
+        // 창을 못 열었으면(다른 창이 떠 있음 등) 그 방에 있는 동안 다음 프레임에 다시. 연 뒤에는 쓰러짐·클리어로 창이 닫혀도 다시 열지 않는다.
+        private readonly HashSet<int> alignmentOffered = new HashSet<int>();
+
+        private void OfferAlignmentEvent()
+        {
+            if (rooms == null || player == null || Time.time < doorReadyTime) return;
+            var room = rooms.Rooms[currentRoom];
+            if (room.Kind != RoomKind.Alignment || alignmentOffered.Contains(currentRoom) || IBlameYou.Core.RunStats.Ended) return;
+            var health = player.GetComponent<HealthSystem>();
+            if (health != null && health.IsDead) return;
+            var e = AlignmentRoomRule.Events[AlignmentRoomRule.Pick(stage.Seed, currentRoom)];
+            if (!StageEvents.RaiseChoice(e.Title, AlignmentRoomRule.Texts(e), AlignmentRoomRule.Alignments(e), result => ApplyAlignmentResult(e, result)))
+                return;
+            alignmentOffered.Add(currentRoom);
+        }
+
+        private void ApplyAlignmentResult(AlignmentRoomRule.Event e, int result)
+        {
+            if (result < 0 || result >= e.Options.Length) return;
+            var option = e.Options[result];
+            int available = IBlameYou.Core.RunStats.Gold - IBlameYou.Core.RunGold.InFlight;
+            int gold = AlignmentRoomRule.GoldChange(option, available);
+            if (gold > 0) IBlameYou.Core.RunStats.AddGold(gold);
+            else if (gold < 0 && !IBlameYou.Core.RunStats.TrySpendGold(-gold, IBlameYou.Core.RunGold.InFlight)) gold = 0;
+            float healthChange = 0f;
+            var health = player != null ? player.GetComponent<HealthSystem>() : null;
+            if (health != null)
+            {
+                healthChange = AlignmentRoomRule.HealthChange(option, health.Current, health.Max);
+                if (healthChange > 0f) health.Heal(healthChange);
+                else if (healthChange < 0f) health.Drain(-healthChange);
+            }
+            StageEvents.PostNotice(AlignmentRoomRule.Summary(option, gold, healthChange));
+            if (gold != 0 || healthChange != 0f) GameAudio.PlaySfx("Pickup", 0.6f, 0f);
+        }
+
         // 플레이어에게서 먼 쪽(방 가로 30% 또는 70%) 근처에서 설 자리를 찾아 보물 고블린을 부른다. 자리가 없으면 부르지 않는다. 불렀으면 true.
         private bool SpawnTreasureGoblin(int index)
         {

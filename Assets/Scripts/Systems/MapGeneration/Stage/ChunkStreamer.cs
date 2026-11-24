@@ -184,6 +184,7 @@ namespace IBlameYou.Systems
 
                 CheckDoors();
                 WakeWaitingGoblin();
+                OfferAlignmentEvent();
                 StageEvents.Depth = RoomDepth(currentRoom);
             }
             else
@@ -708,6 +709,10 @@ namespace IBlameYou.Systems
                 }
                 StageEvents.PostNotice($"마나 샘 발견! {ManaSpringRule.RegenSeconds / 60f:0}분 동안 마나 재생 +{ManaSpringRule.RegenBonus * 100f:0}%");
                 GameAudio.PlaySfx("Pickup", 0.6f, 0f);
+            }
+            else if (firstVisit && entered.Kind == RoomKind.Alignment)
+            {
+                StageEvents.PostNotice("어딘가 묘한 기운이 감도는 방이다...");
             }
             else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))
             {
