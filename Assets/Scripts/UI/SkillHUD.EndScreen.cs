@@ -315,7 +315,7 @@ namespace IBlameYou.UI
         // 클리어 결과 창: 목표 시간(15분) 대비 걸린 시간과 이번 시드의 방 수 한 줄. 빠르면 초록, 느리면 주황 (Chunks/ClearPace).
         private void DrawClearPace(Rect rect)
         {
-            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.MainRooms, StageEvents.SideRooms);
+            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.RoomCount);
             if (string.IsNullOrEmpty(text)) return;
             var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
@@ -366,10 +366,10 @@ namespace IBlameYou.UI
             GUI.matrix = previous;
         }
 
-        // 게임오버 결과 창: 쓰러진 곳(시작 방에서 몇 칸·곁방·가장 멀리 간 거리)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
+        // 게임오버 결과 창: 쓰러진 곳(시작 방에서 몇 칸·가장 멀리 간 거리)과 버틴 시간. 크림색 (Chunks/ClearPace.DescribeDefeat).
         private void DrawDefeatPlace(Rect rect)
         {
-            string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, StageEvents.InSideRoom, defeatTime);
+            string text = ClearPace.DescribeDefeat(StageEvents.RoomDistance, StageEvents.FarthestDistance, defeatTime);
             var style = labelCenterTint; // 글자색은 아래에서 정한다
             style.normal.textColor = OutlinedLabel.Cream;
             GUI.Label(rect, text, style);

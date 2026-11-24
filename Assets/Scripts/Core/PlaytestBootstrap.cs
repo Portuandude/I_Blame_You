@@ -104,11 +104,9 @@ namespace IBlameYou.Core
             float targetSeconds = resume != null && resume.targetSeconds > 0f ? resume.targetSeconds : targetMinutes * 60f;
             currentTargetSeconds = targetSeconds;
             StageEvents.TargetSeconds = targetSeconds;
-            StageEvents.MainRooms = 0;
-            StageEvents.SideRooms = 0;
+            StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
             StageEvents.FarthestDistance = -1;
-            StageEvents.InSideRoom = false;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             StageData featureStage = null;
@@ -122,8 +120,7 @@ namespace IBlameYou.Core
             else if (roomGrid)
             {
                 var layout = RoomLayout.Generate(runSeed, targetSeconds);
-                StageEvents.MainRooms = System.Linq.Enumerable.Count(layout.MainPathRooms());
-                StageEvents.SideRooms = layout.Rooms.Count - StageEvents.MainRooms;
+                StageEvents.RoomCount = layout.Rooms.Count;
                 var geometries = new System.Collections.Generic.List<RoomGeometry>();
                 int invalid = 0;
                 foreach (var room in layout.Rooms)
