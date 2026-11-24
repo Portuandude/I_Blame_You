@@ -359,6 +359,18 @@ namespace IBlameYou.Core
             }
         }
 
+        // 스테이지 3~5 적 체력·공격력 배율 (StageRoster.HealthScale·DamageScale, 스테이지 1·2와 기능 테스트는 1배). 막 만든 적이라 체력은 가득.
+        private static void ScaleForStage(EnemyController enemy, HealthSystem enemyHealth)
+        {
+            if (GameSession.FeatureTest) return;
+            int stage = GameSession.Stage;
+            float hp = StageRoster.HealthScale(stage);
+            if (enemyHealth != null && hp != 1f) enemyHealth.SetValues(enemyHealth.Max * hp, enemyHealth.Max * hp);
+            var stats = enemy.GetComponent<CombatStats>();
+            float damage = StageRoster.DamageScale(stage);
+            if (stats != null && damage != 1f) stats.DamageMultiplier *= damage;
+        }
+
         private static HealthSystem SpawnEnemy(StageEnemy kind, Vector3 position, Transform parent, LevelArtConfig artConfig)
         {
             EnemyController enemy;
@@ -387,7 +399,9 @@ namespace IBlameYou.Core
 
             if (enemy == null) return null;
             enemy.transform.SetParent(parent, true);
-            return enemy.GetComponent<HealthSystem>();
+            var enemyHealth = enemy.GetComponent<HealthSystem>();
+            ScaleForStage(enemy, enemyHealth);
+            return enemyHealth;
         }
 
         // 지금 런을 치우고 다시 시작한다. 씬을 다시 불러오지 않아 빌드 설정에 씬을 등록하지 않아도 된다.
