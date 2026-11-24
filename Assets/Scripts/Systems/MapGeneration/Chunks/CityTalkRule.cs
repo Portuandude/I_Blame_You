@@ -45,7 +45,7 @@ namespace IBlameYou.Systems
             return lines[i];
         }
 
-        // 수정 탑 금: 처음 20개, 탑 단계 하나마다 하나씩 메워진다 (20단계 = 금 없음).
-        public static int Cracks(int totalTowerLevels) => System.Math.Max(0, 20 - System.Math.Max(0, totalTowerLevels));
+        // 수정 탑 금: 처음 CrystalTowerRule.TotalLevels(30)개, 탑 단계 하나마다 하나씩 메워진다 (모두 사면 금 없음).
+        public static int Cracks(int totalTowerLevels) => System.Math.Max(0, CrystalTowerRule.TotalLevels - System.Math.Max(0, totalTowerLevels));
     }
 }
