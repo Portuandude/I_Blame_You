@@ -16,7 +16,6 @@ namespace IBlameYou.UI
         private readonly Dictionary<RelicId, Texture2D> relicIcons = new Dictionary<RelicId, Texture2D>();
         private GUIStyle relicListText;
         private GUIStyle relicBadgeText;
-        private FallRecovery fallRecovery;
 
         private Texture2D RelicIcon(RelicId id)
         {
@@ -34,15 +33,12 @@ namespace IBlameYou.UI
             if (icon != null) GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
         }
 
-        // 횟수가 있는 유물의 남은 횟수: 되감기 모래시계 = 남은 무료 낙하 복귀, 불사조 깃털 = 남은 쓰러짐 버티기
+        // 횟수가 있는 유물의 남은 횟수: 불사조 깃털 = 남은 쓰러짐 버티기
         // (생명 20 특성의 버티기와 합친 값). 횟수가 없는 유물은 -1.
         private int RelicCharges(RelicId id)
         {
             switch (id)
             {
-                case RelicId.Hourglass:
-                    if (fallRecovery == null && health != null) fallRecovery = health.GetComponent<FallRecovery>();
-                    return fallRecovery != null ? fallRecovery.FreeFalls : -1;
                 case RelicId.PhoenixFeather:
                     return health != null ? health.DeathSaves : -1;
                 default:

@@ -229,15 +229,11 @@ namespace IBlameYou.UI
                 int col = i % columns, row = i / columns;
                 var card = new Rect(rect.x + 20f + col * (cardWidth + gap), rect.y + 80f + row * (cardHeight + gap), cardWidth, cardHeight);
                 var previousMatrix = BeginCardPop(card, relicWindowOpenedAt, i);
-                string owner = RelicBook.Owner(id);
-                DrawCard(card, owner);
-
-                string ownerColor = owner == "A" ? "#73d9ff" : owner == "B" ? "#ffa659" : "#dddddd";
+                DrawCard(card, "공용"); // 유물은 A·B 공용이라 주인 색 없이 크림색 테두리 (2026-11-24 주인 표시 삭제)
                 var iconRect = new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f);
                 if (i < relicCardIcons.Length) relicCardIcons[i] = iconRect; // 고르면 여기서 날아간다 (SkillHUD.RelicFly.cs)
                 DrawRelicIcon(id, iconRect); // 오른쪽 위 큰 아이콘 (SkillHUD.RelicIcons.cs)
                 GUI.Label(new Rect(card.x + 10f, card.y + 10f, card.width - 60f, 26f), $"<b>{i + 1}. {RelicBook.Name(id)}</b>", label);
-                GUI.Label(new Rect(card.x + 10f, card.y + 40f, card.width - 20f, 22f), $"<color={ownerColor}>{owner}</color> 유물", small);
                 if (!RelicCodex.Has(relicCodexAtOpen, (int)id)) // 도감에 없는 유물: 아이콘 아래 NEW
                     GUI.Label(new Rect(card.xMax - 56f, card.y + 46f, 46f, 18f), "<b><color=#7dff7a>NEW</color></b>",
                         smallCenter);

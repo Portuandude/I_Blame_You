@@ -50,9 +50,8 @@ namespace IBlameYou.UI
 
         private int SpendableGold => Mathf.Max(0, RunStats.Gold - RunGold.InFlight);
 
-        // 단골 도장이 있으면 마을에서 사는 값 할인 (식당·장비 상점 구매만, 팔기·리롤은 그대로)
-        private float VillagePriceRate =>
-            relics != null && relics.Has(RelicId.RegularStamp) ? RelicBook.RegularStampPriceRate : 1f;
+        // 마을에서 사는 값 배율. 단골 도장(할인 유물)은 2026-11-24 삭제되어 늘 1 (상점 값 계산 자리는 그대로 둔다)
+        private float VillagePriceRate => 1f;
 
         private bool OpenVillage(VillageService service)
         {
