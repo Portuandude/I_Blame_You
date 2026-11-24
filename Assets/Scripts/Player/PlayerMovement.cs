@@ -205,7 +205,7 @@ namespace IBlameYou.Player
             }
 
             // 짧게 누르면 낮은 점프: 이번 점프로 올라가는 중에 키를 떼면 다음 물리 프레임에 위 속도를 줄인다.
-            if (jumpCutArmed && !jumpQueued && !RoleInput.JumpHeld(control)) jumpCutRequested = true;
+            if (jumpCutArmed && !jumpQueued && !control.Locked && !RoleInput.JumpHeld(control)) jumpCutRequested = true; // 창이 열려 잠긴 동안은 키를 뗀 것으로 보지 않는다 (닫으면 점프가 잘리던 것, 버그 점검 2026-11-24)
 
             // 마력 안개(스위치 발판 낭떠러지) 안이나, 공중에서 안개 가까이에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
             if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Blocks(rb.position, IsGroundedStable) && stamina.TryConsume(dashStaminaCost))

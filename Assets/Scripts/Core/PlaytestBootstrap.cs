@@ -94,8 +94,10 @@ namespace IBlameYou.Core
             }
 
             // 저장된 런의 모드로 바꾸되, 시작 화면으로 돌아오면 원래 설정으로 되돌린다 (설정이 런 모드로 덮이지 않게).
-            if (data.devMode != GameSession.DevMode) settingsDevMode = GameSession.DevMode;
+            if (data.devMode != GameSession.DevMode && !settingsDevMode.HasValue) settingsDevMode = GameSession.DevMode; // 이미 바꿔 둔 적이 있으면 처음 설정값을 지킨다
             GameSession.DevMode = data.devMode;
+            // 쉼터 저장이면 쉼터부터 다시 연다: 결과 창·쉼터에서 "저장하고 시작 화면"으로 나간 뒤 이어하면 샘·상인을 못 쓰고 지나가던 것 (버그 점검 2026-11-24)
+            if (data.atStageStart && data.stage > 1) { OpenRest(data); return; }
             BuildWorld(data);
         }
 
@@ -350,6 +352,11 @@ namespace IBlameYou.Core
                 ShowMenu();
                 yield break;
             }
+            OpenRest(data);
+        }
+
+        private void OpenRest(RunSave.Data data)
+        {
             gameObject.AddComponent<RestMenu>().Initialize(data, d =>
             {
                 RunSave.Save(d);
@@ -439,7 +446,8 @@ namespace IBlameYou.Core
             TeardownWorld();
             yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
 
-            if (backToMenu) RestoreSettingsDevMode();
+            // 판이 끝났으면(포기·쓰러짐·클리어) 이어한 런의 모드도 끝난다: 도시·새 런은 설정의 모드로 (버그 점검 2026-11-24 — 개발자 모드 저장을 이어하고 끝나면 일반 설정인데 도시가 개발자 모드였던 것)
+            if (backToMenu || !GameSession.FeatureTest) RestoreSettingsDevMode();
 
             if (backToMenu) ShowMenu();
             else if (!GameSession.FeatureTest)

@@ -103,6 +103,16 @@ namespace IBlameYou.Enemies
         public const float KnockbackSpeed = 4f;
         public const float KnockbackDeceleration = 20f;
         private float knockVelocity;
+        private static LayerMask knockbackGround;
+        private static bool knockbackGroundReady;
+        private static LayerMask KnockbackGround
+        {
+            get
+            {
+                if (!knockbackGroundReady) { knockbackGround = EnemySpawner.GroundMask(); knockbackGroundReady = true; }
+                return knockbackGround;
+            }
+        }
 
         // direction: 밀려날 가로 방향 (+1 오른쪽, -1 왼쪽). 경직에 걸려 있을 때만 의미가 있다.
         public void Knockback(float direction)
@@ -222,6 +232,8 @@ namespace IBlameYou.Enemies
             if (IsDead || hitStun.IsStunned)
             {
                 // 경직 중에는 넉백 속도만 (줄어들며) 남는다. 죽으면 바로 멈춘다.
+                // 넉백이 낭떠러지 끝에 닿으면 거기서 멈춘다 (적이 스스로 걷지 않는 것과 같은 기준, LedgeAhead — 버그 점검 2026-11-24)
+                if (!IsDead && knockVelocity != 0f && LedgeAhead(Mathf.Sign(knockVelocity), KnockbackGround)) knockVelocity = 0f;
                 float x = IsDead ? 0f : knockVelocity;
                 knockVelocity = Mathf.MoveTowards(knockVelocity, 0f, KnockbackDeceleration * Time.fixedDeltaTime);
                 Rb.linearVelocity = new Vector2(x, Rb.linearVelocity.y);

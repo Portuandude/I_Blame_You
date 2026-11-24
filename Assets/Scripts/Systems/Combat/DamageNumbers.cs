@@ -45,6 +45,8 @@ namespace IBlameYou.Systems
         private static int healFrame = -1;
         private static int healStack;
 
+        private static readonly Vector2[] OutlineOffsets = { new Vector2(-1f, 0f), new Vector2(1f, 0f), new Vector2(0f, -1f), new Vector2(0f, 1f) };
+
         public static void ShowText(Vector3 position, string text, Color color, float scale = 1f)
         {
             ShowText(position, text, color, scale, OutlineColor);
@@ -60,8 +62,7 @@ namespace IBlameYou.Systems
             go.transform.localScale = new Vector3(scale, scale, 1f);
             CreateMesh(go, text, color, 50);
 
-            var offsets = new[] { new Vector2(-1f, 0f), new Vector2(1f, 0f), new Vector2(0f, -1f), new Vector2(0f, 1f) };
-            foreach (var o in offsets)
+            foreach (var o in OutlineOffsets)
             {
                 var child = new GameObject("Outline");
                 child.transform.SetParent(go.transform, false);
@@ -116,8 +117,10 @@ namespace IBlameYou.Systems
         private void Update()
         {
             if (meshes == null) return;
-            age += Time.deltaTime;
-            transform.position += Vector3.up * (RiseSpeed * Time.deltaTime);
+            // 창이 열려 시간이 멈춘 동안(식당에서 산 회복 숫자 등)에도 떠올라 사라지게 멈추지 않는 시간으로 (버그 점검 2026-11-24)
+            float dt = Time.unscaledDeltaTime;
+            age += dt;
+            transform.position += Vector3.up * (RiseSpeed * dt);
 
             float pop = age < PopTime ? Mathf.Lerp(PopScale, 1f, age / PopTime) : 1f;
             transform.localScale = baseScale * pop;

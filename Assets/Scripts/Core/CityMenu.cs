@@ -211,6 +211,8 @@ namespace IBlameYou.Core
             towerOpen = tower;
             academyOpen = !tower;
             towerSelection = 0;
+            academyScroll = Vector2.zero; // 다시 열면 첫 줄부터 (지난번 스크롤이 남아 첫 줄이 화면 밖이던 것)
+            lastScrollSelection = -1;
         }
 
         private void CloseSub()

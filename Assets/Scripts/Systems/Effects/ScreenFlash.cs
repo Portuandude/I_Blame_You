@@ -44,7 +44,7 @@ namespace IBlameYou.Systems
         {
             alpha *= ComfortSettings.FlashScale; // 화면 설정 "번쩍임" % (0이면 번쩍이지 않는다)
             if (alpha <= 0f) return;
-            if (Time.unscaledTime - lastPulse < MinInterval) return;
+            if (Time.unscaledTime >= lastPulse && Time.unscaledTime - lastPulse < MinInterval) return; // 도메인 리로드 없이 다시 플레이하면 지난 판의 큰 lastPulse가 남는다
             var flash = Find();
             if (flash == null || flash.CurrentAlpha() > alpha) return; // 더 진한 덮개(방 전환)가 보이는 중이면 덮어쓰지 않는다
 
