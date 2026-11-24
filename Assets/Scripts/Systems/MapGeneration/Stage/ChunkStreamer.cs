@@ -41,6 +41,7 @@ namespace IBlameYou.Systems
         private readonly HashSet<int> cursedBroken = new HashSet<int>(); // 저주받은 상자의 정예를 쓰러뜨린 방 (유물을 아직 안 골랐으면 유물 상자가 남는다)
         private readonly Dictionary<int, IBlameYou.Player.EquipmentItem> groundEquipment = new Dictionary<int, IBlameYou.Player.EquipmentItem>(); // 유물 상자 옆에 남은 장비 (청크 → 장비)
         private readonly HashSet<int> openedGates = new HashSet<int>(); // 봉인문을 연 청크
+        private readonly HashSet<int> burnedVines = new HashSet<int>(); // 태운 숲 바닥 덩굴 (방 번호 × 100 + 방 안 순번). 이어하기에는 남기지 않는다
         private readonly HashSet<int> solvedPuzzles = new HashSet<int>(); // 등불 순서 퍼즐을 푼 청크 (방). 런 이어하기 저장은 안 쓰므로 StageRecords에 넣지 않는다
         private readonly Dictionary<int, int> windBoxColumns = new Dictionary<int, int>(); // 바람 상자를 밀어 둔 열 (방을 나갔다 와도 그 자리)
         private readonly Dictionary<int, int> gateSteps = new Dictionary<int, int>(); // 두 속성 봉인문: 이미 맞힌 속성 수
@@ -244,6 +245,7 @@ namespace IBlameYou.Systems
 
             int platformOrdinal = 0;
             int coinOrdinal = 0;
+            int vineOrdinal = 0;
             var switchPlatforms = new List<MovingPlatform>();
             var switchFeatures = new List<ChunkFeature>();
             foreach (var f in chunk.Features)
@@ -251,7 +253,27 @@ namespace IBlameYou.Systems
                 switch (f.Kind)
                 {
                     case FeatureKind.Spikes:
-                        SpikeTrap.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width);
+                        // 숲(스테이지 2+)은 대나무 가시: 같은 가시를 초록으로 (2026-11-24 사람 결정)
+                        SpikeTrap.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width,
+                            StageRoster.IsForest(chunk.Stage) ? SpikeTrap.BambooTint : (Color?)null);
+                        break;
+                    case FeatureKind.ThornBush:
+                        ThornBush.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width);
+                        break;
+                    case FeatureKind.VineFloor:
+                        int vineKey = index * 100 + vineOrdinal++;
+                        if (!burnedVines.Contains(vineKey))
+                            VineFloor.Create(root, new Vector2(ox + f.X, oy + f.Y), f.Width, () => burnedVines.Add(vineKey));
+                        break;
+                    case FeatureKind.FallingLog:
+                        Stalactite.CreateLog(root, new Vector2(ox + f.X + 0.5f, oy + f.Y + 0.5f));
+                        break;
+                    case FeatureKind.VineWall:
+                        // 세로 덩굴 벽 = 불 한 번이면 열리는 봉인문 (덩굴 색). 연 기록은 봉인문과 같은 방 번호 기록 (한 방에 하나뿐)
+                        int vineWallChunk = index;
+                        var vineWall = IBlameYou.Puzzles.ElementGate.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), chunk.GateHeight(f.X, f.Y),
+                            new[] { Element.Fire }, openedGates.Contains(index), () => openedGates.Add(vineWallChunk));
+                        if (vineWall != null) vineWall.DressAsVines();
                         break;
                     case FeatureKind.FlameJet:
                         FlameJetTrap.Create(root, new Vector2(ox + f.X + 0.5f, oy + f.Y), f.X * 0.37f + index * 0.61f);
@@ -411,8 +433,8 @@ namespace IBlameYou.Systems
             var floor = floorSpot.HasValue
                 ? new Vector2(origin.x + floorSpot.Value.x + 2.5f, origin.y + floorSpot.Value.y)
                 : new Vector2(origin.x + RoomCols(index) / 2f, origin.y + stage.Chunks[index].EntryHeight);
-            // 두 속성 봉인문이 선 세로 보물 방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
-            if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
+            // 두 속성 봉인문(또는 숲 덩굴 벽)이 선 세로 보물 방은 상자를 봉인문(8열) 왼쪽으로 (HasTreasureGate)
+            if (room.Kind == RoomKind.Treasure && room.IsVertical && HasTreasureGate(index))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (IsCursedChestRoom(index)) PlaceCursedChest(root, index);
             if (goblinEquipmentSpots.TryGetValue(index, out var goblinSpot) && groundEquipment.TryGetValue(index, out var goblinLeft))
