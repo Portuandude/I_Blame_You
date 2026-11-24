@@ -192,12 +192,12 @@ namespace IBlameYou.UI
             RunStats.Ended = true;
             clearTime = Time.time - runStartTime;
             stageTime = Time.time - stageStartTime;
+            // 결과 창을 보는 동안 남은 위험물에 쓰러지지 않게 무적 (스테이지 5·기능 테스트 클리어도, 버그 점검 2026-11-24)
+            if (health != null) health.GrantGrace(3600f);
             if (RestNext)
             {
                 // 스테이지 1~4: 판은 이어진다 → 기록·저장 지우기 없이 결과 창 "쉼터로". 쉼터 들어갈 때 저장한다 (PlaytestBootstrap.GoToRest).
-                // 결과 창을 보는 동안 남은 위험물에 쓰러져 판이 끝나지 않게 무적.
                 PlayerPrefs.Save(); // 영혼석
-                if (health != null) health.GrantGrace(3600f);
                 control.Locked = true;
                 return;
             }

@@ -32,7 +32,7 @@ namespace IBlameYou.UI
             if (endScreenShownAt >= 0f) return;
             endScreenShownAt = Time.unscaledTime;
             GameAudio.StopMusic();
-            GameAudio.PlaySfx(deathHandled ? "Jingle_Defeat" : "Jingle_Clear", 0.9f, 0f);
+            GameAudio.PlaySfx(deathHandled && !stageCleared ? "Jingle_Defeat" : "Jingle_Clear", 0.9f, 0f); // 클리어 뒤 쓰러짐이 겹쳐도 클리어 팡파르
         }
 
         // 패널을 그리기 전에 부른다. 돌려받은 행렬을 다 그린 뒤 GUI.matrix에 되돌린다.
