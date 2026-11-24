@@ -87,8 +87,20 @@ def export(pfx, r):
     print(f'{r["name"]:16s} {r["id"]:26s} {len(cleaned):3d}f {c.width}x{c.height}px -> {r["dest"]}')
 
 
+def install_custom(pfx):
+    """Tools/PixelFx/fx/ 의 이 게임 전용 이펙트(예: 눈 없는 슬라임)를 pixelfx 체크아웃 src/fx/ 에 복사한다."""
+    import shutil
+    here = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fx")
+    for d, _, files in os.walk(here):
+        for f in files:
+            if f.endswith(".js"):
+                rel = os.path.relpath(os.path.join(d, f), here)
+                shutil.copyfile(os.path.join(d, f), os.path.join(pfx, "src", "fx", rel))
+
+
 def main():
     pfx = sys.argv[1]
+    install_custom(pfx)
     only = set(sys.argv[2:])
     recipes = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "recipes.json")))
     for r in recipes:
