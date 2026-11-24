@@ -157,6 +157,12 @@ namespace IBlameYou.Core
         {
             var item = shop.Stock[index];
             var current = Equipped(item.Slot);
+            if (current != null && current.Id == item.Id)
+            {
+                feedback = "<color=#ffd84d>이미 끼고 있다.</color>"; // 이어하기로 진열이 처음으로 돌아와도 같은 장비를 또 사지 않게 (버그 점검 2026-11-24)
+                GameAudio.PlaySfx("UiClick", 0.4f, 0.02f);
+                return;
+            }
             var got = shop.Buy(index, current, data.gold, out int cost);
             if (got == null)
             {

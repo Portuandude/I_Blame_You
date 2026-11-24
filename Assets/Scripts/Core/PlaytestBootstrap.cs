@@ -184,6 +184,7 @@ namespace IBlameYou.Core
                 hud.ResumeRun(resume.elapsed, resume.kills, resume.damageTaken, resume.arenasCleared, resume.gatesOpened);
                 RunStats.Restore(resume.gold, resume.goldEarned, resume.goldSpent, resume.heartDust, resume.picks, resume.spellCasts);
                 RunStats.RestoreCodex(resume.newRelics, resume.newRelicMask, resume.codexCompleted);
+                RunStats.RestoreFood(resume.foodMaxHealth, resume.foodManaRegen);
                 StageEvents.PostNotice(resume.atStageStart ? $"{StageTitle(stageNumber)} 시작 (시드 {currentRunSeed})" : $"이어하기: 저장한 곳에서 다시 시작 (시드 {currentRunSeed})");
             }
             else
@@ -241,6 +242,11 @@ namespace IBlameYou.Core
                 foreach (int id in data.relics)
                     if (System.Enum.IsDefined(typeof(RelicId), id)) relics.Add((RelicId)id);
             relics.RestoreLevelBonuses(data.acornLevels, data.candyLevels); // 레벨업으로 늘어난 최대치는 레벨업이 다시 안 일어나므로 횟수로
+            // 마을 음식으로 늘어난 최대 체력·마나 재생 (판 동안 남는다). 집계는 HUD 초기화 뒤 RunStats.RestoreFood가 되살린다
+            var restoredHealth = player.GetComponent<HealthSystem>();
+            if (restoredHealth != null && data.foodMaxHealth > 0f) restoredHealth.AddMax(data.foodMaxHealth);
+            var restoredMana = player.GetComponent<ManaSystem>();
+            if (restoredMana != null && data.foodManaRegen > 0f) restoredMana.RegenMultiplier += data.foodManaRegen;
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && data.health > 0f) health.SetValues(Mathf.Min(data.health, health.Max), health.Max);
@@ -303,7 +309,9 @@ namespace IBlameYou.Core
                 newRelicMask = RunStats.NewRelicMask,
                 codexCompleted = RunStats.CodexCompleted,
                 acornLevels = relics != null ? relics.AcornLevels : 0,
-                candyLevels = relics != null ? relics.CandyLevels : 0
+                candyLevels = relics != null ? relics.CandyLevels : 0,
+                foodMaxHealth = RunStats.FoodMaxHealth,
+                foodManaRegen = RunStats.FoodManaRegen
             };
         }
 

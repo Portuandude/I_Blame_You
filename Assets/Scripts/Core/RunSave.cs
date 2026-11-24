@@ -57,6 +57,8 @@ namespace IBlameYou.Core
             public bool codexCompleted;
             public int acornLevels;         // 도토리 주머니·별사탕이 늘린 최대 체력·마나 횟수 (PlayerRelics.RestoreLevelBonuses)
             public int candyLevels;
+            public float foodMaxHealth;     // 마을 음식으로 늘어난 최대 체력·마나 재생 배율 (RunStats.Food*)
+            public float foodManaRegen;
             public int[] equipment = new int[0]; // 낀 장비 EquipmentId
 
             public IBlameYou.Systems.StageRecords records = new IBlameYou.Systems.StageRecords();
