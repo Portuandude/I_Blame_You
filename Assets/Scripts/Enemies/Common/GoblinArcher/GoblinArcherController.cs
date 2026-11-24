@@ -207,6 +207,7 @@ namespace IBlameYou.Enemies
 
             var go = new GameObject("Arrow");
             go.transform.position = origin;
+            if (transform.parent != null) go.transform.SetParent(transform.parent, true); // 방을 떠나 방이 치워지면 날던 화살도 같이 (새 방에서 맞지 않게, 버그 점검 2026-11-24)
             var look = EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
             var arrow = go.AddComponent<Projectile>();
             arrow.Launch(Stats, false, DamageKind.Physical, Element.Neutral, direction, arrowSpeed, 0.2f,
