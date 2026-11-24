@@ -26,6 +26,37 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void LaterStagesDropMoreGold()
+        {
+            Assert.AreEqual(1f, GoldDropTable.StageGoldMultiplier(1));
+            Assert.AreEqual(3f, GoldDropTable.StageGoldMultiplier(5));
+            var s2 = GoldDropTable.ForStage(2);
+            Assert.AreEqual(0.5f, s2.Normal.Chance, "확률은 그대로");
+            Assert.AreEqual(2, s2.Normal.Min, "1 × 1.5 = 1.5 → 2");
+            Assert.AreEqual(6, s2.Normal.Max);
+            Assert.AreEqual(15, s2.Elite.Min);
+            Assert.AreEqual(30, s2.Elite.Max);
+            var s5 = GoldDropTable.ForStage(5);
+            Assert.AreEqual(3, s5.Normal.Min);
+            Assert.AreEqual(12, s5.Normal.Max);
+            Assert.AreEqual(300, s5.Boss.Min);
+            Assert.AreEqual(600, s5.Boss.Max);
+            Assert.AreEqual(2, s5.BossParts, "나뉘어 나오는 보스 수는 그대로");
+            Assert.AreSame(GoldDropTable.ForStage(5), GoldDropTable.ForStage(9), "범위 밖은 끝 스테이지");
+            Assert.AreSame(GoldDropTable.Stage1, GoldDropTable.ForStage(0));
+            for (int stage = 2; stage <= GoldDropTable.MaxStage; stage++)
+            {
+                var prev = GoldDropTable.ForStage(stage - 1);
+                var cur = GoldDropTable.ForStage(stage);
+                foreach (EnemyRank rank in Enum.GetValues(typeof(EnemyRank)))
+                {
+                    Assert.That(cur.For(rank).Min, Is.GreaterThanOrEqualTo(prev.For(rank).Min), $"{stage} {rank}");
+                    Assert.That(cur.For(rank).Max, Is.GreaterThan(prev.For(rank).Max), $"{stage} {rank}");
+                }
+            }
+        }
+
+        [Test]
         public void NormalDropsAboutHalfTheTimeInRange()
         {
             var rng = new Random(7);

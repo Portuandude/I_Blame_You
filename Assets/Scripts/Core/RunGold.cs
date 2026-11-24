@@ -11,7 +11,6 @@ namespace IBlameYou.Core
     // 동전이 닿을 때마다 숫자가 올라간다. 골드는 그 판 안에서만 쓴다 (SkillHUD.Initialize에서 RunStats.Reset + Reset).
     public static class RunGold
     {
-        public const int Stage = 1;                       // 스테이지가 늘면 지금 스테이지 번호로
         private const float CoinScale = 0.42f;            // 48px 그림 → 약 0.2유닛
         private const float CoinSfxGap = 0.05f;           // 동전 소리는 이 간격보다 촘촘하게 겹치지 않는다
         private const float CoinSfxVolume = 0.55f;        // 하나만 닿을 때 크기. 겹치면 CoinSoundRule로 겹친 수에 비례해 작게 (2026-11-24)
@@ -67,7 +66,7 @@ namespace IBlameYou.Core
             if (treasure) amount = TreasureGoblinRule.Gold(UnityEngine.Random.value);
             else
                 for (int share = Shares(enemy); share > 0; share--) // 프리즘 젤리·코볼트 족장: 둘 몫을 한 번에
-                    amount += GoldDropTable.ForStage(Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
+                    amount += GoldDropTable.ForStage(GameSession.Stage).Roll(rank, UnityEngine.Random.value, UnityEngine.Random.value);
             var relics = target != null ? target.GetComponent<PlayerRelics>() : null;
             if (relics != null && relics.Has(RelicId.LuckyPouch))
             {
