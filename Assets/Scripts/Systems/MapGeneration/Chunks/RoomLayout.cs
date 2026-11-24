@@ -388,7 +388,13 @@ namespace IBlameYou.Systems
 
             var open = new List<RoomData>();
             foreach (var r in layout.Rooms) if (r != start && r != boss && r != mid) open.Add(r);
-            open.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+            open.Sort((a, b) =>
+            {
+                int c = a.Distance.CompareTo(b.Distance);
+                if (c != 0) return c;
+                c = a.Y.CompareTo(b.Y);
+                return c != 0 ? c : a.X.CompareTo(b.X); // 칸이 겹치지 않으니 완전한 순서 (난수로 고르는 마을이 런타임마다 같게)
+            });
 
             // 마을 1개: 좌우 방(건물 두 채가 설 평지), 시작 방에서 VillageMinDistance칸 이상, 보스 방과 격자로 붙지 않은 곳 중 무작위.
             var villages = new List<RoomData>();
