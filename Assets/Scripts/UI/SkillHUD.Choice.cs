@@ -156,7 +156,8 @@ namespace IBlameYou.UI
                 var row = new Rect(rect.x + 20f, rect.y + 84f + i * (rowHeight + 8f), rect.width - 40f, rowHeight);
                 choiceRects[i] = row;
                 if (i == lit) CuteButton.DrawSelection(row);
-                bool clickable = choiceResult < 0 && choiceB < 0 && (dev ? choiceA >= 0 : !IBlameYou.Net.P2Input.Remote);
+                bool clickable = choiceResult < 0 && choiceB < 0 && (dev ? choiceA >= 0 : !IBlameYou.Net.P2Input.Remote)
+                    && Time.frameCount > choiceOpenedFrame && Time.unscaledTime - choiceOpenedAt >= 0.4f; // 창이 열릴 때 누르고 있던 클릭으로 고르지 않게 (키와 같은 0.4초, 버그 점검 2026-11-24)
                 // 버튼 글자에는 누가 골랐는지 넣지 않는다 (몰래 고르기). 결과가 나오면 아루·벨이 고른 것을 보여 준다
                 string text = $"{i + 1}. {choiceOptions[i]}";
                 if (choiceResult >= 0 && (t >= (choiceSpun ? ChoiceRouletteRule.SpinSeconds : 0f)))
