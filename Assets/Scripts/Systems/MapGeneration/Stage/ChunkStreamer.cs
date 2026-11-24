@@ -458,14 +458,15 @@ namespace IBlameYou.Systems
             };
         }
 
-        // 용사의 훈장으로 회복했으면 true. 보스·중간보스 구역은 그쪽 알림에 훈장 회복을 합쳐 한 줄로 띄운다.
+        // 용사의 훈장으로 회복했으면 true. 2026-11-24부터 중간보스·보스를 잡았을 때만 (정예 구역 돌파는 아님).
+        // 보스·중간보스 구역은 그쪽 알림에 훈장 회복을 합쳐 한 줄로 띄운다.
         private bool OnArenaCleared(int chunkIndex, bool boss, bool midBoss)
         {
             clearedArenas.Add(chunkIndex);
             IBlameYou.Core.RunStats.AddArenaCleared();
             var relics = player != null ? IBlameYou.Player.PlayerRelics.For(player.gameObject) : null;
-            bool medalHealed = relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 돌파 보상 회복 + 머리 위 금 메달
-                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, boss || midBoss ? null : $"용사의 훈장: 체력 +{MedalPercent}%");
+            bool medalHealed = (boss || midBoss) && relics != null && relics.Has(IBlameYou.Player.RelicId.HeroMedal) // 용사의 훈장: 회복 + 머리 위 금 메달
+                && HealPlayer(IBlameYou.Player.RelicBook.HeroMedalHealRatio, null);
             if (medalHealed) VfxPlayer.MedalGlint(player, MedalGlintOffset);
             if (!boss) return medalHealed;
 
@@ -671,8 +672,7 @@ namespace IBlameYou.Systems
             if (entered.Kind == RoomKind.Village && firstVisit)
             {
                 // 판에서 처음 찾은 마을: 알림 + 오르골 세 음 (미니맵 집 칸은 처음 들어간 방이라 MinimapUI가 톡 반짝인다)
-                int interest = IBlameYou.Core.RunGold.OnVillageFound(player); // 돼지 저금통 이자 (없으면 0)
-                StageEvents.PostNotice(interest > 0 ? $"마을 발견! 저금통 이자 +{interest}" : "마을 발견! 식당·장비 상점");
+                StageEvents.PostNotice("마을 발견! 식당·장비 상점");
                 GameAudio.PlaySfx("VillageFound", 0.8f, 0f);
             }
             else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))

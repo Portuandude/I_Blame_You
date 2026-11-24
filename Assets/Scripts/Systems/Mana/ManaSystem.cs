@@ -32,7 +32,8 @@ namespace IBlameYou.Systems
         public float WastedRefundRatio { get; set; }
         public float Current => current;
         public bool Infinite { get; set; } // 개발자 모드 치트
-        // 마나가 모자랄 때 (쓰는 사람, 모자란 만큼)을 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약). 없으면 그냥 실패.
+        // 마나가 모자랄 때 (쓰는 사람, 마법값 전체)를 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약: 절반만큼 체력). 없으면 그냥 실패.
+        // 대신 냈으면 마나는 그대로 둔다.
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
         public event Action<float, float> ManaChanged;
 
@@ -84,8 +85,8 @@ namespace IBlameYou.Systems
             amount *= TotalCostMultiplier;
             if (!HasEnough(amount))
             {
-                if (ShortfallCover == null || !ShortfallCover(user, amount - current)) return false;
-                SetCurrent(0f); // 있던 마나는 다 쓰고 모자란 만큼은 대신 냈다
+                if (ShortfallCover == null || !ShortfallCover(user, amount)) return false;
+                // 마법값 전체를 대신 냈다 (있던 마나는 그대로, 2026-11-24 피의 계약)
             }
             else if (!Infinite)
             {

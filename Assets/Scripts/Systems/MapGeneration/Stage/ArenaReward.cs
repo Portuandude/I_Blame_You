@@ -10,7 +10,6 @@ namespace IBlameYou.Systems
         public const float ManaRatio = 0.5f; // 최대 마나의 50%
         private const float FloatHeight = 0.9f;
         private static readonly Vector3 HoneyGlintOffset = new Vector3(0f, 1.5f, 0f); // 꿀단지 시작 높이 (머리 위, 훈장·도토리와 같게)
-        private static readonly Vector3 HorseshoeGlintOffset = new Vector3(-0.55f, 1.4f, 0f); // 말굽 자석 (꿀단지와 안 겹치게 왼쪽)
         private const float BobAmplitude = 0.15f;
         private const float BobSpeed = 3f;
         // 꿀단지를 가졌으면 구슬 뒤에 금빛 테두리가 숨 쉬듯 빛나고 가끔 반짝인다 ("더 많이 찬다")
@@ -19,7 +18,7 @@ namespace IBlameYou.Systems
         private const float HoneyCheckInterval = 0.5f; // 유물을 다시 확인하는 간격
         private const float HoneySparkleInterval = 1.1f;
         // 자석: 살아 있는 플레이어가 구슬 가운데에서 이만큼 안에 들어오면 구슬이 플레이어 쪽으로 통통 끌려온다
-        // (RelicBook.MagnetRadius, 말굽 자석이 있으면 HorseshoeMagnetRadius — 꿀단지처럼 0.5초마다 확인)
+        // (RelicBook.MagnetRadius. 말굽 자석은 2026-11-24 삭제)
         private const float MagnetCheckInterval = 0.1f;
         private const float MagnetStartSpeed = 2f;
         private const float MagnetAcceleration = 14f;
@@ -38,9 +37,6 @@ namespace IBlameYou.Systems
         private float magnetSpeed;
         private float magnetCheckTimer;
         private float nextWhooshTime;
-        private float foundEdgeDistance; // 마지막으로 찾은 플레이어 몸 가장자리까지 거리 (FindMagnetTarget)
-        private float magnetRadius = IBlameYou.Player.RelicBook.MagnetRadius;
-        private float magnetRelicTimer;
         private SpriteRenderer orbRenderer;
         private float trailTimer;
         // 등장 (보상 연출, 2026-11-13): 방금 나온 구슬은 그림이 AppearStart배에서 통통하게 조금 넘쳤다가(1.15배) 제 크기로.
@@ -143,13 +139,6 @@ namespace IBlameYou.Systems
         {
             if (collected) return;
             magnetCheckTimer -= Time.deltaTime;
-            magnetRelicTimer -= Time.deltaTime;
-            if (magnetRelicTimer <= 0f)
-            {
-                magnetRelicTimer = HoneyCheckInterval;
-                magnetRadius = AnyPlayerHas(IBlameYou.Player.RelicId.HorseshoeMagnet)
-                    ? IBlameYou.Player.RelicBook.HorseshoeMagnetRadius : IBlameYou.Player.RelicBook.MagnetRadius;
-            }
             if (magnetCheckTimer <= 0f)
             {
                 magnetCheckTimer = MagnetCheckInterval;
@@ -159,12 +148,6 @@ namespace IBlameYou.Systems
                 {
                     GameAudio.PlaySfx("MagnetWhoosh", 0.5f);
                     nextWhooshTime = Time.time + WhooshCooldown;
-                    // 말굽 자석 덕분에 기본 거리 밖에서 잡혔으면 머리 위로 말굽 자석이 톡
-                    // (몸 가장자리까지 거리로 판단, 잡힌 그 플레이어가 유물을 가졌을 때만)
-                    var foundRelics = found.GetComponent<IBlameYou.Player.PlayerRelics>();
-                    if (foundRelics != null && foundRelics.Has(IBlameYou.Player.RelicId.HorseshoeMagnet)
-                        && foundEdgeDistance > IBlameYou.Player.RelicBook.MagnetRadius)
-                        VfxPlayer.HorseshoeGlint(found, HorseshoeGlintOffset); // 곧 주우면 꿀단지가 가운데에 뜨므로 왼쪽으로 비켜서
                 }
                 magnetTarget = found;
                 if (magnetTarget == null) magnetSpeed = 0f;
@@ -196,7 +179,7 @@ namespace IBlameYou.Systems
             filter.NoFilter();
             int playerLayer = LayerMask.NameToLayer(CharacterLayers.PlayerLayerName); // 플레이어 층이 있으면 그 층만 (바닥 칸이 버퍼를 채우지 않게)
             if (playerLayer >= 0) filter.SetLayerMask(1 << playerLayer);
-            int count = Physics2D.OverlapCircle(center, magnetRadius, filter, MagnetHits);
+            int count = Physics2D.OverlapCircle(center, IBlameYou.Player.RelicBook.MagnetRadius, filter, MagnetHits);
             Transform best = null;
             float bestDistance = float.MaxValue;
             for (int i = 0; i < count; i++)
@@ -213,15 +196,6 @@ namespace IBlameYou.Systems
                     best = player.transform;
                 }
             }
-            // 고른 플레이어 몸 가장자리까지 가장 가까운 거리 (OverlapCircle은 가장자리로 잡는다)
-            foundEdgeDistance = float.MaxValue;
-            if (best != null)
-                for (int i = 0; i < count; i++)
-                {
-                    var player = TrapCommon.PlayerFrom(MagnetHits[i]);
-                    if (player == null || player.transform != best) continue;
-                    foundEdgeDistance = Mathf.Min(foundEdgeDistance, (MagnetHits[i].ClosestPoint(center) - center).magnitude);
-                }
             return best;
         }
 

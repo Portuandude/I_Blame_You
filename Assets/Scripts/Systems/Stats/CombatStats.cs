@@ -28,6 +28,9 @@ namespace IBlameYou.Systems
         // 마법 피해에만 곱하는 배율 (장비 "마법 공격" 능력치 — 옛 수식어용, 지금 주는 장비 없음. 끼고 빼며 더하고 뺀다). 0.1 아래로는 내려가지 않게 쓸 때 자른다.
         public float MagicDamageMultiplier { get; set; } = 1f;
 
+        // 약점 속성으로 맞혔을 때(상성 배율 > 1) 더 주는 피해 비율 (유물 속성 공명석 +0.2, DamageCalculator)
+        public float WeaknessDamageBonus { get; set; }
+
         // 이동속도(유닛/초) = 문서 이동속도 × 2 × 버프 배율 × 둔화 배율.
         public float MoveSpeedUnits => StatUnits.MoveSpeedToUnits(stats.moveSpeed) * TotalMoveMultiplier;
 
