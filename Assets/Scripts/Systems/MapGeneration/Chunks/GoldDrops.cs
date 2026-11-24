@@ -41,8 +41,49 @@ namespace IBlameYou.Systems
             Boss = new GoldDrop(1f, 100, 200),
         };
 
-        // 아직 스테이지 1만 있다. 새 스테이지 표는 여기에 더한다.
-        public static GoldDropTable ForStage(int stage) => Stage1;
+        // 스테이지가 오를수록 골드를 늘린다 (2026-11-24 사람 결정, 배율은 가안). 확률은 그대로, 양(최소·최대)만 곱한다.
+        // 스테이지 1 = 1배(위 표 그대로), 2 = 1.5배, 3 = 2배, 4 = 2.5배, 5 = 3배. 범위 밖 번호는 가까운 끝으로.
+        public const int MaxStage = 5;
+        public static float StageGoldMultiplier(int stage)
+        {
+            if (stage < 1) stage = 1;
+            if (stage > MaxStage) stage = MaxStage;
+            return 1f + 0.5f * (stage - 1);
+        }
+
+        private static readonly GoldDropTable[] stageTables = BuildStageTables();
+
+        private static GoldDropTable[] BuildStageTables()
+        {
+            var tables = new GoldDropTable[MaxStage];
+            tables[0] = Stage1;
+            for (int stage = 2; stage <= MaxStage; stage++)
+                tables[stage - 1] = Stage1.Scaled(StageGoldMultiplier(stage));
+            return tables;
+        }
+
+        public static GoldDropTable ForStage(int stage)
+        {
+            if (stage < 1) stage = 1;
+            if (stage > MaxStage) stage = MaxStage;
+            return stageTables[stage - 1];
+        }
+
+        // 양만 배율로 늘린 새 표 (반올림). 나뉘어 나오는 보스 수는 그대로.
+        public GoldDropTable Scaled(float multiplier) => new GoldDropTable
+        {
+            Normal = ScaleDrop(Normal, multiplier),
+            Elite = ScaleDrop(Elite, multiplier),
+            MidBoss = ScaleDrop(MidBoss, multiplier),
+            Boss = ScaleDrop(Boss, multiplier),
+            MidBossParts = MidBossParts,
+            BossParts = BossParts,
+        };
+
+        private static GoldDrop ScaleDrop(GoldDrop drop, float multiplier) => new GoldDrop(
+            drop.Chance,
+            (int)Math.Round(drop.Min * multiplier, MidpointRounding.AwayFromZero),
+            (int)Math.Round(drop.Max * multiplier, MidpointRounding.AwayFromZero));
 
         public GoldDrop For(EnemyRank rank)
         {

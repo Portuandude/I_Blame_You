@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace IBlameYou.Systems
 {
-    // 낭떠러지에 떨어지면 체력을 조금 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다.
+    // 낭떠러지에 떨어지면 체력을 조금 잃고 마지막으로 안전하게 서 있던 땅으로 돌아온다. 낙사로는 쓰러지지 않는다 (체력 1, FallDamageRule).
     // 떨어질 때 "휘이이잉", 돌아오면 빛 고리·"뿅"·무적 동안 깜빡임 (FallRecoveryFx, 그림·소리만).
     // 안전한 땅: 바닥에 서 있고, 무너지는 발판이 아니고, 가까이에 함정이 없는 곳.
     [RequireComponent(typeof(PlayerMovement))]
@@ -88,8 +88,15 @@ namespace IBlameYou.Systems
         {
             bool shielded = health.IsInvulnerable; // 무적(대쉬·경직·직전 복귀·치트) 중이면 피해도 모래시계도 쓰지 않는다 (버그 점검 2026-11-24)
             bool free = !shielded && FreeFalls > 0;
+            bool capped = false;
             if (free) FreeFalls--;
-            else if (!shielded) health.TakeDamage(health.Max * DamageRatio);
+            else if (!shielded)
+            {
+                // 낙사로는 쓰러지지 않는다: 체력 1을 남기고 버티기(불사조 깃털·생명 20)도 아낀다 (2026-11-24 사람 결정, FallDamageRule)
+                capped = FallDamageRule.Capped(health.Current, health.Max, DamageRatio);
+                float damage = FallDamageRule.Damage(health.Current, health.Max, DamageRatio);
+                if (damage > 0f) health.TakeDamage(damage);
+            }
             if (health.IsDead) return;
 
             rb.linearVelocity = Vector2.zero;
@@ -101,6 +108,7 @@ namespace IBlameYou.Systems
             health.GrantGrace(InvulnerableTime);
             StageEvents.PostNotice(shielded ? "낭떠러지! 무적이라 피해 없음"
                 : free ? $"모래시계가 시간을 되감았다! 피해 없음 (남은 {FreeFalls}번)"
+                : capped ? "낭떠러지! 겨우 체력 1로 버텼다"
                 : $"낭떠러지! 체력 -{DamageRatio * 100f:0}%");
 
             var follow = Camera.main != null ? Camera.main.GetComponent<Core.CameraFollow>() : null;
