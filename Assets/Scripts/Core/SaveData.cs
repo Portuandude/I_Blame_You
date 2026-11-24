@@ -10,6 +10,7 @@ namespace IBlameYou.Core
         private const string KeyDevMode = "Settings.DevMode";
         private const string KeyMusicVolume = "Settings.MusicVolume";
         private const string KeySfxVolume = "Settings.SfxVolume";
+        private const string KeySaveSlot = "Settings.SaveSlot";   // 마지막에 고른 저장 슬롯 (공용)
         private const string KeyBestClear = "Best.ClearTime";
         private const string KeyBestLevel = "Best.Level";
         private const string KeyBestGold = "Best.Gold"; // 한 판에 모은 골드(RunStats.GoldEarned) 최고
@@ -34,6 +35,7 @@ namespace IBlameYou.Core
             GameSession.DevMode = PlayerPrefs.GetInt(KeyDevMode, GameSession.DevMode ? 1 : 0) != 0;
             GameAudio.MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, GameAudio.MusicVolume));
             GameAudio.SfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, GameAudio.SfxVolume));
+            GameSession.SaveSlot = SaveSlotRule.Clamp(PlayerPrefs.GetInt(KeySaveSlot, 1));
             DisplaySettings.Load(); // 해상도·창 모드 적용, 16:9 레터박스
         }
 
@@ -52,6 +54,17 @@ namespace IBlameYou.Core
             PlayerPrefs.SetFloat(KeySfxVolume, GameAudio.SfxVolume);
             PlayerPrefs.Save();
         }
+
+        // 저장 슬롯을 고른다 (시작 화면). 바로 남긴다.
+        public static void SelectSaveSlot(int slot)
+        {
+            GameSession.SaveSlot = SaveSlotRule.Clamp(slot);
+            PlayerPrefs.SetInt(KeySaveSlot, GameSession.SaveSlot);
+            PlayerPrefs.Save();
+        }
+
+        // 지금 슬롯의 키 (슬롯 1 = 예전 키 그대로). 숨은 능력치·런 저장이 쓴다.
+        public static string SlotKey(string key) => SaveSlotRule.Key(key, GameSession.SaveSlot);
 
         private static string ModeKey(string key, bool devMode) => key + (devMode ? ".Dev" : ".Normal");
 
@@ -167,21 +180,21 @@ namespace IBlameYou.Core
         public static void RecordRevival()
         {
             if (GameSession.DevMode || GameSession.FeatureTest) return;
-            PlayerPrefs.SetInt(KeyRevivals, Revivals() + 1);
+            PlayerPrefs.SetInt(SlotKey(KeyRevivals), Revivals() + 1);
             PlayerPrefs.Save();
         }
 
-        public static int Revivals() => PlayerPrefs.GetInt(KeyRevivals, 0);
+        public static int Revivals() => PlayerPrefs.GetInt(SlotKey(KeyRevivals), 0);
 
         public static int Causality() => HiddenStatsRule.Causality(Revivals());
 
         // 선악도: player = "A"(아루) 또는 "B"(벨). 처음은 HiddenStatsRule.StartAlignment
-        public static int Alignment(string player) => PlayerPrefs.GetInt(KeyAlignment + player, HiddenStatsRule.StartAlignment);
+        public static int Alignment(string player) => PlayerPrefs.GetInt(SlotKey(KeyAlignment + player), HiddenStatsRule.StartAlignment);
 
         public static void AddAlignment(string player, int delta)
         {
             if (GameSession.DevMode || GameSession.FeatureTest || delta == 0) return;
-            PlayerPrefs.SetInt(KeyAlignment + player, Alignment(player) + delta);
+            PlayerPrefs.SetInt(SlotKey(KeyAlignment + player), Alignment(player) + delta);
             PlayerPrefs.Save();
         }
 

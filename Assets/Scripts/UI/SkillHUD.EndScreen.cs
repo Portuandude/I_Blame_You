@@ -136,7 +136,9 @@ namespace IBlameYou.UI
             {
                 // 최고 기록이면 괄호 대신 제목 왼쪽 금색 도장 (DrawBestStamp)
                 string best = newBestTime ? "" : $" (최고 {SaveData.FormatTime(SaveData.BestClearTime(GameSession.DevMode))})";
-                manaText = $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · " + manaText;
+                manaText = RestNext
+                    ? $"이번 스테이지 {SaveData.FormatTime(stageTime)} · 판 {SaveData.FormatTime(clearTime)} · " + manaText // 판 기록은 스테이지 5에서
+                    : $"걸린 시간 {SaveData.FormatTime(clearTime)}{best} · " + manaText;
             }
             GUI.Label(new Rect(rect.x, y + lift, rect.width, line), manaText, center);
             GUI.color = previous;
@@ -245,8 +247,9 @@ namespace IBlameYou.UI
             bool ready = EndButtonsReady;
             bool wasEnabled = GUI.enabled;
             GUI.enabled = ready;
-            if (CuteButton.Button(left, !GameSession.FeatureTest ? "도시로 (R)" : clear ? "새 맵으로 다시 (R)" : "다시 시작 (R)", endButton)) RequestRestart(false);
-            if (CuteButton.Button(right, "시작 화면 (M)", endButton)) RequestRestart(true);
+            bool rest = clear && RestNext;
+            if (CuteButton.Button(left, rest ? "쉼터로 (R)" : !GameSession.FeatureTest ? "도시로 (R)" : clear ? "새 맵으로 다시 (R)" : "다시 시작 (R)", endButton)) RequestRestart(false);
+            if (CuteButton.Button(right, rest ? "저장·시작 화면 (M)" : "시작 화면 (M)", endButton)) RequestRestart(true);
             GUI.enabled = wasEnabled;
             if (ready) CuteButton.DrawSelection(endSelection == 0 ? left : right);
         }
@@ -276,7 +279,8 @@ namespace IBlameYou.UI
         {
             if (restartRequested) return;
             restartRequested = true;
-            restart?.Invoke(backToMenu);
+            if (RestNext && !health.IsDead) goToRest(backToMenu); // 스테이지 1~4 클리어: 쉼터로 (판이 이어진다)
+            else restart?.Invoke(backToMenu);
         }
 
         // 클리어 색종이: 조각마다 고정된 무작위 값(인덱스 해시)으로 x·속도·흔들림·크기·색을 정하고 위에서 아래로 반복해서 떨어진다.
@@ -315,10 +319,10 @@ namespace IBlameYou.UI
         // 클리어 결과 창: 목표 시간(15분) 대비 걸린 시간과 이번 시드의 방 수 한 줄. 빠르면 초록, 느리면 주황 (Chunks/ClearPace).
         private void DrawClearPace(Rect rect)
         {
-            string text = ClearPace.Describe(clearTime, StageEvents.TargetSeconds, StageEvents.RoomCount);
+            string text = ClearPace.Describe(stageTime, StageEvents.TargetSeconds, StageEvents.RoomCount); // 목표 시간은 스테이지 하나 몫
             if (string.IsNullOrEmpty(text)) return;
             var style = labelCenterTint; // 글자색은 아래에서 정한다
-            style.normal.textColor = ClearPace.IsFast(clearTime, StageEvents.TargetSeconds)
+            style.normal.textColor = ClearPace.IsFast(stageTime, StageEvents.TargetSeconds)
                 ? new Color(0.45f, 0.95f, 0.5f)   // 초록: 목표보다 빠름
                 : new Color(1f, 0.62f, 0.25f);    // 주황: 목표보다 느림
             GUI.Label(rect, text, style);

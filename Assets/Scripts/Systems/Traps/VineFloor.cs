@@ -11,7 +11,7 @@ namespace IBlameYou.Systems
         private static readonly List<VineFloor> Active = new List<VineFloor>();
         private static readonly Color VineColor = new Color(0.3f, 0.6f, 0.25f, 0.9f);
 
-        private readonly HashSet<CombatStats> inside = new HashSet<CombatStats>();
+        private readonly Dictionary<CombatStats, int> inside = new Dictionary<CombatStats, int>(); // 몸마다 들어와 있는 콜라이더 수
         private System.Action onBurned;
         private bool burned;
 
@@ -41,21 +41,25 @@ namespace IBlameYou.Systems
         private void OnDisable()
         {
             Active.Remove(this);
-            foreach (var stats in inside) if (stats != null) stats.TerrainSlowStacks = Mathf.Max(0, stats.TerrainSlowStacks - 1);
+            foreach (var stats in inside.Keys) if (stats != null) stats.TerrainSlowStacks = Mathf.Max(0, stats.TerrainSlowStacks - 1);
             inside.Clear();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
             var stats = other.GetComponentInParent<CombatStats>();
-            if (stats == null || !inside.Add(stats)) return;
-            stats.TerrainSlowStacks++;
+            if (stats == null) return;
+            inside.TryGetValue(stats, out int count);
+            inside[stats] = count + 1;
+            if (count == 0) stats.TerrainSlowStacks++; // 몸의 첫 콜라이더만 센다 (콜라이더가 여럿이어도 한 번)
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
             var stats = other.GetComponentInParent<CombatStats>();
-            if (stats == null || !inside.Remove(stats)) return;
+            if (stats == null || !inside.TryGetValue(stats, out int count)) return;
+            if (count > 1) { inside[stats] = count - 1; return; } // 아직 다른 콜라이더가 덩굴 위
+            inside.Remove(stats);
             stats.TerrainSlowStacks = Mathf.Max(0, stats.TerrainSlowStacks - 1);
         }
 

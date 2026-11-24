@@ -29,6 +29,11 @@ namespace IBlameYou.Enemies
         private void Update()
         {
             if (health == null || health.IsDead || Time.timeScale <= 0f) return;
+            if (mover != null && mover.Stunned) // 맞아서 경직이면 예고 중이던 그물도 취소 (리뷰 MEDIUM)
+            {
+                if (windupLeft >= 0f) { windupLeft = -1f; EnemySquash.For(gameObject).Cancel(); }
+                return;
+            }
             if (target == null)
             {
                 var player = FindFirstObjectByType<IBlameYou.Player.PlayerMovement>();
@@ -47,6 +52,8 @@ namespace IBlameYou.Enemies
             if (Time.time < nextNetTime || (mover != null && mover.Busy)) return;
             float distance = Vector2.Distance(transform.position, target.position);
             if (!KoboldChiefRules.InNetRange(distance) || IBlameYou.Systems.NetSnare.IsSnared(target.gameObject)) return;
+            var targetHealth = target.GetComponent<HealthSystem>();
+            if (targetHealth != null && targetHealth.IsDead) return; // 쓰러진 플레이어에게는 안 던진다
             windupLeft = WindupTime;
             EnemySquash.For(gameObject).Windup(WindupTime);
             VfxPlayer.AimGlint(Hand());

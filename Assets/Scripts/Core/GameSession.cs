@@ -21,5 +21,8 @@ namespace IBlameYou.Core
 
         // 개발자 모드 시작 화면에서 고른 시작 스테이지 (숲 스테이지 2를 바로 시험). 일반 모드는 늘 1. 저장하지 않는다.
         public static int DevStartStage { get; set; } = 1;
+
+        // 저장 슬롯 1~99 (SaveSlotRule). 런 저장(쉼터)·숨은 능력치가 슬롯마다 따로다. 고른 값은 SaveData가 공용 키에 남긴다.
+        public static int SaveSlot { get; set; } = 1;
     }
 }

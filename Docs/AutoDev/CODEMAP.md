@@ -19,7 +19,7 @@
 | 기능 | 파일 |
 | --- | --- |
 | 온라인 2인 (호스트 방식, 컴퓨터 두 대) | `Net/` — 순수 `Net/Core/`(바이트·TCP·P2 입력·압축, 테스트 `Tests/EditMode/NetCoreTests`), 그림·HUD 옮기기 `Net/View/`(`NetWorld`·`HudRecorder`·`NetGUI` 별칭, 테스트 `Tests/EditModeUnity/NetViewTests`), 연결 `NetSession`, 호스트 보내기 `NetHostStreamer`, 친구 화면 `NetClientView`, P2 입력 `P2Input`, 소리 `NetAudio`, 메뉴 창 `Core/OnlineWindow.cs`. OnGUI 파일은 `using GUI = IBlameYou.Net.NetGUI;` 필수 |
-| 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch), 저장 `Core/RunSave.cs`·`SaveData.cs`, 카메라 `Core/CameraFollow.cs` |
+| 씬 시작·런 조립·적 스폰 분기 | `Core/PlaytestBootstrap.cs` (`SpawnEnemy` switch, 스테이지 1→5·쉼터 `GoToRest`·`BuildRunData`·`TeardownWorld`), 쉼터 창 `Core/RestMenu.cs`, 저장 `Core/RunSave.cs`(쉼터에서만)·`SaveData.cs`(슬롯 키 `SlotKey`), 규칙 `Chunks/RunFlowRule`·`RestRule`·`SaveSlotRule`, 카메라 `Core/CameraFollow.cs` |
 | 스테이지 계획·청크 지형 (순수 C#, 테스트 가능) | `Systems/MapGeneration/Chunks/`: `StagePlanner`(청크 순서·시간), `ChunkGenerator`(청크 지형), `StageValidator`(갈 수 있는지), `ChunkData`(타일·적·기능 데이터) |
 | 방 격자 (순수 C#) | `Chunks/RoomLayout.cs`(5×4 방 배치·방 구성: 14~18방 = 전투 5+(좌우 2+)·퍼즐 2+·마을 1·중간보스 1(MidBossFor)·보물·샘 1~2, 이동 방 없음. 주 경로·곁방 개념 없음 — 보스 = 가장 먼 방, 중간보스 = 보스 길목 밖 그다음 먼 방, 특수 방은 문 모양만 봄), `Chunks/RoomShaper.cs`(방 지형·세로 방 모양·중간보스 방 기사) |
 | 스테이지를 씬에 만들기 | `Systems/MapGeneration/Stage/ChunkStreamer.cs`(로드·방 전환, partial: `.Queries` 미니맵·결과 창 질문 / `.Puzzles` 등불 퍼즐 / `.Rewards` 보상·런 기록 / `.RoomEvents` 보물 고블린·저주 상자), `ChunkBuilder.cs`(타일), `ArenaZone.cs`(전투 잠금), `Checkpoint`·`RelicChest`·`ArenaReward`·`StageExit`·`FallRecovery` |

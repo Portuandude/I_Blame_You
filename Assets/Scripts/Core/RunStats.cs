@@ -40,6 +40,19 @@ namespace IBlameYou.Core
             Ended = false;
         }
 
+        // 쉼터에서 다음 스테이지로 (또는 쉼터 저장 이어하기): 앞 스테이지까지의 판 기록을 되살린다 (Reset 뒤에 부른다).
+        // 영혼석은 얻을 때 이미 SaveData에 쌓였으니 이번 판 표시값만 되돌린다.
+        public static void Restore(int gold, int earned, int spent, int heartDust, int picks, int[] casts)
+        {
+            Gold = System.Math.Max(0, gold);
+            GoldEarned = System.Math.Max(0, earned);
+            GoldSpent = System.Math.Max(0, spent);
+            HeartDust = System.Math.Max(0, heartDust);
+            Picks = System.Math.Max(0, picks);
+            if (casts != null)
+                for (int i = 0; i < SpellCasts.Length && i < casts.Length; i++) SpellCasts[i] = System.Math.Max(0, casts[i]);
+        }
+
         // 골드는 판이 끝난 뒤(보스 처치 → 클리어)에도 받는다: 보스 골드가 클리어와 같은 순간에 들어오기 때문.
         public static void AddGold(int amount)
         {
