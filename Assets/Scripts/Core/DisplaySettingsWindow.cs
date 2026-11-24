@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using IBlameYou.Systems;
 using IBlameYou.UI;
 using UnityEngine;
@@ -22,6 +23,8 @@ namespace IBlameYou.Core
         private readonly DerivedStyle headStyle = new DerivedStyle();
         private readonly DerivedStyle centerStyle = new DerivedStyle();
         private readonly DerivedStyle noteStyle = new DerivedStyle();
+        private readonly DerivedStyle appliedStyle = new DerivedStyle();
+        private List<int> available = new List<int>(); // 고를 수 있는 해상도 (모니터 크기는 창이 열린 동안 안 바뀌므로 Show에서 한 번 계산)
         private const float OpenFade = 0.2f;      // 배경 어둠이 다 깔리는 시간
         private const float OpenPop = 0.22f;      // 창이 톡 커지는 시간
         private const float OpenScale = 0.9f;     // 처음 크기
@@ -66,6 +69,7 @@ namespace IBlameYou.Core
             frameLimit = DisplaySettings.FrameLimit;
             shake = ComfortSettings.ShakePercent;
             flash = ComfortSettings.FlashPercent;
+            available = DisplayRules.Available(DisplaySettings.MonitorWidth, DisplaySettings.MonitorHeight);
             openedAt = Time.unscaledTime;
             openedFrame = Time.frameCount;
             keyboard = false;
@@ -95,7 +99,7 @@ namespace IBlameYou.Core
                 return;
             }
 
-            var available = DisplayRules.Available(DisplaySettings.MonitorWidth, DisplaySettings.MonitorHeight);
+            if (available == null || available.Count == 0) available = DisplayRules.Available(DisplaySettings.MonitorWidth, DisplaySettings.MonitorHeight);
             int at = Mathf.Max(0, available.IndexOf(resolution));
             HandleKeys(Event.current, available.Count, ref at);
             if (!IsOpen) return;
@@ -109,7 +113,8 @@ namespace IBlameYou.Core
 
             const float width = 440f;
             const float height = 324f + 3f * PercentRowStep; // 프레임 제한·눈 편의 세 줄
-            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
+            // 낮은 창에서도 [적용]·[닫기]가 화면 밖으로 나가지 않게 아래도 맞춘다 (그래도 모자라면 위를 우선)
+            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, Mathf.Min((Screen.height - height) / 2f, Screen.height - height - 10f)), width, height);
             var previousMatrix = GUI.matrix;
             float pop = PopScale(open);
             if (pop != 1f) GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), rect.center);
@@ -376,7 +381,7 @@ namespace IBlameYou.Core
         }
 
         // "적용됨!" 금색 띠: 가운데서 좌우로 펼쳐지고, 끝무렵 흐려진다.
-        private static void DrawApplied(Rect rect, float t)
+        private void DrawApplied(Rect rect, float t)
         {
             if (Event.current.type != EventType.Repaint) return;
             float grow = Mathf.Clamp01(t / 0.12f);
@@ -391,12 +396,14 @@ namespace IBlameYou.Core
             GUI.DrawTexture(new Rect(band.x, band.yMax - 2f, band.width, 2f), Texture2D.whiteTexture);
             if (grow >= 1f)
             {
-                var style = new GUIStyle(GUI.skin.label)
+                var style = appliedStyle.Get(GUI.skin.label, st =>
                 {
-                    alignment = TextAnchor.MiddleCenter, fontSize = 24, fontStyle = FontStyle.Bold
-                };
-                style.normal.textColor = new Color(1f, 0.85f, 0.3f, alpha);
-                GUI.color = Color.white;
+                    st.alignment = TextAnchor.MiddleCenter;
+                    st.fontSize = 24;
+                    st.fontStyle = FontStyle.Bold;
+                    st.normal.textColor = new Color(1f, 0.85f, 0.3f);
+                });
+                GUI.color = new Color(1f, 1f, 1f, alpha); // 옅어짐은 GUI.color로 (스타일은 한 번만 만든다)
                 GUI.Label(band, "적용됨!", style);
             }
             GUI.color = previous;
