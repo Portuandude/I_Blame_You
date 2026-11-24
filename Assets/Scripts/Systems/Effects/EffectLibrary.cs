@@ -86,10 +86,14 @@ namespace IBlameYou.Systems
 
         // 마법 투사체가 날아가는 동안 반복 재생할 프레임. Resources에 없으면 LevelArtConfig 것을 쓴다.
         public static Sprite[] FlightFrames(Element element) =>
-            LoadRuntimeFrames($"Effects/Flight/{ElementFolder(element)}") ?? SpellFrames(element);
+            LoadRuntimeFrames($"Effects/Px/Flight/{ElementFolder(element)}") ?? SpellFrames(element);
+
+        // 마법 전용 그림 (pixelfx, Resources/Effects/Px/Spell/<name>/). ground면 아래 가운데 피벗 (땅에 서는 그림). 없으면 null.
+        public static Sprite[] SpellArt(string name, bool ground = false) =>
+            string.IsNullOrEmpty(name) ? null : LoadRuntimeFrames($"Effects/Px/Spell/{name}", ground ? new Vector2(0.5f, 0f) : new Vector2(0.5f, 0.5f));
 
         // 마법이 적이나 벽에 맞았을 때 한 번 재생할 프레임.
-        public static Sprite[] HitFrames(Element element) => LoadRuntimeFrames($"Effects/Hit/{ElementFolder(element)}");
+        public static Sprite[] HitFrames(Element element) => LoadRuntimeFrames($"Effects/Px/Hit/{ElementFolder(element)}");
 
         public static void PlayHit(Element element, Vector3 position, float scale = 1f)
         {
@@ -97,7 +101,7 @@ namespace IBlameYou.Systems
         }
 
         // 마법을 쏠 때 손 앞에 빛이 모였다 터지는 프레임 (Tools/ArtGen/generate_magic_fx.py).
-        public static Sprite[] CastFrames(Element element) => LoadRuntimeFrames($"Effects/Cast/{ElementFolder(element)}");
+        public static Sprite[] CastFrames(Element element) => LoadRuntimeFrames($"Effects/Px/Cast/{ElementFolder(element)}");
 
         public static void PlayCast(Element element, Vector3 position, bool flipX = false, float scale = 0.8f)
         {
@@ -119,6 +123,7 @@ namespace IBlameYou.Systems
             if (RuntimeFrames.TryGetValue(key, out var cached)) return cached;
 
             var textures = Resources.LoadAll<Texture2D>(path);
+            bool pixelArt = IsPixelFxFolder(path);
             Sprite[] frames = null;
             if (textures != null && textures.Length > 0)
             {
@@ -127,6 +132,7 @@ namespace IBlameYou.Systems
                 for (int i = 0; i < textures.Length; i++)
                 {
                     var texture = textures[i];
+                    if (pixelArt) texture.filterMode = FilterMode.Point; // pixelfx 픽셀 그림은 흐리지 않게
                     frames[i] = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), pivot,
                         RuntimePixelsPerUnit);
                     frames[i].name = texture.name;
@@ -136,6 +142,9 @@ namespace IBlameYou.Systems
             RuntimeFrames[key] = frames;
             return frames;
         }
+
+        // pixelfx로 만든 그림 폴더 (Tools/PixelFx/recipes.json의 dest = Resources/Effects/Px/)
+        private static bool IsPixelFxFolder(string path) => path.StartsWith("Effects/Px/");
 
         private static Sprite[] NullIfEmpty(Sprite[] frames) => frames != null && frames.Length > 0 ? frames : null;
     }
