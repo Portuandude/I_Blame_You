@@ -31,6 +31,7 @@ namespace IBlameYou.UI
         private static readonly Color TreasureColor = new Color(1f, 0.85f, 0.3f);   // gold
         private static readonly Color RestColor = new Color(0.5f, 0.97f, 1f);       // aqua
         private static readonly Color ManaSpringColor = new Color(0.45f, 0.62f, 1f); // 마나 샘: 샘 아이콘을 파랗게 물들인다 (새 그림 없이)
+        private static readonly Color AlignmentColor = new Color(0.78f, 0.5f, 1f); // 선악도 방: 샘 아이콘을 보랏빛으로 (새 그림 없이)
         private static readonly Color StartColor = new Color(0.6f, 1f, 0.45f);
         private static readonly Color CoinColor = new Color(1f, 0.82f, 0.25f);      // 동전 무더기 점 (금색)
         private static readonly Color CurseColor = new Color(0.66f, 0.4f, 0.98f);   // 저주받은 상자 점 (보라, CursedChest와 같은 색)
@@ -621,8 +622,8 @@ namespace IBlameYou.UI
             return style;
         }
 
-        // 아이콘 색: 마나 샘은 회복 샘 아이콘을 파랗게, 나머지는 그대로
-        private static Color IconTint(RoomKind kind) => kind == RoomKind.ManaSpring ? ManaSpringColor : Color.white;
+        // 아이콘 색: 마나 샘은 회복 샘 아이콘을 파랗게, 선악도 방은 보랏빛으로, 나머지는 그대로
+        private static Color IconTint(RoomKind kind) => kind == RoomKind.ManaSpring ? ManaSpringColor : kind == RoomKind.Alignment ? AlignmentColor : Color.white;
 
         private static Texture2D KindIcon(RoomKind kind)
         {
@@ -634,6 +635,7 @@ namespace IBlameYou.UI
                 case RoomKind.Treasure: return art.Treasure;
                 case RoomKind.Spring: return art.Rest; // 숨 고르기 방(Rest)은 체크포인트 제거(2026-11-10)로 표시 없음
                 case RoomKind.ManaSpring: return art.Rest; // 샘 아이콘을 파랗게 (IconTint)
+                case RoomKind.Alignment: return art.Rest; // 샘 아이콘을 보랏빛으로 (IconTint)
                 case RoomKind.Start: return art.Start;
                 case RoomKind.Village: return art.Village;
                 default: return null;
@@ -668,7 +670,7 @@ namespace IBlameYou.UI
             {
                 GUI.Label(rect,
                     "<color=#ff524d>■</color> 보스  <color=#ff9933>■</color> 중간보스  <color=#bf73ff>■</color> 정예  " +
-                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#739eff>■</color> 마나 샘  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비  <color=#ff9940>●</color> 퍼즐", legend);
+                    "<color=#ffd84d>■</color> 보물  <color=#7ff6ff>■</color> 샘  <color=#739eff>■</color> 마나 샘  <color=#c780ff>■</color> 묘한 방  <color=#99ff73>■</color> 시작  <color=#ffa07a>■</color> 마을  <color=#ffd140>●</color> 동전  <color=#a866fa>●</color> 저주 상자  <color=#8cd9ff>●</color> 장비  <color=#ff9940>●</color> 퍼즐", legend);
                 return;
             }
 
@@ -790,6 +792,7 @@ namespace IBlameYou.UI
                 case RoomKind.Treasure: return TreasureColor;
                 case RoomKind.Spring: return RestColor; // 숨 고르기 방(Rest)은 표시 없음
                 case RoomKind.ManaSpring: return ManaSpringColor;
+                case RoomKind.Alignment: return AlignmentColor;
                 case RoomKind.Start: return StartColor;
                 case RoomKind.Village: return VillageColor;
                 default: return null;
