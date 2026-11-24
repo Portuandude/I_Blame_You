@@ -141,6 +141,8 @@ namespace IBlameYou.Systems
         {
             var player = TrapCommon.PlayerFrom(other);
             if (active || cleared || player == null) return;
+            var health = player.GetComponent<HealthSystem>();
+            if (health != null && health.IsDead) return; // 쓰러진 몸이 밀려 들어와 문을 닫지 않게 (버그 점검 2026-11-24)
             enteredPlayer = player.transform;
             StartCoroutine(Begin());
         }
