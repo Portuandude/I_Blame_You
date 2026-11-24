@@ -279,7 +279,7 @@ namespace IBlameYou.UI
         {
             if (restartRequested) return;
             restartRequested = true;
-            if (RestNext && !health.IsDead) goToRest(backToMenu); // 스테이지 1~4 클리어: 쉼터로 (판이 이어진다)
+            if (RestNext && (health == null || !health.IsDead)) goToRest(backToMenu); // 스테이지 1~4 클리어: 쉼터로 (판이 이어진다)
             else restart?.Invoke(backToMenu);
         }
 

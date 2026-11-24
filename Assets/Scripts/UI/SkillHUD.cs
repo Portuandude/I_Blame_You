@@ -132,6 +132,8 @@ namespace IBlameYou.UI
 
         // 런 시작부터 지금까지 (런 진행 저장용).
         public float RunElapsed => Time.time - runStartTime;
+        // 쉼터 저장에 넣을 판 시간: 클리어했으면 클리어 순간에 멈춘 값 (결과 창을 보는 시간은 판 시간이 아니다)
+        public float RunElapsedForSave => stageCleared ? clearTime : RunElapsed;
 
         // 저장된 런을 이어 할 때: Initialize 뒤에 불러 걸린 시간과 런 기록을 되살린다.
         public void ResumeRun(float elapsed, int kills, float damageTaken, int arenasCleared, int gatesOpened)

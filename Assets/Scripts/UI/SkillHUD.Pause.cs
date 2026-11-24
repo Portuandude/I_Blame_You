@@ -175,7 +175,7 @@ namespace IBlameYou.UI
                     break;
                 case 2:
                     ClosePauseMenu();
-                    RunSave.UpdateElapsed(RunElapsed); // 이어 할 때 시간이 저장 시점으로 되감기지 않게
+                    RunSave.UpdateElapsed(RunElapsed); // 스테이지 중간 저장일 때만 시간을 올린다 (쉼터 저장은 그 스테이지를 다시 하므로 그대로, RunSave.UpdateElapsed)
                     restart?.Invoke(true);
                     break;
                 case 3:
