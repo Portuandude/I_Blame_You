@@ -163,7 +163,7 @@ namespace IBlameYou.Player
                     Dial.Cancel();
                     return false;
                 }
-                if (P2Input.GetMouseButtonDown(0))
+                if (P2Input.GetMouseButtonDown(0) || P2Input.GetKeyDown(KeyCode.Escape)) // Esc: 마나 없이 취소 (친구 창이 포커스를 잃을 때 보내는 취소도 이것)
                 {
                     Dial.Cancel();
                     dialCancelFrame = Time.frameCount; // 같은 프레임에 PlayerCombat이 나중에 돌아도 평타가 나가지 않게

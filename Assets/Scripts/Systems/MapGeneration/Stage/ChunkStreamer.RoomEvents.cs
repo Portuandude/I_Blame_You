@@ -216,8 +216,9 @@ namespace IBlameYou.Systems
             int cols = RoomCols(index);
             for (int offset = 0; offset <= 8; offset++)
             {
-                foreach (int x in new[] { center + offset, center - offset })
+                for (int side = 0; side < 2; side++) // 오른쪽·왼쪽 (기다리는 보물 고블린이 매 프레임 다시 찾으므로 배열을 만들지 않는다)
                 {
+                    int x = side == 0 ? center + offset : center - offset;
                     if (x < 3 || x > cols - 4 || HasTerrainFeature(chunk, x)) continue;
                     for (int y = 1; y < ChunkData.Height - 3; y++)
                     {

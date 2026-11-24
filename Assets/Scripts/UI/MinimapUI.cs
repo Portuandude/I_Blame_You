@@ -595,6 +595,8 @@ namespace IBlameYou.UI
         }
 
         private static MapArt art;
+        private static (Texture2D icon, string name, Color tint)[] legendItems; // 범례 항목 (art를 읽은 뒤 한 번)
+        private const float LegendMinItem = 72f; // 라벨 50px: "중간보스"·"묘한 방"이 잘리지 않게 (14칸 ≈ 1008px)
 
         private static void LoadArt()
         {
@@ -674,17 +676,25 @@ namespace IBlameYou.UI
                 return;
             }
 
-            var items = new[]
-            {
-                (art.Boss, "보스"), (art.MidBoss, "중간보스"), (art.Elite, "정예"),
-                (art.Treasure, "보물"), (art.Rest, "샘"), (art.Start, "시작"), (art.Village, "마을"), (art.Check, "돌파")
-            };
-            int count = items.Length + 4; // 마지막 네 칸은 동전 점·저주 상자 점·장비 점·퍼즐 점 (그림이 아니라 색 점)
-            float itemWidth = Mathf.Min(92f, rect.width / count); // 좁은 지도에서도 패널 안에
+            // 한 번만 만든다 (지도를 펼친 동안 OnGUI마다 배열을 만들던 것). 마나 샘·묘한 방은 샘 아이콘에 색만 입힌다 (IconTint와 같게)
+            if (legendItems == null)
+                legendItems = new[]
+                {
+                    (art.Boss, "보스", Color.white), (art.MidBoss, "중간보스", Color.white), (art.Elite, "정예", Color.white),
+                    (art.Treasure, "보물", Color.white), (art.Rest, "샘", Color.white), (art.Rest, "마나 샘", ManaSpringColor),
+                    (art.Rest, "묘한 방", AlignmentColor), (art.Start, "시작", Color.white), (art.Village, "마을", Color.white),
+                    (art.Check, "돌파", Color.white)
+                };
+            int count = legendItems.Length + 4; // 마지막 네 칸은 동전 점·저주 상자 점·장비 점·퍼즐 점 (그림이 아니라 색 점)
+            // 좁은 지도(초반 방 두세 칸)에서는 칸이 8px까지 줄어 아이콘이 겹치던 것: 칸 폭은 최소 LegendMinItem, 범례가 지도보다 넓으면 가운데 기준으로 넘친다
+            float itemWidth = Mathf.Clamp(rect.width / count, LegendMinItem, 92f);
             float x = rect.center.x - itemWidth * count / 2f;
-            foreach (var (icon, name) in items)
+            var tintBefore = GUI.color;
+            foreach (var (icon, name, tint) in legendItems)
             {
+                GUI.color = tintBefore * tint;
                 if (icon != null) GUI.DrawTexture(new Rect(x, rect.y + 2f, 20f, 20f), icon, ScaleMode.ScaleToFit, true);
+                GUI.color = tintBefore;
                 GUI.Label(new Rect(x + 22f, rect.y, itemWidth - 22f, rect.height), name, legendLeft);
                 x += itemWidth;
             }

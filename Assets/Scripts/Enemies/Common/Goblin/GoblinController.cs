@@ -84,7 +84,7 @@ namespace IBlameYou.Enemies
 
             if (phase != AttackPhase.None)
             {
-                UpdateAttack();
+                UpdateAttack(target);
                 return;
             }
 
@@ -148,9 +148,10 @@ namespace IBlameYou.Enemies
             return true;
         }
 
-        private void UpdateAttack()
+        private void UpdateAttack(Transform target)
         {
-            if (IsStunned)
+            // 웅크린 사이 플레이어가 쓰러지면(FindTarget = null) 시체에 휘두르지 않고 거둔다 (슬라임과 같게, 버그 점검 2026-11-24)
+            if (IsStunned || (phase == AttackPhase.Windup && target == null))
             {
                 EndAttack(true);
                 return;

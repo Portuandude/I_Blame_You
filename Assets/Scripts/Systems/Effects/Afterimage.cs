@@ -65,6 +65,8 @@ namespace IBlameYou.Systems
             float k = 1f - age / life;
             if (k <= 0f)
             {
+                // 판 정리로 파괴된 항목이 풀 자리를 차지하고 있으면 걷어 낸다 (새 판 초반 잔상이 풀로 못 돌아가던 것, 버그 점검 2026-11-24)
+                if (Pool.Count >= PoolLimit && Pool.Peek() == null) PurgeDestroyed();
                 if (Pool.Count < PoolLimit)
                 {
                     gameObject.SetActive(false);
@@ -75,6 +77,17 @@ namespace IBlameYou.Systems
             }
 
             Apply(startAlpha * k);
+        }
+
+        private static void PurgeDestroyed()
+        {
+            var alive = new System.Collections.Generic.List<Afterimage>(Pool.Count);
+            while (Pool.Count > 0)
+            {
+                var item = Pool.Pop();
+                if (item != null) alive.Add(item);
+            }
+            for (int i = alive.Count - 1; i >= 0; i--) Pool.Push(alive[i]);
         }
 
         private void Apply(float alpha)
