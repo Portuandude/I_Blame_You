@@ -57,7 +57,10 @@ namespace IBlameYou.UI
             choiceDone = null;
             Time.timeScale = 1f;
             if (!deathHandled && !stageCleared) control.Locked = false;
-            if (finished) done?.Invoke(choiceResult);
+            if (!finished) return; // 쓰러짐·클리어로 닫히면 행동도 선악도도 없던 일
+            IBlameYou.Core.SaveData.AddAlignment("A", ChoiceRouletteRule.AlignmentDelta(choiceAlignment, choiceA));
+            IBlameYou.Core.SaveData.AddAlignment("B", ChoiceRouletteRule.AlignmentDelta(choiceAlignment, choiceB));
+            done?.Invoke(choiceResult);
         }
 
         private void UpdateChoiceInput()
@@ -105,9 +108,7 @@ namespace IBlameYou.UI
             GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
             if (choiceA < 0 || choiceB < 0) return;
 
-            // 둘 다 골랐다: 선악도는 각자 고른 대로, 행동은 같으면 그대로·다르면 룰렛
-            IBlameYou.Core.SaveData.AddAlignment("A", ChoiceRouletteRule.AlignmentDelta(choiceAlignment, choiceA));
-            IBlameYou.Core.SaveData.AddAlignment("B", ChoiceRouletteRule.AlignmentDelta(choiceAlignment, choiceB));
+            // 둘 다 골랐다: 행동은 같으면 그대로·다르면 룰렛 (선악도는 결과를 보여 주고 닫을 때 각자 고른 대로, CloseChoice)
             choiceResult = ChoiceRouletteRule.Resolve(choiceA, choiceB, UnityEngine.Random.value, out choiceSpun);
             choiceDecidedAt = Time.unscaledTime;
             if (choiceSpun) GameAudio.PlaySfx("ChestCreak", 0.5f, 0f); // 룰렛 도는 소리 (있는 소리)
