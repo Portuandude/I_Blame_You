@@ -52,11 +52,21 @@ namespace IBlameYou.Core
             foreach (var intro in GetComponents<StoryIntro>()) Destroy(intro);
             foreach (var rest in GetComponents<RestMenu>()) Destroy(rest);
             GameAudio.StopMusic(); // 곡은 호스트가 보내 준다
+            ResetMusicEffects();
+        }
+
+        // 호스트가 보낸 먹먹함·줄임·음 높이는 끊기면 되돌리는 패킷이 안 올 수 있다 (GameAudio는 씬을 넘어 남음, 버그 점검 2026-11-24)
+        private static void ResetMusicEffects()
+        {
+            GameAudio.SetMusicMuffled(false);
+            GameAudio.SetMusicDuck(1f);
+            GameAudio.SetMusicPitch(1f);
         }
 
         // 연결이 끝나면 시작 화면으로 (이유는 온라인 창에 보인다)
         private void OnOnlineClientEnded(string reason)
         {
+            ResetMusicEffects();
             if (GetComponent<StartMenu>() == null) ShowMenu();
         }
 
