@@ -179,7 +179,7 @@ namespace IBlameYou.Systems
                     // 방을 옮긴 다음 프레임에 한 번 더: 그 사이 치워진 전투 구역(ArenaZone.OnDestroy)이 카메라 영역을 바꿨을 수 있다
                     reapplyCameraBounds = false;
                     var follow = Camera.main != null ? Camera.main.GetComponent<IBlameYou.Core.CameraFollow>() : null;
-                    if (follow != null) follow.SetBounds(RoomRect(currentRoom));
+                    if (follow != null && ArenaZone.Current == null) follow.SetBounds(RoomRect(currentRoom)); // 새 방에서 막 잠긴 구역의 카메라 잠금은 두기
                 }
 
                 CheckDoors();
