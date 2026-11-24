@@ -23,7 +23,10 @@ namespace IBlameYou.Systems
         private Transform glint;
 
         // (x, y)는 가시 줄 왼쪽 아래 모서리(월드), width는 칸 수.
-        public static SpikeTrap Create(Transform parent, Vector2 bottomLeft, int width)
+        // tint: 숲 대나무 가시 (스테이지 2, 2026-11-24 사람 결정 "가시 함정 색만 바꿈"). 그림에 곱하는 색, null이면 그대로.
+        public static readonly Color BambooTint = new Color(0.55f, 0.85f, 0.4f);
+
+        public static SpikeTrap Create(Transform parent, Vector2 bottomLeft, int width, Color? tint = null)
         {
             var go = new GameObject("Spikes");
             go.transform.SetParent(parent, false);
@@ -37,8 +40,9 @@ namespace IBlameYou.Systems
             var sprite = TrapCommon.Frame("Spikes");
             for (int i = 0; i < width; i++)
             {
-                TrapCommon.AddSprite(go.transform, $"Spike_{i}", sprite, new Vector2(i - (width - 1) / 2f, 0.3f), new Vector2(0.9f, 0.6f),
+                var spike = TrapCommon.AddSprite(go.transform, $"Spike_{i}", sprite, new Vector2(i - (width - 1) / 2f, 0.3f), new Vector2(0.9f, 0.6f),
                     new Color(0.85f, 0.85f, 0.9f), 0);
+                if (tint.HasValue) spike.color = tint.Value;
             }
 
             var trap = go.AddComponent<SpikeTrap>();

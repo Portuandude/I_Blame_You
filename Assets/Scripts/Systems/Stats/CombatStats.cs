@@ -20,7 +20,11 @@ namespace IBlameYou.Systems
         public float GrabSlowMultiplier { get; set; } = 1f;
 
         // 버프와 디버프를 합친 최종 이동속도 배율.
-        public float TotalMoveMultiplier => MoveSpeedMultiplier * SlowMultiplier * GrabSlowMultiplier;
+        public float TotalMoveMultiplier => MoveSpeedMultiplier * SlowMultiplier * GrabSlowMultiplier * (TerrainSlowStacks > 0 ? TerrainSlow : 1f);
+
+        // 바닥 지형 둔화 (숲 바닥 덩굴 VineFloor): 밟고 있는 덩굴 수. 겹쳐 밟아도 둔화는 한 번만 (젖음·붙잡기와는 곱한다)
+        public const float TerrainSlow = 0.6f;
+        public int TerrainSlowStacks { get; set; }
 
         // 주는 피해 배율 (레벨업 특성 등). 방어 계산 전 공격 수치에 곱한다.
         public float DamageMultiplier { get; set; } = 1f;

@@ -119,6 +119,8 @@ namespace IBlameYou.Systems
                 // 쏜 자리에서 이미 겹쳐 있던 장치(룬 위에 서서 다른 룬을 쏠 때)는 건너뛴다: 쏜 방향으로 장치 반폭보다 앞에 있어야 한다.
                 if (hitsEnemies && hit.isTrigger)
                 {
+                    var touched = hit.GetComponent<IElementTouchReceiver>(); // 숲 덩굴 등: 속성만 알리고 그대로 지나간다
+                    if (touched != null) { touched.TouchElement(element); continue; }
                     var trigger = hit.GetComponent<IElementReceiver>();
                     var bounds = hit.bounds;
                     bool ahead = velocity.x == 0f

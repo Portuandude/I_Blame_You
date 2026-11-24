@@ -58,7 +58,7 @@ namespace IBlameYou.Systems
         {
             if (!active) return;
             if (health != null && health.IsDead) { End(false); return; }
-            if (Time.timeScale > 0f && !control.Locked && AnyP1Down()) // 창·일시정지·방 이동 잠금 중의 키는 세지 않는다
+            if (Time.timeScale > 0f && !control.Locked && RoleInput.Focus != ControlFocus.B && AnyP1Down()) // 창·일시정지·방 이동 잠금 중의 키는 세지 않는다
             {
                 presses++;
                 if (look != null) look.transform.localScale = lookScale * 1.12f; // 흔들어 빠져나오는 느낌

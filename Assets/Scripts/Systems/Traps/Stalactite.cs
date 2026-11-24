@@ -56,17 +56,34 @@ namespace IBlameYou.Systems
         private Vector2[] pebbleVelocity;
         private int nextPebble;
 
-        // position: 매달린 칸의 가운데 (월드). 그 칸 바로 위가 천장이다.
-        public static Stalactite Create(Transform parent, Vector2 position)
+        // 숲 "떨어지는 통나무" (스테이지 2, 2026-11-24 사람 결정 C1): 종유석과 같은 동작에 가로로 긴 갈색 통나무 몸 (임시 그림, 아트 규칙).
+        // 나뭇가지에 걸린 통나무라 천장이 없어도 된다 (ForestDressing이 바닥 위 빈 칸에 매단다).
+        private static readonly Color LogColor = new Color(0.5f, 0.33f, 0.18f);
+        private static readonly Color LeafColor = new Color(0.4f, 0.62f, 0.3f);
+        private bool isLog;
+
+        public static Stalactite CreateLog(Transform parent, Vector2 position)
         {
-            var go = new GameObject("Stalactite");
+            var trap = Create(parent, position, true);
+            return trap;
+        }
+
+        // position: 매달린 칸의 가운데 (월드). 그 칸 바로 위가 천장이다.
+        public static Stalactite Create(Transform parent, Vector2 position) => Create(parent, position, false);
+
+        private static Stalactite Create(Transform parent, Vector2 position, bool log)
+        {
+            var go = new GameObject(log ? "FallingLog" : "Stalactite");
             go.transform.SetParent(parent, false);
             go.transform.position = position;
 
             var trap = go.AddComponent<Stalactite>();
+            trap.isLog = log;
             trap.home = go.transform.position;
-            trap.body = TrapCommon.AddSprite(go.transform, "Body", TrapCommon.Frame("Stalactite"), Vector2.zero, new Vector2(0.5f, 0.9f),
-                new Color(0.55f, 0.5f, 0.62f), 2);
+            trap.body = log
+                ? TrapCommon.AddSprite(go.transform, "Body", null, Vector2.zero, new Vector2(1.6f, 0.5f), LogColor, 2)
+                : TrapCommon.AddSprite(go.transform, "Body", TrapCommon.Frame("Stalactite"), Vector2.zero, new Vector2(0.5f, 0.9f),
+                    new Color(0.55f, 0.5f, 0.62f), 2);
             trap.baseColor = trap.body.color;
             trap.bodyScale = trap.body.transform.localScale;
             trap.bodyHalfHeight = trap.body.bounds.extents.y;
@@ -91,7 +108,7 @@ namespace IBlameYou.Systems
                 pebbleGo.transform.localScale = new Vector3(PebbleSize, PebbleSize, 1f);
                 var pebble = pebbleGo.AddComponent<SpriteRenderer>();
                 pebble.sprite = SolidSpriteFactory.CreateSquare();
-                pebble.color = PebbleColor;
+                pebble.color = log ? LeafColor : PebbleColor;
                 pebble.sortingOrder = 2;
                 pebble.enabled = false;
                 trap.pebbles[i] = pebble;
@@ -102,7 +119,7 @@ namespace IBlameYou.Systems
             rb.useFullKinematicContacts = true;
             trap.hitBox = go.AddComponent<BoxCollider2D>();
             trap.hitBox.isTrigger = true;
-            trap.hitBox.size = new Vector2(0.45f, 0.85f);
+            trap.hitBox.size = log ? new Vector2(1.5f, 0.45f) : new Vector2(0.45f, 0.85f);
             trap.hitBox.enabled = false;
             return trap;
         }
@@ -171,7 +188,7 @@ namespace IBlameYou.Systems
         {
             if (pebbles == null || pebbles[i] == null) return;
             pebbles[i].enabled = true;
-            pebbles[i].color = PebbleColor;
+            pebbles[i].color = isLog ? LeafColor : PebbleColor;
             pebbles[i].transform.position = home + new Vector3(Random.Range(-0.12f, 0.12f), -TipOffset, 0f);
             pebbleAge[i] = 0f;
             pebbleVelocity[i] = new Vector2(Random.Range(-0.6f, 0.6f), -0.5f);
@@ -193,7 +210,8 @@ namespace IBlameYou.Systems
                 pebbleVelocity[i].y -= PebbleGravity * Time.deltaTime;
                 pebble.transform.position += (Vector3)(pebbleVelocity[i] * Time.deltaTime);
                 float fade = 1f - pebbleAge[i] / PebbleLife;
-                pebble.color = new Color(PebbleColor.r, PebbleColor.g, PebbleColor.b, fade);
+                var leaf = isLog ? LeafColor : PebbleColor;
+                pebble.color = new Color(leaf.r, leaf.g, leaf.b, fade);
             }
         }
 
