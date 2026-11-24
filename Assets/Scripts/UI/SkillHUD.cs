@@ -35,6 +35,9 @@ namespace IBlameYou.UI
         private bool deathHandled;
         private bool stageCleared;
         private float runStartTime;
+        private float stageStartTime;  // 이 스테이지를 시작한 때 (판 시간은 runStartTime, 앞 스테이지까지 이어짐)
+        private float stageTime;       // 클리어 때 이 스테이지만 걸린 시간 (결과 창 목표 대비 줄)
+        private Action<bool> goToRest; // 스테이지 1~4 클리어 뒤 결과 창 버튼: 쉼터로 (false) / 저장하고 시작 화면 (true)
         private float clearTime;
         private bool newBestTime;
         private string notice;
@@ -84,6 +87,7 @@ namespace IBlameYou.UI
                 progression.TraitRaised += OnTraitRaised;
             }
             runStartTime = Time.time;
+            stageStartTime = Time.time;
             RunStats.Reset();
             RunGold.Reset();
             VillageNpc.ResetGreetings(); // 새 판이면 마을 NPC가 다시 인사
@@ -97,6 +101,12 @@ namespace IBlameYou.UI
             InitializeVillage();
             InitializeChoice(); // A·B 선택지 룰렛 (SkillHUD.Choice.cs)
         }
+
+        // 스테이지 사이 쉼터로 가는 길 (PlaytestBootstrap). 없으면 클리어는 언제나 판 끝 (도시로).
+        public void SetRestCallback(Action<bool> callback) => goToRest = callback;
+
+        // 지금 클리어가 판 끝이 아니라 쉼터로 이어지는지 (스테이지 1~4, 기능 테스트 제외 — Chunks/RunFlowRule)
+        private bool RestNext => stageCleared && goToRest != null && RunFlowRule.HasRest(GameSession.Stage, GameSession.FeatureTest);
 
         private void OnEnemyKilled(EnemyController enemy, float xp)
         {
@@ -178,10 +188,20 @@ namespace IBlameYou.UI
             stageCleared = true;
             RunStats.AddHeartDust(HeartDustRule.StageClear); // 스테이지 클리어 영혼석 (아래 RecordClearTime의 PlayerPrefs.Save로 함께 저장)
             RunStats.Ended = true;
-            RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             clearTime = Time.time - runStartTime;
+            stageTime = Time.time - stageStartTime;
+            if (RestNext)
+            {
+                // 스테이지 1~4: 판은 이어진다 → 기록·저장 지우기 없이 결과 창 "쉼터로". 쉼터 들어갈 때 저장한다 (PlaytestBootstrap.GoToRest).
+                // 결과 창을 보는 동안 남은 위험물에 쓰러져 판이 끝나지 않게 무적.
+                PlayerPrefs.Save(); // 영혼석
+                if (health != null) health.GrantGrace(3600f);
+                control.Locked = true;
+                return;
+            }
+            RunSave.Clear(); // 끝난 런은 이어 할 수 없다
             newBestTime = SaveData.RecordClearTime(clearTime);
-            SaveData.RecordRecentClear(clearTime, StageEvents.TargetSeconds, StageEvents.RoomCount); // 시작 화면 최근 5판 평균
+            SaveData.RecordRecentClear(stageTime, StageEvents.TargetSeconds, StageEvents.RoomCount); // 시작 화면 최근 5판 평균 (스테이지 하나 몫 — 목표 시간 조정용)
             if (progression != null) SaveData.RecordLevel(progression.Level);
             RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs)
             control.Locked = true;
