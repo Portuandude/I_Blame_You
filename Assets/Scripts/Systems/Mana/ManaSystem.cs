@@ -83,14 +83,19 @@ namespace IBlameYou.Systems
 
         public bool TryConsume(float amount) => TryConsume(amount, ManaUser.Other);
 
+        // 바로 전 TryConsume이 마나 대신 다른 것(피의 계약 체력)으로 냈는지. 그때 마법진이 실패해도 마나를 날린 게 아니다 (MarkWasted 안 함).
+        public bool LastPaidByCover { get; private set; }
+
         public bool TryConsume(float amount, ManaUser user)
         {
+            LastPaidByCover = false;
             if (amount <= 0f) return true;
             amount *= TotalCostMultiplier;
             if (!HasEnough(amount))
             {
                 if (ShortfallCover == null || !ShortfallCover(user, amount)) return false;
                 // 마법값 전체를 대신 냈다 (있던 마나는 그대로, 2026-11-24 피의 계약)
+                LastPaidByCover = true;
             }
             else if (!Infinite)
             {
