@@ -201,7 +201,8 @@ namespace IBlameYou.Enemies
 
             if (ThrowsNets)
             {
-                NetShot.Launch(Stats, origin, direction, shootRange * 1.4f);
+                var net = NetShot.Launch(Stats, origin, direction, shootRange * 1.4f);
+                if (net != null && transform.parent != null) net.transform.SetParent(transform.parent, true); // 방이 치워지면 같이
                 return;
             }
 

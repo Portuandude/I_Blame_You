@@ -76,7 +76,13 @@ namespace IBlameYou.Enemies
                 GameAudio.PlaySfx("KnightLink", 0.7f, 0.05f);
                 StageEvents.PostNotice(IsChief ? "족장을 잃은 와르그가 날뛴다!" : "무리를 잃고 화가 났다!");
             }
-            else BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName);
+            else
+            {
+                // 낙사선 아래로 떨어져 끝났으면 연출을 화면 안(낙사선 위)에서 (버그 점검 2026-11-24)
+                var at = transform.position + Vector3.up * 0.6f;
+                at.y = Mathf.Max(at.y, killY + 3f);
+                BossDefeatFx.Play(at, DisplayName);
+            }
         }
 
         private void Enrage()
