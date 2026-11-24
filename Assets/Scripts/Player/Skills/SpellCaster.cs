@@ -302,6 +302,7 @@ namespace IBlameYou.Player
             {
                 tailwindUntil = Time.time + spell.Duration;
                 EffectLibrary.PlayCast(Element.Wind, transform.position + new Vector3(0f, 0.6f, 0f), facing < 0f, 1.2f);
+                ShowTailwind(spell);
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} — {spell.Duration:0}초 동안 마법진이 한 단계 쉬워진다");
                 return;
             }
@@ -310,7 +311,7 @@ namespace IBlameYou.Player
             {
                 var mist = new GameObject("Spell_Mist");
                 mist.transform.position = CursorLanding(spell);
-                mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration);
+                mist.AddComponent<MistZone>().Begin(spell.Radius, spell.Duration, EffectLibrary.SpellArt(spell.Art));
                 SkillMessages.Post(ManaUser.PlayerB, $"{spell.Name} 발동{tag}");
                 return;
             }
@@ -393,7 +394,7 @@ namespace IBlameYou.Player
 
             var go = new GameObject($"Spell_{spell.Element}");
             go.transform.position = origin;
-            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.FlightFrames(spell.Element), 16f, true,
+            EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.SpellArt(spell.Art) ?? EffectLibrary.FlightFrames(spell.Element), 16f, true,
                 ElementInfo.Color(spell.Element), spell.Radius * 2.5f);
             go.AddComponent<ProjectileTrail>().Begin(spell.Element);
 
@@ -446,7 +447,7 @@ namespace IBlameYou.Player
                     EffectLibrary.PlayHit(Element.Earth, HitPoint(health));
                     ScreenFlash.Pulse();
                     StatusEffects.TryApply(health, spell.Debuff, stats);
-                });
+                }, EffectLibrary.SpellArt(spell.Art, true), spell.ArtLead);
         }
 
         private System.Collections.IEnumerator VolleyRest(SpellDefinition spell, float facing, float power)
@@ -510,7 +511,22 @@ namespace IBlameYou.Player
             {
                 EffectLibrary.PlayHit(Element.Fire, HitPoint(health), 0.6f);
                 if (first) StatusEffects.TryApply(health, spell.Debuff, stats, true);
-            }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight);
+            }, spell.AtCursor, spell.Height > 0f ? spell.Height : FireWall.WallHeight, EffectLibrary.SpellArt(spell.Art, !spell.AtCursor));
+        }
+
+        // 순풍: 버프가 이어지는 동안 B 발밑에 도는 바람 (pixelfx 그림, 몸을 따라다님). 다시 걸면 새로 감는다.
+        private GameObject tailwindVisual;
+
+        private void ShowTailwind(SpellDefinition spell)
+        {
+            var frames = EffectLibrary.SpellArt(spell.Art, true);
+            if (frames == null) return;
+            if (tailwindVisual != null) Destroy(tailwindVisual);
+            var renderer = EffectLibrary.CreateVisual(transform, "TailwindAura", frames, 16f, true, ElementInfo.Color(Element.Wind), 1f, 3);
+            renderer.transform.localPosition = new Vector3(0f, -0.48f, 0f); // 발밑 (캡슐 콜라이더 아래 끝)
+            renderer.color = new Color(1f, 1f, 1f, 0.85f);
+            tailwindVisual = renderer.gameObject;
+            Destroy(tailwindVisual, spell.Duration);
         }
 
         // 정예·중간보스·보스인지 (골드 표와 같은 등급, RunGold.RankOf)
