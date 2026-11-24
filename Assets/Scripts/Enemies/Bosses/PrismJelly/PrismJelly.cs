@@ -25,6 +25,7 @@ namespace IBlameYou.Enemies
         private float nextShiftAt;
         private bool started;
         private bool fallen;
+        private float killY = float.NegativeInfinity; // 나타난 방 기준 낙사선 (방을 떠나는 프레임에 FloorY가 바뀌어도 낙사로 치지 않게, 버그 점검 2026-11-24)
 
         private static PrismJelly noticeOwner;
 
@@ -58,6 +59,7 @@ namespace IBlameYou.Enemies
 
         private void Start()
         {
+            killY = FallRecovery.FloorY + FallRecovery.KillY;
             started = true;
             nextShiftAt = Time.time + PrismJellyRules.ShiftInterval;
             nextColor = PrismJellyRules.NextColor(color, Random.value);
@@ -76,7 +78,7 @@ namespace IBlameYou.Enemies
         {
             if (fallen || !started) return;
             // 낙사선 아래로 떨어지면 전투 구역이 체력 0 없이 치운다: 그때도 처치 연출이 나오게 (SlimeKnight와 같음, 버그 점검 2026-11-24)
-            if (transform.position.y < FallRecovery.FloorY + FallRecovery.KillY)
+            if (transform.position.y < killY)
             {
                 OnHealthChanged(0f, 0f);
                 return;
