@@ -212,6 +212,7 @@ namespace IBlameYou.UI
                 // 시작 화면 최근 쓰러진 곳 평균. 클리어 직후 쓰러진 판은 클리어로 이미 기록했으므로 뺀다
                 if (!stageCleared) SaveData.RecordRecentDefeat(StageEvents.FarthestDistance); // 방 격자가 아니면(-1) 기록 안 함
                 if (!stageCleared) RecordBestGold(); // 최고 골드 (SkillHUD.Gold.cs), 클리어 뒤 쓰러짐은 이미 기록
+                SaveData.RecordRevival(); // 숨은 능력치 인과율: 쓰러지면 도시에서 다시 깨어난다 (개발자·기능 테스트 모드는 안 셈)
                 RunStats.Ended = true;
                 RunSave.Clear(); // 쓰러진 런은 이어 할 수 없다 (저장 시점으로 되돌려 무르기 방지)
                 control.Locked = true;
