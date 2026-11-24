@@ -148,6 +148,13 @@ namespace IBlameYou.Systems
                     continue;
                 }
 
+                // 관통 탄은 무적인 대상을 "맞힘"으로 남기지 않고 지나간다: 무적이 풀린 뒤 아직 겹쳐 있으면 그때 맞힌다 (버그 점검 2026-11-24)
+                if (piercing && health.IsInvulnerable)
+                {
+                    alreadyHit.Remove(health);
+                    continue;
+                }
+
                 LastHitBlocked = health.IsInvulnerable;
                 DamageCalculator.Strike(owner, health, kind, element, multiplier);
                 Hit?.Invoke(health);
