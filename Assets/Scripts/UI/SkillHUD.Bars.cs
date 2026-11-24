@@ -106,6 +106,9 @@ namespace IBlameYou.UI
                 healthTrail.GainFrom, healthTrail.GainAlpha(Time.unscaledTime));
 
             string manaText = mana.Infinite ? "무한" : $"{mana.Current:0}/{mana.Max:0}";
+            // 마나 샘 방 효과가 남아 있으면 남은 시간 (재생 +10%, 2026-11-24)
+            float spring = mana.SpringRemaining;
+            if (spring > 0f) manaText += $"  샘 {(int)spring / 60}:{(int)spring % 60:00}";
             // 무한 마나면 끈다. 반짝이는 동안 이어 차서 5%를 넘겨도 켜진다 (구간 시작점이 유지되므로)
             float manaGain = !mana.Infinite && manaRatio - manaTrail.GainFrom > ManaGainMin ? manaTrail.GainAlpha(Time.unscaledTime) : 0f;
             DrawVitalBar(new Rect(line.x + half + 8f, line.y, half, line.height), starIcon, 1f, manaRatio, manaTrail.Shown,
