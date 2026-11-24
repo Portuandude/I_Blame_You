@@ -121,8 +121,16 @@ namespace IBlameYou.Core
             GUILayout.Space(12f);
 
             devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
-            if (devMode) // 개발자 모드만: 숲 스테이지 2부터 바로 시작 (스테이지 1을 건너뛰고 숲 시험)
-                GameSession.DevStartStage = GUILayout.Toggle(GameSession.DevStartStage >= 2, "  스테이지 2 (숲)부터 시작", toggle) ? 2 : 1;
+            if (devMode) // 개발자 모드만: 시작 스테이지 1~5 (누를 때마다 다음, 5 다음 1) — 숲·쉼터·마지막 스테이지 시험
+            {
+                int stage = StageRoster.Clamp(GameSession.DevStartStage);
+                string theme = StageRoster.IsForest(stage) ? " (숲)" : "";
+                if (IBlameYou.UI.CuteButton.LayoutButton($"시작 스테이지 {stage}{theme} — 눌러서 바꾸기", recordSmall))
+                {
+                    GameSession.DevStartStage = stage >= StageRoster.LastStage ? StageRoster.FirstStage : stage + 1;
+                    GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                }
+            }
             GUILayout.Space(8f);
             GUILayout.Label(devMode ? DevModeHelp : NormalModeHelp, body);
             GUILayout.Space(12f);
