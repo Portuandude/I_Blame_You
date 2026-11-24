@@ -86,6 +86,7 @@ namespace IBlameYou.Player
             {
                 RoleInput.CloseSpellDial();
                 if (CircleOpen) CloseCircle();
+                lockedAim = null; // 커서 자리 마법 조준이 다음 즉시 시전(개발자 모드)에 남지 않게
                 return;
             }
 
@@ -168,13 +169,14 @@ namespace IBlameYou.Player
         {
             if (control.Locked)
             {
-                CancelCircle("방 이동으로 마법진 취소");
+                CancelCircle("조작이 잠겨 마법진 취소"); // 방 이동·일시정지·창 등 (control.Locked)
                 return;
             }
-            if (openedRemote && !IBlameYou.Net.P2Input.Remote)
+            if (openedRemote != IBlameYou.Net.P2Input.Remote)
             {
-                // 온라인 친구가 그리는 중에 끊김: 호스트 마우스로 바뀌어 그리다 만 그림이 판정되지 않게 취소 (마나 그대로)
-                CancelCircle("친구 연결이 끊겨 마법진 취소");
+                // 그리는 중에 P2 입력이 바뀜 (친구가 끊기거나, 호스트 마우스로 그리던 중 친구가 붙음):
+                // 다른 쪽 버튼이 안 눌린 것으로 읽혀 그리다 만 그림이 판정되지 않게 취소 (마나 그대로, 버그 점검 2026-11-24)
+                CancelCircle(openedRemote ? "친구 연결이 끊겨 마법진 취소" : "친구가 연결되어 마법진 취소");
                 return;
             }
             if (RoleInput.CircleCancelDown())
@@ -581,6 +583,7 @@ namespace IBlameYou.Player
             WindupSpell = null;
             if (charge != null) Destroy(charge.gameObject);
             if (CircleOpen) CloseCircle();
+            lockedAim = null;
         }
     }
 }
