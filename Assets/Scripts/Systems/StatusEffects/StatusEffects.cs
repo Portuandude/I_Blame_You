@@ -34,7 +34,7 @@ namespace IBlameYou.Systems
         private static readonly Color StunColor = new Color(0.8f, 0.65f, 0.4f);
 
         private int burnStacks;
-        private float burnDamagePerStack;
+        private float burnDamagePerTick; // 쌓인 중첩마다 그 공격자의 불 데미지 × BurnRatio를 더한 값 (마지막 공격자 값으로 전체를 덮어쓰지 않게, 버그 점검 2026-11-24)
         private float burnRemaining;   // 화면 표시용 남은 시간 (매 프레임 감소)
         private int burnTicksLeft;     // 남은 피해 횟수
         private float stunRemaining;   // 화면 표시용 (실제 경직은 HitStun이 처리)
@@ -94,7 +94,7 @@ namespace IBlameYou.Systems
                     float fire = attacker != null ? attacker.Stats.ElementDamage(Element.Fire) : 0f;
                     if (burnStacks == 0) burnTickTimer = 1f; // 쌓을 때마다 다시 1초로 맞추면 1초 안에 계속 맞는 동안 피해가 한 번도 안 들어간다
                     burnStacks++;
-                    burnDamagePerStack = fire * BurnRatio;
+                    burnDamagePerTick += fire * BurnRatio;
                     burnRemaining = BurnDuration;
                     burnTicksLeft = Mathf.RoundToInt(BurnDuration);
                     Announce($"화상 x{burnStacks}", BurnColor);
@@ -143,7 +143,7 @@ namespace IBlameYou.Systems
             if (burnTickTimer > 0f) return;
             burnTickTimer += 1f;
 
-            float total = burnStacks * burnDamagePerStack;
+            float total = burnDamagePerTick;
             burnTicksLeft--;
             if (burnTicksLeft <= 0) ClearBurn();
 
@@ -155,6 +155,7 @@ namespace IBlameYou.Systems
         private void ClearBurn()
         {
             burnStacks = 0;
+            burnDamagePerTick = 0f;
             burnRemaining = 0f;
             burnTicksLeft = 0;
         }
