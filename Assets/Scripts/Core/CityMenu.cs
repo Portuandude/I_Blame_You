@@ -36,7 +36,7 @@ namespace IBlameYou.Core
         private const int SlotCount = 4;
         private const int EscapePressed = 100;
         private bool towerOpen;       // 수정 탑 창 (도시 3단계)
-        private int towerSelection;   // 0~3 항목 · 4 돌아가기
+        private int towerSelection;   // 0~5 항목 · 6 돌아가기 (CrystalTowerRule.StatCount)
         private float towerFlashAt = -10f; // 바친 순간 (창 반짝)
         private int towerFlashRow = -1;
         private Vector2 academyScroll; // 마법 8개가 창에 다 안 들어가서 줄 목록은 스크롤 (리뷰 LOW)
@@ -221,7 +221,7 @@ namespace IBlameYou.Core
             if (runDust > 0) GUILayout.Label($"<color=#f0b8ff>이번 판 영혼석 +{runDust}</color>", small);
         }
 
-        // 수정 탑 그림: 가운데 수정에 남은 금(20 - 산 단계)이 실금으로, 단계가 오를수록 빛이 밝아진다.
+        // 수정 탑 그림: 가운데 수정에 남은 금(CrystalTowerRule.TotalLevels - 산 단계)이 실금으로, 단계가 오를수록 빛이 밝아진다.
         private void DrawCrystal(Rect rect, int totalLevels)
         {
             if (Event.current.type != EventType.Repaint) return;
@@ -240,7 +240,7 @@ namespace IBlameYou.Core
             int cracks = CityTalkRule.Cracks(totalLevels);
             var random = new System.Random(77); // 금 자리는 늘 같게
             GUI.color = new Color(0.25f, 0.15f, 0.4f, 0.85f);
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < CrystalTowerRule.TotalLevels; i++)
             {
                 float x = center.x + ((float)random.NextDouble() - 0.5f) * rect.width * 0.5f;
                 float y = center.y + ((float)random.NextDouble() - 0.5f) * rect.height * 0.6f;
