@@ -352,7 +352,7 @@ namespace IBlameYou.Player
             float cost = Mathf.Max(0f, bolt.ManaCost - BoltCostReduction);
             if (!mana.TryConsume(cost, ManaUser.PlayerB))
             {
-                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {cost:0})", true);
+                SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: 평타 마력탄 (필요 {cost * mana.TotalCostMultiplier:0})", true);
                 return false;
             }
 
