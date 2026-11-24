@@ -152,7 +152,7 @@ namespace IBlameYou.UI
 
             var icon = EquipmentIcon(item.Id);
             if (icon != null) GUI.DrawTexture(new Rect(card.xMax - 46f, card.y + 8f, 36f, 36f), icon, ScaleMode.ScaleToFit);
-            GUI.Label(new Rect(card.x + 10f, card.y + 30f, card.width - 60f, 26f), $"<b><color={GradeColor(item.Grade)}>{item.Name}</color></b>", label);
+            GUI.Label(new Rect(card.x + 10f, card.y + 30f, card.width - 60f, 26f), $"<b><color={ItemNameColor}>{item.Name}</color></b>", label);
 
             var text = new System.Text.StringBuilder();
             foreach (var s in stats)
@@ -176,7 +176,7 @@ namespace IBlameYou.UI
             GUI.matrix = previousMatrix;
         }
 
-        // 능력치 한 줄 글. 수식어가 주는 마법 공격·마나 소모(EquipmentModifier, 장비 기본 능력치에는 없음)는 좋으면 초록, 나쁘면 빨강으로 (2026-11-14).
+        // 능력치 한 줄 글. 마법 공격·마나 소모(옛 수식어 능력치, 지금은 주는 장비 없음)는 좋으면 초록, 나쁘면 빨강으로 (2026-11-14).
         // 상점 진열·비교 카드·일시정지 장비 줄이 같이 쓴다.
         private static string StatLineText(StatValue s)
         {

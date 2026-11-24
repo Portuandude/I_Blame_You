@@ -33,17 +33,8 @@ namespace IBlameYou.UI
             return icon;
         }
 
-        // 수식어 등급 색: 비틀린 회색, 흔한 흰색, 숙련자의 초록, 영웅의 금색
-        public static string GradeColor(int grade)
-        {
-            if (grade < 0) return "#9a9a9a";
-            switch (grade)
-            {
-                case 1: return "#7dff8a";
-                case 2: return "#ffd84d";
-                default: return "#fff4dc";
-            }
-        }
+        // 장비 이름 색 (수식어 등급 색은 2026-11-24 수식어 삭제로 하나만 남음)
+        public const string ItemNameColor = "#fff4dc";
 
         private static string SlotName(EquipSlot slot) => slot == EquipSlot.Robe ? "로브" : slot == EquipSlot.Staff ? "지팡이" : "신발";
 
@@ -70,7 +61,7 @@ namespace IBlameYou.UI
                 {
                     var stats = new List<string>();
                     foreach (var stat in item.Stats()) stats.Add(StatLineText(stat));
-                    text = $"<color={GradeColor(item.Grade)}>{item.Name}</color> — {string.Join(", ", stats)}";
+                    text = $"<color={ItemNameColor}>{item.Name}</color> — {string.Join(", ", stats)}";
                 }
 
                 var line = new GUIContent(text);
@@ -132,9 +123,9 @@ namespace IBlameYou.UI
             }
 
             if (hovered == null) return;
-            // 마우스를 올린 장비 이름 (등급 색) 말풍선: 줄 바로 위
+            // 마우스를 올린 장비 이름 말풍선: 줄 바로 위
             var tip = tipLine;
-            var content = new GUIContent($"<color={GradeColor(hovered.Grade)}>{hovered.Name}</color>");
+            var content = new GUIContent($"<color={ItemNameColor}>{hovered.Name}</color>");
             var size = tip.CalcSize(content);
             float left = Mathf.Clamp(hoveredCenter - size.x * 0.5f, rect.x, rect.xMax - size.x);
             var box = new Rect(left, rect.y - size.y - 2f, size.x, size.y);

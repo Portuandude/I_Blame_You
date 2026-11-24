@@ -21,12 +21,11 @@ namespace IBlameYou.UI
         private string villageMessage; // 창 아래 한 줄 (샀다 / 골드 부족 등)
         private readonly RestaurantVisit restaurantVisit = new RestaurantVisit();
 
-        // 키보드 고르기 (식당·장비 상점 공용). villageCol은 장비 상점의 지금 장비 줄에서 팔기(0)/바꾸기(1).
+        // 키보드 고르기 (식당·장비 상점 공용).
         // S·Space·Enter는 이동·점프 키이기도 해서 창이 다 뜨기 전(0.4초)엔 받지 않고, Enter·Space는 ↓로 줄을 보인 뒤에만 받는다.
         private const float VillageKeysDelay = 0.4f;
         private bool villageKeyboard;
         private int villageRow;
-        private int villageCol;
 
         // 사기 반응: 산 줄이 금색으로 번쩍(VillageFlashTime), 창 왼쪽 위 골드가 톡 튐. 골드가 모자라면 골드가 빨갛게 좌우로 흔들림.
         private const float VillageFlashTime = 0.45f;
@@ -65,7 +64,6 @@ namespace IBlameYou.UI
             villageMessage = null;
             villageKeyboard = false;
             villageRow = 0;
-            villageCol = 0;
             villageFlashRow = -1;
             villageGoldShakeAt = -9f;
             villageGoldPopAt = -9f;

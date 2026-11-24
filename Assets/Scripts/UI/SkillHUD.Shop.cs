@@ -44,13 +44,6 @@ namespace IBlameYou.UI
                 }
 
             if (!VillageKeysReady || UpdateVillageRowKeys(ShopKeyRows)) return;
-            if (villageKeyboard && villageRow >= EquipmentShop.StockSize &&
-                (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)))
-            {
-                villageCol = 1 - villageCol; // 팔기 ↔ 바꾸기
-                GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
-                return;
-            }
             if (!VillageConfirmKey) return;
 
             int row = Mathf.Clamp(villageRow, 0, ShopKeyRows - 1);
@@ -65,8 +58,7 @@ namespace IBlameYou.UI
             var slot = (EquipSlot)(row - EquipmentShop.StockSize);
             if (PlayerEquipment.For(health.gameObject).Get(slot) == null) { GameAudio.PlaySfx("Switch_Tick", 0.5f); return; } // 빈 칸
             GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
-            if (villageCol == 0) SellEquipment(slot);
-            else RerollEquipment(shop, slot);
+            SellEquipment(slot); // 수식어 다시 뽑기는 2026-11-24 사람 결정으로 뺐다 (지금 장비 줄은 팔기만)
         }
 
         private void BuyEquipment(EquipmentShop shop, int index)
@@ -112,33 +104,6 @@ namespace IBlameYou.UI
             StageEvents.RaiseVillageNpcSay(VillageService.Shop, "고마워요, 잘 쓸게요!");
         }
 
-        private void RerollEquipment(EquipmentShop shop, EquipSlot slot)
-        {
-            var equip = PlayerEquipment.For(health.gameObject);
-            var item = equip.Get(slot);
-            if (item == null) return;
-            if (!EquipmentShop.CanReroll(item, SpendableGold))
-            {
-                VillageGoldShake();
-                villageMessage = "<color=#ff9a6b>골드가 모자라요</color>";
-                GameAudio.PlaySfx("Switch_Tick", 0.5f);
-                return;
-            }
-
-            int before = item.Grade;
-            if (!RunStats.TrySpendGold(item.RerollCost, RunGold.InFlight)) return;
-            int cost = shop.Reroll(item, int.MaxValue); // 골드는 위에서 뺐다
-            equip.Refresh(slot);
-            VillageFlash(EquipmentShop.StockSize + (int)slot);
-            string turn = item.Grade > before ? "좋아졌다!" : item.Grade < before ? "나빠졌다…" : "그대로";
-            string color = item.Grade > before ? "#7dff8a" : item.Grade < before ? "#ff6b6b" : "#fff4dc";
-            villageMessage = $"<color={color}>수식어 변경 (-{cost} G): {item.Name} — {turn}</color>";
-            GameAudio.PlaySfx("Reroll", 0.8f, 0f); // 주사위 데구르르 → 0.55초 뒤 결과 소리 (Tools/AudioGen reroll)
-            GameAudio.PlaySfxDelayed(item.Grade > before ? "RelicNew" : "Switch_On", 0.55f, 0.6f);
-            StageEvents.RaiseVillageNpcSay(VillageService.Shop,
-                item.Grade > before ? "오, 운이 좋네요!" : item.Grade < before ? "앗… 운이 없네요" : "음, 그대로네요");
-        }
-
         private void DrawShopWindow()
         {
             var shop = CurrentShop;
@@ -159,7 +124,7 @@ namespace IBlameYou.UI
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "장비 상점", big);
             DrawVillageGold(rect);
             GUI.Label(new Rect(rect.x + 20f, rect.y + 46f, rect.width - 40f, 22f),
-                $"같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? "←→ 팔기/바꾸기 · " + VillageKeysHint("1~4", "누르기") : VillageKeysHint("1~4"))}",
+                $"같은 부위 장비는 팔고 그만큼 깎음 · {(villageKeyboard && villageRow >= EquipmentShop.StockSize ? VillageKeysHint("1~4", "팔기") : VillageKeysHint("1~4"))}",
                 smallCenter);
 
             int gold = SpendableGold;
@@ -200,9 +165,8 @@ namespace IBlameYou.UI
                 var item = equip.Get(slot);
                 DrawVillageRowFlash(row, EquipmentShop.StockSize + (int)slot);
                 bool rowSelected = villageKeyboard && villageRow == EquipmentShop.StockSize + (int)slot;
-                var sellRect = new Rect(row.xMax - 250f, row.y + 6f, 110f, row.height - 12f);
-                var rerollRect = new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f);
-                if (rowSelected) CuteButton.DrawSelection(item == null ? row : villageCol == 0 ? sellRect : rerollRect); // 고른 버튼에 테두리
+                var sellRect = new Rect(row.xMax - 130f, row.y + 6f, 120f, row.height - 12f);
+                if (rowSelected) CuteButton.DrawSelection(item == null ? row : sellRect); // 고른 버튼에 테두리
                 if (item == null)
                 {
                     GUI.Label(new Rect(row.x + 12f, row.y + 10f, row.width - 24f, 22f), $"<color=#8a8a8a>{SlotName(slot)}: 없음</color>", labelRich);
@@ -212,11 +176,6 @@ namespace IBlameYou.UI
                     DrawShopItem(row, "", item, labelRich, smallRich);
                     if (CuteButton.Button(sellRect, $"팔기 +{item.SellPrice}", buttonRich))
                         SellEquipment(slot);
-                    bool wasEnabled = GUI.enabled;
-                    GUI.enabled = EquipmentShop.CanReroll(item, gold);
-                    if (CuteButton.Button(rerollRect, $"바꾸기 {item.RerollCost} G", buttonRich))
-                        RerollEquipment(shop, slot);
-                    GUI.enabled = wasEnabled;
                 }
                 y += rowHeight;
             }
@@ -227,13 +186,13 @@ namespace IBlameYou.UI
             GUI.matrix = previousMatrix;
         }
 
-        // 아이콘 + 이름(등급 색) + 능력치 한 줄
+        // 아이콘 + 이름 + 능력치 한 줄
         private void DrawShopItem(Rect row, string prefix, EquipmentItem item, GUIStyle labelRich, GUIStyle smallRich)
         {
             var icon = EquipmentIcon(item.Id);
             if (icon != null) GUI.DrawTexture(new Rect(row.x + 8f, row.y + 6f, 32f, 32f), icon, ScaleMode.ScaleToFit);
             GUI.Label(new Rect(row.x + 46f, row.y + 2f, row.width - 320f, 22f),
-                $"{prefix}<b><color={GradeColor(item.Grade)}>{item.Name}</color></b>", labelRich);
+                $"{prefix}<b><color={ItemNameColor}>{item.Name}</color></b>", labelRich);
             var stats = new System.Text.StringBuilder();
             foreach (var s in item.Stats())
             {
