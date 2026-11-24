@@ -30,7 +30,7 @@ namespace IBlameYou.Puzzles
         private float height;
         private float nextDeflectTime;
 
-        public Element Required => sequence[step];
+        public Element Required => sequence[Mathf.Min(step, sequence.Length - 1)]; // 다 맞힌 프레임(Destroy 전)에도 범위 안
 
         private void OnEnable() => Active.Add(this);
         private void OnDisable() => Active.Remove(this);
