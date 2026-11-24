@@ -4,7 +4,8 @@ namespace IBlameYou.Systems
 {
     // 마법이 적에게 맞는 순간 화면을 아주 살짝 하얗게 번쩍인다 (Docs/ArtStyle.md: 알파 0.08, 0.05초).
     // 여러 발이 한꺼번에 맞아도 눈이 아프지 않게 MinInterval 안의 번쩍임은 무시한다.
-    // 방을 옮길 때는 RoomFade로 화면을 잠깐 어둡게 덮었다가 밝힌다 (Docs/LevelDesign.md 방 전환 연출).
+    // 방을 옮길 때는 RoomFadeOut으로 화면을 검게 덮고(그동안 플레이어는 문 앞에 멈춘다), 옮긴 뒤 RoomFadeIn으로 밝힌다
+    // (2026-11-24 사람 요청 "방과 방을 넘어갈 때 페이드 화면"). 덮개도 카메라 아래 SpriteRenderer라 온라인 친구 화면에도 그대로 보인다.
     // 시작 화면에서 출발할 때는 StartFade로 어둡게 덮고 0.5초 동안 밝힌다 (월드를 만드는 긴 프레임이 지난 다음 프레임부터 잰다).
     // EdgeWarn: 화면 가장자리만 색으로 두 번 깜빡인다 (정예 등장 경고 — 가운데 싸움은 가리지 않게).
     public class ScreenFlash : MonoBehaviour
@@ -13,9 +14,13 @@ namespace IBlameYou.Systems
         private const float Duration = 0.05f;
         private const float FadeTime = 0.08f;
         private const float MinInterval = 0.12f;
-        private const float RoomFadeAlpha = 0.85f;
-        private const float RoomFadeHold = 0.04f;  // 옮긴 직전 프레임이 비치지 않게 잠깐 어둡게 유지
-        private const float RoomFadeTime = 0.15f;  // 어둡게 → 밝게
+        private const float QuickDimAlpha = 0.85f;
+        private const float QuickDimHold = 0.04f;  // 옮긴 직전 프레임이 비치지 않게 잠깐 어둡게 유지
+        private const float QuickDimTime = 0.15f;  // 어둡게 → 밝게
+        public const float RoomFadeOutTime = 0.16f; // 밝게 → 까맣게 (이동은 다 까매진 뒤에 한다: ChunkStreamer.CheckDoors)
+        private const float RoomFadeBlackHold = 0.08f; // 옮긴 뒤 새 방이 다 만들어지고 카메라가 자리 잡을 동안 까맣게 유지
+        private const float RoomFadeInTime = 0.26f;  // 까맣게 → 밝게
+        private const float RoomFadeSafety = 1.2f;   // 페이드 아웃 뒤 RoomFadeIn이 끝내 안 오면 (판이 끝나는 등) 이만큼 뒤 스스로 밝아진다
         private static readonly Color RoomFadeColor = new Color(0.08f, 0.06f, 0.16f); // 팔레트 night보다 조금 더 어둡게
         private const float StartFadeHold = 0.12f; // 출발: 첫 화면이 잠깐 어둡게 머문 뒤
         private const float StartFadeTime = 0.5f;  // 천천히 밝아진다
@@ -37,6 +42,9 @@ namespace IBlameYou.Systems
         private Color color = Color.white;
         private float hold = Duration;
         private float fade = FadeTime;
+        private float rise; // 0이면 바로 peak에서 시작, 아니면 riseFrom → peak로 이만큼 동안 진해진다
+        private float riseFrom;
+        private bool roomCover; // 방 전환·출발 덮개가 보이는 중이면 마법 번쩍임이 덮어쓰지 않는다
         private bool restartClock; // StartFade: 월드를 만드느라 길어진 프레임들을 빼고 시간을 잰다
         private int restartUntilFrame; // 이 프레임까지는 시간을 계속 처음으로 되돌린다 (만든 프레임 + 새 오브젝트 Start가 도는 다음 프레임)
 
@@ -46,17 +54,52 @@ namespace IBlameYou.Systems
             if (alpha <= 0f) return;
             if (Time.unscaledTime - lastPulse < MinInterval) return;
             var flash = Find();
-            if (flash == null || flash.CurrentAlpha() > alpha) return; // 더 진한 덮개(방 전환)가 보이는 중이면 덮어쓰지 않는다
+            if (flash == null || flash.CurrentAlpha() > alpha) return; // 더 진한 덮개가 보이는 중이면 덮어쓰지 않는다
+            if (flash.roomCover && flash.overlay != null && flash.overlay.enabled) return; // 방 전환 페이드 아웃 첫 순간(아직 옅음)도 끊지 않게
 
             lastPulse = Time.unscaledTime;
             flash.Begin(Color.white, alpha, Duration, FadeTime);
+            flash.roomCover = false;
         }
 
-        // 방 문을 지나 옆 방으로 옮긴 순간 부른다: 어둡게 덮은 채 시작해서 0.15초 동안 밝아진다.
+        // 짧게 어둡게 덮은 채 시작해서 0.15초 동안 밝아진다 (낭떠러지 복귀처럼 이미 자리를 옮긴 순간용).
         public static void RoomFade()
         {
             var flash = Find();
-            if (flash != null) flash.Begin(RoomFadeColor, RoomFadeAlpha, RoomFadeHold, RoomFadeTime);
+            if (flash == null) return;
+            if (flash.roomCover && flash.CurrentAlpha() > QuickDimAlpha) return; // 방 전환 페이드 중이면 그쪽을 끊지 않는다
+            flash.Begin(RoomFadeColor, QuickDimAlpha, QuickDimHold, QuickDimTime);
+            flash.roomCover = true;
+        }
+
+        // 방 문을 지난 순간 부른다: 지금 밝기에서 RoomFadeOutTime 동안 까맣게 덮고, RoomFadeIn이 올 때까지 까맣게 둔다.
+        public static void RoomFadeOut()
+        {
+            var flash = Find();
+            if (flash == null) return;
+            float from = flash.CurrentAlpha();
+            flash.Begin(RoomFadeColor, 1f, RoomFadeSafety, RoomFadeInTime, RoomFadeOutTime, from);
+            flash.roomCover = true;
+        }
+
+        // 옆 방으로 옮긴 직후 부른다: 잠깐 까맣게 머문 뒤 RoomFadeInTime 동안 밝아진다.
+        public static void RoomFadeIn()
+        {
+            var flash = Find();
+            if (flash == null) return;
+            flash.Begin(RoomFadeColor, 1f, RoomFadeBlackHold, RoomFadeInTime);
+            flash.roomCover = true;
+        }
+
+        // 덮개 진하기 곡선: riseFrom → peak (rise초) → peak 유지 (hold초) → 0 (fade초). since는 시작부터 지난 시간.
+        public static float AlphaAt(float since, float riseFrom, float rise, float peak, float hold, float fade)
+        {
+            if (since < 0f) since = 0f;
+            if (rise > 0f && since < rise) return Mathf.Lerp(riseFrom, peak, since / rise);
+            since -= Mathf.Max(0f, rise);
+            if (since <= hold) return peak;
+            if (fade <= 0f) return 0f;
+            return Mathf.Max(0f, peak * (1f - (since - hold) / fade));
         }
 
         // 시작 화면에서 런을 시작하는 순간 부른다: 완전히 어둡게 덮고, 다음 프레임부터 0.12초 머문 뒤 0.5초 동안 밝아진다.
@@ -65,6 +108,7 @@ namespace IBlameYou.Systems
             var flash = Find();
             if (flash == null) return;
             flash.Begin(RoomFadeColor, 1f, StartFadeHold, StartFadeTime);
+            flash.roomCover = true;
             flash.restartClock = true;
             flash.restartUntilFrame = Time.frameCount + 2;
         }
@@ -148,11 +192,10 @@ namespace IBlameYou.Systems
         private float CurrentAlpha()
         {
             if (overlay == null || !overlay.enabled) return 0f;
-            float since = Time.unscaledTime - startedAt;
-            return since <= hold ? peak : peak * (1f - (since - hold) / fade);
+            return AlphaAt(Time.unscaledTime - startedAt, riseFrom, rise, peak, hold, fade);
         }
 
-        private void Begin(Color tint, float alpha, float holdTime, float fadeTime)
+        private void Begin(Color tint, float alpha, float holdTime, float fadeTime, float riseTime = 0f, float riseStart = 0f)
         {
             if (overlay == null)
             {
@@ -168,6 +211,8 @@ namespace IBlameYou.Systems
             peak = alpha;
             hold = holdTime;
             fade = fadeTime;
+            rise = riseTime;
+            riseFrom = Mathf.Clamp01(riseStart);
             startedAt = Time.unscaledTime;
             overlay.enabled = true;
             UpdateOverlay();
@@ -197,7 +242,8 @@ namespace IBlameYou.Systems
 
             float height = cam.orthographicSize * 2f + 1f;
             overlay.transform.localPosition = new Vector3(0f, 0f, 1f); // 카메라 앞 (z = -10 + 1)
-            overlay.transform.localScale = new Vector3(height * cam.aspect + 1f, height, 1f);
+            // 가로는 넉넉히: 온라인 친구 화면이 호스트보다 가로로 길어도 (21:9 등) 양옆이 비치지 않게
+            overlay.transform.localScale = new Vector3(height * Mathf.Max(cam.aspect, 3f) + 1f, height, 1f);
             overlay.color = new Color(color.r, color.g, color.b, a);
         }
     }
