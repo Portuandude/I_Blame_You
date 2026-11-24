@@ -35,6 +35,7 @@ namespace IBlameYou.Core
         private const int SlotBack = 3;
         private const int SlotCount = 4;
         private const int EscapePressed = 100;
+        private const int CloseSubPressed = 101; // 수정 탑·아카데미에서 Esc: 그리기가 끝난 뒤 닫는다 (같은 이벤트 안에서 레이아웃이 바뀌지 않게)
         private bool towerOpen;       // 수정 탑 창 (도시 3단계)
         private int towerSelection;   // 0~5 항목 · 6 돌아가기 (CrystalTowerRule.StatCount)
         private float towerFlashAt = -10f; // 바친 순간 (창 반짝)
@@ -133,6 +134,13 @@ namespace IBlameYou.Core
             GUILayout.EndArea();
             GUI.matrix = screenMatrix;
 
+            if (pressed == CloseSubPressed)
+            {
+                // IMGUI는 Layout 단계와 KeyDown 단계가 같은 모양이어야 한다. Esc를 받자마자 닫으면 KeyDown 단계가 탑·아카데미 대신
+                // 시작 메뉴를 그려 Layout 기록과 어긋났다 (버그 점검 2026-11-24). 그리기가 끝난 뒤 닫는다.
+                CloseSub();
+                return;
+            }
             if (SubOpen) return;
             if (depart) Depart();
             else if (back || pressed == EscapePressed) Back();
@@ -155,12 +163,7 @@ namespace IBlameYou.Core
             if (e.keyCode == KeyCode.Escape)
             {
                 e.Use();
-                if (SubOpen)
-                {
-                    CloseSub();
-                    return -1;
-                }
-                return EscapePressed;
+                return SubOpen ? CloseSubPressed : EscapePressed;
             }
             int step = 0;
             if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) step = -1;

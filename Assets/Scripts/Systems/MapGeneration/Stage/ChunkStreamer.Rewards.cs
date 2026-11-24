@@ -89,6 +89,7 @@ namespace IBlameYou.Systems
                 gateStepChunks = new int[gateSteps.Count],
                 gateStepValues = new int[gateSteps.Count],
                 visitedRooms = ToArray(visitedRooms),
+                alignmentOffered = ToArray(alignmentOffered),
                 bossCleared = bossCleared
             };
 
@@ -113,6 +114,7 @@ namespace IBlameYou.Systems
             Fill(takenRelics, records.takenRelics);
             Fill(openedGates, records.openedGates);
             Fill(visitedRooms, records.visitedRooms);
+            Fill(alignmentOffered, records.alignmentOffered); // 선악도 방 이벤트를 이어하기로 다시 굴리지 않게
             gateSteps.Clear();
             if (records.gateStepChunks != null && records.gateStepValues != null)
             {

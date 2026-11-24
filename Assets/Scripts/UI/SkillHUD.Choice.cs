@@ -8,7 +8,7 @@ namespace IBlameYou.UI
     // A·B 선택지 + 룰렛 창 (ChoiceRouletteRule, 2026-11-24 사람 결정). 게임을 멈추고, 아루(P1)는 숫자 키, 벨(P2)은 마우스로
     // 동시에 몰래 고른다 (누가 무엇을 골랐는지는 안 보이고 "골랐다"만). 같으면 그대로, 다르면 50:50 룰렛이 돌아 실제 행동을 정한다.
     // 선악도는 각자 고른 선택지대로 (SaveData.AddAlignment, 일반 모드만). 개발자 모드는 한 사람이 키로 아루 → 벨 순서로 고른다.
-    // 지금은 기능 테스트 도구(F9 창)에서만 연다. NPC 방·선악도 방이 생기면 StageEvents.RaiseChoice로 부른다.
+    // 선악도 방(ChunkStreamer.OfferAlignmentEvent)과 기능 테스트 도구가 StageEvents.RaiseChoice로 연다. NPC 방이 생기면 거기서도.
     public partial class SkillHUD
     {
         private bool choiceOpen;

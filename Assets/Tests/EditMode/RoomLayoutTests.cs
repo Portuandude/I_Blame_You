@@ -269,6 +269,76 @@ namespace IBlameYou.Tests
             Assert.That(with, Is.InRange(total / 4, total * 3 / 4), $"마나 샘이 있는 판 {with}/{total}");
         }
 
+        // 선악도 방 (2026-11-24 P2): 판마다 0~1개, 대략 절반의 판에. 마나 샘과 같은 판에 있어도 일반 전투 방 5개·좌우 전투 방 2개는 그대로.
+        [Test]
+        public void AlignmentRoomIsZeroOrOnePerStage()
+        {
+            int with = 0, both = 0, total = 0;
+            foreach (var layout in Layouts())
+            {
+                total++;
+                int shrines = layout.Rooms.FindAll(r => r.Kind == RoomKind.Alignment).Count;
+                Assert.That(shrines, Is.InRange(0, 1), $"seed {layout.Seed}");
+                if (shrines == 0) continue;
+                with++;
+                if (layout.Find(RoomKind.ManaSpring) != null) both++;
+                Assert.AreEqual(ChunkKind.Rest, layout.Find(RoomKind.Alignment).Chunk);
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat).Count, RoomLayout.MinCombatRooms, $"seed {layout.Seed}");
+                Assert.GreaterOrEqual(layout.Rooms.FindAll(r => r.Kind == RoomKind.Combat && !r.IsVertical).Count, RoomLayout.MinSideCombatRooms, $"seed {layout.Seed}");
+            }
+            Assert.That(with, Is.InRange(total / 4, total * 3 / 4), $"선악도 방이 있는 판 {with}/{total}");
+            Assert.Greater(both, 0, "마나 샘과 선악도 방이 같은 판에 나올 수 있다");
+        }
+
+        [Test]
+        public void AlignmentRoomEventsAreWellFormed()
+        {
+            Assert.Greater(AlignmentRoomRule.Events.Length, 1);
+            foreach (var e in AlignmentRoomRule.Events)
+            {
+                Assert.IsFalse(string.IsNullOrEmpty(e.Title));
+                Assert.That(e.Options.Length, Is.InRange(2, 4), e.Title); // 선택지 창은 2~4개
+                Assert.AreEqual(e.Options.Length, AlignmentRoomRule.Texts(e).Length);
+                Assert.AreEqual(e.Options.Length, AlignmentRoomRule.Alignments(e).Length);
+                bool good = false, evil = false;
+                foreach (var o in e.Options) { good |= o.Alignment > 0; evil |= o.Alignment < 0; }
+                Assert.IsTrue(good && evil, $"{e.Title}: 선한 선택지와 악한 선택지가 하나씩은 있다");
+            }
+            var seen = new System.Collections.Generic.HashSet<int>();
+            for (int seed = 0; seed < 200; seed++)
+            {
+                int pick = AlignmentRoomRule.Pick(seed, seed % 17);
+                Assert.That(pick, Is.InRange(0, AlignmentRoomRule.Events.Length - 1));
+                Assert.AreEqual(pick, AlignmentRoomRule.Pick(seed, seed % 17), "같은 판이면 같은 이벤트");
+                seen.Add(pick);
+            }
+            Assert.AreEqual(AlignmentRoomRule.Events.Length, seen.Count, "모든 이벤트가 나온다");
+            Assert.That(AlignmentRoomRule.Pick(int.MinValue, 3), Is.InRange(0, AlignmentRoomRule.Events.Length - 1), "음수 시드도 범위 안");
+        }
+
+        [Test]
+        public void AlignmentRoomOutcomesNeverKillOrOverspend()
+        {
+            var pay = new AlignmentRoomRule.Option("내기", 1, gold: -20);
+            Assert.AreEqual(-20, AlignmentRoomRule.GoldChange(pay, 50));
+            Assert.AreEqual(-7, AlignmentRoomRule.GoldChange(pay, 7), "가진 만큼만");
+            Assert.AreEqual(0, AlignmentRoomRule.GoldChange(pay, -3));
+            Assert.AreEqual(30, AlignmentRoomRule.GoldChange(new AlignmentRoomRule.Option("얻기", -1, gold: 30), 0));
+
+            var hurt = new AlignmentRoomRule.Option("아픔", 1, healthPct: -0.15f);
+            Assert.AreEqual(-15f, AlignmentRoomRule.HealthChange(hurt, 80f, 100f), 1e-4);
+            Assert.AreEqual(-4f, AlignmentRoomRule.HealthChange(hurt, 5f, 100f), 1e-4, "1은 남긴다");
+            Assert.AreEqual(0f, AlignmentRoomRule.HealthChange(hurt, 1f, 100f), 1e-4);
+            Assert.AreEqual(0f, AlignmentRoomRule.HealthChange(hurt, 0f, 100f), 1e-4, "쓰러진 몸은 그대로");
+            var heal = new AlignmentRoomRule.Option("회복", 0, healthPct: 0.3f);
+            Assert.AreEqual(10f, AlignmentRoomRule.HealthChange(heal, 90f, 100f), 1e-4, "최대 체력까지만");
+            Assert.AreEqual(30f, AlignmentRoomRule.HealthChange(heal, 50f, 100f), 1e-4);
+
+            StringAssert.Contains("골드 -7", AlignmentRoomRule.Summary(pay, -7, 0f));
+            StringAssert.Contains("체력 +30", AlignmentRoomRule.Summary(heal, 0, 30f));
+            Assert.AreEqual("\"모른 척\"", AlignmentRoomRule.Summary(new AlignmentRoomRule.Option("모른 척", 0), 0, 0f));
+        }
+
         [Test]
         public void ManaSpringRuleLastsThreeMinutes()
         {
@@ -289,7 +359,7 @@ namespace IBlameYou.Tests
                 foreach (var room in layout.Rooms)
                 {
                     if (!room.IsVertical) continue;
-                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring || room.Kind == RoomKind.ManaSpring,
+                    Assert.IsTrue(room.Kind == RoomKind.Combat || room.Kind == RoomKind.Treasure || room.Kind == RoomKind.Spring || room.Kind == RoomKind.ManaSpring || room.Kind == RoomKind.Alignment,
                         $"seed {layout.Seed} room {room.Index}: {room.Kind}에 위/아래 문");
                 }
             }
