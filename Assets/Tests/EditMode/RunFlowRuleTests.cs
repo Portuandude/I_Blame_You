@@ -41,6 +41,27 @@ namespace IBlameYou.Tests
         }
 
         [Test]
+        public void EveryStageOfARunBuildsValidRooms()
+        {
+            // 한 판의 스테이지 1~5 맵 (스테이지 시드)이 모두 갈 수 있는 방으로 만들어지고, 보스가 하나씩 있다
+            for (int runSeed = 1; runSeed <= 40; runSeed++)
+            for (int stage = 1; stage <= 5; stage++)
+            {
+                int seed = RunFlowRule.StageSeed(runSeed, stage);
+                int bosses = 0;
+                foreach (var room in RoomLayout.Generate(seed, 20f * 60f, stage).Rooms)
+                {
+                    var geometry = RoomShaper.Build(seed, room);
+                    Assert.IsTrue(geometry.Valid, $"판 {runSeed} 스테이지 {stage} 방 {room.Index}");
+                    Assert.AreEqual(stage, geometry.Chunk.Stage);
+                    foreach (var f in geometry.Chunk.Features)
+                        if (f.Kind == FeatureKind.Enemy && StageRoster.IsBoss(f.Enemy)) bosses++;
+                }
+                Assert.AreEqual(1, bosses, $"판 {runSeed} 스테이지 {stage} 보스 수");
+            }
+        }
+
+        [Test]
         public void SaveSlotsWrapAndSlotOneKeepsOldKey()
         {
             Assert.AreEqual("Run.Save", SaveSlotRule.Key("Run.Save", 1));
