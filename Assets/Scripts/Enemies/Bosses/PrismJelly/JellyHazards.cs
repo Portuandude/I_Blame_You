@@ -261,8 +261,10 @@ namespace IBlameYou.Enemies
             bool any = false;
             foreach (var target in JellyHazards.PlayersIn(Center, new Vector2(Width, Height), players))
             {
-                StatusEffects.TryApply(target, debuff, attacker);
                 any = true;
+                var hp = target.GetComponentInParent<HealthSystem>();
+                if (hp != null && hp.IsInvulnerable) continue; // 대시·순간이동 무적 중엔 웅덩이 상태이상도 안 걸린다 (기사 돌진·불기둥 함정과 같게)
+                StatusEffects.TryApply(target, debuff, attacker);
             }
             if (any) nextTick = Time.time + PrismJellyRules.PuddleTick;
         }
