@@ -66,12 +66,23 @@ namespace IBlameYou.UI
             return true;
         }
 
+        // 고르는 메뉴 차례 (유물 상자·장비 카드, PickTurnRule): 아루(P1) = 키보드, 벨(P2) = 마우스. 개발자 모드는 둘 다.
+        private static bool PickKeyboardTurn => PickTurnRule.KeyboardAllowed(IBlameYou.Core.RunStats.Picks, IBlameYou.Core.GameSession.DevMode);
+        private static bool PickMouseTurn => PickTurnRule.MouseAllowed(IBlameYou.Core.RunStats.Picks, IBlameYou.Core.GameSession.DevMode);
+
+        // 창 위 안내 줄: 차례인 사람 이름(아루 하늘색·벨 주황)과 그 사람의 조작법. keys = 키보드 조작 안내
+        private static string PickTurnText(string keys) =>
+            PickTurnRule.IsP1Turn(IBlameYou.Core.RunStats.Picks)
+                ? $"<color=#73d9ff>아루(P1) 차례</color> · {keys}"
+                : "<color=#ffa659>벨(P2) 차례</color> · 마우스로 클릭";
+
         private void ChooseRelic(int index)
         {
             if (!relicWindowOpen || relicOffer == null || index < 0 || index >= relicOffer.Length) return;
             var chosen = relicOffer[index];
             var callback = relicChosen;
             relicCancelled = null; // 골랐으니 취소 콜백은 부르지 않는다
+            IBlameYou.Core.RunStats.Picks++; // 다음 고르기는 다른 사람 차례 (PickTurnRule)
             CloseRelicWindow(true);
             callback?.Invoke(chosen);
             if (OwnsRelic(chosen)) StartRelicFly(chosen, index); // 아이콘이 HUD 유물 칸으로 날아간다 (SkillHUD.RelicFly.cs)
@@ -104,6 +115,7 @@ namespace IBlameYou.UI
 
             // 상자에 닿은 프레임에 누르고 있던 스킬 키로 후보를 보지도 않고 고르지 않게, 연 프레임의 입력은 버린다.
             if (!relicWindowOpen || Time.frameCount <= relicOpenedFrame) return;
+            if (!PickKeyboardTurn) return; // 벨(P2) 차례: 키보드는 받지 않는다 (마우스로 고른다)
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) ChooseRelic(0);
             else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) ChooseRelic(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) ChooseRelic(2);
@@ -219,8 +231,10 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel); // 두 겹으로 덜 비치게
 
             GUI.Label(new Rect(rect.x, rect.y + 10f, rect.width, 34f), "유물 상자", big);
+            string keys = $"{(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter";
             GUI.Label(new Rect(rect.x + 20f, rect.y + 48f, rect.width - 40f, 22f),
-                $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {(count >= 4 ? "1/2/3/4" : count == 3 ? "1/2/3" : count == 2 ? "1/2" : "1")} 키, ←→ + Enter 또는 클릭",
+                IBlameYou.Core.GameSession.DevMode ? $"하나만 고를 수 있다 · A와 B가 함께 갖는다 · {keys} 또는 클릭"
+                    : $"하나만 고를 수 있다 · {PickTurnText(keys)}",
                 smallCenter);
 
             for (int i = 0; i < count; i++)
@@ -241,7 +255,7 @@ namespace IBlameYou.UI
 
                 var buttonRect = new Rect(card.x + 10f, card.yMax - 40f, card.width - 20f, 30f);
                 if (relicKeyboard && i == relicSelection) CuteButton.DrawSelection(card); // 키보드로 고른 카드 둘레 금색 테두리
-                bool chosen = CuteButton.Button(buttonRect, "고르기", cardButton);
+                bool chosen = CuteButton.Button(buttonRect, PickMouseTurn ? "고르기" : "아루가 고르는 중", cardButton) && PickMouseTurn; // 아루(P1) 차례엔 클릭을 받지 않는다
                 GUI.matrix = previousMatrix;
                 if (chosen)
                 {
