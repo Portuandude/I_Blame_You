@@ -16,6 +16,7 @@ namespace IBlameYou.Enemies
         private Transform target;
         private float nextNetTime;
         private float windupLeft = -1f;
+        private float nextSearchTime;
 
         private void Awake()
         {
@@ -36,6 +37,8 @@ namespace IBlameYou.Enemies
             }
             if (target == null)
             {
+                if (Time.time < nextSearchTime) return; // 플레이어가 없는 동안 매 프레임 씬 전체를 찾지 않게 (버그 점검 2026-11-24)
+                nextSearchTime = Time.time + 0.5f;
                 var player = FindFirstObjectByType<IBlameYou.Player.PlayerMovement>();
                 if (player == null) return;
                 target = player.transform;
@@ -54,6 +57,7 @@ namespace IBlameYou.Enemies
             if (!KoboldChiefRules.InNetRange(distance) || IBlameYou.Systems.NetSnare.IsSnared(target.gameObject)) return;
             var targetHealth = target.GetComponent<HealthSystem>();
             if (targetHealth != null && targetHealth.IsDead) return; // 쓰러진 플레이어에게는 안 던진다
+            if (Physics2D.Linecast(Hand(), (Vector2)target.position + Vector2.up * 0.5f, EnemySpawner.GroundMask())) return; // 벽·바닥 너머로는 예고도 하지 않는다 (그물은 땅에 막힘, 버그 점검 2026-11-24)
             windupLeft = WindupTime;
             EnemySquash.For(gameObject).Windup(WindupTime);
             VfxPlayer.AimGlint(Hand());
@@ -71,7 +75,8 @@ namespace IBlameYou.Enemies
             var targetHealth = target.GetComponent<HealthSystem>();
             if (targetHealth != null && targetHealth.IsDead) return; // 예고 중에 쓰러졌으면 안 던진다 (버그 점검 2026-11-24)
             Vector2 from = Hand();
-            NetShot.Launch(stats, from, (Vector2)target.position + Vector2.up * 0.5f - from, KoboldChiefRules.NetMaxRange * 1.5f);
+            var net = NetShot.Launch(stats, from, (Vector2)target.position + Vector2.up * 0.5f - from, KoboldChiefRules.NetMaxRange * 1.5f);
+            if (net != null && transform.parent != null) net.transform.SetParent(transform.parent, true); // 방이 치워지면 날던 그물도 같이
         }
     }
 }

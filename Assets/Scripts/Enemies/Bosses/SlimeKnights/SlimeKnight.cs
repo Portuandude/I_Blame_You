@@ -123,7 +123,9 @@ namespace IBlameYou.Enemies
             }
             if (!partnerAlive)
             {
-                BossDefeatFx.Play(transform.position + Vector3.up * 0.6f, DisplayName); // 둘 다 쓰러졌다
+                var at = transform.position + Vector3.up * 0.6f;
+                at.y = Mathf.Max(at.y, killY + 3f); // 낙사로 끝났으면 연출을 낙사선 위(화면 안)에서 (버그 점검 2026-11-24)
+                BossDefeatFx.Play(at, DisplayName); // 둘 다 쓰러졌다
                 foreach (var other in knights) // 같은 프레임에 함께 쓰러진 짝이 처치 연출을 한 번 더 내지 않게
                     if (other != this && other.transform.parent == transform.parent) other.pendingLink = false;
                 // 광폭화로 빨라진 곡을 되돌린다 (쓰러진 뒤엔 Update가 돌지 않아 UpdateEnrageFx의 되돌리기가 오지 않던 것, 버그 점검 2026-11-22)

@@ -39,6 +39,10 @@ namespace IBlameYou.Systems
         // 마나가 모자랄 때 (쓰는 사람, 마법값 전체)를 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약: 절반만큼 체력). 없으면 그냥 실패.
         // 대신 냈으면 마나는 그대로 둔다.
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
+        // ShortfallCover가 이 값(비용 배율 적용 뒤)을 지금 대신 낼 수 있는지 미리 본다 (내지는 않음). 없으면 대신 내는 것이 없다고 본다.
+        public Func<float, bool> CanCover { get; set; }
+        // 마나로든 대신 내는 것으로든 이 값을 낼 수 있는지 (amount는 비용 배율 적용 뒤)
+        public bool CanAfford(float amount) => HasEnough(amount) || (ShortfallCover != null && CanCover != null && CanCover(amount));
         public event Action<float, float> ManaChanged;
 
         // (누가, 얼마나, 헛되이 날렸는지) — 결과 창 A/B 날린 마나용.

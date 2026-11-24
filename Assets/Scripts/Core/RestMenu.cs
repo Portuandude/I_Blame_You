@@ -153,8 +153,13 @@ namespace IBlameYou.Core
             GameAudio.PlaySfx("Pickup", 0.7f, 0.05f);
         }
 
+        // 산 칸은 빠지고 뒤 장비가 당겨지므로 연타·더블클릭으로 다른 장비까지 사지 않게 잠깐 쉰다 (버그 점검 2026-11-24)
+        private const float BuyGap = 0.35f;
+        private float buyReadyAt;
+
         private void Buy(int index)
         {
+            if (Time.unscaledTime < buyReadyAt) return;
             var item = shop.Stock[index];
             var current = Equipped(item.Slot);
             if (current != null && current.Id == item.Id)
@@ -171,6 +176,7 @@ namespace IBlameYou.Core
                 return;
             }
             data.gold -= cost;
+            buyReadyAt = Time.unscaledTime + BuyGap;
             data.goldSpent += cost;
             var ids = new List<int>();
             if (data.equipment != null)
