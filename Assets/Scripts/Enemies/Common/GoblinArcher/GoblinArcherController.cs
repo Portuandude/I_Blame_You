@@ -189,12 +189,12 @@ namespace IBlameYou.Enemies
             Vector2 origin = ArrowOrigin();
             Vector2 eye = (Vector2)transform.position + Vector2.up * arrowHeight;
             var hit = Physics2D.Linecast(eye, origin, obstacleLayer);
-            return hit.collider != null ? hit.point - new Vector2(facing * 0.05f, 0f) : origin;
+            return hit.collider != null ? hit.point + hit.normal * 0.05f : origin;
         }
 
         private void Release(Transform target)
         {
-            Vector2 origin = ArrowOrigin();
+            Vector2 origin = SafeArrowOrigin();
             Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
             var direction = aimAt - origin;
             if (direction.sqrMagnitude < 0.01f) direction = Vector2.right * facing;
