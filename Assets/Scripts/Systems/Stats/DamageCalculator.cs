@@ -80,7 +80,7 @@ namespace IBlameYou.Systems
 
             if (damage <= 0f) return 0f;
 
-            bool applied = !health.IsInvulnerable;
+            bool applied = !health.IsInvulnerable && !health.IsDead; // 쓰러진 대상은 TakeDamage가 무시하므로 피해 숫자·연출도 내지 않는다
             health.TakeDamage(damage);
             if (applied)
             {
