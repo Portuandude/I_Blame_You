@@ -15,6 +15,7 @@ namespace IBlameYou.Net
         private Camera viewCamera;
         private GameObject root;
         private readonly P2InputState input = new P2InputState();
+        private bool unfocused; // 친구 창이 포커스를 잃은 동안 (Alt-Tab): 입력을 보내지 않는다
         private float lastHostMessage;
         private GUIStyle statusStyle;
         private GameObject hiddenCamera; // 친구 화면을 그리는 동안 꺼 둔 원래 카메라 (끝나면 다시 켠다)
@@ -101,7 +102,28 @@ namespace IBlameYou.Net
                 NetSession.Stop();
                 return;
             }
-            if (NetSession.IsClient) SendInput(); // 다시 붙는 중에는 호스트가 어차피 버리니 보내지 않는다 (송신 큐가 쌓이지 않게, 버그 점검 2026-11-24)
+            if (NetSession.IsClient && !unfocused) SendInput(); // 다시 붙는 중에는 호스트가 어차피 버리니 보내지 않는다 (송신 큐가 쌓이지 않게, 버그 점검 2026-11-24)
+        }
+
+        // 창이 포커스를 잃으면 Unity가 마우스 버튼을 뗀 것으로 보아, 호스트에서 그리던 마법진이 판정되고 다이얼이 발동하던 것 (버그 점검 2026-11-24).
+        // 호스트 창의 같은 문제는 SpellCaster.OnApplicationFocus가 막지만 친구 P2는 빠져 있었다.
+        // → 포커스를 잃는 순간 버튼은 누른 채로 두고 Esc(마법진·다이얼 취소)만 한 번 보낸 뒤, 돌아올 때까지 입력을 보내지 않는다.
+        //   그 사이 뗀 것은 세지 않으므로 돌아와 보내는 상태에는 '뗌'이 없다 (누른 채 여부만 바뀐다).
+        private void OnApplicationFocus(bool focused)
+        {
+            if (focused)
+            {
+                unfocused = false;
+                return;
+            }
+            if (!NetSession.IsClient || unfocused) return;
+            unfocused = true;
+            if (P2Input.TryMap(KeyCode.Escape, out var esc))
+            {
+                input.Sequence++;
+                input.KeyPresses[(int)esc]++;
+                NetSession.Send(input.Write());
+            }
         }
 
         private void SendInput()
