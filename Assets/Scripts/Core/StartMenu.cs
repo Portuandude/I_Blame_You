@@ -47,6 +47,7 @@ namespace IBlameYou.Core
         private string[] letters;     // 제목 글자 (매 프레임 ToString 하지 않게)
         private int tipIndex = -1;    // 오늘의 팁 (처음 그릴 때 무작위)
         private bool tipAdvancePending;
+        private int pendingSlotDelta; // ◀▶로 누른 슬롯 이동 (다음 Layout에서 ChangeSlot)
         private float tipMaxHeight = -1f; // 모든 팁 가운데 가장 높은 줄 (팁을 넘겨도 기록 줄 접힘이 바뀌지 않게)
         private float tipHeightWidth;
         private Texture2D glow;        // 반딧불 둥근 빛 (한 번 만든다)
@@ -89,6 +90,14 @@ namespace IBlameYou.Core
         private void OnGUI()
         {
             EnsureStyles();
+            // ◀▶ 클릭으로 바꾼 슬롯은 다음 Layout 이벤트 맨 앞에서 반영한다: 클릭 이벤트 도중 saved가 바뀌면
+            // 아래 이어하기 버튼 수가 Layout 때와 달라져 IMGUI 오류가 날 수 있다 (버그 점검 2026-11-24)
+            if (Event.current.type == EventType.Layout && pendingSlotDelta != 0)
+            {
+                int delta = pendingSlotDelta;
+                pendingSlotDelta = 0;
+                ChangeSlot(delta);
+            }
 
             const float width = 640f;
             float height = Mathf.Min(640f, Screen.height - 20f); // 낮은 창에서도 버튼이 잘리지 않게
@@ -225,7 +234,7 @@ namespace IBlameYou.Core
             GUILayout.Label(summary, body);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            if (delta != 0) ChangeSlot(delta);
+            if (delta != 0) pendingSlotDelta = delta; // OnGUI 맨 앞 Layout에서 바꾼다
         }
 
         private void ChangeSlot(int delta)

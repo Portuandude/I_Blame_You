@@ -180,6 +180,13 @@ namespace IBlameYou.Core
                 e.Use();
                 if (activateKeyHeld) return -1; // 누른 채 키 반복
                 activateKeyHeld = true;
+                if (SubOpen && !keyboardUsed)
+                {
+                    // 마우스로 연 수정 탑·아카데미에서 첫 Enter는 고른 칸을 보여 주기만 한다 (테두리 없는 첫 줄을 사 버리지 않게, 버그 점검 2026-11-24)
+                    keyboardUsed = true;
+                    GameAudio.PlaySfx("UiClick", 0.35f, 0.04f);
+                    return -1;
+                }
                 keyboardUsed = true;
                 GameAudio.PlaySfx("UiClick", 0.7f, 0.04f);
                 return SubOpen ? towerSelection : keySelection;
