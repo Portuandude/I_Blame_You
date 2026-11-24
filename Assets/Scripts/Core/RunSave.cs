@@ -20,6 +20,7 @@ namespace IBlameYou.Core
             public float targetSeconds;
             public bool devMode;
             public int checkpointChunk;     // 방 격자 모드에서는 방 번호
+            public int stage;               // 스테이지 번호 (0 = 옛 저장 → 1)
             public bool roomGrid;           // 방 격자 모드로 저장한 런인지 (모드가 다르면 같은 시드라도 맵이 달라 이어 할 수 없다)
             public float spawnX;
             public float spawnY;

@@ -15,5 +15,11 @@ namespace IBlameYou.Core
         // 기능 테스트 모드: 적 없는 시험용 맵(FeatureTestStage)에서 몬스터·유물·협동 기능을 키로 불러 시험한다.
         // 기록(최고 기록·최근 판·유물 도감)은 남기지 않는다 (SaveData.Record*). 시작 화면 버튼이 정한다.
         public static bool FeatureTest { get; set; }
+
+        // 지금 판의 스테이지 번호 (1 = 슬라임·고블린, 2 = 숲, StageRoster). PlaytestBootstrap.BuildWorld가 정한다.
+        public static int Stage { get; set; } = 1;
+
+        // 개발자 모드 시작 화면에서 고른 시작 스테이지 (숲 스테이지 2를 바로 시험). 일반 모드는 늘 1. 저장하지 않는다.
+        public static int DevStartStage { get; set; } = 1;
     }
 }
