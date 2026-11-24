@@ -96,7 +96,6 @@ namespace IBlameYou.Player
             // 한 번에 여러 레벨이 올라도 빛기둥·띠·고리·가장자리는 하나만 (RestoreProgress는 여기를 지나지 않아 이어하기에는 안 뜬다)
             if (Level > levelBefore)
             {
-                var movement = GetComponent<PlayerMovement>();
                 VfxPlayer.LevelUp(transform, movement != null ? movement.FeetLocalY : 0f);
                 VfxPlayer.RelicBanner(transform.position + Vector3.up * LevelBannerHeight, "레벨 업!"); // 머리 위 띠 (2026-11-13 레벨업 연출)
                 VfxPlayer.ManaRing(transform, Vector3.zero, LevelRingColor);                           // 몸 둘레 금빛 고리
@@ -198,7 +197,6 @@ namespace IBlameYou.Player
         {
             // 화려하게: 흰 번쩍임 + 발밑에서 gold 빛기둥(레벨업 그림) + 머리 위 "버텼다!" 띠
             ScreenFlash.Pulse();
-            var movement = GetComponent<PlayerMovement>();
             VfxPlayer.LevelUp(transform, movement != null ? movement.FeetLocalY : 0f);
             VfxPlayer.RelicBanner(transform.position + Vector3.up * 2.4f, "버텼다!");
             SkillMessages.Post(ManaUser.Other, "쓰러질 피해를 버텨냈다 (생명 20·불사조 깃털)", false); // 버티기는 특성과 유물이 같이 쓴다
