@@ -58,7 +58,7 @@ namespace IBlameYou.Systems
                 return null;
             }
         }
-        // 미니맵 자물쇠: 아직 안 연 협동 봉인문이 있는 곁방 (RoomShaper.HasPairGate)
+        // 미니맵 자물쇠: 아직 안 연 두 속성 봉인문이 있는 보물 방 (RoomShaper.HasPairGate)
         public bool HasClosedPairGate(int index) =>
             rooms != null && index >= 0 && index < rooms.Rooms.Count && RoomShaper.HasPairGate(rooms.Rooms[index]) && !openedGates.Contains(index);
         // 미니맵 돌파 체크: 그 방의 전투 구역을 돌파했는지 (방 격자 모드에서 청크 번호 = 방 번호)

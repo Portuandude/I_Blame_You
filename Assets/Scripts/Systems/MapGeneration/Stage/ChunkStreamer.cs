@@ -401,17 +401,17 @@ namespace IBlameYou.Systems
             return list;
         }
 
-        // 방 격자 모드의 곁방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
+        // 방 격자 모드의 보상 방: 보물 방 = 유물 상자, 샘 방 = 회복 구슬 (가져가면 기록돼 다시 오면 없다), 마을 = 식당·장비 상점 건물.
         private void LoadRoomExtras(int index, Transform root, Vector2 origin)
         {
             var room = rooms.Rooms[index];
             RoomDoorMarkers.Create(root, origin, room, geometries[index], rooms, HasVisited);
-            // 좌우 문 곁방은 평평한 휴식 지형 가운데, 세로 곁방은 바닥 구멍을 피해 바닥 칸 옆
+            // 좌우 방은 평평한 휴식 지형 가운데, 세로 방은 바닥 구멍을 피해 바닥 칸 옆
             var floorSpot = geometries[index].Floor;
             var floor = floorSpot.HasValue
                 ? new Vector2(origin.x + floorSpot.Value.x + 2.5f, origin.y + floorSpot.Value.y)
                 : new Vector2(origin.x + RoomCols(index) / 2f, origin.y + stage.Chunks[index].EntryHeight);
-            // 협동 봉인문이 선 세로 곁방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
+            // 두 속성 봉인문이 선 세로 보물 방은 상자를 봉인문(8열) 왼쪽으로 (RoomShaper.HasPairGate)
             if (room.Kind == RoomKind.Treasure && room.IsVertical && RoomShaper.HasPairGate(room))
                 floor = new Vector2(origin.x + RoomShaper.ShaftPairChestX + 0.5f, origin.y + RoomShaper.ShaftGround);
             if (IsCursedChestRoom(index)) PlaceCursedChest(root, index);
@@ -658,7 +658,6 @@ namespace IBlameYou.Systems
             var entered = rooms.Rooms[index];
             StageEvents.RoomDistance = entered.Distance; // 게임오버 창 "쓰러진 곳: 시작 방에서 N칸"
             StageEvents.FarthestDistance = Math.Max(StageEvents.FarthestDistance, entered.Distance);
-            StageEvents.InSideRoom = !entered.MainPath;
             if (entered.Kind == RoomKind.Village)
             {
                 StageEvents.VillageVisit++; // 식당 새 방문
@@ -678,7 +677,7 @@ namespace IBlameYou.Systems
             }
             else if (firstVisit && (entered.Kind == RoomKind.Treasure || entered.Kind == RoomKind.Spring))
             {
-                // 막다른 곁방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
+                // 보물·샘 방을 처음 찾았을 때: 무슨 방인지 알림 + 반짝 소리 (마을과 같은 "발견" 리듬, 더 작게)
                 StageEvents.PostNotice(entered.Kind == RoomKind.Treasure ? "보물 방 발견!" : "회복 샘 발견!");
                 GameAudio.PlaySfx("Pickup", 0.6f, 0f);
             }
@@ -730,7 +729,7 @@ namespace IBlameYou.Systems
             return false;
         }
 
-        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 4×3 격자). 곁가지 방도 자기 거리로 잰다.
+        // 깊이 = 시작 방에서의 방 거리 / 보스 거리 (= 방 난이도, RoomLayout 5×4 격자). 어느 방이든 자기 거리로 잰다.
         private float RoomDepth(int index) => Mathf.Clamp01(rooms.Rooms[index].Difficulty);
 
         private void OnDestroy()
