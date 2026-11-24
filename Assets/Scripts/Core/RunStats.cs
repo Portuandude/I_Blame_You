@@ -59,13 +59,14 @@ namespace IBlameYou.Core
                 for (int i = 0; i < SpellCasts.Length && i < casts.Length; i++) SpellCasts[i] = System.Math.Max(0, casts[i]);
         }
 
-        // 쉼터를 넘어 이어지는 도감 집계 (결과 창 "새로 도감에 오른 유물"·NEW 점·"유물 도감 완성!"이 판 전체 몫이 되게). Reset 뒤에 부른다.
+        // 쉼터를 넘어 이어지는 마을 음식 집계 (Reset 뒤에 부른다, 플레이어 몫은 PlaytestBootstrap.RestorePlayer가 붙인다)
         public static void RestoreFood(float maxHealth, float manaRegen)
         {
             FoodMaxHealth = System.Math.Max(0f, maxHealth);
             FoodManaRegen = System.Math.Max(0f, manaRegen);
         }
 
+        // 쉼터를 넘어 이어지는 도감 집계 (결과 창 "새로 도감에 오른 유물"·NEW 점·"유물 도감 완성!"이 판 전체 몫이 되게). Reset 뒤에 부른다.
         public static void RestoreCodex(int newRelics, long newRelicMask, bool codexCompleted)
         {
             NewRelics = System.Math.Max(0, newRelics);
