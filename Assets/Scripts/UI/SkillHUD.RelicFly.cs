@@ -17,6 +17,14 @@ namespace IBlameYou.UI
         private const float RelicFlyArc = 80f; // 곡선 꼭대기가 출발·도착점 중 높은 쪽보다 이만큼 위
 
         private readonly Dictionary<RelicId, Rect> relicListSlots = new Dictionary<RelicId, Rect>();
+        private readonly Dictionary<RelicId, int> relicListSlotFrames = new Dictionary<RelicId, int>(); // 그 칸을 마지막으로 그린 프레임 (목록이 안 그려지는데 옛 자리로 날아가던 것, 버그 점검 2026-11-25)
+
+        // 최근 몇 프레임 안에 그려진 칸만 믿는다
+        private bool TryRelicSlot(RelicId id, out Rect rect)
+        {
+            rect = default;
+            return relicListSlotFrames.TryGetValue(id, out int frame) && Time.frameCount - frame <= 2 && relicListSlots.TryGetValue(id, out rect);
+        }
         private readonly Rect[] relicCardIcons = new Rect[4]; // 창에 그린 카드별 큰 아이콘 자리 (출발점)
         private bool relicFlying;
         private RelicId relicFlyId;
@@ -41,7 +49,9 @@ namespace IBlameYou.UI
 
         private void RecordRelicSlot(RelicId id, Rect rect)
         {
-            if (Event.current.type == EventType.Repaint) relicListSlots[id] = rect;
+            if (Event.current.type != EventType.Repaint) return;
+            relicListSlots[id] = rect;
+            relicListSlotFrames[id] = Time.frameCount;
         }
 
         private void DrawRelicFly()
@@ -49,7 +59,7 @@ namespace IBlameYou.UI
             if (relicFlying)
             {
                 float t = (Time.unscaledTime - relicFlyStart) / RelicFlyTime;
-                bool hasSlot = relicListSlots.TryGetValue(relicFlyId, out var to);
+                bool hasSlot = TryRelicSlot(relicFlyId, out var to);
                 if (t >= 1f)
                 {
                     if (Event.current.type == EventType.Repaint)
@@ -100,7 +110,7 @@ namespace IBlameYou.UI
 
             if (!relicGlinting) return;
             float g = (Time.unscaledTime - relicGlintStart) / RelicGlintTime;
-            if (g >= 1f || !relicListSlots.TryGetValue(relicGlintId, out var slot)) { relicGlinting = false; return; }
+            if (g >= 1f || !TryRelicSlot(relicGlintId, out var slot)) { relicGlinting = false; return; }
             if (Event.current.type != EventType.Repaint) return;
             var before = GUI.color;
             // 칸이 잠깐 하얗게 빛났다가 사라지고, 금색 고리가 바깥으로 퍼진다

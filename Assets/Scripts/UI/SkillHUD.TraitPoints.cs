@@ -17,6 +17,9 @@ namespace IBlameYou.UI
         private GUIStyle traitPillText;
         private int traitPillLastPoints = -1; // -1: 아직 안 봄 (불러온 런에서 처음부터 있던 포인트는 팝하지 않는다)
         private float traitPillPopStart = -10f;
+        private GUIContent traitPillContent;
+        private int traitPillContentPoints = -1;
+        private float traitPillWidth;
 
         private void DrawTraitPointsPill(Vector2 topLeft)
         {
@@ -32,8 +35,14 @@ namespace IBlameYou.UI
                 traitPillText.normal.textColor = TraitPillInk;
             }
 
-            var content = new GUIContent($"특성 포인트 {points} (Tab)");
-            float width = traitPillText.CalcSize(content).x + 26f;
+            if (traitPillContent == null || traitPillContentPoints != points) // 포인트가 바뀔 때만 글자를 새로 잰다 (매 OnGUI 할당하던 것)
+            {
+                traitPillContentPoints = points;
+                traitPillContent = new GUIContent($"특성 포인트 {points} (Tab)");
+                traitPillWidth = traitPillText.CalcSize(traitPillContent).x + 26f;
+            }
+            var content = traitPillContent;
+            float width = traitPillWidth;
             var pill = new Rect(topLeft.x + BarGlow, topLeft.y, width, TraitPillHeight);
 
             // 숨쉬기: 0~1을 오가는 값
