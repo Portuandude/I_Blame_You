@@ -88,9 +88,22 @@ namespace IBlameYou.Core
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = previous;
 
-            const float width = 560f;
-            const float height = 420f;
-            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, Mathf.Min((Screen.height - height) / 2f, Screen.height - height - 10f)), width, height);
+            // 낮거나 좁은 창(440px 미만)에서는 창을 통째로 줄여 아래 버튼이 잘리지 않게 한다 (GUI.matrix는 클릭 자리도 같이 바꾼다)
+            float fit = Mathf.Clamp(Mathf.Min((Screen.width - 20f) / PanelWidth, (Screen.height - 20f) / PanelHeight), 0.3f, 1f);
+            var screenMatrix = GUI.matrix;
+            if (fit < 1f) GUIUtility.ScaleAroundPivot(new Vector2(fit, fit), new Vector2(Screen.width / 2f, Screen.height / 2f));
+            try { DrawPanel(panel, body, button); }
+            finally { GUI.matrix = screenMatrix; }
+        }
+
+        private const float PanelWidth = 560f;
+        private const float PanelHeight = 420f;
+
+        private void DrawPanel(GUIStyle panel, GUIStyle body, GUIStyle button)
+        {
+            const float width = PanelWidth;
+            const float height = PanelHeight;
+            var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
             var head = headStyle.Get(body, s => { s.alignment = TextAnchor.MiddleCenter; s.fontSize = 22; s.fontStyle = FontStyle.Bold; });
