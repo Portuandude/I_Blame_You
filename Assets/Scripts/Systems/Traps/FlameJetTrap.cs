@@ -138,7 +138,7 @@ namespace IBlameYou.Systems
             var health = player.GetComponent<HealthSystem>();
             if (health == null || health.IsDead || health.IsInvulnerable) return;
 
-            TrapCommon.Strike(player, DamageKind.Magic, Element.Fire, DamageMultiplier);
+            if (TrapCommon.Strike(player, DamageKind.Magic, Element.Fire, DamageMultiplier) <= 0f) return; // 피했으면(회피 유물 등) 화상도 없음 (가시 덤불과 같게)
             StatusEffects.TryApply(player, StatusDebuff.Burn, TrapCommon.Source);
             TrapHitFx.FlameTouch(other.bounds.center); // 연출: 몸에서 불똥 + "치익"
             nextTick = Time.time + TickInterval;

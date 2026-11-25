@@ -68,12 +68,18 @@ namespace IBlameYou.Systems
             return renderer;
         }
 
+        private static int groundLayer = -1;
+
         public static int GroundLayer
         {
             get
             {
-                int layer = LayerMask.NameToLayer("Ground");
-                return layer >= 0 ? layer : 0;
+                if (groundLayer < 0) // 이름 찾기는 한 번만 (떨어지는 종유석이 매 프레임 부르던 것)
+                {
+                    int layer = LayerMask.NameToLayer("Ground");
+                    groundLayer = layer >= 0 ? layer : 0;
+                }
+                return groundLayer;
             }
         }
     }
