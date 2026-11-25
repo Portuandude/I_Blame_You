@@ -22,6 +22,15 @@ namespace IBlameYou.Systems
                 false, scale, sortingOrder: -1); // 땅 그림(-3 이하) 위, 발판·캐릭터(0 이상) 뒤
         }
 
+        // 달리기 발 구름 (pixelfx impacts/step-puff, Tools/PixelFx): 발을 구를 때마다 뒤꿈치 뒤로 작은 먼지 뭉게.
+        // facing: 캐릭터가 보는 쪽 (+1 오른쪽). 그림은 오른쪽을 볼 때 왼쪽(뒤)으로 퍼지게 그려져 있다.
+        public static void StepPuff(Vector3 feet, float facing)
+        {
+            var frames = EffectLibrary.LoadRuntimeFrames("Effects/Px/Dust/Step", new Vector2(0.5f, 0f)); // 발밑 = 아래 가운데
+            if (frames == null) return;
+            EffectLibrary.PlayOneShot(feet, frames, 30f, Color.clear, 0f, facing < 0f, 1f, sortingOrder: -1);
+        }
+
         // 레벨업 빛기둥. 플레이어를 따라다니도록 자식으로 붙인다 (그림이 좌우 대칭이라 방향 뒤집힘은 상관없다).
         public static void LevelUp(Transform follow, float feetLocalY)
         {

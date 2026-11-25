@@ -37,11 +37,15 @@ def export(pfx, r):
     frames, m = render(pfx, r["id"], r.get("opts"))
     src_fps, n_src = m["fps"], m["frames"]
     dur = n_src / src_fps
+    gray = r.get("gray")  # 회색판 (속성 색을 곱해 쓰는 ElementRecolor용): 밝기만 남긴다
     start = r.get("start", 0.0)
     end = min(r.get("end", dur), dur)
     fps = r["fps"]
-    count = max(1, round((end - start) * fps))
-    picked = [frames[min(n_src - 1, int(round((start + i * (end - start) / count) * src_fps)) % n_src)] for i in range(count)]
+    times = r.get("times")  # 프레임마다 뽑을 시각(초)을 직접 정할 때 (애니메이션 클립 구간에 맞출 때)
+    if not times:
+        count = max(1, round((end - start) * fps))
+        times = [start + i * (end - start) / count for i in range(count)]
+    picked = [frames[min(n_src - 1, int(round(tt * src_fps)) % n_src)] for tt in times]
     if r.get("blank_last"):
         picked.append(Image.new("RGBA", picked[0].size))
     # 알파가 아주 옅은 빛 번짐은 버린다 (어두운 배경 전제의 광택이라 게임 배경 위에선 뿌연 사각형이 됨)
@@ -72,15 +76,27 @@ def export(pfx, r):
     else:  # bottom: 피벗 y가 맨 아래 (땅 아래로 그린 금·그림자는 잘린다)
         box = (px - hx, y0, px + hx, py)
     s = r.get("scale", 2)
+    canvas = r.get("canvas")  # [w, h]: 원래 스프라이트와 같은 고정 캔버스 (아래 가운데 = 피벗). 넘치는 부분은 잘린다
+    if canvas:
+        px, py = m["pivot"]
+        # canvas_pivot: 출력 캔버스에서 pixelfx 피벗(발밑)이 올 픽셀 (없으면 아래 가운데). scale로 나눠떨어지게 잡는다
+        cpx, cpy = r.get("canvas_pivot", [canvas[0] // 2, canvas[1]])
+        lx, ty = cpx // s, cpy // s
+        box = (px - lx, py - ty, px - lx + -(-canvas[0] // s), py - ty + -(-canvas[1] // s))
     dest = os.path.join(ROOT, r["dest"])
     os.makedirs(dest, exist_ok=True)
     prefix = r.get("prefix", "")
     for i, im in enumerate(cleaned):
         c = im.crop(box)
         c = c.resize((c.width * s, c.height * s), Image.NEAREST)
+        if canvas:  # 피벗을 맞춘 채 정확한 크기로 (오른쪽·아래 넘친 부분을 자른다)
+            c = c.crop((0, 0, canvas[0], canvas[1]))
         if r.get("flip_y"):
             c = c.transpose(Image.FLIP_TOP_BOTTOM)
-        c.save(os.path.join(dest, f"{prefix}{i:02d}.png"))
+        if r.get("gray"):
+            a_ = c.getchannel("A"); c = c.convert("L").convert("RGBA"); c.putalpha(a_)
+        name = r["file"] if r.get("file") else f"{prefix}{i:02d}.png"  # file: 한 장짜리 그림의 정해진 이름
+        c.save(os.path.join(dest, name))
     stale = sorted(f for f in os.listdir(dest) if f.endswith(".png") and f >= f"{prefix}{len(cleaned):02d}.png" and f.startswith(prefix))
     if stale:
         print(f'  ! {r["dest"]}: 이번에 안 쓰는 옛 프레임 {stale} — Trash/로 옮길 것')

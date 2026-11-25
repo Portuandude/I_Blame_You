@@ -262,6 +262,7 @@ namespace IBlameYou.Player
             if (stepTimer > 0f) return;
             stepTimer = isRunning ? RunStepInterval : WalkStepInterval;
             GameAudio.PlaySfx("Step", isRunning ? 0.6f : 0.45f, 0.1f);
+            if (isRunning) VfxPlayer.StepPuff(groundCheck.position, Mathf.Sign(transform.localScale.x)); // 달리면 발 구름
         }
 
         private void UpdateAnimator()
