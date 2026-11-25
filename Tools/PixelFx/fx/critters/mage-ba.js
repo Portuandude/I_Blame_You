@@ -26,7 +26,8 @@ const C = {
   white: H("#ffffff"),
   mouth: H("#b5525f"), tongue: H("#ff9aa6"),
   jakD: H("#b4bbd6"), jak: H("#e6e9f4"), jakL: H("#f6f7fc"), jakH: H("#ffffff"),
-  trim: H("#5b6db0"), trimS: H("#45528d"), tie: H("#d99a2e"), tieL: H("#ffcf5c"),
+  trim: H("#5b6db0"), trimS: H("#45528d"), tie: H("#d9435e"), tieL: H("#ff7d95"),
+  tipD: H("#43369a"), tip: H("#6b57cf"), tipM: H("#9a86ec"),
   gold: H("#ffd45e"), goldS: H("#e0a43a"),
   shorts: H("#3d4266"), shortsL: H("#555b85"), sock: H("#ffffff"), sockS: H("#d3d6e8"),
   shoe: H("#4a5a9a"), shoeL: H("#6f82c8"), sole: H("#f2f2f6"),
@@ -199,8 +200,12 @@ function jacket(g, P) {
   // collar + tie
   const tx = lx + 5;
   g.poly([[tx - 7, top - 1], [tx, top + 4], [tx + 6, top - 1], [tx + 4, top + 2], [tx, top + 6], [tx - 5, top + 2]], (x, y) => (x < tx ? C.trim : C.trimS));
-  g.poly([[tx - 1.5, top + 3], [tx + 1.5, top + 3], [tx + 2, top + 9], [tx, top + 11], [tx - 2, top + 9]], (x, y) => (x < tx ? C.tieL : C.tie));
-  g.set(tx, top + 3, C.gold);
+  // a ribbon bow with two tails
+  g.poly([[tx - 1, top + 9], [tx - 3, top + 15], [tx - 1, top + 14]], C.tie);
+  g.poly([[tx + 1, top + 9], [tx + 3, top + 15], [tx + 1, top + 14]], C.tie);
+  g.poly([[tx, top + 7], [tx - 6, top + 4], [tx - 6, top + 11]], (x, y) => (y < top + 7 ? C.tieL : C.tie));
+  g.poly([[tx, top + 7], [tx + 6, top + 4], [tx + 6, top + 11]], (x, y) => (y < top + 7 ? C.tieL : C.tie));
+  g.shade(tx - 1, top + 6, tx + 1, top + 8, () => C.tieL);
 }
 
 function hood(g, P) {
@@ -267,10 +272,11 @@ function eye(g, x, y, w, P, near) {
     }
   // lid flick at the outer corner, and a soft lower lid
   g.set(near ? x + w : x - 1, y + top, C.line);
-  for (let i = 1; i < w - 1; i++) g.set(x + i, y + h, C.skinS);
+  for (let i = 1; i < w - 1; i++) g.set(x + i, y + h, mix(E.d, C.skin, 0.35)); // colored lower lash
   // pupil and catch-lights: a big soft one up top, a sparkle below
   if (P.eyes !== "wide") for (let r = 5; r < 9; r++) g.set(x + Math.floor(w / 2), y + r, E.d), g.set(x + Math.floor(w / 2) - 1, y + r, r > 5 && r < 8 ? E.d : E.m);
   g.shade(x + 1, y + top + 2, x + 2, y + top + 4, () => C.white);
+  g.set(x + w - 2, y + top + 3, C.white); // a second small glint
   g.set(x + w - 2, y + 11, C.white); g.set(x + w - 3, y + 11, C.white);
   if (P.eyes === "determined") for (let i = 0; i < w; i++) g.set(x + i, y + 1 + (near ? (i < w / 2 ? 1 : 0) : (i >= w / 2 ? 1 : 0)), C.line);
 }
@@ -287,7 +293,10 @@ function longHair(g, P) {
     const tip = bot - 5 * tri((x - x0) / 5.5); // pointed ends
     if (y > tip) return 0;
     const strand = tri((x - x0 + v * 3) / 5.5) > 0.86;
-    if (strand && y > hy + 6) return C.hairD;
+    // the ends fade into violet, dithered through the middle
+    const tipped = v > 0.78 || (v > 0.6 && (x + y) & 1);
+    if (strand && y > hy + 6) return tipped ? C.tipD : C.hairD;
+    if (tipped) return x < x0 + 3 ? C.tipM : x > x1 - 4 ? C.tipD : C.tip;
     return x < x0 + 3 ? C.hairM : x > x1 - 4 ? C.hairD : C.hair;
   });
 }
@@ -299,7 +308,11 @@ function head(g, P) {
   g.ellipse(hx - 3, hy + 1, 25, 23, (nx, ny) => (ny > 0.35 ? C.hairD : nx < -0.4 ? C.hair : C.hairM));
   for (let i = 0; i < 4; i++) g.tube([[hx - 12 + i * 3, hy + 10], [hx - 18 + i * 2.5 - hb * 0.4, hy + 19 + hb - i]], (u) => lerp(3.4, 0.8, u), i % 2 ? C.hair : C.hairD);
   // face: a soft round bun
-  g.ellipse(hx + 3, hy + 6, 20, 17, (nx, ny) => (nx > 0.75 || ny > 0.82 ? C.skinS : nx > 0.5 || ny > 0.6 ? C.skinM : C.skin));
+  const skinAt = (nx, ny) => (nx > 0.75 || ny > 0.82 ? C.skinS : nx > 0.5 || ny > 0.6 ? C.skinM : C.skin);
+  g.ellipse(hx + 3, hy + 6, 20, 17, skinAt);
+  // chubby cheeks pushing the jaw out
+  g.ellipse(hx - 7, hy + 14, 9, 7, (nx, ny) => (ny > 0.7 ? C.skinM : C.skin));
+  g.ellipse(hx + 13, hy + 14, 9.5, 7, (nx, ny) => (nx > 0.6 || ny > 0.7 ? C.skinM : C.skin));
   // hair cap with soft pointed bangs, long side locks
   const clump = (x, y) => 1 - tri((x - hx + 1 + (y - hy) * 0.3) / 6.5);
   g.shade(hx - 30, hy - 32, hx + 30, hy + 32, (x, y) => {
@@ -310,11 +323,13 @@ function head(g, P) {
     const side = x < hx - 12 && y < hy + 13 + hb;
     const lock = x > hx + 19 && y < hy + 26 + hb - Math.max(0, x - hx - 21) * 4; // a long pointed lock framing the cheek
     if (y > bang && !side && !lock) return 0;
+    if (lock && y > hy + 16 + hb) return y > hy + 20 + hb || (x + y) & 1 ? (x > hx + 22 ? C.tipD : C.tip) : C.hair;
     if (y > hy - 8 && y < bang - 1 && tri((x - hx + 1 + (y - hy) * 0.3) / 6.5) > 0.86) return C.hairD;
     if (y >= bang - 1 && !side && !lock) return C.hair;
-    if (ny < -0.5 && nx < 0.35) return C.hairL;
-    if (nx > 0.6 || ny > 0.3) return C.hair;
-    return nx < -0.5 ? C.hairL : C.hairM;
+    // soft round lighting from the upper left, darker at the far edge
+    const l = -0.45 * nx - 0.75 * ny;
+    if (nx > 0.8 || (ny > 0.55 && nx > 0)) return C.hairD;
+    return l > 0.5 ? C.hairL : l > -0.15 ? C.hairM : C.hair;
   });
   // shine: a broken angel ring
   for (let k = -2; k <= 2; k++) {
@@ -322,10 +337,14 @@ function head(g, P) {
     for (let i = 0; i < 4; i++) g.set(sx0 + i, sy0 + (i === 0 || i === 3 ? 1 : 0), C.hairH);
   }
   // fluffy cowlick
-  g.tube([[hx - 2, hy - 20], [hx + 2, hy - 27], [hx + 5 - hb * 0.6, hy - 26 + hb * 0.5]], (u) => lerp(2.4, 0.7, u), (u, d) => (d < 0.5 ? C.hairL : C.hair));
-  // star hairpin on the near side
-  const sx = hx + 14, sy = hy - 6;
-  g.poly([[sx, sy - 4], [sx + 1.3, sy - 1.3], [sx + 4, sy], [sx + 1.3, sy + 1.3], [sx, sy + 4], [sx - 1.3, sy + 1.3], [sx - 4, sy], [sx - 1.3, sy - 1.3]], (x, y) => (x < sx && y < sy ? C.gold : C.goldS));
+  g.tube([[hx - 1, hy - 22], [hx + 1, hy - 27], [hx + 4, hy - 30], [hx + 7 - hb * 0.6, hy - 29 + hb * 0.5]], (u) => lerp(1.7, 0.5, u), (u, d) => (d < 0.5 ? C.hairL : C.hair));
+  // two hair clips on the near side, and a little star charm
+  const sx = hx + 13, sy = hy - 6;
+  for (let i = 0; i < 2; i++) for (let k = 0; k < 7; k++) {
+    const c = i ? C.white : C.gold;
+    g.set(sx + i * 3 + k * 0.5, sy - 3 + k, c), g.set(sx + i * 3 + k * 0.5 + 1, sy - 3 + k, i ? C.trimS : C.goldS);
+  }
+  g.poly([[sx + 9, sy - 6], [sx + 10, sy - 4], [sx + 12, sy - 4], [sx + 10.5, sy - 2.5], [sx + 11, sy], [sx + 9, sy - 1.5], [sx + 7, sy], [sx + 7.5, sy - 2.5], [sx + 6, sy - 4], [sx + 8, sy - 4]], C.gold);
   // bang shadow on the forehead
   for (let x = hx - 12; x <= hx + 21; x++)
     for (let y = hy - 4; y <= hy + 14; y++) {
@@ -336,9 +355,13 @@ function head(g, P) {
   const ey = hy + 2;
   eye(g, hx + 10, ey, 8, P, true);
   eye(g, hx - 5, ey, 7, P, false);
-  const mx = hx + 6, my = ey + 18;
-  if (P.mouth === "smile") g.set(mx - 1, my, C.mouth), g.set(mx, my + 1, C.mouth), g.set(mx + 1, my, C.mouth);
-  else if (P.mouth === "open") g.shade(mx - 1, my, mx + 1, my + 2, (x, y) => (y >= my + 2 ? C.tongue : C.mouth));
+  const mx = hx + 6, my = ey + 15;
+  // a big happy "D" grin: wider on top, tongue at the bottom
+  const grin = (rows) => rows.forEach((hw, r) => {
+    for (let i = -hw; i <= hw; i++) g.set(mx + i, my + r, r === 0 ? C.line : r >= rows.length - 2 && Math.abs(i) < hw ? C.tongue : C.mouth);
+  });
+  if (P.mouth === "smile") grin([3, 3, 2, 1]);
+  else if (P.mouth === "open") grin([3, 3, 3, 2, 1]);
   else if (P.mouth === "o") g.ellipse(mx, my + 1, 1.5, 2, C.mouth);
   else if (P.mouth === "flat") g.line(mx - 1, my + 1, mx + 1, my + 1, C.mouth);
   else for (let i = -2; i <= 2; i++) g.set(mx + i, my + (i & 1 ? 1 : 0), C.mouth);
@@ -365,6 +388,7 @@ export function draw(p, time, o) {
     const c = g.get(x - Math.sign(nx), y - Math.sign(ny)) || g.get(x - 1, y) || g.get(x + 1, y) || g.get(x, y - 1) || g.get(x, y + 1);
     return c ? mix(c, C.line, 0.72) : C.line;
   });
+  g.outline(C.white); // a white sticker border around the whole character
   g.draw(p);
   if (P.gemGlow > 0.05) p.glow(gem[0], gem[1], 8 + 12 * P.gemGlow, C.gem, 0.35 * P.gemGlow);
 }
