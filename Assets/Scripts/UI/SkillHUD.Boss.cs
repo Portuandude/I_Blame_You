@@ -56,9 +56,17 @@ namespace IBlameYou.UI
             GUI.Box(rect, GUIContent.none, panel);
 
             int alive = BossEvents.AliveCount;
-            string title = alive > 1 ? $"{BossEvents.Name} ×{alive}" : BossEvents.Name;
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f),
-                $"<b>{title}</b>  {BossEvents.Current:0} / {BossEvents.Max:0}", labelCenter);
+            int bossCur = RoundShown(BossEvents.Current), bossMax = RoundShown(BossEvents.Max); // 보이는 숫자가 바뀔 때만 글자를 새로 만든다 (보스전 내내 OnGUI마다 만들던 것)
+            if (bossLabelText == null || bossLabelAlive != alive || bossLabelCur != bossCur || bossLabelMax != bossMax || bossLabelName != BossEvents.Name)
+            {
+                bossLabelAlive = alive;
+                bossLabelCur = bossCur;
+                bossLabelMax = bossMax;
+                bossLabelName = BossEvents.Name;
+                string title = alive > 1 ? $"{bossLabelName} ×{alive}" : bossLabelName;
+                bossLabelText = $"<b>{title}</b>  {bossCur} / {bossMax}";
+            }
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 2f, rect.width - 20f, 24f), bossLabelText, labelCenter);
 
             // 왕관 아이콘 + 캡슐 바 (SkillHUD.Bars.cs). 한 번에 크게 깎이면 아이콘과 바가 함께 잠깐 흔들린다 (바 x가 아이콘 기준).
             float ratio = BossEvents.Max > 0f ? Mathf.Clamp01(BossEvents.Current / BossEvents.Max) : 0f;
@@ -82,9 +90,21 @@ namespace IBlameYou.UI
             DrawIcon(crownIcon, icon, 1f);
 
             if (!string.IsNullOrEmpty(BossEvents.Notice))
-                GUI.Label(new Rect(rect.x, rect.yMax + 2f, rect.width, 22f), $"<color=#ffd84d>{BossEvents.Notice}</color>",
-                    smallCenter);
+            {
+                if (!ReferenceEquals(bossNoticeSource, BossEvents.Notice))
+                {
+                    bossNoticeSource = BossEvents.Notice;
+                    bossNoticeText = $"<color=#ffd84d>{bossNoticeSource}</color>";
+                }
+                GUI.Label(new Rect(rect.x, rect.yMax + 2f, rect.width, 22f), bossNoticeText, smallCenter);
+            }
         }
+
+        private string bossLabelText;
+        private string bossLabelName;
+        private int bossLabelAlive, bossLabelCur, bossLabelMax;
+        private string bossNoticeSource;
+        private string bossNoticeText;
     
         private static Rect BossBarRect()
         {

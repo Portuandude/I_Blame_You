@@ -126,6 +126,9 @@ namespace IBlameYou.Core
             StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
             StageEvents.FarthestDistance = -1;
+            StageEvents.Depth = 0f; // 지난 판 값이 첫 방에 들어가기 전 배경 색조·후반 곡에 남지 않게 (버그 점검 2026-11-25)
+            StageEvents.VillageVisit = 0;
+            StageEvents.VillageRoom = -1;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             StageData featureStage = null;
