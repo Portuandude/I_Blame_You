@@ -21,6 +21,18 @@ namespace IBlameYou.Player
             guard.clearedAtStart = RunStats.ArenasCleared;
         }
 
+        // 스테이지를 넘을 때(새 플레이어) 저장한 값 그대로 다시 붙인다 (RunSave, 버그 점검 2026-11-25: 마을에서 사고 구역을 돌파하기 전에
+        // 쉼터로 넘어가면 효과가 사라지던 것). 돌파 횟수는 판 기록(RunStats.ArenasCleared)이 이어지므로 산 때 값을 그대로 쓴다.
+        public static void Restore(GameObject player, float reduction, int clearedAtStart)
+        {
+            if (!(reduction > 0f) || clearedAtStart < 0) return;
+            Grant(player, reduction);
+            player.GetComponent<LunchboxGuard>().clearedAtStart = clearedAtStart;
+        }
+
+        public float SavedReduction => Active ? reduction : 0f;
+        public int SavedClearedAt => Active ? clearedAtStart : -1;
+
         public float Modify(float damage, DamageKind kind, Element element) =>
             Active ? damage * (1f - reduction) : damage;
     }

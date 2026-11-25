@@ -259,6 +259,7 @@ namespace IBlameYou.Core
             if (restoredHealth != null && data.foodMaxHealth > 0f) restoredHealth.AddMax(data.foodMaxHealth);
             var restoredMana = player.GetComponent<ManaSystem>();
             if (restoredMana != null && data.foodManaRegen > 0f) restoredMana.RegenMultiplier += data.foodManaRegen;
+            LunchboxGuard.Restore(player, data.lunchReduction, data.lunchClearedAt); // 아직 안 끝난 도시락도 다음 스테이지로
 
             // 마나·기력은 스테이지마다 가득: 장비·유물이 최대치만 올린(AddMax(v, false)) 몫까지 채운다 (버그 점검 2026-11-24)
             if (restoredMana != null) restoredMana.Restore(restoredMana.Max);
@@ -289,6 +290,7 @@ namespace IBlameYou.Core
             var equipmentIds = new System.Collections.Generic.List<int>();
             var equipment = player.GetComponent<PlayerEquipment>();
             if (equipment != null) foreach (var item in equipment.All) equipmentIds.Add((int)item.Id);
+            var lunch = player.GetComponent<LunchboxGuard>();
 
             return new RunSave.Data
             {
@@ -328,7 +330,9 @@ namespace IBlameYou.Core
                 acornLevels = relics != null ? relics.AcornLevels : 0,
                 candyLevels = relics != null ? relics.CandyLevels : 0,
                 foodMaxHealth = RunStats.FoodMaxHealth,
-                foodManaRegen = RunStats.FoodManaRegen
+                foodManaRegen = RunStats.FoodManaRegen,
+                lunchReduction = lunch != null ? lunch.SavedReduction : 0f,
+                lunchClearedAt = lunch != null ? lunch.SavedClearedAt : -1
             };
         }
 
