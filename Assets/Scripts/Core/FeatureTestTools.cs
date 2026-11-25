@@ -73,8 +73,11 @@ namespace IBlameYou.Core
             foreach (var item in keptEquipment) equipment.Equip(new EquipmentItem(item.Id));
         }
 
+        private void OnEnable() => active = this;
+
         private void OnDestroy()
         {
+            if (active == this) active = null;
             if (rebuilding) return;
             if (menuDevMode.HasValue) GameSession.DevMode = menuDevMode.Value; // 시작 화면 설정을 시험 중 바꾼 값으로 덮지 않는다
             RoleInput.Focus = ControlFocus.Both; // A/B 전환은 시험 맵 안에서만
@@ -98,9 +101,20 @@ namespace IBlameYou.Core
             if (Input.GetKeyDown(KeyCode.F10)) JumpToArea((area + 1) % FeatureTestStage.Order.Length);
             if (Input.GetKeyDown(KeyCode.F12)) equipWindowOpen = !equipWindowOpen;
             if (Input.GetKeyDown(KeyCode.F11)) StageEvents.RaiseCleared(); // 결과 창 (판이 끝남, R로 다시)
-            if (relicWindowOpen && Input.GetKeyDown(KeyCode.Escape)) relicWindowOpen = false;
-            if (equipWindowOpen && Input.GetKeyDown(KeyCode.Escape)) equipWindowOpen = false;
+            if ((relicWindowOpen || equipWindowOpen) && Input.GetKeyDown(KeyCode.Escape))
+            {
+                relicWindowOpen = false;
+                equipWindowOpen = false;
+                escClosedFrame = Time.frameCount; // 같은 Esc가 일시정지 메뉴를 열지 않게 (SkillHUD가 이 Update 뒤에 돌 때)
+            }
         }
+
+        // 일시정지 메뉴(SkillHUD.Pause)가 Esc를 받기 전에 묻는다: F9 유물·F12 장비 창이 열려 있거나 이번 프레임 Esc로 닫혔으면 그 Esc는 창 몫.
+        // Update 순서가 정해져 있지 않으므로 "열림"(SkillHUD가 먼저 돌 때)과 "이번 프레임에 닫힘"(나중에 돌 때)을 둘 다 본다.
+        private static FeatureTestTools active; // 기능 테스트 모드에서만 있다
+        private static int escClosedFrame = -1;
+        public static bool EscapeTaken => escClosedFrame == Time.frameCount
+            || (active != null && (active.relicWindowOpen || active.equipWindowOpen));
 
         // A/B 전환 (2026-11-14 사람 결정 ④): 둘 다 → A만 → B만 → 둘 다. 한 역할만 조작해 보며 그 사람이 할 일을 시험한다 (RoleInput.Focus).
         private static void CycleFocus()
