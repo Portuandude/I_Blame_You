@@ -15,7 +15,13 @@ namespace IBlameYou.Enemies
         {
             var prefab = artConfig != null ? artConfig.motherSlimePrefab : null;
             if (prefab != null && prefab.GetComponent<SplitOnDeath>() == null) prefab = null;
-            return EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "MotherSlime");
+            var slime = EnemySpawner.Spawn<SlimeController>(prefab, () => Build(artConfig), position, "MotherSlime");
+            // 회색 슬라임 그림에 보라를 곱한다 (2026-11-25 pixelfx 슬라임: 초록 원본에 곱하면 탁한 초록이 되던 것). 슬라임 킹과 같은 방식
+            var visual = slime != null ? slime.transform.Find("Visual") : null;
+            var renderer = visual != null ? visual.GetComponent<SpriteRenderer>() : null;
+            if (renderer != null && artConfig != null && artConfig.slimeDefaultSprite != null)
+                ElementRecolor.Attach(renderer, "Enemies/SlimeGray", Tint);
+            return slime;
         }
 
         public static GameObject Build(LevelArtConfig artConfig)
