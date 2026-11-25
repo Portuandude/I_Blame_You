@@ -70,6 +70,8 @@ namespace IBlameYou.Enemies
             int ground = LayerMask.NameToLayer("Ground");
             if (ground < 0) return offset;
             int mask = 1 << ground;
+            // 어미 발밑에도 바닥이 없으면(공중에서 죽음) 낭떠러지가 아니라 공중이라 그대로 퍼뜨린다 (한 자리에 겹치지 않게)
+            if (Physics2D.Raycast((Vector2)transform.position + new Vector2(0f, 0.3f), Vector2.down, GroundProbe, mask).collider == null) return offset;
             for (int step = 0; step < 3; step++)
             {
                 var origin = (Vector2)transform.position + new Vector2(offset, 0.3f);
