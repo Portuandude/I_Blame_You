@@ -110,6 +110,7 @@ namespace IBlameYou.Core
             GUILayout.Space(8f);
             GUILayout.Label("떠돌이 상인 (낀 장비는 판매가만큼 깎아 준다)", small);
             int bought = -1;
+            int nextSlot = SlotNext, quitSlot = SlotQuit; // 산 칸이 빠지기 전 번호: 마지막 진열품에서 Enter가 [다음 스테이지]까지 누르지 않게
             for (int i = 0; i < shop.Stock.Count; i++)
             {
                 var item = shop.Stock[i];
@@ -124,9 +125,9 @@ namespace IBlameYou.Core
             GUILayout.Label(feedback ?? "", small); // 늘 그린다: 사고 마신 그 이벤트에 칸 수가 바뀌면 IMGUI가 [다음]·[저장] 클릭을 잃는다
 
             GUILayout.FlexibleSpace();
-            bool next = MenuButton(SlotNext, $"다음 스테이지 {data.stage}로", 50f, pressed);
+            bool next = MenuButton(nextSlot, $"다음 스테이지 {data.stage}로", 50f, pressed);
             GUILayout.Space(6f);
-            bool quit = MenuButton(SlotQuit, "저장하고 시작 화면", 38f, pressed);
+            bool quit = MenuButton(quitSlot, "저장하고 시작 화면", 38f, pressed);
             GUILayout.Label("↑↓ 고르기 · Enter 누르기 · 저장은 쉼터에서만", small);
             GUILayout.EndArea();
             GUI.matrix = screenMatrix;
