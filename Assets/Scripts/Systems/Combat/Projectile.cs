@@ -82,8 +82,19 @@ namespace IBlameYou.Systems
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
+        // Destroy는 프레임 끝에 지우므로, 긴 프레임에 FixedUpdate가 여러 번 돌면 이미 맞은 탄이 한 번 더 판정했다
+        // (봉인문 두 단계가 한 발에 풀림, 비관통 탄이 다음 적까지 맞힘 — 버그 점검 2026-11-25). 사라질 탄은 여기서 멈춘다.
+        private bool spent;
+
+        private void Expire()
+        {
+            spent = true;
+            Destroy(gameObject);
+        }
+
         private void FixedUpdate()
         {
+            if (spent) return;
             Vector2 position = transform.position;
             if (!launchKnown)
             {
@@ -109,7 +120,7 @@ namespace IBlameYou.Systems
                     }
                 }
                 Impact?.Invoke(wall.point);
-                Destroy(gameObject);
+                Expire();
                 return;
             }
 
@@ -132,7 +143,7 @@ namespace IBlameYou.Systems
                     {
                         trigger.ReceiveElement(element);
                         Impact?.Invoke(transform.position);
-                        Destroy(gameObject);
+                        Expire();
                         return;
                     }
                 }
@@ -160,13 +171,13 @@ namespace IBlameYou.Systems
                 Hit?.Invoke(health);
                 if (!piercing)
                 {
-                    Destroy(gameObject);
+                    Expire();
                     return;
                 }
             }
 
             lifeRemaining -= Time.fixedDeltaTime;
-            if (lifeRemaining <= 0f) Destroy(gameObject);
+            if (lifeRemaining <= 0f) Expire();
         }
 
         private void Steer(Vector2 position)
