@@ -99,7 +99,12 @@ namespace IBlameYou.Systems
 
         private void Update()
         {
-            if (touching == null) return;
+            if (touching == null) // 서 있던 플레이어가 사라지면(Exit 없이 파괴) "W" 안내가 켜진 채 남지 않게 (버그 점검 2026-11-25)
+            {
+                control = null;
+                if (prompt != null && prompt.activeSelf) prompt.SetActive(false);
+                return;
+            }
             if (prompt != null) prompt.transform.localPosition = new Vector3(0f, PromptHeight + Mathf.Sin(Time.time * 4f) * 0.06f, 0f);
             if (Time.timeScale <= 0f || control == null || !RoleInput.InteractDown(control)) return;
             var health = touching.GetComponent<HealthSystem>();

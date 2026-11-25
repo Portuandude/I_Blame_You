@@ -184,6 +184,7 @@ namespace IBlameYou.Systems
 
         private Transform FindMagnetTarget()
         {
+            if (IBlameYou.Core.RunStats.Ended) return null; // 판이 끝난 뒤에는 끌려가지도 않는다
             Vector2 center = transform.position + Vector3.up * FloatHeight;
             var filter = new ContactFilter2D();
             filter.NoFilter();
@@ -254,7 +255,17 @@ namespace IBlameYou.Systems
         }
 
         // 둘(A·B가 함께 쓰는 캐릭터) 중 누구라도 꿀단지를 가졌는지.
-        private static bool AnyPlayerHasHoney() => AnyPlayerHas(IBlameYou.Player.RelicId.HoneyJar);
+        // 구슬마다 0.5초에 한 번씩 씬 전체를 훑던 것을 구슬끼리 나눠 쓴다 (같은 0.5초 안에는 한 번만 찾음, 버그 점검 2026-11-25)
+        private static bool honeyCached;
+        private static float honeyCachedUntil = -1f;
+
+        private static bool AnyPlayerHasHoney()
+        {
+            if (Time.time < honeyCachedUntil && Time.time >= honeyCachedUntil - HoneyCheckInterval) return honeyCached; // 새 판으로 Time.time이 되돌아가도 다시 찾게
+            honeyCached = AnyPlayerHas(IBlameYou.Player.RelicId.HoneyJar);
+            honeyCachedUntil = Time.time + HoneyCheckInterval;
+            return honeyCached;
+        }
 
         private static bool AnyPlayerHas(IBlameYou.Player.RelicId id)
         {
@@ -276,6 +287,7 @@ namespace IBlameYou.Systems
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && health.IsDead) return;
+            if (IBlameYou.Core.RunStats.Ended) return; // 결과 창이 뜬 뒤(한쪽이 쓰러짐·클리어)에는 줍지 않는다 (동전 무더기·출구와 같음, 버그 점검 2026-11-25)
             if (!NeedsReward(player)) return; // 체력·마나가 다 찼으면 남겨 둔다 (지나가다 헛되이 먹던 것, 버그 점검 2026-11-24)
 
             collected = true;

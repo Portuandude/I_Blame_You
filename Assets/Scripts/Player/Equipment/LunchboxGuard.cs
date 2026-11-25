@@ -15,6 +15,7 @@ namespace IBlameYou.Player
 
         public static void Grant(GameObject player, float reduction)
         {
+            if (!(reduction > 0f)) return; // Clamp01(NaN) = NaN: 피해 감소가 NaN이면 TakeDamage가 피해를 통째로 버린다
             var guard = player.GetComponent<LunchboxGuard>();
             if (guard == null) guard = player.AddComponent<LunchboxGuard>();
             guard.reduction = Mathf.Clamp01(reduction);

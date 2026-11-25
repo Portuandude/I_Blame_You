@@ -12,9 +12,13 @@ namespace IBlameYou.UI
     public partial class SkillHUD
     {
         private GUIStyle mouseSpellStyle;
+        private SpellDefinition mouseSpellShown;
+        private GUIContent mouseSpellContent;
+        private Vector2 mouseSpellSize;
 
         private void DrawMouseSpellTag()
         {
+            if (Event.current.type != EventType.Repaint) return; // 글자만 그리므로 Layout·입력 이벤트에서는 할 일이 없다
             if (GameSession.DevMode || caster == null || control == null) return;
             if (caster.CircleOpen || control.Locked || health.IsDead || deathHandled || stageCleared) return;
             if (paused || traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen) return; // 창 위에는 안 띄운다
@@ -28,8 +32,14 @@ namespace IBlameYou.UI
 
             Vector2 mouse = P2Input.mousePosition; // 온라인이면 친구 커서 자리
             var pos = new Vector2(mouse.x + 16f, Screen.height - mouse.y + 14f); // GUI 좌표는 위가 0
-            var content = new GUIContent($"우클릭 {spell.Name}");
-            Vector2 size = mouseSpellStyle.CalcSize(content);
+            if (spell != mouseSpellShown) // 고른 스킬이 바뀔 때만 글자·크기를 다시 만든다 (늘 보이는 표시라 매 프레임 할당하던 것)
+            {
+                mouseSpellShown = spell;
+                mouseSpellContent = new GUIContent($"우클릭 {spell.Name}");
+                mouseSpellSize = mouseSpellStyle.CalcSize(mouseSpellContent);
+            }
+            var content = mouseSpellContent;
+            Vector2 size = mouseSpellSize;
             pos.x = Mathf.Min(pos.x, Screen.width - size.x - 4f);
             pos.y = Mathf.Min(pos.y, Screen.height - size.y - 4f);
 

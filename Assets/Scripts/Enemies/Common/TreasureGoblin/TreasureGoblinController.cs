@@ -137,6 +137,7 @@ namespace IBlameYou.Enemies
         {
             if (escaped) return;
             escaped = true;
+            MarkGone(); // 같은 프레임에 늦게 온 피해로 쓰러져 골드를 주지 않게
             EffectLibrary.PlayOneShot(transform.position + Vector3.up * 0.5f, EffectLibrary.TeleportFrames, 20f, new Color(1f, 0.85f, 0.4f, 0.7f), 1.2f);
             GameAudio.PlaySfx("BlinkVanish", 0.7f);
             // 맞혀서 흘린 금화가 있으면 같이 알려 준다 (놓쳐도 헛걸음은 아니었다는 느낌)

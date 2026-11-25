@@ -23,6 +23,7 @@ namespace IBlameYou.Enemies
         private float remaining;
         private bool used;
         private bool boosted; // 배율을 곱해 둔 상태 (End가 한 번만 나눠 되돌리게)
+        private float appliedBoost = 1f; // Begin에서 곱한 값 (켜진 뒤 Configure로 speedBonus가 바뀌어도 같은 값으로 나눈다)
 
         public bool Active => remaining > 0f;
 
@@ -97,8 +98,9 @@ namespace IBlameYou.Enemies
             mana -= manaCost;
             remaining = duration;
             // 곱으로 더하고 나눠 되돌린다: 둔화(안개 표식 등)·다른 배율을 덮어쓰지 않게 (버그 점검 2026-11-24)
-            stats.MoveSpeedMultiplier *= 1f + speedBonus;
-            stats.AttackSpeedMultiplier *= 1f + speedBonus;
+            appliedBoost = 1f + speedBonus;
+            stats.MoveSpeedMultiplier *= appliedBoost;
+            stats.AttackSpeedMultiplier *= appliedBoost;
             boosted = true;
             DamageNumbers.ShowText(transform.position + Vector3.up * 1.8f, "광폭화!", new Color(1f, 0.3f, 0.2f), 1.3f);
             GameAudio.PlaySfx("Enrage", 0.9f); // 낮게 으르렁 올라가는 소리 (Tools/AudioGen)
@@ -118,8 +120,8 @@ namespace IBlameYou.Enemies
             if (boosted)
             {
                 boosted = false;
-                stats.MoveSpeedMultiplier /= 1f + speedBonus;
-                stats.AttackSpeedMultiplier /= 1f + speedBonus;
+                stats.MoveSpeedMultiplier /= appliedBoost;
+                stats.AttackSpeedMultiplier /= appliedBoost;
             }
             if (TintsBody && visual != null) visual.color = Color.white;
         }

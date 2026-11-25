@@ -20,6 +20,8 @@ namespace IBlameYou.Systems
         private static readonly Dictionary<StatusDebuff, Sprite[]> SliceCache = new Dictionary<StatusDebuff, Sprite[]>();
         private static Font font;
 
+        private int shownStacks = -1;
+
         private class Icon
         {
             public GameObject Root;
@@ -69,7 +71,11 @@ namespace IBlameYou.Systems
                 if (icon.Count != null)
                 {
                     int stacks = effects.BurnStacks;
-                    icon.Count.text = stacks > 1 ? stacks.ToString() : "";
+                    if (stacks != shownStacks) // 바뀔 때만 글자를 만든다 (화상 중첩 적마다 매 프레임 문자열 할당하던 것)
+                    {
+                        shownStacks = stacks;
+                        icon.Count.text = stacks > 1 ? stacks.ToString() : "";
+                    }
                 }
             }
         }

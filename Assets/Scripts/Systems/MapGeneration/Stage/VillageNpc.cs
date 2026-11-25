@@ -236,11 +236,14 @@ namespace IBlameYou.Systems
             if (mark) exclaim.transform.localPosition = new Vector3(0f, BubbleHeight + 0.1f + Mathf.Sin(time * 4f) * 0.08f, 0f);
         }
 
+        private float nextPlayerSearch;
+
         private bool PlayerNear()
         {
             // 두 사람이 한 몸(A/B 협동)을 움직이므로 플레이어는 하나. 죽었다 다시 생기면 다시 찾는다.
-            if (player == null)
+            if (player == null && Time.unscaledTime >= nextPlayerSearch) // 플레이어가 없는 동안(쓰러져 치워짐 등) 매 프레임 씬을 훑지 않게 0.5초마다
             {
+                nextPlayerSearch = Time.unscaledTime + 0.5f;
                 player = FindFirstObjectByType<PlayerMovement>();
                 playerHealth = player != null ? player.GetComponent<HealthSystem>() : null;
             }

@@ -21,6 +21,7 @@ namespace IBlameYou.Core
         private float confirmQuitAt = -10f; // "게임 종료"를 한 번 누른 때 (3초 안에 한 번 더 누르면 끈다, 2026-11-23 스팀 출시 준비)
         private const float QuitConfirmSeconds = 3f;
         private bool devMode;
+        private bool? pendingDevMode; // 토글로 바꾼 값 (다음 Layout 이벤트에서 devMode로)
         private float musicVolume;
         private float sfxVolume;
         private GUIStyle title;
@@ -98,6 +99,13 @@ namespace IBlameYou.Core
                 pendingSlotDelta = 0;
                 ChangeSlot(delta);
             }
+            // 개발자 모드 토글도 같은 이유로 다음 Layout에서 반영한다: 클릭(MouseUp) 이벤트 도중 바뀌면 바로 아래 "시작 스테이지" 버튼과
+            // 도움말·기록 줄 높이가 Layout 때와 달라져 IMGUI 오류가 나고 그 이벤트의 나머지 창이 그려지지 않는다 (버그 점검 2026-11-25)
+            if (Event.current.type == EventType.Layout && pendingDevMode.HasValue)
+            {
+                devMode = pendingDevMode.Value;
+                pendingDevMode = null;
+            }
 
             const float width = 640f;
             float height = Mathf.Min(640f, Screen.height - 20f); // 낮은 창에서도 버튼이 잘리지 않게
@@ -129,7 +137,9 @@ namespace IBlameYou.Core
             GUILayout.Label(IntroText, body);
             GUILayout.Space(12f);
 
-            devMode = GUILayout.Toggle(devMode, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
+            bool shownDev = pendingDevMode ?? devMode; // 누른 순간 체크 표시는 바로 바뀌게 (컨트롤 구조는 devMode로)
+            bool toggledDev = GUILayout.Toggle(shownDev, "  개발자 모드 (한 사람이 A/B 동시 조작, 미니게임 생략)", toggle);
+            if (toggledDev != shownDev) pendingDevMode = toggledDev;
             if (devMode) // 개발자 모드만: 시작 스테이지 1~5 (누를 때마다 다음, 5 다음 1) — 숲·쉼터·마지막 스테이지 시험
             {
                 int stage = StageRoster.Clamp(GameSession.DevStartStage);
@@ -169,7 +179,7 @@ namespace IBlameYou.Core
                 if (MenuButton(0, $"이어하기 — {where} · 레벨 {saved.level} · {SaveData.FormatTime(saved.elapsed)} ({mode})", 44f) && !launching)
                 {
                     launching = true;
-                    GameSession.DevMode = devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
+                    GameSession.DevMode = pendingDevMode ?? devMode; // 메뉴의 토글이 설정값 (런은 저장된 모드로 진행, PlaytestBootstrap.ContinueWorld)
                     SaveData.SaveSettings();
                     GameSession.Started = true;
                     GameSession.FeatureTest = false;
@@ -327,7 +337,7 @@ namespace IBlameYou.Core
         {
             if (launching) return;
             launching = true;
-            GameSession.DevMode = devMode;
+            GameSession.DevMode = pendingDevMode ?? devMode;
             SaveData.SaveSettings();
             GameSession.Started = true;
             GameSession.FeatureTest = featureTest;
@@ -498,7 +508,7 @@ namespace IBlameYou.Core
         // 시작하지 않고 메뉴에서 바로 끄더라도 바꾼 설정은 남긴다.
         private void OnApplicationQuit()
         {
-            GameSession.DevMode = devMode;
+            GameSession.DevMode = pendingDevMode ?? devMode;
             SaveData.SaveSettings();
         }
 
@@ -577,7 +587,7 @@ namespace IBlameYou.Core
                 recordsExpanded = !recordsExpanded;
                 recordsTogglePending = false;
             }
-            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.H)
+            if (GUI.enabled && Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.H) // 도감·설정·온라인 창이 열려 있으면 H는 그 창 몫 (주소 칸 글자 등)
             {
                 recordsTogglePending = true;
                 Event.current.Use();

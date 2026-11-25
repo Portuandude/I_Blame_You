@@ -173,12 +173,14 @@ namespace IBlameYou.Enemies
             }
         }
 
+        private readonly System.Collections.Generic.List<Collider2D> swingOverlaps = new System.Collections.Generic.List<Collider2D>(); // 휘두를 때마다 새 배열 대신
+
         private void Swing()
         {
             struck.Clear();
             Vector2 center = SwingCenter();
             bool connected = false;
-            foreach (var hit in Physics2D.OverlapBoxAll(center, hitboxSize, 0f))
+            foreach (var hit in OverlapQuery.Box(center, hitboxSize, swingOverlaps))
             {
                 var targetHealth = hit.GetComponentInParent<HealthSystem>();
                 if (targetHealth == null || !struck.Add(targetHealth)) continue;

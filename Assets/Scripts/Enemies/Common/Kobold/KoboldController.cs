@@ -82,6 +82,13 @@ namespace IBlameYou.Enemies
             var target = FindTarget();
             UpdateChase(target);
 
+            if (phase == Phase.Windup && target == null)
+            {
+                // 웅크린 사이 플레이어가 쓰러지면 시체 쪽으로 돌격하지 않고 거둔다 (슬라임·고블린과 같게, 버그 점검 2026-11-25)
+                StopAll();
+                nextChargeTime = Time.time + Stats.AttackInterval * CooldownMultiplier;
+                return;
+            }
             if (phase != Phase.None)
             {
                 UpdatePhase();

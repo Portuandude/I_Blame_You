@@ -88,18 +88,15 @@ namespace IBlameYou.Systems
 
         private void Spawn(Vector3 position)
         {
-            var go = new GameObject("TrailParticle");
-            go.transform.position = position + (Vector3)(Random.insideUnitCircle * 0.08f);
-            var renderer = go.AddComponent<SpriteRenderer>();
-            renderer.sprite = SolidSpriteFactory.CreateCircle();
-            renderer.sortingOrder = 4;
             var velocity = settings.Drift + Random.insideUnitCircle * settings.Spread;
-            go.AddComponent<TrailParticle>().Begin(renderer, velocity, settings.Gravity, settings.Size, settings.Life,
+            TrailParticle.Spawn(position + (Vector3)(Random.insideUnitCircle * 0.08f), velocity, settings.Gravity, settings.Size, settings.Life,
                 settings.Start, settings.End);
         }
     }
 
     // 짧게 움직이며 작아지고 투명해지다 사라지는 입자.
+    // 불 투사체 하나가 초당 50개쯤 뿌리므로, 다 사라진 입자는 버리지 않고 꺼 두었다가 다시 쓴다 (Afterimage와 같은 방식, 2026-11-25).
+    // 판을 다시 시작해 지워진 것은 꺼낼 때 건너뛴다.
     public class TrailParticle : MonoBehaviour
     {
         private SpriteRenderer spriteRenderer;
@@ -111,17 +108,68 @@ namespace IBlameYou.Systems
         private Color start;
         private Color end;
 
-        public void Begin(SpriteRenderer renderer, Vector2 initialVelocity, float gravityAcceleration, float startSize, float lifetime,
+        private const int PoolLimit = 128;
+        private static readonly System.Collections.Generic.Stack<TrailParticle> Pool = new System.Collections.Generic.Stack<TrailParticle>();
+
+        public static void Spawn(Vector3 position, Vector2 initialVelocity, float gravityAcceleration, float startSize, float lifetime,
             Color startColor, Color endColor)
         {
-            spriteRenderer = renderer;
+            var particle = Take();
+            particle.transform.position = position;
+            particle.Begin(initialVelocity, gravityAcceleration, startSize, lifetime, startColor, endColor);
+            particle.gameObject.SetActive(true);
+        }
+
+        private static TrailParticle Take()
+        {
+            while (Pool.Count > 0)
+            {
+                var pooled = Pool.Pop();
+                if (pooled != null && pooled.spriteRenderer != null) return pooled;
+            }
+            var go = new GameObject("TrailParticle");
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = SolidSpriteFactory.CreateCircle();
+            renderer.sortingOrder = 4;
+            var particle = go.AddComponent<TrailParticle>();
+            particle.spriteRenderer = renderer;
+            return particle;
+        }
+
+        private void Begin(Vector2 initialVelocity, float gravityAcceleration, float startSize, float lifetime,
+            Color startColor, Color endColor)
+        {
             velocity = initialVelocity;
             gravity = gravityAcceleration;
             size = startSize;
-            life = lifetime;
+            life = Mathf.Max(0.01f, lifetime);
+            age = 0f;
             start = startColor;
             end = endColor;
             Apply(0f);
+        }
+
+        private void Release()
+        {
+            // 판 정리로 파괴된 항목이 풀 자리를 차지하고 있으면 걷어 낸다 (Afterimage와 같음)
+            if (Pool.Count >= PoolLimit && Pool.Peek() == null) PurgeDestroyed();
+            if (Pool.Count < PoolLimit)
+            {
+                gameObject.SetActive(false);
+                Pool.Push(this);
+            }
+            else Destroy(gameObject);
+        }
+
+        private static void PurgeDestroyed()
+        {
+            var alive = new System.Collections.Generic.List<TrailParticle>(Pool.Count);
+            while (Pool.Count > 0)
+            {
+                var item = Pool.Pop();
+                if (item != null) alive.Add(item);
+            }
+            for (int i = alive.Count - 1; i >= 0; i--) Pool.Push(alive[i]);
         }
 
         private void Update()
@@ -130,7 +178,7 @@ namespace IBlameYou.Systems
             float t = age / life;
             if (t >= 1f)
             {
-                Destroy(gameObject);
+                Release();
                 return;
             }
 

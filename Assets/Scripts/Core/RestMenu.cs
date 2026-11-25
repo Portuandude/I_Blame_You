@@ -83,12 +83,14 @@ namespace IBlameYou.Core
             }
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
-            float width = Mathf.Min(600f, Screen.width - 20f); // 좁은 창에서도 화면 안에
-            float height = Mathf.Min(620f, Screen.height - 20f);
+            // 창은 늘 600×620으로 짜고, 낮거나 좁은 창(600px 미만 높이 등)에서는 통째로 줄여 [다음]·[저장] 버튼이 잘리지 않게 한다 (GUI.matrix는 클릭 자리도 같이 바꾼다)
+            const float width = 600f, height = 620f;
+            float fit = Mathf.Min(1f, Mathf.Min((Screen.width - 20f) / width, (Screen.height - 20f) / height));
+            if (fit < 0.3f) fit = 0.3f; // 말도 안 되게 작은 창: 너무 작아져 못 읽는 것보다 일부 잘리는 쪽
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
             var screenMatrix = GUI.matrix;
-            float pop = t >= 1f ? 1f : Mathf.Lerp(0.88f, 1f, Mathf.SmoothStep(0f, 1f, t));
+            float pop = (t >= 1f ? 1f : Mathf.Lerp(0.88f, 1f, Mathf.SmoothStep(0f, 1f, t))) * fit;
             if (pop != 1f) GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), area.center);
             GUI.Box(area, GUIContent.none, panel);
             GUI.Box(area, GUIContent.none, panel);

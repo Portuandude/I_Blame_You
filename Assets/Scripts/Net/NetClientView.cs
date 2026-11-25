@@ -159,16 +159,30 @@ namespace IBlameYou.Net
             if (Event.current.type != EventType.Repaint) return;
             if (statusStyle == null)
                 statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerRight, richText = true };
+            // 상태줄은 0.25초마다만 다시 만든다 (지연·전송량은 초 단위로 바뀌는데 Repaint마다 문자열 4~5개를 만들던 것, 버그 점검 2026-11-25)
+            if (statusLine == null || Time.unscaledTime >= statusLineAt)
+            {
+                statusLineAt = Time.unscaledTime + StatusRefresh;
+                statusLine = BuildStatusLine();
+            }
+            var previous = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.7f);
+            GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), statusLine, statusStyle);
+            GUI.color = previous;
+        }
+
+        private const float StatusRefresh = 0.25f;
+        private string statusLine;
+        private float statusLineAt;
+
+        private string BuildStatusLine()
+        {
             float silent = Mathf.Max(Time.unscaledTime - lastHostMessage, NetSession.PeerSilentSeconds);
-            string line = NetSession.Reconnecting
+            return NetSession.Reconnecting
                 ? "<color=#ffa659>호스트와 끊김 — 다시 연결하는 중</color> · F10 그만두기"
                 : silent > 2f
                 ? $"<color=#ffa659>호스트 대답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김) · F10 연결 끊기"
                 : $"<color=#ffa659>P2</color> 온라인 · {LatencyText(NetSession.RttMs)}{NetSession.TrafficText()} · F10 연결 끊기";
-            var previous = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, 0.7f);
-            GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);
-            GUI.color = previous;
         }
 
         // "지연 45ms" (빠르면 초록, 보통 노랑, 느리면 빨강). 호스트 화면 표시도 같이 쓴다.

@@ -264,6 +264,9 @@ namespace IBlameYou.Enemies
             }
         }
 
+        // 죽지 않고 사라지는 적(보물 고블린 도주)이 Destroy가 일어나기 전 같은 프레임에 피해를 받아도 처치(Killed·골드·경험치)로 치지 않게 (버그 점검 2026-11-25)
+        protected void MarkGone() => IsDead = true;
+
         private void OnHealthChanged(float current, float max)
         {
             if (current > 0f || IsDead) return;

@@ -20,6 +20,7 @@ namespace IBlameYou.Player
         private float age;
         private bool struck;
         private GameObject telegraph;
+        private readonly System.Collections.Generic.List<Collider2D> overlaps = new System.Collections.Generic.List<Collider2D>();
         private Sprite[] art;       // 전용 그림 (pixelfx). 피해와 따로 끝까지 재생하고 사라진다
         private float artLead;
         private bool artShown;
@@ -34,7 +35,7 @@ namespace IBlameYou.Player
             target = followTarget;
             groundMask = ground;
             onHit = hit;
-            art = spellArt;
+            art = spellArt != null && spellArt.Length > 0 ? spellArt : null; // 빈 배열이면 기본 가시 그림으로 (전용 그림 없이 아무것도 안 보이던 것)
             artLead = spellArtLead;
 
             // 예고: 솟아오를 자리에 납작한 갈색 표시.
@@ -68,7 +69,7 @@ namespace IBlameYou.Player
                 }
                 var center = (Vector2)transform.position + new Vector2(0f, 0.8f);
                 var hit = new System.Collections.Generic.HashSet<HealthSystem>();
-                foreach (var col in Physics2D.OverlapBoxAll(center, new Vector2(halfWidth * 2f, 1.6f), 0f))
+                foreach (var col in OverlapQuery.Box(center, new Vector2(halfWidth * 2f, 1.6f), overlaps))
                 {
                     var health = col.GetComponentInParent<HealthSystem>();
                     if (health == null || health.IsDead || health.GetComponent<IBlameYou.Enemies.EnemyController>() == null) continue;
