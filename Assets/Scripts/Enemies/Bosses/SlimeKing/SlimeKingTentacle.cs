@@ -36,6 +36,7 @@ namespace IBlameYou.Enemies
 
         private PlayerMovement player;
         private CombatStats playerStats;
+        private static readonly System.Collections.Generic.List<SlimeKingTentacle> Slowing = new System.Collections.Generic.List<SlimeKingTentacle>(); // 지금 둔화를 건 촉수들
         private float tetherTime;
         private bool slowed;
 
@@ -149,6 +150,7 @@ namespace IBlameYou.Enemies
                 {
                     playerStats.GrabSlowMultiplier = SlowMultiplier;
                     slowed = true;
+                    Slowing.Add(this);
                 }
 
                 DamageNumbers.ShowText(target.transform.position + Vector3.up * 1.4f, "촉수에 붙잡힘!", new Color(0.8f, 0.55f, 1f), 1f);
@@ -218,7 +220,16 @@ namespace IBlameYou.Enemies
         {
             if (!slowed) return;
             slowed = false;
-            if (playerStats != null) playerStats.GrabSlowMultiplier = 1f;
+            Slowing.Remove(this);
+            // 다른 촉수(쌍둥이 킹 몫 포함)가 아직 붙들고 있으면 그 둔화는 남긴다
+            if (playerStats != null && !OtherTentacleSlows(playerStats)) playerStats.GrabSlowMultiplier = 1f;
+        }
+
+        private bool OtherTentacleSlows(CombatStats stats)
+        {
+            foreach (var other in Slowing)
+                if (other != this && other != null && other.playerStats == stats) return true;
+            return false;
         }
 
         private void Release()
@@ -238,6 +249,7 @@ namespace IBlameYou.Enemies
         private void OnDestroy()
         {
             EndSlow();
+            if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); // 촉수마다 만든 재질도 같이 (패턴마다 쌓이던 것)
         }
     }
 }

@@ -318,6 +318,14 @@ namespace IBlameYou.Enemies
                 for (int i = 0; i < summonMarks.Count; i++) PlaceMark(summonMarks[i], spawnXs[i], transform.position.y + 1.5f, k);
             });
 
+            // 쌍둥이 킹 둘이 거의 같이 소환을 고르면 무리가 둘 생겨, 먼저 만든 무리는 킹이 죽어도 치워지지 않았다 (버그 점검 2026-11-25):
+            // 웅크리는 사이 다른 킹이 이미 불렀으면 이번 소환은 접고 마나를 돌려준다.
+            if (SlimeBrood.Active != null)
+            {
+                ClearSummonMarks();
+                mana += SummonMana;
+                yield break;
+            }
             var brood = SlimeBrood.Create(transform.parent, BroodDuration);
             for (int i = 0; i < BroodSize; i++)
             {
@@ -524,6 +532,7 @@ namespace IBlameYou.Enemies
             for (float t = 0f; t < pullTime; t += Time.fixedDeltaTime)
             {
                 if (player == null || health.IsDead || !grabbing) break;
+                if (grabbedControl != null) grabbedControl.Locked = true; // 당기는 사이 다른 창이 닫히며 잠금을 풀어도 끝까지 붙든다
                 var bounds = BodyBounds;
                 var end = new Vector2(bounds.center.x + side * (bounds.extents.x + 0.3f), transform.position.y + 0.2f);
                 body.position = Vector2.Lerp(start, end, t / pullTime);
