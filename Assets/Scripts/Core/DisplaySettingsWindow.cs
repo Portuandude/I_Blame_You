@@ -152,7 +152,7 @@ namespace IBlameYou.Core
             GUI.enabled = enabled;
             if (matched >= 0 || at != startAt) resolution = available[at];
             var valueRect = new Rect(rect.x + 164f + BumpOffset(now, RowResolution), y, 184f, 36f);
-            GUI.Label(valueRect, DisplayRules.ResolutionName(resolution), center);
+            GUI.Label(valueRect, resolution >= 0 && resolution < DisplayRules.Resolutions.Length ? DisplayRules.ResolutionName(resolution) : "?", center); // 잘못 저장된 값이어도 창이 깨지지 않게
             if (ShowSelection(RowResolution)) CuteButton.DrawSelection(new Rect(left.x, y, right.xMax - left.x, 36f));
 
             // 창 모드 줄
