@@ -83,7 +83,7 @@ namespace IBlameYou.Core
             }
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
-            const float width = 600f;
+            float width = Mathf.Min(600f, Screen.width - 20f); // 좁은 창에서도 화면 안에
             float height = Mathf.Min(620f, Screen.height - 20f);
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
