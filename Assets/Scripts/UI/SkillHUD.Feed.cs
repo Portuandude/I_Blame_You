@@ -26,6 +26,12 @@ namespace IBlameYou.UI
             public bool Bad;       // 실패 알림이면 왼쪽 띠가 berry
             public int Count = 1;
             public float Y = -1f;  // 그리는 높이. 위 줄이 사라지면 제자리(FeedSlotY)로 부드럽게 따라간다
+            // 그릴 글자·너비 (글자는 그대로, ×N만 Count가 바뀔 때 다시 잰다 — OnGUI마다 GUIContent·CalcSize 하던 것, 버그 점검 2026-11-25)
+            public GUIContent Content;
+            public float TextWidth = -1f;
+            public GUIContent CountContent;
+            public int CountShown = 1;
+            public float CountWidth;
         }
 
         private GUIStyle feedText;
@@ -82,10 +88,21 @@ namespace IBlameYou.UI
                 float y = entry.Y < 0f ? FeedSlotY(i) : entry.Y; // Update 전에 그려지는 첫 프레임은 제자리
                 float age = Time.time - entry.Time;
                 float alpha = Mathf.Clamp01((FeedLifetime - (Time.time - entry.LastTime)) / 1.5f);
-                var content = new GUIContent(entry.Text);
-                float textWidth = feedText.CalcSize(content).x;
-                var countContent = entry.Count > 1 ? new GUIContent($"×{entry.Count}") : null;
-                float countWidth = countContent != null ? feedCount.CalcSize(countContent).x + 8f : 0f;
+                if (entry.Content == null)
+                {
+                    entry.Content = new GUIContent(entry.Text);
+                    entry.TextWidth = feedText.CalcSize(entry.Content).x;
+                }
+                if (entry.Count > 1 && (entry.CountContent == null || entry.CountShown != entry.Count))
+                {
+                    entry.CountShown = entry.Count;
+                    entry.CountContent = new GUIContent($"×{entry.Count}");
+                    entry.CountWidth = feedCount.CalcSize(entry.CountContent).x + 8f;
+                }
+                var content = entry.Content;
+                float textWidth = entry.TextWidth;
+                var countContent = entry.Count > 1 ? entry.CountContent : null;
+                float countWidth = countContent != null ? entry.CountWidth : 0f;
                 float width = Mathf.Min(FeedMaxWidth, textWidth + countWidth + 34f);
                 float slide = 1f - EaseOutBack(Mathf.Clamp01(age / FeedSlideTime));
                 float shake = entry.Bad ? FeedShake(Time.time - entry.LastTime) : 0f;

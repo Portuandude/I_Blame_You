@@ -90,7 +90,7 @@ namespace IBlameYou.Core
 
             const float width = 560f;
             const float height = 420f;
-            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
+            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, Mathf.Min((Screen.height - height) / 2f, Screen.height - height - 10f)), width, height);
             GUI.Box(rect, GUIContent.none, panel);
             GUI.Box(rect, GUIContent.none, panel);
             var head = headStyle.Get(body, s => { s.alignment = TextAnchor.MiddleCenter; s.fontSize = 22; s.fontStyle = FontStyle.Bold; });

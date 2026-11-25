@@ -59,6 +59,8 @@ namespace IBlameYou.Core
             public int candyLevels;
             public float foodMaxHealth;     // 마을 음식으로 늘어난 최대 체력·마나 재생 배율 (RunStats.Food*)
             public float foodManaRegen;
+            public float lunchReduction;    // 아직 안 끝난 든든한 도시락 (LunchboxGuard): 줄이는 몫, 산 때 돌파 구역 수 (-1 = 없음)
+            public int lunchClearedAt = -1;
             public int[] equipment = new int[0]; // 낀 장비 EquipmentId
 
             public IBlameYou.Systems.StageRecords records = new IBlameYou.Systems.StageRecords();

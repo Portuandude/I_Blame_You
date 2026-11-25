@@ -172,6 +172,16 @@ namespace IBlameYou.Systems
             }
         }
 
+        // 체력이나 마나가 조금이라도 비었는지 (다 찼으면 구슬을 남겨 둔다)
+        private static bool NeedsReward(Component player)
+        {
+            var health = player.GetComponent<HealthSystem>();
+            var mana = player.GetComponent<ManaSystem>();
+            bool healthFull = health == null || health.Current >= health.Max;
+            bool manaFull = mana == null || mana.Current >= mana.Max;
+            return !(healthFull && manaFull);
+        }
+
         private Transform FindMagnetTarget()
         {
             Vector2 center = transform.position + Vector3.up * FloatHeight;
@@ -188,6 +198,7 @@ namespace IBlameYou.Systems
                 if (player == null) continue;
                 var health = player.GetComponent<HealthSystem>();
                 if (health != null && health.IsDead) continue;
+                if (!NeedsReward(player)) continue; // 다 찬 플레이어에게는 끌려가지 않는다
                 if (WallBetween(center, (Vector2)player.transform.position + Vector2.up * 0.6f)) continue; // 벽 너머로는 끌려가지 않는다
                 float distance = ((Vector2)player.transform.position - center).sqrMagnitude;
                 if (distance < bestDistance)
@@ -265,6 +276,7 @@ namespace IBlameYou.Systems
 
             var health = player.GetComponent<HealthSystem>();
             if (health != null && health.IsDead) return;
+            if (!NeedsReward(player)) return; // 체력·마나가 다 찼으면 남겨 둔다 (지나가다 헛되이 먹던 것, 버그 점검 2026-11-24)
 
             collected = true;
             var progression = player.GetComponent<IBlameYou.Player.PlayerProgression>();

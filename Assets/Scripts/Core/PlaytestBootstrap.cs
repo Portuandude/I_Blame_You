@@ -94,8 +94,10 @@ namespace IBlameYou.Core
             }
 
             // 저장된 런의 모드로 바꾸되, 시작 화면으로 돌아오면 원래 설정으로 되돌린다 (설정이 런 모드로 덮이지 않게).
-            if (data.devMode != GameSession.DevMode) settingsDevMode = GameSession.DevMode;
+            if (data.devMode != GameSession.DevMode && !settingsDevMode.HasValue) settingsDevMode = GameSession.DevMode; // 이미 바꿔 둔 적이 있으면 처음 설정값을 지킨다
             GameSession.DevMode = data.devMode;
+            // 쉼터 저장이면 쉼터부터 다시 연다: 결과 창·쉼터에서 "저장하고 시작 화면"으로 나간 뒤 이어하면 샘·상인을 못 쓰고 지나가던 것 (버그 점검 2026-11-24)
+            if (data.atStageStart && data.stage > 1) { OpenRest(data); return; }
             BuildWorld(data);
         }
 
@@ -124,6 +126,9 @@ namespace IBlameYou.Core
             StageEvents.RoomCount = 0;
             StageEvents.RoomDistance = -1; // 방 격자면 첫 방에 들어갈 때 채운다 (ChunkStreamer)
             StageEvents.FarthestDistance = -1;
+            StageEvents.Depth = 0f; // 지난 판 값이 첫 방에 들어가기 전 배경 색조·후반 곡에 남지 않게 (버그 점검 2026-11-25)
+            StageEvents.VillageVisit = 0;
+            StageEvents.VillageRoom = -1;
             streamer = new GameObject("Stage").AddComponent<ChunkStreamer>();
             System.Func<StageEnemy, Vector3, Transform, HealthSystem> spawner = (kind, position, parent) => SpawnEnemy(kind, position, parent, artConfig);
             StageData featureStage = null;
@@ -257,6 +262,7 @@ namespace IBlameYou.Core
             if (restoredHealth != null && data.foodMaxHealth > 0f) restoredHealth.AddMax(data.foodMaxHealth);
             var restoredMana = player.GetComponent<ManaSystem>();
             if (restoredMana != null && data.foodManaRegen > 0f) restoredMana.RegenMultiplier += data.foodManaRegen;
+            LunchboxGuard.Restore(player, data.lunchReduction, data.lunchClearedAt); // 아직 안 끝난 도시락도 다음 스테이지로
 
             // 마나·기력은 스테이지마다 가득: 장비·유물이 최대치만 올린(AddMax(v, false)) 몫까지 채운다 (버그 점검 2026-11-24)
             if (restoredMana != null) restoredMana.Restore(restoredMana.Max);
@@ -287,6 +293,7 @@ namespace IBlameYou.Core
             var equipmentIds = new System.Collections.Generic.List<int>();
             var equipment = player.GetComponent<PlayerEquipment>();
             if (equipment != null) foreach (var item in equipment.All) equipmentIds.Add((int)item.Id);
+            var lunch = player.GetComponent<LunchboxGuard>();
 
             return new RunSave.Data
             {
@@ -326,7 +333,9 @@ namespace IBlameYou.Core
                 acornLevels = relics != null ? relics.AcornLevels : 0,
                 candyLevels = relics != null ? relics.CandyLevels : 0,
                 foodMaxHealth = RunStats.FoodMaxHealth,
-                foodManaRegen = RunStats.FoodManaRegen
+                foodManaRegen = RunStats.FoodManaRegen,
+                lunchReduction = lunch != null ? lunch.SavedReduction : 0f,
+                lunchClearedAt = lunch != null ? lunch.SavedClearedAt : -1
             };
         }
 
@@ -350,6 +359,11 @@ namespace IBlameYou.Core
                 ShowMenu();
                 yield break;
             }
+            OpenRest(data);
+        }
+
+        private void OpenRest(RunSave.Data data)
+        {
             gameObject.AddComponent<RestMenu>().Initialize(data, d =>
             {
                 RunSave.Save(d);
@@ -439,7 +453,8 @@ namespace IBlameYou.Core
             TeardownWorld();
             yield return null; // Destroy가 끝난 다음 프레임에 새로 만든다
 
-            if (backToMenu) RestoreSettingsDevMode();
+            // 판이 끝났으면(포기·쓰러짐·클리어) 이어한 런의 모드도 끝난다: 도시·새 런은 설정의 모드로 (버그 점검 2026-11-24 — 개발자 모드 저장을 이어하고 끝나면 일반 설정인데 도시가 개발자 모드였던 것)
+            if (backToMenu || !GameSession.FeatureTest) RestoreSettingsDevMode();
 
             if (backToMenu) ShowMenu();
             else if (!GameSession.FeatureTest)

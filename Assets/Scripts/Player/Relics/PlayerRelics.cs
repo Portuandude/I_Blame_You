@@ -171,6 +171,12 @@ namespace IBlameYou.Player
 
         // 피의 계약: 마나가 모자라면 마법값(required) 전체를 마나 대신 그 절반의 체력으로 낸다 (마나는 그대로). 횟수 제한 없음.
         // 내면 체력이 1 밑으로 내려가면 거절. 체력은 Drain으로 깎는다 (경직·피해 숫자 없이, 버티기도 쓰지 않음).
+        private bool CanPayWithHealth(float required)
+        {
+            var health = GetComponent<HealthSystem>();
+            return health != null && !health.IsDead && RelicBook.BloodPactCost(health.Current, required, out _);
+        }
+
         private bool PayWithHealth(ManaUser user, float required)
         {
             var health = GetComponent<HealthSystem>();
@@ -253,7 +259,7 @@ namespace IBlameYou.Player
                     if (GetComponent<GraceBlink>() == null) gameObject.AddComponent<GraceBlink>(); // 무적 동안 보라 깜빡임 + 잔상
                     break;
                 case RelicId.BloodPact:
-                    if (mana != null) mana.ShortfallCover = PayWithHealth;
+                    if (mana != null) { mana.ShortfallCover = PayWithHealth; mana.CanCover = CanPayWithHealth; }
                     break;
                 case RelicId.PhoenixFeather:
                     if (health != null) health.DeathSaves += RelicBook.PhoenixFeatherSaves;

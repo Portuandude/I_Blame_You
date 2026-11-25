@@ -18,6 +18,7 @@ namespace IBlameYou.UI
 
         private void DrawOrbGuides()
         {
+            if (Event.current.type != EventType.Repaint) return; // 그림만 그리므로 Layout 이벤트에서는 구슬을 훑지 않는다
             if (deathHandled || stageCleared || heartIcon == null) return;
             var cam = Camera.main;
             if (cam == null || ArenaReward.Active.Count == 0) return;

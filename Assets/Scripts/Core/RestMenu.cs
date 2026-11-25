@@ -83,7 +83,7 @@ namespace IBlameYou.Core
             }
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
-            const float width = 600f;
+            float width = Mathf.Min(600f, Screen.width - 20f); // 좁은 창에서도 화면 안에
             float height = Mathf.Min(620f, Screen.height - 20f);
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
@@ -110,6 +110,7 @@ namespace IBlameYou.Core
             GUILayout.Space(8f);
             GUILayout.Label("떠돌이 상인 (낀 장비는 판매가만큼 깎아 준다)", small);
             int bought = -1;
+            int nextSlot = SlotNext, quitSlot = SlotQuit; // 산 칸이 빠지기 전 번호: 마지막 진열품에서 Enter가 [다음 스테이지]까지 누르지 않게
             for (int i = 0; i < shop.Stock.Count; i++)
             {
                 var item = shop.Stock[i];
@@ -121,12 +122,12 @@ namespace IBlameYou.Core
                 GUILayout.Space(3f);
             }
             if (bought >= 0) Buy(bought);
-            if (!string.IsNullOrEmpty(feedback)) GUILayout.Label(feedback, small);
+            GUILayout.Label(feedback ?? "", small); // 늘 그린다: 사고 마신 그 이벤트에 칸 수가 바뀌면 IMGUI가 [다음]·[저장] 클릭을 잃는다
 
             GUILayout.FlexibleSpace();
-            bool next = MenuButton(SlotNext, $"다음 스테이지 {data.stage}로", 50f, pressed);
+            bool next = MenuButton(nextSlot, $"다음 스테이지 {data.stage}로", 50f, pressed);
             GUILayout.Space(6f);
-            bool quit = MenuButton(SlotQuit, "저장하고 시작 화면", 38f, pressed);
+            bool quit = MenuButton(quitSlot, "저장하고 시작 화면", 38f, pressed);
             GUILayout.Label("↑↓ 고르기 · Enter 누르기 · 저장은 쉼터에서만", small);
             GUILayout.EndArea();
             GUI.matrix = screenMatrix;
@@ -153,8 +154,13 @@ namespace IBlameYou.Core
             GameAudio.PlaySfx("Pickup", 0.7f, 0.05f);
         }
 
+        // 산 칸은 빠지고 뒤 장비가 당겨지므로 연타·더블클릭으로 다른 장비까지 사지 않게 잠깐 쉰다 (버그 점검 2026-11-24)
+        private const float BuyGap = 0.35f;
+        private float buyReadyAt;
+
         private void Buy(int index)
         {
+            if (Time.unscaledTime < buyReadyAt) return;
             var item = shop.Stock[index];
             var current = Equipped(item.Slot);
             if (current != null && current.Id == item.Id)
@@ -170,7 +176,9 @@ namespace IBlameYou.Core
                 GameAudio.PlaySfx("UiClick", 0.4f, 0.02f);
                 return;
             }
+            if (keySelection > SlotShop(index)) keySelection--; // 산 칸이 빠지며 아래 칸이 당겨진다: Enter가 [다음] 대신 [저장하고 시작 화면]을 누르지 않게
             data.gold -= cost;
+            buyReadyAt = Time.unscaledTime + BuyGap;
             data.goldSpent += cost;
             var ids = new List<int>();
             if (data.equipment != null)

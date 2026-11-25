@@ -39,7 +39,11 @@ namespace IBlameYou.Enemies
         {
             Name = name;
             bodies.RemoveAll(b => b == null);
-            if (bodies.Count == 0) removedMax = 0f; // 새 보스 싸움
+            if (bodies.Count == 0) // 새 보스 싸움: 치워지며 Unregister를 못 한 지난 보스의 알림("광폭화!" 등)도 지운다 (버그 점검 2026-11-25)
+            {
+                removedMax = 0f;
+                Notice = null;
+            }
             if (body != null && !bodies.Contains(body)) bodies.Add(body);
         }
 

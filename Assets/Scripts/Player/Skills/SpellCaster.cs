@@ -143,9 +143,9 @@ namespace IBlameYou.Player
         private void OpenCircle(SpellDefinition spell)
         {
             // 마나가 모자라면 열지 않는다: 6초 동안 다 그린 뒤에야 "마나 부족"을 알게 되지 않게 (버그 점검 2026-11-22)
-            // 피의 계약처럼 모자란 마나를 대신 내는 유물이 있으면 판정 때 TryConsume에 맡긴다
+            // 피의 계약처럼 모자란 마나를 대신 내는 유물이 있으면 그것으로 낼 수 있는지도 본다 (체력도 모자라면 열지 않음, 버그 점검 2026-11-24)
             float cost = CostOf(spell);
-            if (mana.ShortfallCover == null && !mana.HasEnough(cost * mana.TotalCostMultiplier))
+            if (!mana.CanAfford(cost * mana.TotalCostMultiplier))
             {
                 SkillMessages.Post(ManaUser.PlayerB, $"마나 부족: {spell.Name} (필요 {cost * mana.TotalCostMultiplier:0})", true);
                 return;
@@ -410,7 +410,8 @@ namespace IBlameYou.Player
                 // 얼음 족쇄(반드시 거는 젖음): 정예·중간보스·보스는 둔화 20%, 일반 몹 40% (ShackleRules)
                 bool shackle = spell.DebuffAlways && spell.Debuff == StatusDebuff.Wet;
                 float wetSlow = shackle ? ShackleRules.Slow(IsStrong(target)) : StatusEffects.WetSlow;
-                StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
+                if (!projectile.LastHitBlocked) // 무적(대시·순간이동 등)이라 피해가 막혔으면 상태이상도 막힌다 (버그 점검 2026-11-24)
+                    StatusEffects.TryApply(target, spell.Debuff, stats, spell.DebuffAlways, wetSlow);
             };
             projectile.Impact = point =>
             {

@@ -399,15 +399,22 @@ namespace IBlameYou.UI
             DrawRooms(layout, current, area, cell, layout.MinX, layout.MaxY);
         }
 
+        private readonly System.Collections.Generic.List<MapLinkLine> linkLines = new System.Collections.Generic.List<MapLinkLine>();
+        private System.Func<int, bool> isShownForLinks;
+        private RoomData linkCurrent;
+
         // left: 화면 왼쪽 끝 칸의 격자 x, top: 화면 맨 위 칸의 격자 y. 영역 밖 칸은 그리지 않는다.
         private void DrawRooms(RoomLayoutData layout, RoomData current, Rect area, float cell, int left, int top)
         {
-            float link = Mathf.Max(3f, cell * 0.22f);
-            float pad = Mathf.Max(2f, cell * 0.14f);
+            float link = Mathf.Min(Mathf.Max(3f, cell * 0.22f), cell * 0.5f); // 아주 작은 창에서 칸보다 굵은 선·음수 크기 칸이 되지 않게
+            float pad = Mathf.Min(Mathf.Max(2f, cell * 0.14f), cell * 0.3f);
 
             // 통로 실선 (던그리드 방식, MinimapRules): 가 본 두 방은 칸 가운데끼리 잇고, 안 가 본 쪽으로는 반 칸쯤만 뻗는다.
             // 칸이 실선 위에 덮이므로 칸 사이에만 선이 보인다. 작은 지도는 GUI 그룹이 영역 밖을 잘라 준다.
-            foreach (var line in MinimapRules.Links(layout, i => IsShown(i, current)))
+            linkCurrent = current;
+            if (isShownForLinks == null) isShownForLinks = i => IsShown(i, linkCurrent);
+            MinimapRules.Links(layout, isShownForLinks, linkLines); // 목록·판별 함수를 다시 쓴다 (OnGUI마다 할당하던 것)
+            foreach (var line in linkLines)
             {
                 if (!Near(line.From.X, line.From.Y, left, top, area, cell)) continue;
                 var c = CellRect(line.From.X, line.From.Y, left, top, area, cell).center;

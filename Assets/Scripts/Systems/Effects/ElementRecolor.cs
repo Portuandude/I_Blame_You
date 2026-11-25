@@ -72,7 +72,11 @@ namespace IBlameYou.Systems
         private Sprite GrayFor(Sprite original)
         {
             if (grayByOriginal == null) return null;
-            if (grayByOriginal.TryGetValue(original, out var cached)) return cached;
+            if (grayByOriginal.TryGetValue(original, out var cached))
+            {
+                if (cached != null) return cached;
+                grayByOriginal.Remove(original); // 도메인 리로드 없이 다시 플레이하면 예전 판에 만든 회색판은 파괴돼 있다 (버그 점검 2026-11-25) → 다시 만든다
+            }
             if (textures == null || !textures.TryGetValue(original.name, out var texture)) return null;
 
             var rect = original.rect;

@@ -52,10 +52,18 @@ namespace IBlameYou.Systems
             return trap;
         }
 
+        private readonly System.Collections.Generic.List<SpriteRenderer> dotRenderers = new System.Collections.Generic.List<SpriteRenderer>();
+
         private void Update()
         {
             if (player == null)
             {
+                if (warned) // 예고 중 플레이어가 사라지면(다시 시작) 가장자리 "!"·점선·붉은 몸이 남던 것 (버그 점검 2026-11-25)
+                {
+                    SetWarning(false);
+                    body.color = baseColor;
+                    timer = Mathf.Min(timer, Interval - WarnTime - 0.3f);
+                }
                 if (Time.time < nextLookup) return;
                 nextLookup = Time.time + LookupInterval;
                 var movement = FindFirstObjectByType<Player.PlayerMovement>();
@@ -80,11 +88,9 @@ namespace IBlameYou.Systems
             if (warning && dots != null)
             {
                 float alpha = blinkOn ? 0.55f : 0.25f;
-                foreach (Transform dot in dots)
-                {
-                    var r = dot.GetComponent<SpriteRenderer>();
-                    if (r != null) r.color = new Color(DotColor.r, DotColor.g, DotColor.b, alpha);
-                }
+                var color = new Color(DotColor.r, DotColor.g, DotColor.b, alpha);
+                foreach (var r in dotRenderers) // 점선 그림은 만들 때 담아 둔다 (예고 중 매 프레임 GetComponent 하던 것)
+                    if (r != null) r.color = color;
             }
 
             if (timer >= Interval)
@@ -107,6 +113,7 @@ namespace IBlameYou.Systems
                 Destroy(dots.gameObject);
                 dots = null;
             }
+            dotRenderers.Clear();
             if (!on) return;
 
             if (CameraNear()) GameAudio.PlaySfx("TrapWarn", 0.7f);
@@ -134,6 +141,7 @@ namespace IBlameYou.Systems
                 r.sprite = square;
                 r.color = new Color(DotColor.r, DotColor.g, DotColor.b, 0.4f);
                 r.sortingOrder = 2;
+                dotRenderers.Add(r);
             }
         }
 

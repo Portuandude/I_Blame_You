@@ -120,7 +120,8 @@ namespace IBlameYou.Systems
         public static Sprite[] LoadRuntimeFrames(string path, Vector2 pivot)
         {
             string key = pivot == new Vector2(0.5f, 0.5f) ? path : $"{path}|{pivot.x:0.###},{pivot.y:0.###}";
-            if (RuntimeFrames.TryGetValue(key, out var cached)) return cached;
+            // 도메인 리로드 없이 다시 플레이하면 지난 플레이에서 만든 스프라이트가 파괴된 채 남으므로 그때는 다시 만든다
+            if (RuntimeFrames.TryGetValue(key, out var cached) && (cached == null || cached.Length == 0 || cached[0] != null)) return cached;
 
             var textures = Resources.LoadAll<Texture2D>(path);
             bool pixelArt = IsPixelFxFolder(path);

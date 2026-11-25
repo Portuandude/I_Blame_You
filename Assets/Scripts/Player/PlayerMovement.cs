@@ -205,7 +205,7 @@ namespace IBlameYou.Player
             }
 
             // 짧게 누르면 낮은 점프: 이번 점프로 올라가는 중에 키를 떼면 다음 물리 프레임에 위 속도를 줄인다.
-            if (jumpCutArmed && !jumpQueued && !RoleInput.JumpHeld(control)) jumpCutRequested = true;
+            if (jumpCutArmed && !jumpQueued && !control.Locked && !RoleInput.JumpHeld(control)) jumpCutRequested = true; // 창이 열려 잠긴 동안은 키를 뗀 것으로 보지 않는다 (닫으면 점프가 잘리던 것, 버그 점검 2026-11-24)
 
             // 마력 안개(스위치 발판 낭떠러지) 안이나, 공중에서 안개 가까이에서는 대시를 시작하지 못한다 (기력도 쓰지 않음).
             if (RoleInput.DashDown(control) && !isDashing && !stunned && !BlinkWard.Blocks(rb.position, IsGroundedStable) && stamina.TryConsume(dashStaminaCost))
@@ -222,6 +222,8 @@ namespace IBlameYou.Player
             airMinVelocityY = 0f;
             wasGrounded = true;
             lastGroundedTime = float.NegativeInfinity; // 옮긴 자리(공중일 수 있음)에서 예전 땅 기준 코요테 점프가 나오지 않게
+            jumpQueued = false; // 같은 프레임에 땅에서 받아 둔 점프가 옮긴 자리(공중)에서 터지던 것 (버그 점검 2026-11-25)
+            jumpPressedTime = float.NegativeInfinity;
             jumpCutArmed = false;
             jumpCutRequested = false;
             var squash = GetComponent<PlayerSquash>();
@@ -307,6 +309,13 @@ namespace IBlameYou.Player
                 rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
                 dashTimeRemaining -= Time.fixedDeltaTime;
                 // 대시하다 마력 안개에 들어가면 그 자리에서 흩어진다: 가로 속도를 걷기 속도로 낮춰 대시 거리로 건너뛰지 못하게.
+                // 대시 도중 창이 열리거나(멈추지 않는 창) 그물에 묶이면 그 자리에서 멈춘다 — 잠긴 동안 대시가 끝까지 미끄러지던 것 (버그 점검 2026-11-25)
+                if (control.MovementFrozen)
+                {
+                    EndDash();
+                    rb.linearVelocity = new Vector2(carryX, 0f);
+                    return;
+                }
                 if (BlinkWard.Contains(rb.position))
                 {
                     EndDash();

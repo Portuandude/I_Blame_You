@@ -20,6 +20,8 @@ namespace IBlameYou.Enemies
         private bool finished; // Finish 뒤 Destroy(0.1초)까지 Update가 다시 처치 축하·알림을 내지 않게
         private int lastWarnSecond = -1;
         private Vector3 lastSeen;
+        private int noticeCount = -1;
+        private int noticeSecond = -1;
         private bool seen; // 한 번이라도 슬라임이 있었을 때만 처치 축하를 한다
         private SlimeBroodFx fx;
 
@@ -51,8 +53,11 @@ namespace IBlameYou.Enemies
             members.RemoveAll(m => m == null || m.IsDead);
             if (members.Count == 0)
             {
-                StageEvents.PostNotice("슬라임을 모두 처치했다!");
-                if (seen) SlimeBroodFx.Cleared(lastSeen);
+                if (seen) // 한 마리도 나오지 못한 무리(소환 실패)는 축하하지 않는다
+                {
+                    StageEvents.PostNotice("슬라임을 모두 처치했다!");
+                    SlimeBroodFx.Cleared(lastSeen);
+                }
                 Finish();
                 return;
             }
@@ -60,7 +65,13 @@ namespace IBlameYou.Enemies
             lastSeen = members[members.Count - 1].transform.position + Vector3.up * 0.4f;
             seen = true;
             float left = endTime - Time.time;
-            BossEvents.Notice = $"슬라임 {members.Count}마리 · 합체까지 {Mathf.CeilToInt(Mathf.Max(left, 0f))}초";
+            int shownSecond = Mathf.CeilToInt(Mathf.Max(left, 0f));
+            if (members.Count != noticeCount || shownSecond != noticeSecond || BossEvents.Notice == null) // 숫자가 바뀔 때만 글을 새로 만든다 (매 프레임 할당하던 것)
+            {
+                noticeCount = members.Count;
+                noticeSecond = shownSecond;
+                BossEvents.Notice = $"슬라임 {noticeCount}마리 · 합체까지 {noticeSecond}초";
+            }
             if (left <= 0f)
             {
                 StartCoroutine(Merge());

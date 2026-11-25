@@ -77,6 +77,7 @@ namespace IBlameYou.UI
 
         private void DrawEnemyGuides()
         {
+            if (Event.current.type != EventType.Repaint) return; // 그림만 그리므로 Layout 이벤트에서는 적을 훑고 정렬하지 않는다
             var zone = ArenaZone.Current;
             if (zone == null || deathHandled || stageCleared) return;
             var cam = Camera.main;

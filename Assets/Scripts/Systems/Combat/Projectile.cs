@@ -148,6 +148,13 @@ namespace IBlameYou.Systems
                     continue;
                 }
 
+                // 관통 탄은 무적인 대상을 "맞힘"으로 남기지 않고 지나간다: 무적이 풀린 뒤 아직 겹쳐 있으면 그때 맞힌다 (버그 점검 2026-11-24)
+                if (piercing && health.IsInvulnerable)
+                {
+                    alreadyHit.Remove(health);
+                    continue;
+                }
+
                 LastHitBlocked = health.IsInvulnerable;
                 DamageCalculator.Strike(owner, health, kind, element, multiplier);
                 Hit?.Invoke(health);
@@ -165,7 +172,7 @@ namespace IBlameYou.Systems
         private void Steer(Vector2 position)
         {
             retargetTimer -= Time.fixedDeltaTime;
-            if (homingTarget != null && (homingTarget.IsDead || alreadyHit.Contains(homingTarget))) homingTarget = null;
+            if (homingTarget != null && (homingTarget.IsDead || homingTarget.IsInvulnerable || alreadyHit.Contains(homingTarget))) homingTarget = null; // 무적이 된 대상은 놓는다 (관통 탄이 무적 대상 둘레를 맴돌던 것, 버그 점검 2026-11-25)
             // 대상이 없어도 RetargetInterval마다만 찾는다 (적이 없을 때 물리 프레임마다 Overlap을 돌던 것, 버그 점검 2026-11-24)
             if (retargetTimer <= 0f)
             {
@@ -193,7 +200,7 @@ namespace IBlameYou.Systems
             Physics2D.OverlapCircle(center, r, filter, overlaps);
         }
 
-        // 아직 맞히지 않은 살아 있는 대상 중 가장 가까운 것.
+        // 아직 맞히지 않은 살아 있는 대상 중 가장 가까운 것. 지금 무적인 대상(대시·순간이동·등장 중)은 고르지 않는다.
         private HealthSystem FindTarget(Vector2 position)
         {
             HealthSystem best = null;
@@ -202,7 +209,7 @@ namespace IBlameYou.Systems
             foreach (var col in overlaps)
             {
                 var health = col.GetComponentInParent<HealthSystem>();
-                if (health == null || health.IsDead || alreadyHit.Contains(health)) continue;
+                if (health == null || health.IsDead || health.IsInvulnerable || alreadyHit.Contains(health)) continue;
                 if (owner != null && health.gameObject == owner.gameObject) continue;
                 bool isEnemy = health.GetComponent<IBlameYou.Enemies.EnemyController>() != null;
                 if (isEnemy != hitsEnemies) continue;

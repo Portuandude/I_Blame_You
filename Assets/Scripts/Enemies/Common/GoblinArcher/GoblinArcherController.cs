@@ -90,7 +90,7 @@ namespace IBlameYou.Enemies
 
             if (moveDirection != 0f && WallAhead(moveDirection)) moveDirection = 0f;
 
-            if (distance <= shootRange && Time.time >= nextShotTime && !IsStunned)
+            if (distance <= shootRange && Time.time >= nextShotTime && !IsStunned && HasLineOfSight(target))
             {
                 drawing = true;
                 Aiming.Add(this);
@@ -160,7 +160,7 @@ namespace IBlameYou.Enemies
         private void UpdateAimLine(Transform target)
         {
             if (aimLine == null) return;
-            Vector2 origin = ArrowOrigin();
+            Vector2 origin = SafeArrowOrigin();
             Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
             float progress = 1f - Mathf.Clamp01(phaseTimeRemaining / DrawTime);
             aimLine.Aim(origin, aimAt, shootRange * 1.6f, obstacleLayer, progress);
@@ -174,21 +174,41 @@ namespace IBlameYou.Enemies
 
         private Vector2 ArrowOrigin() => (Vector2)transform.position + new Vector2(facing * 0.4f, arrowHeight);
 
-        private void Release(Transform target)
+        // 몸(활 높이)에서 대상까지 벽이 없는지. 벽 너머로는 시위를 당기지 않는다 (버그 점검 2026-11-24)
+        private bool HasLineOfSight(Transform target)
+        {
+            if (target == null) return false;
+            Vector2 eye = (Vector2)transform.position + Vector2.up * arrowHeight;
+            Vector2 goal = (Vector2)target.position + Vector2.up * 0.6f;
+            return !Physics2D.Linecast(eye, goal, obstacleLayer);
+        }
+
+        // 벽에 바짝 붙어 있으면 화살 시작점이 벽 너머가 되지 않게 몸 쪽으로 당긴다
+        private Vector2 SafeArrowOrigin()
         {
             Vector2 origin = ArrowOrigin();
+            Vector2 eye = (Vector2)transform.position + Vector2.up * arrowHeight;
+            var hit = Physics2D.Linecast(eye, origin, obstacleLayer);
+            return hit.collider != null ? hit.point + hit.normal * 0.05f : origin;
+        }
+
+        private void Release(Transform target)
+        {
+            Vector2 origin = SafeArrowOrigin();
             Vector2 aimAt = target != null ? (Vector2)target.position : origin + Vector2.right * facing;
             var direction = aimAt - origin;
             if (direction.sqrMagnitude < 0.01f) direction = Vector2.right * facing;
 
             if (ThrowsNets)
             {
-                NetShot.Launch(Stats, origin, direction, shootRange * 1.4f);
+                var net = NetShot.Launch(Stats, origin, direction, shootRange * 1.4f);
+                if (net != null && transform.parent != null) net.transform.SetParent(transform.parent, true); // 방이 치워지면 같이
                 return;
             }
 
             var go = new GameObject("Arrow");
             go.transform.position = origin;
+            if (transform.parent != null) go.transform.SetParent(transform.parent, true); // 방을 떠나 방이 치워지면 날던 화살도 같이 (새 방에서 맞지 않게, 버그 점검 2026-11-24)
             var look = EffectLibrary.CreateVisual(go.transform, "Visual", EffectLibrary.ArrowFrames, 12f, true, new Color(0.9f, 0.8f, 0.5f), 0.5f);
             var arrow = go.AddComponent<Projectile>();
             arrow.Launch(Stats, false, DamageKind.Physical, Element.Neutral, direction, arrowSpeed, 0.2f,

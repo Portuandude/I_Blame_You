@@ -129,6 +129,7 @@ namespace IBlameYou.Enemies
         {
             if (Suspended)
             {
+                if (phase != AttackPhase.None) EndAttack(false); // 하던 도약을 접는다: 풀린 뒤 옛 도약 속도로 튀거나 공격 중으로 남아 기사 기술을 막지 않게 (버그 점검 2026-11-24)
                 RemoveLandMark(); // 기사 기술이 몸을 맡는 동안엔 예고를 지운다
                 leapAirborne = false; // 몸을 맡긴 동안의 착지는 슬라임 도약 착지가 아니다 (리뷰 LOW)
                 return;

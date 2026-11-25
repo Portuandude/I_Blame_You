@@ -72,12 +72,40 @@ namespace IBlameYou.UI
             return style;
         }
 
+        // 색마다 한 장만 만들어 모든 HUD가 같이 쓴다 (HUD를 새로 만들 때마다 지우지 않는 텍스처가 쌓이던 것, 버그 점검 2026-11-25)
+        private static readonly System.Collections.Generic.Dictionary<Color, Texture2D> SolidTextures = new System.Collections.Generic.Dictionary<Color, Texture2D>();
+
         private static Texture2D SolidTexture(Color color)
         {
+            if (SolidTextures.TryGetValue(color, out var cached) && cached != null) return cached;
             var texture = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
             texture.SetPixel(0, 0, color);
             texture.Apply();
+            SolidTextures[color] = texture;
             return texture;
+        }
+
+        // 체력·마나 "현재/최대" 글자: 보이는 정수(와 샘 남은 초)가 바뀔 때만 새로 만든다 (늘 보이는 바라 OnGUI마다 문자열을 만들던 것)
+        private struct VitalTextCache
+        {
+            public int Current, Max, Spring;
+            public string Text;
+        }
+
+        private VitalTextCache healthTextCache;
+        private VitalTextCache manaTextCache;
+
+        private static int RoundShown(float value) => (int)System.Math.Round(value, System.MidpointRounding.AwayFromZero); // "{v:0}"와 같은 반올림
+
+        private static string VitalText(ref VitalTextCache cache, float current, float max, int spring)
+        {
+            int c = RoundShown(current), m = RoundShown(max);
+            if (cache.Text != null && cache.Current == c && cache.Max == m && cache.Spring == spring) return cache.Text;
+            cache.Current = c;
+            cache.Max = m;
+            cache.Spring = spring;
+            cache.Text = spring >= 0 ? $"{c}/{m}  샘 {spring / 60}:{spring % 60:00}" : $"{c}/{m}";
+            return cache.Text;
         }
 
         // 상태 패널 안 한 줄(높이 BarIconSize)에 체력·마나 바를 나란히 그린다.
@@ -102,13 +130,12 @@ namespace IBlameYou.UI
             float beat = severity > 0f ? 1f + 0.18f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * Mathf.PI * (1.2f + severity * 1.5f))) : 1f;
 
             DrawVitalBar(new Rect(line.x, line.y, half, line.height), heartIcon, beat, healthRatio, healthTrail.Shown,
-                HealthFillColor, HealthGlowColor, $"{health.Current:0}/{health.Max:0}",
+                HealthFillColor, HealthGlowColor, VitalText(ref healthTextCache, health.Current, health.Max, -1),
                 healthTrail.GainFrom, healthTrail.GainAlpha(Time.unscaledTime));
 
-            string manaText = mana.Infinite ? "무한" : $"{mana.Current:0}/{mana.Max:0}";
             // 마나 샘 방 효과가 남아 있으면 남은 시간 (재생 +10%, 2026-11-24)
             float spring = mana.SpringRemaining;
-            if (spring > 0f) manaText += $"  샘 {(int)spring / 60}:{(int)spring % 60:00}";
+            string manaText = mana.Infinite ? "무한" : VitalText(ref manaTextCache, mana.Current, mana.Max, spring > 0f ? (int)spring : -1);
             // 무한 마나면 끈다. 반짝이는 동안 이어 차서 5%를 넘겨도 켜진다 (구간 시작점이 유지되므로)
             float manaGain = !mana.Infinite && manaRatio - manaTrail.GainFrom > ManaGainMin ? manaTrail.GainAlpha(Time.unscaledTime) : 0f;
             DrawVitalBar(new Rect(line.x + half + 8f, line.y, half, line.height), starIcon, 1f, manaRatio, manaTrail.Shown,

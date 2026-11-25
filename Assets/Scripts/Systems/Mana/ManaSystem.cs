@@ -39,6 +39,10 @@ namespace IBlameYou.Systems
         // 마나가 모자랄 때 (쓰는 사람, 마법값 전체)를 다른 것으로 대신 냈으면 true를 돌려준다 (유물 피의 계약: 절반만큼 체력). 없으면 그냥 실패.
         // 대신 냈으면 마나는 그대로 둔다.
         public Func<ManaUser, float, bool> ShortfallCover { get; set; }
+        // ShortfallCover가 이 값(비용 배율 적용 뒤)을 지금 대신 낼 수 있는지 미리 본다 (내지는 않음). 없으면 대신 내는 것이 없다고 본다.
+        public Func<float, bool> CanCover { get; set; }
+        // 마나로든 대신 내는 것으로든 이 값을 낼 수 있는지 (amount는 비용 배율 적용 뒤)
+        public bool CanAfford(float amount) => HasEnough(amount) || (ShortfallCover != null && CanCover != null && CanCover(amount));
         public event Action<float, float> ManaChanged;
 
         // (누가, 얼마나, 헛되이 날렸는지) — 결과 창 A/B 날린 마나용.
@@ -69,7 +73,8 @@ namespace IBlameYou.Systems
         // 최대 마나를 늘린다 (늘어난 만큼 현재 마나도 채운다).
         public void AddMax(float amount, bool fillCurrent = true)
         {
-            maxMana += amount;
+            if (float.IsNaN(amount)) return;
+            maxMana = Mathf.Max(1f, maxMana + amount); // 최대치가 0 이하면 재생이 영영 멈추던 것 (버그 점검 2026-11-25)
             SetCurrent(fillCurrent ? current + Mathf.Max(amount, 0f) : current); // fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
@@ -110,6 +115,7 @@ namespace IBlameYou.Systems
         // amount는 마법의 원래 값(TryConsume에 넘긴 값). 실제로 낸 값(비용 배율 적용)으로 기록해 결과 창에서 날린 마나가 쓴 마나보다 커지지 않게 한다.
         public void MarkWasted(ManaUser user, float amount)
         {
+            if (!(amount > 0f)) return; // NaN·음수면 마나가 NaN이 되거나 날린 기록이 줄던 것
             amount *= TotalCostMultiplier;
             wastedByUser[(int)user] += amount;
             ManaSpent?.Invoke(user, amount, true);

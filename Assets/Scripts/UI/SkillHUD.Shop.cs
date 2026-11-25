@@ -61,8 +61,13 @@ namespace IBlameYou.UI
             SellEquipment(slot); // 수식어 다시 뽑기는 2026-11-24 사람 결정으로 뺐다 (지금 장비 줄은 팔기만)
         }
 
+        // 산 칸은 진열에서 빠져 뒤 장비가 당겨진다: 같은 키·같은 줄을 연달아 누르면(더블클릭·연타) 다른 장비까지 사던 것을 막는다 (버그 점검 2026-11-24)
+        private const float ShopBuyGap = 0.35f;
+        private float shopBuyReadyAt;
+
         private void BuyEquipment(EquipmentShop shop, int index)
         {
+            if (Time.unscaledTime < shopBuyReadyAt) return;
             var equip = PlayerEquipment.For(health.gameObject);
             var item = shop.Stock[index];
             var current = equip.Get(item.Slot);
@@ -85,6 +90,7 @@ namespace IBlameYou.UI
             int cost = EquipmentShop.NetCost(item, current, rate);
             if (!RunStats.TrySpendGold(cost, RunGold.InFlight)) return;
             shop.Buy(index, current, gold, out _, rate);
+            shopBuyReadyAt = Time.unscaledTime + ShopBuyGap;
             if (EquipmentShop.NetCost(item, current, rate) < EquipmentShop.NetCost(item, current)) VfxPlayer.StampGlint(health.transform, StampGlintOffset); // 단골 도장 할인 쾅
             var old = equip.Equip(item); // 옛 장비는 값에서 이미 깎았다 (판매)
             VillageFlash(EquipmentShop.StockSize + (int)item.Slot); // 새로 낀 장비 줄이 번쩍

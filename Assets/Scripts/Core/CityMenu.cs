@@ -92,7 +92,7 @@ namespace IBlameYou.Core
             }
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
-            const float width = 560f;
+            float width = Mathf.Min(560f, Screen.width - 20f); // 좁은 창에서도 화면 안에
             float height = Mathf.Min(academyOpen || towerOpen ? 640f : 520f, Screen.height - 20f); // 수정 탑 6항목 (2026-11-24)
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
@@ -211,6 +211,8 @@ namespace IBlameYou.Core
             towerOpen = tower;
             academyOpen = !tower;
             towerSelection = 0;
+            academyScroll = Vector2.zero; // 다시 열면 첫 줄부터 (지난번 스크롤이 남아 첫 줄이 화면 밖이던 것)
+            lastScrollSelection = -1;
         }
 
         private void CloseSub()

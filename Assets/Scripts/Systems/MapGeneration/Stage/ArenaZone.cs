@@ -31,6 +31,7 @@ namespace IBlameYou.Systems
         private float lockedAt; // 문이 닫힌 시각 (돌파 시간 알림)
         private readonly List<GameObject> gates = new List<GameObject>();
         private Rect? previousCameraBounds;
+        private Rect lockedCameraBounds;
         private string fightMusic = BossMusic; // 이번 보스 구역에서 튼 곡 (Boss 또는 MidBoss)
         private bool bossFight; // 보스·중간보스가 나오는 구역: 문이 닫히는 동안 보스 곡 (Resources/Audio/Music/Boss)
 
@@ -141,6 +142,8 @@ namespace IBlameYou.Systems
         {
             var player = TrapCommon.PlayerFrom(other);
             if (active || cleared || player == null) return;
+            var health = player.GetComponent<HealthSystem>();
+            if (health != null && health.IsDead) return; // 쓰러진 몸이 밀려 들어와 문을 닫지 않게 (버그 점검 2026-11-24)
             enteredPlayer = player.transform;
             StartCoroutine(Begin());
         }
@@ -400,13 +403,16 @@ namespace IBlameYou.Systems
             var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
             if (follow == null) return;
             previousCameraBounds = follow.Bounds;
-            follow.SetBounds(new Rect(area.xMin, FallRecovery.FloorY - 1f, area.width, ChunkData.Height + 1f)); // 방 격자 모드에서는 지금 방 바닥 기준
+            lockedCameraBounds = new Rect(area.xMin, FallRecovery.FloorY - 1f, area.width, ChunkData.Height + 1f); // 방 격자 모드에서는 지금 방 바닥 기준
+            follow.SetBounds(lockedCameraBounds);
         }
 
         private void UnlockCamera()
         {
             var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
             if (follow == null || !previousCameraBounds.HasValue) return;
+            // 그사이 다른 방이 카메라 경계를 새로 잡았으면(잠긴 채 방을 떠나 구역이 치워짐) 옛 방 경계로 되돌리지 않는다 (버그 점검 2026-11-25)
+            if (follow.Bounds != lockedCameraBounds) return;
             follow.SetBounds(previousCameraBounds.Value);
         }
 

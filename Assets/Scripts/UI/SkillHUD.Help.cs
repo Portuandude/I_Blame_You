@@ -30,7 +30,17 @@ namespace IBlameYou.UI
             public string[] Keys;
             public string Desc;
             public float Width;      // 미리 잰 전체 너비
+            // 그릴 때 쓰는 글자·너비도 만들 때 한 번만 잰다 (늘 보이는 줄이라 OnGUI마다 GUIContent·CalcSize를 하던 것, 버그 점검 2026-11-25)
+            public GUIContent TagContent;
+            public float TagWidth;
+            public GUIContent[] KeyContents;
+            public float[] CapWidths;
+            public GUIContent DescContent;
+            public float DescWidth;
         }
+
+        private static readonly GUIContent HelpPlus = new GUIContent("+");
+        private float helpPlusWidth;
 
         private GUIStyle helpCap;
         private GUIStyle helpText;
@@ -115,53 +125,57 @@ namespace IBlameYou.UI
 
         private float MeasureHelpItem(HelpItem item)
         {
+            helpPlusWidth = helpText.CalcSize(HelpPlus).x;
             float width = 0f;
-            if (!string.IsNullOrEmpty(item.Tag)) width += helpTag.CalcSize(new GUIContent(item.Tag)).x + HelpInnerGap;
+            if (!string.IsNullOrEmpty(item.Tag))
+            {
+                item.TagContent = new GUIContent(item.Tag);
+                item.TagWidth = helpTag.CalcSize(item.TagContent).x;
+                width += item.TagWidth + HelpInnerGap;
+            }
+            item.KeyContents = new GUIContent[item.Keys.Length];
+            item.CapWidths = new float[item.Keys.Length];
             for (int k = 0; k < item.Keys.Length; k++)
             {
-                if (k > 0) width += helpText.CalcSize(new GUIContent("+")).x + 2f * HelpInnerGap;
-                width += CapWidth(item.Keys[k]);
+                if (k > 0) width += helpPlusWidth + 2f * HelpInnerGap;
+                item.KeyContents[k] = new GUIContent(item.Keys[k]);
+                item.CapWidths[k] = Mathf.Max(HelpCapMinWidth, helpCap.CalcSize(item.KeyContents[k]).x);
+                width += item.CapWidths[k];
             }
-            width += HelpInnerGap + helpText.CalcSize(new GUIContent(item.Desc)).x;
+            item.DescContent = new GUIContent(item.Desc);
+            item.DescWidth = helpText.CalcSize(item.DescContent).x;
+            width += HelpInnerGap + item.DescWidth;
             return width;
         }
-
-        private float CapWidth(string key) => Mathf.Max(HelpCapMinWidth, helpCap.CalcSize(new GUIContent(key)).x);
 
         private void DrawHelpItem(HelpItem item, float x, float centerY)
         {
             var previous = GUI.color;
-            if (!string.IsNullOrEmpty(item.Tag))
+            if (item.TagContent != null)
             {
-                var tag = new GUIContent(item.Tag);
-                float w = helpTag.CalcSize(tag).x;
                 GUI.color = item.TagColor;
-                GUI.Label(new Rect(x, centerY - 10f, w, 20f), tag, helpTag);
+                GUI.Label(new Rect(x, centerY - 10f, item.TagWidth, 20f), item.TagContent, helpTag);
                 GUI.color = previous;
-                x += w + HelpInnerGap;
+                x += item.TagWidth + HelpInnerGap;
             }
 
-            for (int k = 0; k < item.Keys.Length; k++)
+            for (int k = 0; k < item.KeyContents.Length; k++)
             {
                 if (k > 0)
                 {
-                    var plus = new GUIContent("+");
-                    float pw = helpText.CalcSize(plus).x;
                     x += HelpInnerGap;
-                    GUI.Label(new Rect(x, centerY - 10f, pw, 20f), plus, helpText);
-                    x += pw + HelpInnerGap;
+                    GUI.Label(new Rect(x, centerY - 10f, helpPlusWidth, 20f), HelpPlus, helpText);
+                    x += helpPlusWidth + HelpInnerGap;
                 }
-                var key = new GUIContent(item.Keys[k]);
-                float cw = CapWidth(item.Keys[k]);
+                float cw = item.CapWidths[k];
                 // 버튼이 아니라 그림만: 마우스를 올려도 바뀌지 않게 보통 상태로만 그린다
                 if (Event.current.type == EventType.Repaint)
-                    GUI.StyleDraw(helpCap, new Rect(x, centerY - HelpCapHeight * 0.5f, cw, HelpCapHeight), key, false, false, false, false);
+                    GUI.StyleDraw(helpCap, new Rect(x, centerY - HelpCapHeight * 0.5f, cw, HelpCapHeight), item.KeyContents[k], false, false, false, false);
                 x += cw;
             }
 
-            var desc = new GUIContent(item.Desc);
             x += HelpInnerGap;
-            GUI.Label(new Rect(x, centerY - 10f, helpText.CalcSize(desc).x + 2f, 20f), desc, helpText);
+            GUI.Label(new Rect(x, centerY - 10f, item.DescWidth + 2f, 20f), item.DescContent, helpText);
         }
 
         private static List<HelpItem> BuildHelpItems(bool dev)

@@ -255,13 +255,14 @@ namespace IBlameYou.UI
                 }
 
                 if (traitKeyboard && i == traitSelection) CuteButton.DrawSelection(column); // 키보드로 고른 칸 둘레 금색 테두리
-                GUI.enabled = progression.CanRaise(trait);
+                bool wasEnabled = GUI.enabled; // 바깥에서 꺼 둔 상태를 덮어쓰지 않게 원래 값으로 되돌린다
+                GUI.enabled = wasEnabled && progression.CanRaise(trait);
                 string raiseText = progression.Points <= 0 ? "포인트 없음" : rank >= TraitTree.MaxRank ? "최대" : "+ 찍기";
                 if (CuteButton.Button(new Rect(column.x + 10f, column.yMax - 36f, column.width - 20f, 28f), raiseText, cardButton))
                 {
                     if (progression.Raise(trait)) OnTraitRaisedInWindow(i, progression.Rank(trait));
                 }
-                GUI.enabled = true;
+                GUI.enabled = wasEnabled;
                 GUI.matrix = previousMatrix;
             }
 

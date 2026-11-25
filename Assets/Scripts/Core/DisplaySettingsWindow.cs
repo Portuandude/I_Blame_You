@@ -100,10 +100,13 @@ namespace IBlameYou.Core
             }
 
             if (available == null || available.Count == 0) available = DisplayRules.Available(DisplaySettings.MonitorWidth, DisplaySettings.MonitorHeight);
-            int at = Mathf.Max(0, available.IndexOf(resolution));
+            // 저장된 해상도가 목록에 없으면(모니터 교체 등) 몰래 가장 작은 해상도로 바꾸지 않는다: 직접 고를 때만 바꾼다
+            int matched = available.IndexOf(resolution);
+            int at = matched < 0 ? available.Count - 1 : matched;
+            int startAt = at;
             HandleKeys(Event.current, available.Count, ref at);
             if (!IsOpen) return;
-            resolution = available[at];
+            if (matched >= 0 || at != startAt) resolution = available[at];
 
             float open = now - openedAt;
             var previous = GUI.color;
@@ -147,9 +150,9 @@ namespace IBlameYou.Core
             GUI.enabled = enabled && at < available.Count - 1;
             if (CuteButton.Button(right, "▶", button)) at = Mathf.Min(available.Count - 1, at + 1);
             GUI.enabled = enabled;
-            resolution = available[at];
+            if (matched >= 0 || at != startAt) resolution = available[at];
             var valueRect = new Rect(rect.x + 164f + BumpOffset(now, RowResolution), y, 184f, 36f);
-            GUI.Label(valueRect, DisplayRules.ResolutionName(resolution), center);
+            GUI.Label(valueRect, resolution >= 0 && resolution < DisplayRules.Resolutions.Length ? DisplayRules.ResolutionName(resolution) : "?", center); // 잘못 저장된 값이어도 창이 깨지지 않게
             if (ShowSelection(RowResolution)) CuteButton.DrawSelection(new Rect(left.x, y, right.xMax - left.x, 36f));
 
             // 창 모드 줄

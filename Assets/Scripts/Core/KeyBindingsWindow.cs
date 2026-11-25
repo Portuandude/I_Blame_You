@@ -106,7 +106,7 @@ namespace IBlameYou.Core
             const float rowHeight = 34f;
             const float rowGap = 4f;
             float height = 96f + ActionRows * (rowHeight + rowGap) + 64f;
-            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, (Screen.height - height) / 2f), width, height);
+            var rect = new Rect((Screen.width - width) / 2f, Mathf.Max(10f, Mathf.Min((Screen.height - height) / 2f, Screen.height - height - 10f)), width, height); // 낮은 창에서도 [닫기]가 보이게 아래도 맞춘다
             var previousMatrix = GUI.matrix;
             float pop = PopScale(open);
             if (pop != 1f) GUIUtility.ScaleAroundPivot(new Vector2(pop, pop), rect.center);

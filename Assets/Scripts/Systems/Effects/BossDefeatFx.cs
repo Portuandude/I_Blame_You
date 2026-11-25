@@ -94,7 +94,7 @@ namespace IBlameYou.Systems
 
         private void OnGUI()
         {
-            float alpha = FlashAlpha * (1f - Mathf.Clamp01(Elapsed / FlashDuration));
+            float alpha = FlashAlpha * ComfortSettings.FlashScale * (1f - Mathf.Clamp01(Elapsed / FlashDuration)); // 화면 설정 "번쩍임" % (0이면 없음, 버그 점검 2026-11-24)
             if (alpha <= 0f) return;
             GUI.depth = -100; // HUD 위에
             var previous = GUI.color;
