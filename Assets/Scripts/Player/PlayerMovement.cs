@@ -222,6 +222,8 @@ namespace IBlameYou.Player
             airMinVelocityY = 0f;
             wasGrounded = true;
             lastGroundedTime = float.NegativeInfinity; // 옮긴 자리(공중일 수 있음)에서 예전 땅 기준 코요테 점프가 나오지 않게
+            jumpQueued = false; // 같은 프레임에 땅에서 받아 둔 점프가 옮긴 자리(공중)에서 터지던 것 (버그 점검 2026-11-25)
+            jumpPressedTime = float.NegativeInfinity;
             jumpCutArmed = false;
             jumpCutRequested = false;
             var squash = GetComponent<PlayerSquash>();
@@ -307,6 +309,13 @@ namespace IBlameYou.Player
                 rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0f);
                 dashTimeRemaining -= Time.fixedDeltaTime;
                 // 대시하다 마력 안개에 들어가면 그 자리에서 흩어진다: 가로 속도를 걷기 속도로 낮춰 대시 거리로 건너뛰지 못하게.
+                // 대시 도중 창이 열리거나(멈추지 않는 창) 그물에 묶이면 그 자리에서 멈춘다 — 잠긴 동안 대시가 끝까지 미끄러지던 것 (버그 점검 2026-11-25)
+                if (control.MovementFrozen)
+                {
+                    EndDash();
+                    rb.linearVelocity = new Vector2(carryX, 0f);
+                    return;
+                }
                 if (BlinkWard.Contains(rb.position))
                 {
                     EndDash();

@@ -66,13 +66,15 @@ namespace IBlameYou.Systems
         // 최대 체력을 늘린다 (늘어난 만큼 현재 체력도 채운다).
         public void AddMax(float amount, bool fillCurrent = true)
         {
-            maxHealth += amount;
+            if (float.IsNaN(amount)) return;
+            maxHealth = Mathf.Max(1f, maxHealth + amount); // 최대치가 0 이하가 되면 체력이 음수로 잘려 바로 쓰러지던 것 (버그 점검 2026-11-25, 기력과 같게)
             SetCurrent(fillCurrent && !IsDead ? current + Mathf.Max(amount, 0f) : current); // 쓰러진 뒤에는 채우지 않는다 (Heal과 같게). fillCurrent false: 장비처럼 끼고 빼기를 반복해도 회복되지 않게
         }
 
         // 최대/현재 체력을 한꺼번에 정한다 (보스 분열처럼 체력을 나눠 가질 때).
         public void SetValues(float currentValue, float maxValue)
         {
+            if (!(maxValue > 0f) || float.IsNaN(currentValue)) return; // NaN·0 이하 값이면 죽지 않는 몸이 될 수 있어 받지 않는다
             maxHealth = maxValue;
             SetCurrent(currentValue);
         }

@@ -56,6 +56,7 @@ namespace IBlameYou.Systems
         public static void ShowText(Vector3 position, string text, Color color, float scale, Color outline)
         {
             if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            FloatingText.MakeRoom(); // 광역기·화상 틱으로 숫자가 쏟아져도 동시에 떠 있는 글자 수를 묶는다 (버그 점검 2026-11-25)
 
             var go = new GameObject("FloatingText");
             go.transform.position = position;
@@ -99,6 +100,24 @@ namespace IBlameYou.Systems
 
         private const float PopTime = 0.1f;
         private const float PopScale = 1.3f;
+
+        private const int MaxLive = 40; // 넘으면 가장 오래된 글자부터 지운다 (하나에 TextMesh 5개라 수십 개면 프레임이 흔들렸다)
+        private static readonly System.Collections.Generic.List<FloatingText> Live = new System.Collections.Generic.List<FloatingText>();
+
+        internal static void MakeRoom()
+        {
+            Live.RemoveAll(t => t == null);
+            while (Live.Count >= MaxLive)
+            {
+                var oldest = Live[0];
+                Live.RemoveAt(0);
+                if (oldest != null) Destroy(oldest.gameObject);
+            }
+        }
+
+        private void Awake() => Live.Add(this);
+
+        private void OnDestroy() => Live.Remove(this);
 
         private TextMesh[] meshes;
         private Color[] baseColors;

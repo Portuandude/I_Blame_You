@@ -104,7 +104,9 @@ namespace IBlameYou.Systems
             float top = transform.position.y + 0.5f; // 가시 끝 높이
             TrapHitFx.SpikeStab(new Vector3(player.transform.position.x, top, 0f));
             var rb = player.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, BounceSpeed);
+            // 이미 더 빠르게 오르는 중(버섯·바람)이면 깎지 않고, 낮은 점프 끊기·코요테 점프가 튕김에 끼어들지 않게 (버그 점검 2026-11-25)
+            if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, BounceSpeed));
+            player.ResetAirborne();
             nextHitTime = Time.time + Cooldown;
         }
     }

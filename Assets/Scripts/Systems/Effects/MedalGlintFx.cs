@@ -76,7 +76,8 @@ namespace IBlameYou.Systems
             if (!sparkled && age >= SparkleDelay)
             {
                 sparkled = true;
-                VfxPlayer.HelmetGlint(transform.position + new Vector3(0.18f, 0.18f, 0f)); // 메달 오른쪽 위에서 반짝
+                // 메달 오른쪽 위에서 반짝. 실제 시간으로 도는 메달(멈춘 창 위)은 건너뛴다: 반짝이는 게임 시간이라 창이 닫힐 때까지 첫 프레임에 멈춰 있었다 (버그 점검 2026-11-25)
+                if (!unscaled) VfxPlayer.HelmetGlint(transform.position + new Vector3(0.18f, 0.18f, 0f));
             }
 
             float alpha = t < FadeStart ? 1f : 1f - (t - FadeStart) / (1f - FadeStart);
