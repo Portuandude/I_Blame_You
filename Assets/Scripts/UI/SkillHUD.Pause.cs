@@ -51,6 +51,7 @@ namespace IBlameYou.UI
                 return;
             }
 
+            if (FeatureTestTools.EscapeTaken) return; // 기능 테스트 F9·F12 창이 Esc를 받았다 (창만 닫고 일시정지는 열지 않음)
             if (traitWindowOpen || relicWindowOpen || equipCardOpen || villageOpen || choiceOpen || deathHandled || stageCleared || health.IsDead) return;
             if (pauseMap == null) pauseMap = GetComponent<MinimapUI>();
             if (pauseMap != null && pauseMap.Expanded)
