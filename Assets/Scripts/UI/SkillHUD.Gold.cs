@@ -75,7 +75,8 @@ namespace IBlameYou.UI
             bool spending = spendAge >= 0f && spendAge < GoldSpendTime;
             // 쓴 직전: 숫자를 붉게 했다가 시간이 지나며 금색으로 돌아온다
             var numberColor = spending ? Color.Lerp(GoldSpendRed, OutlinedLabel.Gold, spendAge / GoldSpendTime) : OutlinedLabel.Gold;
-            OutlinedLabel.Draw(textRect, shown.ToString(), goldText, numberColor, OutlinedLabel.Outline, 0f, 1.5f);
+            if (goldShownText == null || goldShownValue != shown) { goldShownValue = shown; goldShownText = shown.ToString(); } // 숫자가 바뀔 때만
+            OutlinedLabel.Draw(textRect, goldShownText, goldText, numberColor, OutlinedLabel.Outline, 0f, 1.5f);
             GUI.matrix = previous;
             if (spending) DrawGoldSpend(rect, spendAge / GoldSpendTime);
         }
@@ -95,6 +96,9 @@ namespace IBlameYou.UI
         }
 
         // 결과 창 오른쪽 위: 금화 + "골드 N". shown은 올라가며 세는 중인 값, pop은 다 센 순간 톡 커지는 배율 (SkillHUD.EndScreen.cs)
+        private string goldShownText;
+        private int goldShownValue;
+
         private void DrawEndGold(Rect panelRect, int shown, float pop)
         {
             EnsureGoldArt();
