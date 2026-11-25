@@ -164,8 +164,15 @@ namespace IBlameYou.Systems
             if (lastPlayed.TryGetValue(name, out float last) && Time.unscaledTime - last < SameClipCooldown) return;
             lastPlayed[name] = Time.unscaledTime;
 
-            var source = voices[nextVoice];
-            nextVoice = (nextVoice + 1) % voices.Length;
+            // 쉬고 있는 칸을 먼저 쓴다: 차례대로만 돌면 PlayDelayed로 기다리던 소리(또는 긴 소리)를 다른 효과음이 끊었다 (버그 점검 2026-11-25)
+            int pick = nextVoice;
+            for (int i = 0; i < voices.Length; i++)
+            {
+                int index = (nextVoice + i) % voices.Length;
+                if (!voices[index].isPlaying) { pick = index; break; }
+            }
+            var source = voices[pick];
+            nextVoice = (pick + 1) % voices.Length;
             source.Stop();
             source.clip = clip;
             source.volume = SfxVolume * volume;
@@ -183,7 +190,8 @@ namespace IBlameYou.Systems
             musicPitch = 1f; // 곡 파일이 없어도 이전 곡 빠르기는 원래대로
             if (clip == null) return;
 
-            var next = currentMusic == musicA ? musicB : musicA;
+            // 지금 곡의 반대쪽. 지금 곡이 없으면(StopMusic 뒤 줄어드는 중) 더 작은 쪽을 써서, 줄어들던 곡을 갑자기 끊어 딸깍 소리가 나지 않게 (버그 점검 2026-11-25)
+            var next = currentMusic == musicA ? musicB : currentMusic == musicB ? musicA : (musicA.volume <= musicB.volume ? musicA : musicB);
             next.clip = clip;
             next.volume = 0f;
             next.pitch = 1f;
