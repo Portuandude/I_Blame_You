@@ -56,10 +56,20 @@ namespace IBlameYou.Systems
         public static List<MapLinkLine> Links(RoomLayoutData layout, Func<int, bool> shown)
         {
             var lines = new List<MapLinkLine>();
+            Links(layout, shown, lines);
+            return lines;
+        }
+
+        private static readonly DoorDir[] LinkDirs = { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down };
+
+        // 부르는 쪽 목록에 담는다 (지도가 OnGUI마다 부르므로 새 목록·방마다 새 배열을 만들지 않게, 버그 점검 2026-11-25)
+        public static void Links(RoomLayoutData layout, Func<int, bool> shown, List<MapLinkLine> lines)
+        {
+            lines.Clear();
             foreach (var room in layout.Rooms)
             {
                 bool roomShown = shown(room.Index);
-                foreach (var dir in new[] { DoorDir.Left, DoorDir.Right, DoorDir.Up, DoorDir.Down })
+                foreach (var dir in LinkDirs)
                 {
                     if ((room.Doors & dir) == 0) continue;
                     var other = layout.Neighbor(room, dir);
@@ -79,8 +89,6 @@ namespace IBlameYou.Systems
                     lines.Add(new MapLinkLine { From = room, Dir = dir, Kind = kind });
                 }
             }
-
-            return lines;
         }
     }
 }
