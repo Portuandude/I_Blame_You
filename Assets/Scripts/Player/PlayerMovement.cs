@@ -222,6 +222,8 @@ namespace IBlameYou.Player
             airMinVelocityY = 0f;
             wasGrounded = true;
             lastGroundedTime = float.NegativeInfinity; // 옮긴 자리(공중일 수 있음)에서 예전 땅 기준 코요테 점프가 나오지 않게
+            jumpQueued = false; // 같은 프레임에 땅에서 받아 둔 점프가 옮긴 자리(공중)에서 터지던 것 (버그 점검 2026-11-25)
+            jumpPressedTime = float.NegativeInfinity;
             jumpCutArmed = false;
             jumpCutRequested = false;
             var squash = GetComponent<PlayerSquash>();
