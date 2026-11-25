@@ -120,6 +120,7 @@ namespace IBlameYou.Puzzles
                 return;
             }
 
+            slideBackColumn = column;
             column = next;
             slideFrom = body.position;
             slideTo = CellCenter(next);
@@ -131,13 +132,24 @@ namespace IBlameYou.Puzzles
         }
 
         // 가려는 칸에 플레이어가 있으면 밀지 않는다 (몸을 끼우지 않게)
-        private bool Occupied(int x)
+        private bool Occupied(int x) => PlayerAt(CellCenter(x), new Vector2(0.8f, 0.8f));
+
+        // 상자 몸이 이 자리에 오면 플레이어와 겹치는지 (위에 선 플레이어는 빼려고 위쪽을 조금 줄인다)
+        private bool PlayerInside(Vector2 center) =>
+            PlayerAt(center - new Vector2(0f, 0.15f), new Vector2(Size - 0.2f, Size - 0.4f));
+
+        private readonly Collider2D[] occupants = new Collider2D[8];
+
+        private bool PlayerAt(Vector2 center, Vector2 size)
         {
-            var hits = Physics2D.OverlapBoxAll(CellCenter(x), new Vector2(0.8f, 0.8f), 0f);
-            foreach (var hit in hits)
-                if (hit != null && !hit.isTrigger && TrapCommon.PlayerFrom(hit) != null) return true;
+            var filter = new ContactFilter2D { useTriggers = false };
+            int count = Physics2D.OverlapBox(center, size, 0f, filter, occupants);
+            for (int i = 0; i < count; i++)
+                if (occupants[i] != null && TrapCommon.PlayerFrom(occupants[i]) != null) return true;
             return false;
         }
+
+        private int slideBackColumn = -1; // 미끄러지기 전 칸 (플레이어와 부딪히면 여기로 되돌아간다)
 
         private void FixedUpdate()
         {
@@ -145,11 +157,24 @@ namespace IBlameYou.Puzzles
             float t = Mathf.Clamp01((Time.time - slideStart) / SlideTime);
             float eased = 1f - (1f - t) * (1f - t); // 처음 빠르고 끝에서 느려지며 멈춘다
             var target = Vector2.Lerp(slideFrom, slideTo, eased);
+            // 미끄러지는 사이 플레이어가 가는 칸에 뛰어들면 벽 쪽으로 끼워 밀던 것 (버그 점검 2026-11-25): 원래 칸으로 되돌아간다 (한 번만)
+            if (slideBackColumn >= 0 && PlayerInside(target))
+            {
+                column = slideBackColumn;
+                slideBackColumn = -1;
+                slideFrom = body.position;
+                slideTo = CellCenter(column);
+                slideStart = Time.time;
+                GameAudio.PlaySfx("BoxBump", 0.6f);
+                moved?.Invoke(column);
+                return;
+            }
             CarryRider(target - body.position);
             body.MovePosition(target);
             if (t < 1f) return;
 
             sliding = false;
+            slideBackColumn = -1;
             EffectLibrary.PlayOneShot(new Vector3(slideTo.x, slideTo.y - Size / 2f + 0.1f, 0f), TrapCommon.Frames("Smoke"), 14f,
                 new Color(0.8f, 0.78f, 0.72f, 0.6f), 0.5f);
             bool step = WindBoxRules.IsStep(column, ledgeX0, ledgeWidth);
