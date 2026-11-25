@@ -65,11 +65,11 @@ namespace IBlameYou.Enemies
             lastSeen = members[members.Count - 1].transform.position + Vector3.up * 0.4f;
             seen = true;
             float left = endTime - Time.time;
-            int second = Mathf.CeilToInt(Mathf.Max(left, 0f));
-            if (members.Count != noticeCount || second != noticeSecond || BossEvents.Notice == null) // 숫자가 바뀔 때만 글을 새로 만든다 (매 프레임 할당하던 것)
+            int shownSecond = Mathf.CeilToInt(Mathf.Max(left, 0f));
+            if (members.Count != noticeCount || shownSecond != noticeSecond || BossEvents.Notice == null) // 숫자가 바뀔 때만 글을 새로 만든다 (매 프레임 할당하던 것)
             {
                 noticeCount = members.Count;
-                noticeSecond = second;
+                noticeSecond = shownSecond;
                 BossEvents.Notice = $"슬라임 {noticeCount}마리 · 합체까지 {noticeSecond}초";
             }
             if (left <= 0f)
