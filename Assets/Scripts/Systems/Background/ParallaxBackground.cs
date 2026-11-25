@@ -158,6 +158,7 @@ namespace IBlameYou.Systems
             Vector3 camPos = cam.transform.position;
             float halfHeight = cam.orthographicSize;
             float halfWidth = halfHeight * cam.aspect;
+            if (!(halfWidth > 0.001f) || !(halfHeight > 0.001f)) return; // 창을 내려 화면 비율이 0·NaN이면 반짝이 자리가 NaN으로 굳던 것 (버그 점검 2026-11-25)
             Color tint;
             if (room >= 0)
             {
@@ -212,6 +213,7 @@ namespace IBlameYou.Systems
             Vector2 cameraMove = camPos - lastCameraPosition;
             float width = halfWidth * 2f;
             float height = halfHeight * 2f;
+            if (Mathf.Abs(cameraMove.x) > width || Mathf.Abs(cameraMove.y) > height) cameraMove = Vector2.zero; // 방 전환으로 카메라가 건너뛴 프레임은 반짝이를 밀지 않는다
             for (int i = 0; i < sparkles.Length; i++)
             {
                 var s = sparkles[i];
