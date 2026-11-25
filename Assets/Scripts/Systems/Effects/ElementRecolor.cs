@@ -101,6 +101,7 @@ namespace IBlameYou.Systems
             loaded = new Dictionary<string, Texture2D>();
             foreach (var texture in Resources.LoadAll<Texture2D>(folder))
             {
+                texture.filterMode = FilterMode.Point; // pixelfx 픽셀 그림 (슬라임 회색판 등)은 흐리지 않게
                 loaded[texture.name] = texture;
             }
 
