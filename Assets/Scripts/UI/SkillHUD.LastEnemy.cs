@@ -13,6 +13,7 @@ namespace IBlameYou.UI
 
         private void DrawLastEnemyMark()
         {
+            if (Event.current.type != EventType.Repaint) return; // 표시만 하므로 Layout·입력 이벤트에서 적 찾기·좌표 계산을 하지 않는다
             var zone = ArenaZone.Current;
             if (zone == null || zone.HasBoss || zone.Remaining != 1 || deathHandled || stageCleared) return;
             var cam = Camera.main;
