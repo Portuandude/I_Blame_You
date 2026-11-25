@@ -719,7 +719,7 @@
  },
  {
   "name": "Player/Idle",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "idle"
   },
@@ -733,7 +733,7 @@
    0.5833333333333334,
    0.6999999999999998
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -748,7 +748,7 @@
  },
  {
   "name": "Player/Walk",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "walk"
   },
@@ -763,7 +763,7 @@
    0.42857142857142855,
    0.5
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -778,7 +778,7 @@
  },
  {
   "name": "Player/Run",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "run"
   },
@@ -793,7 +793,7 @@
    0.3,
    0.35
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -808,7 +808,7 @@
  },
  {
   "name": "Player/Dash",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "dash"
   },
@@ -821,7 +821,7 @@
    0.13333333333333333,
    0.16666666666666666
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -836,7 +836,7 @@
  },
  {
   "name": "Player/Attack",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "attack"
   },
@@ -851,7 +851,7 @@
    0.375,
    0.4375
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -866,7 +866,7 @@
  },
  {
   "name": "Player/Hurt",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "hurt"
   },
@@ -875,7 +875,7 @@
    0.02,
    0.15
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -890,7 +890,7 @@
  },
  {
   "name": "Player/Rise",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "rise"
   },
@@ -898,7 +898,7 @@
   "times": [
    0.0
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
@@ -914,7 +914,7 @@
  },
  {
   "name": "Player/Fall",
-  "id": "critters/mage-chibi",
+  "id": "critters/mage-sd",
   "opts": {
    "mode": "fall"
   },
@@ -922,7 +922,7 @@
   "times": [
    0.0
   ],
-  "scale": 4,
+  "scale": 2,
   "canvas": [
    300,
    256
