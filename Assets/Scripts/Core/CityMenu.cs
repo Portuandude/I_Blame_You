@@ -92,7 +92,7 @@ namespace IBlameYou.Core
             }
             if (openedAt < 0f) openedAt = Time.unscaledTime;
 
-            const float width = 560f;
+            float width = Mathf.Min(560f, Screen.width - 20f); // 좁은 창에서도 화면 안에
             float height = Mathf.Min(academyOpen || towerOpen ? 640f : 520f, Screen.height - 20f); // 수정 탑 6항목 (2026-11-24)
             var area = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float t = Mathf.Clamp01((Time.unscaledTime - openedAt) / 0.3f);
