@@ -22,17 +22,21 @@ const H = (s) => hex(s);
 const C = {
   line: H("#3a2c4a"),
   skin: H("#fff0e6"), skinM: H("#ffdccb"), skinS: H("#f5b9a6"), blush: H("#ff8fa3"),
-  hairD: H("#776cab"), hair: H("#a097d0"), hairM: H("#c9c2ea"), hairL: H("#ebe7fa"), hairH: H("#ffffff"),
-  irisD: H("#33326e"), iris: H("#4d6fd0"), irisM: H("#5fa4ec"), irisL: H("#8fe3ff"), white: H("#ffffff"),
+  hairD: H("#2c4791"), hair: H("#4569c0"), hairM: H("#6a94dc"), hairL: H("#9cc0f2"), hairH: H("#e4f2ff"),
+  white: H("#ffffff"),
   mouth: H("#b5525f"), tongue: H("#ff9aa6"),
-  jakD: H("#6f8fc8"), jak: H("#9dbcee"), jakL: H("#c4dbfb"), jakH: H("#e6f1ff"),
-  trim: H("#ffffff"), trimS: H("#d7def0"), tie: H("#3f5ec0"), tieL: H("#6d8be0"),
+  jakD: H("#b4bbd6"), jak: H("#e6e9f4"), jakL: H("#f6f7fc"), jakH: H("#ffffff"),
+  trim: H("#5b6db0"), trimS: H("#45528d"), tie: H("#d99a2e"), tieL: H("#ffcf5c"),
   gold: H("#ffd45e"), goldS: H("#e0a43a"),
   shorts: H("#3d4266"), shortsL: H("#555b85"), sock: H("#ffffff"), sockS: H("#d3d6e8"),
   shoe: H("#4a5a9a"), shoeL: H("#6f82c8"), sole: H("#f2f2f6"),
   wand: H("#fff6dc"), wandS: H("#d9b86a"),
   gemD: H("#2a8fc8"), gem: H("#6ae4ff"), gemL: H("#d8fdff"),
 };
+// odd eyes: the near eye amber, the far eye sky blue (dark top -> bright glow at the bottom)
+const EYE_NEAR = { d: H("#5e3212"), m: H("#b8701c"), l: H("#e8a63a"), g: H("#ffe28a") };
+const EYE_FAR = { d: H("#1f2f6e"), m: H("#3f6fd0"), l: H("#5fb0f0"), g: H("#a0f0ff") };
+
 const GRID = new Grid(-64, -104, 128, 108);
 const DUR = { idle: 1.4, walk: 8 / 14, run: 8 / 20, rise: 0.2, fall: 0.2, dash: 0.2, attack: 0.5, hurt: 0.2 };
 export const durations = DUR;
@@ -238,14 +242,14 @@ function staff(g, P, [hx, hy]) {
 }
 
 function eye(g, x, y, w, P, near) {
-  const h = 12;
+  const h = 14, E = near ? EYE_NEAR : EYE_FAR;
   if (P.eyes === "blink" || P.eyes === "closed") {
-    for (let i = 0; i < w; i++) g.set(x + i, y + 7 - (i > 0 && i < w - 1 ? 1 : 0), C.line); // ^ happy arc
+    for (let i = 0; i < w; i++) g.set(x + i, y + 9 - (i > 0 && i < w - 1 ? 1 : 0), C.line); // ^ happy arc
     return;
   }
   if (P.eyes === "hurt") {
     const d = near ? -1 : 1;
-    for (let i = 0; i < 4; i++) g.set(x + (d > 0 ? i : w - 1 - i), y + 4 + i, C.line), g.set(x + (d > 0 ? i : w - 1 - i), y + 10 - i, C.line);
+    for (let i = 0; i < 4; i++) g.set(x + (d > 0 ? i : w - 1 - i), y + 5 + i, C.line), g.set(x + (d > 0 ? i : w - 1 - i), y + 11 - i, C.line);
     return;
   }
   const top = P.eyes === "determined" ? 3 : P.eyes === "wide" ? 0 : 1;
@@ -255,39 +259,56 @@ function eye(g, x, y, w, P, near) {
       if (edge && (r === h - 1 || r === top || r === h - 2)) continue; // tall rounded oval
       let c;
       if (r <= top + 1) c = C.line;                // the upper lid
-      else if (r < 5) c = C.irisD;
-      else if (r < 8) c = C.iris;
-      else if (r < 10) c = edge ? C.iris : C.irisM;
-      else c = edge ? C.irisM : C.irisL;         // the glow at the bottom of the iris
+      else if (r < 6) c = E.d;
+      else if (r < 9) c = E.m;
+      else if (r < 12) c = edge ? E.m : E.l;
+      else c = edge ? E.l : E.g;         // the glow at the bottom of the iris
       g.set(x + i, y + r, c);
     }
   // lid flick at the outer corner, and a soft lower lid
   g.set(near ? x + w : x - 1, y + top, C.line);
   for (let i = 1; i < w - 1; i++) g.set(x + i, y + h, C.skinS);
   // pupil and catch-lights: a big soft one up top, a sparkle below
-  if (P.eyes !== "wide") for (let r = 5; r < 8; r++) g.set(x + Math.floor(w / 2), y + r, C.irisD);
+  if (P.eyes !== "wide") for (let r = 5; r < 9; r++) g.set(x + Math.floor(w / 2), y + r, E.d), g.set(x + Math.floor(w / 2) - 1, y + r, r > 5 && r < 8 ? E.d : E.m);
   g.shade(x + 1, y + top + 2, x + 2, y + top + 4, () => C.white);
-  g.set(x + w - 2, y + 9, C.white);
+  g.set(x + w - 2, y + 11, C.white); g.set(x + w - 3, y + 11, C.white);
   if (P.eyes === "determined") for (let i = 0; i < w; i++) g.set(x + i, y + 1 + (near ? (i < w / 2 ? 1 : 0) : (i >= w / 2 ? 1 : 0)), C.line);
+}
+
+// long hair falling down the back to the hips, swept back by the run and swaying a beat late
+function longHair(g, P) {
+  const hx = P.lean + 3 + P.headX, hy = -56 + P.bob + P.headY, hb = P.hair;
+  const bot = -9 + P.bob + Math.max(0, hb), sw = P.cape * 0.55 + 1;
+  const tri = (v) => Math.abs(((v % 1) + 1) % 1 - 0.5) * 2;
+  g.shade(hx - 34 - sw, hy, hx + 6, bot + 4, (x, y) => {
+    const v = clamp((y - hy) / (bot - hy));
+    const x0 = hx - 23 - sw * v * v + 2 * v, x1 = hx + 3 - sw * v * v * 0.8 - 3 * v;
+    if (x < x0 || x > x1) return 0;
+    const tip = bot - 5 * tri((x - x0) / 5.5); // pointed ends
+    if (y > tip) return 0;
+    const strand = tri((x - x0 + v * 3) / 5.5) > 0.86;
+    if (strand && y > hy + 6) return C.hairD;
+    return x < x0 + 3 ? C.hairM : x > x1 - 4 ? C.hairD : C.hair;
+  });
 }
 
 function head(g, P) {
   const hx = P.lean + 3 + P.headX, hy = -56 + P.bob + P.headY, hb = P.hair;
   const tri = (v) => Math.abs(((v % 1) + 1) % 1 - 0.5) * 2;
   // back hair: a fluffy mass with flared tufts at the nape
-  g.ellipse(hx - 3, hy + 1, 23, 21, (nx, ny) => (ny > 0.35 ? C.hairD : nx < -0.4 ? C.hair : C.hairM));
+  g.ellipse(hx - 3, hy + 1, 25, 23, (nx, ny) => (ny > 0.35 ? C.hairD : nx < -0.4 ? C.hair : C.hairM));
   for (let i = 0; i < 4; i++) g.tube([[hx - 12 + i * 3, hy + 10], [hx - 18 + i * 2.5 - hb * 0.4, hy + 19 + hb - i]], (u) => lerp(3.4, 0.8, u), i % 2 ? C.hair : C.hairD);
   // face: a soft round bun
-  g.ellipse(hx + 3, hy + 6, 18.5, 15.5, (nx, ny) => (nx > 0.75 || ny > 0.82 ? C.skinS : nx > 0.5 || ny > 0.6 ? C.skinM : C.skin));
+  g.ellipse(hx + 3, hy + 6, 20, 17, (nx, ny) => (nx > 0.75 || ny > 0.82 ? C.skinS : nx > 0.5 || ny > 0.6 ? C.skinM : C.skin));
   // hair cap with soft pointed bangs, long side locks
   const clump = (x, y) => 1 - tri((x - hx + 1 + (y - hy) * 0.3) / 6.5);
-  g.shade(hx - 28, hy - 30, hx + 28, hy + 22, (x, y) => {
-    const nx = (x - hx + 1) / 24.5, ny = (y - hy + 2 - hb * 0.3) / 22.5;
+  g.shade(hx - 30, hy - 32, hx + 30, hy + 32, (x, y) => {
+    const nx = (x - hx + 1) / 26.5, ny = (y - hy + 2 - hb * 0.3) / 24.5;
     const ang = Math.atan2(ny, nx), tuft = 0.05 * (1 - tri(ang * 1.9 + 0.2)) * (ny < 0.1 ? 1 : 0);
-    if (nx * nx + ny * ny > (1 + tuft) * (1 + tuft)) return 0;
+    if (nx * nx + ny * ny > (1 + tuft) * (1 + tuft) && !(x > hx + 19 && x < hx + 26 && y > hy)) return 0;
     const bang = hy - 2 + hb + 11 * clump(x, y);
     const side = x < hx - 12 && y < hy + 13 + hb;
-    const lock = x > hx + 18 && y < hy + 16 + hb - Math.max(0, x - hx - 20) * 3; // a long pointed lock framing the cheek
+    const lock = x > hx + 19 && y < hy + 26 + hb - Math.max(0, x - hx - 21) * 4; // a long pointed lock framing the cheek
     if (y > bang && !side && !lock) return 0;
     if (y > hy - 8 && y < bang - 1 && tri((x - hx + 1 + (y - hy) * 0.3) / 6.5) > 0.86) return C.hairD;
     if (y >= bang - 1 && !side && !lock) return C.hair;
@@ -311,12 +332,11 @@ function head(g, P) {
       const c = g.get(x, y), up = g.get(x, y - 1);
       if ((c === C.skin || c === C.skinM) && (up === C.hair || up === C.hairM || up === C.hairD)) g.set(x, y, C.skinM);
     }
-  // eyes (near one wider), hatched blush, tiny mouth
+  // big odd eyes (near one wider), tiny mouth
   const ey = hy + 2;
-  eye(g, hx + 10, ey, 7, P, true);
-  eye(g, hx - 4, ey, 6, P, false);
-  for (const bx of [hx - 5, hx + 11]) for (let i = 0; i < 3; i++) g.set(bx + i * 2, ey + 15, C.blush), g.set(bx + i * 2 + 1, ey + 14, C.blush);
-  const mx = hx + 6, my = ey + 16;
+  eye(g, hx + 10, ey, 8, P, true);
+  eye(g, hx - 5, ey, 7, P, false);
+  const mx = hx + 6, my = ey + 18;
   if (P.mouth === "smile") g.set(mx - 1, my, C.mouth), g.set(mx, my + 1, C.mouth), g.set(mx + 1, my, C.mouth);
   else if (P.mouth === "open") g.shade(mx - 1, my, mx + 1, my + 2, (x, y) => (y >= my + 2 ? C.tongue : C.mouth));
   else if (P.mouth === "o") g.ellipse(mx, my + 1, 1.5, 2, C.mouth);
@@ -329,6 +349,7 @@ export function draw(p, time, o) {
   const t = Math.min(time, DUR[mode] - 1e-6);
   const P = pose(mode, t), g = GRID;
   g.clear();
+  longHair(g, P);
   const back = arm(g, P, false);
   hand(g, back);
   legs(g, P);
