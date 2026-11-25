@@ -68,6 +68,8 @@ namespace IBlameYou.Systems
             }
         }
 
+        private readonly System.Collections.Generic.List<Collider2D> hazardHits = new System.Collections.Generic.List<Collider2D>();
+
         private bool IsSafeHere()
         {
             var below = Physics2D.Raycast(transform.position, Vector2.down, 1.5f, groundMask);
@@ -76,7 +78,7 @@ namespace IBlameYou.Systems
             // UnsafeGround를 붙이면 순간이동이 발판으로 보고 봉인을 뚫으므로 여기서 따로 본다
             if (below.collider.GetComponentInParent<ArenaZone>() != null) return false;
 
-            foreach (var hit in Physics2D.OverlapCircleAll(transform.position, HazardRadius))
+            foreach (var hit in OverlapQuery.Circle(transform.position, HazardRadius, hazardHits)) // 서 있는 동안 0.2초마다: 새 배열 대신 이 목록에
             {
                 if (hit.GetComponent<SpikeTrap>() != null || hit.GetComponent<FlameJetTrap>() != null) return false;
             }
