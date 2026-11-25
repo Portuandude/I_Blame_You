@@ -31,7 +31,7 @@ namespace IBlameYou.Enemies
             if (body != null) center = body.bounds.center;
             for (int i = 0; i < count; i++)
             {
-                float offset = WallClamped((i - (count - 1) / 2f) * spread);
+                float offset = OverGround(WallClamped((i - (count - 1) / 2f) * spread));
                 var slime = SlimeSpawner.Spawn(transform.position + new Vector3(offset, 0.3f, 0f), EffectLibrary.Config);
                 if (slime == null) continue;
                 EnemySquash.For(slime.gameObject).Spawn(); // 새끼는 길쭉하게 "뿅" 솟았다가 제 모양으로 (그림만)
@@ -61,6 +61,25 @@ namespace IBlameYou.Enemies
             if (hit.collider == null) return offset;
             return dir * Mathf.Max(0f, hit.distance - SlimeHalfWidth);
         }
+
+        // 낭떠러지 끝에서 죽으면 바깥쪽 새끼가 허공에 생겨 바로 떨어지던 것 (버그 점검 2026-11-25):
+        // 그 자리 아래에 바닥이 없으면 어미 쪽으로 반씩 당겨 바닥 위에 내려놓는다. 끝까지 없으면 어미 자리(0).
+        private float OverGround(float offset)
+        {
+            if (Mathf.Abs(offset) < 0.01f) return offset;
+            int ground = LayerMask.NameToLayer("Ground");
+            if (ground < 0) return offset;
+            int mask = 1 << ground;
+            for (int step = 0; step < 3; step++)
+            {
+                var origin = (Vector2)transform.position + new Vector2(offset, 0.3f);
+                if (Physics2D.Raycast(origin, Vector2.down, GroundProbe, mask).collider != null) return offset;
+                offset *= 0.5f;
+            }
+            return 0f;
+        }
+
+        private const float GroundProbe = 2.5f; // 어미 발밑보다 이만큼 아래까지 바닥이 없으면 낭떠러지로 본다
 
         private const float SlimeHalfWidth = 0.45f; // 새끼 몸 반 폭쯤 (벽에서 이만큼 띄운다)
 
