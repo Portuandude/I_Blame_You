@@ -24,6 +24,14 @@ namespace IBlameYou.Systems
             if (frames != null && frames.Length > 0) spriteRenderer.sprite = frames[0];
         }
 
+        // 루프 그림 여러 개를 나란히 둘 때 서로 다른 프레임에서 시작하게 (불꽃 장막 기둥).
+        public void SkipFrames(int count)
+        {
+            if (frames == null || frames.Length == 0 || frameRate <= 0f) return;
+            time += count / frameRate;
+            spriteRenderer.sprite = frames[Mathf.FloorToInt(time * frameRate) % frames.Length];
+        }
+
         private void Update()
         {
             if (frames == null || frames.Length == 0) return;

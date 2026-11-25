@@ -1,0 +1,423 @@
+[
+ {
+  "name": "Flight/Neutral",
+  "id": "arcane/arcane-orb",
+  "fps": 16,
+  "end": 2.4,
+  "scale": 1,
+  "dest": "Assets/Resources/Effects/Px/Flight/Neutral",
+  "clip": [
+   0,
+   0,
+   136,
+   82
+  ],
+  "anchor": "bbox"
+ },
+ {
+  "name": "Flight/Fire",
+  "id": "fire/fireball",
+  "fps": 16,
+  "scale": 1,
+  "dest": "Assets/Resources/Effects/Px/Flight/Fire"
+ },
+ {
+  "name": "Flight/Water",
+  "id": "ice/ice-lance",
+  "opts": {
+   "palette": [
+    "#081830",
+    "#0e2e5a",
+    "#14508c",
+    "#1c76bc",
+    "#36a2e0",
+    "#78ccf4",
+    "#c4ecff",
+    "#ffffff"
+   ]
+  },
+  "fps": 16,
+  "scale": 1,
+  "dest": "Assets/Resources/Effects/Px/Flight/Water",
+  "clip": [
+   70,
+   0,
+   176,
+   64
+  ]
+ },
+ {
+  "name": "Flight/Wind",
+  "id": "projectiles/energy-disc",
+  "opts": {
+   "palette": [
+    "#06201a",
+    "#0c3f30",
+    "#177050",
+    "#2aa070",
+    "#55d08f",
+    "#8cf0b4",
+    "#c8ffe0",
+    "#ffffff"
+   ]
+  },
+  "fps": 16,
+  "scale": 1,
+  "start": 0,
+  "end": 0.5,
+  "dest": "Assets/Resources/Effects/Px/Flight/Wind"
+ },
+ {
+  "name": "Cast/Neutral",
+  "id": "arcane/mana-burst",
+  "fps": 24,
+  "start": 0.08,
+  "end": 0.42,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Cast/Neutral",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Cast/Fire",
+  "id": "arcane/mana-burst",
+  "opts": {
+   "palette": [
+    "#1f0b10",
+    "#4a1118",
+    "#8c1d1c",
+    "#cc3a1a",
+    "#f2701f",
+    "#ffae35",
+    "#ffe27a",
+    "#fff8d6"
+   ]
+  },
+  "fps": 24,
+  "start": 0.08,
+  "end": 0.42,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Cast/Fire",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Cast/Water",
+  "id": "arcane/mana-burst",
+  "opts": {
+   "palette": [
+    "#081830",
+    "#0e2e5a",
+    "#14508c",
+    "#1c76bc",
+    "#36a2e0",
+    "#78ccf4",
+    "#c4ecff",
+    "#ffffff"
+   ]
+  },
+  "fps": 24,
+  "start": 0.08,
+  "end": 0.42,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Cast/Water",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Cast/Wind",
+  "id": "arcane/mana-burst",
+  "opts": {
+   "palette": [
+    "#06201a",
+    "#0c3f30",
+    "#177050",
+    "#2aa070",
+    "#55d08f",
+    "#8cf0b4",
+    "#c8ffe0",
+    "#ffffff"
+   ]
+  },
+  "fps": 24,
+  "start": 0.08,
+  "end": 0.42,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Cast/Wind",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Cast/Earth",
+  "id": "arcane/mana-burst",
+  "opts": {
+   "palette": [
+    "#140e0a",
+    "#2a1e14",
+    "#47321e",
+    "#69492a",
+    "#8e6638",
+    "#b88a52",
+    "#dcb47c",
+    "#fff0d0"
+   ]
+  },
+  "fps": 24,
+  "start": 0.08,
+  "end": 0.42,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Cast/Earth",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Hit/Neutral",
+  "id": "impacts/crit-hit",
+  "opts": {
+   "palette": [
+    "#140a26",
+    "#2b1252",
+    "#481c88",
+    "#6b2cc0",
+    "#9a48ec",
+    "#c684ff",
+    "#ecc8ff",
+    "#ffffff"
+   ]
+  },
+  "fps": 20,
+  "end": 0.5,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Hit/Neutral"
+ },
+ {
+  "name": "Hit/Fire",
+  "id": "impacts/crit-hit",
+  "fps": 20,
+  "end": 0.5,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Hit/Fire"
+ },
+ {
+  "name": "Hit/Water",
+  "id": "water/splash",
+  "fps": 20,
+  "start": 0.12,
+  "end": 0.62,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Hit/Water",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Hit/Wind",
+  "id": "impacts/crit-hit",
+  "opts": {
+   "palette": [
+    "#06201a",
+    "#0c3f30",
+    "#177050",
+    "#2aa070",
+    "#55d08f",
+    "#8cf0b4",
+    "#c8ffe0",
+    "#ffffff"
+   ],
+   "seed": 7
+  },
+  "fps": 20,
+  "end": 0.5,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Hit/Wind"
+ },
+ {
+  "name": "Hit/Earth",
+  "id": "impacts/blunt-hit",
+  "opts": {
+   "palette": [
+    "#140e0a",
+    "#2a1e14",
+    "#47321e",
+    "#69492a",
+    "#8e6638",
+    "#b88a52",
+    "#dcb47c"
+   ]
+  },
+  "fps": 20,
+  "end": 0.55,
+  "scale": 1,
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Hit/Earth"
+ },
+ {
+  "name": "EarthSpike",
+  "id": "ice/ice-spikes",
+  "opts": {
+   "palette": [
+    "#140e0a",
+    "#2a1e14",
+    "#47321e",
+    "#69492a",
+    "#8e6638",
+    "#b88a52",
+    "#dcb47c",
+    "#fff0d0"
+   ]
+  },
+  "fps": 14,
+  "start": 0.1,
+  "end": 1.8,
+  "scale": 2,
+  "pivot": "bottom",
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Spell/EarthSpike",
+  "anchor_x": "bbox",
+  "clip": [
+   0,
+   0,
+   144,
+   112
+  ]
+ },
+ {
+  "name": "StoneLance",
+  "id": "nature/earth-spike",
+  "fps": 14,
+  "start": 0.3,
+  "end": 2.4,
+  "scale": 2,
+  "pivot": "bottom",
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Spell/StoneLance",
+  "clip": [
+   96,
+   0,
+   176,
+   150
+  ]
+ },
+ {
+  "name": "Meteor",
+  "id": "fire/meteor",
+  "fps": 14,
+  "start": 0.35,
+  "end": 2.2,
+  "scale": 1,
+  "pivot": "bottom",
+  "blank_last": true,
+  "dest": "Assets/Resources/Effects/Px/Spell/Meteor"
+ },
+ {
+  "name": "IceShackle",
+  "id": "ice/ice-crystal",
+  "fps": 16,
+  "scale": 1,
+  "end": 1.5,
+  "dest": "Assets/Resources/Effects/Px/Spell/IceShackle",
+  "clip": [
+   0,
+   0,
+   96,
+   78
+  ],
+  "anchor": "bbox"
+ },
+ {
+  "name": "GaleBlades",
+  "id": "projectiles/energy-disc",
+  "opts": {
+   "palette": [
+    "#0a1a20",
+    "#123848",
+    "#1e6070",
+    "#34909a",
+    "#62c4c4",
+    "#a4ecec",
+    "#e0ffff",
+    "#ffffff"
+   ],
+   "seed": 5
+  },
+  "fps": 16,
+  "scale": 1,
+  "start": 0,
+  "end": 0.5,
+  "dest": "Assets/Resources/Effects/Px/Spell/GaleBlades"
+ },
+ {
+  "name": "FlameCurtain",
+  "id": "fire/spirit-flame",
+  "opts": {
+   "palette": [
+    "#1f0b10",
+    "#4a1118",
+    "#8c1d1c",
+    "#cc3a1a",
+    "#f2701f",
+    "#ffae35",
+    "#ffe27a",
+    "#fff8d6"
+   ]
+  },
+  "fps": 12,
+  "end": 3,
+  "scale": 3,
+  "pivot": "bottom",
+  "dest": "Assets/Resources/Effects/Px/Spell/FlameCurtain"
+ },
+ {
+  "name": "FlameRain",
+  "id": "fire/fireball",
+  "opts": {
+   "angle": 90
+  },
+  "fps": 16,
+  "scale": 1,
+  "dest": "Assets/Resources/Effects/Px/Spell/FlameRain"
+ },
+ {
+  "name": "WaterMist",
+  "id": "nature/poison-cloud",
+  "opts": {
+   "palette": [
+    "#081830",
+    "#0e2e5a",
+    "#14508c",
+    "#1c76bc",
+    "#36a2e0",
+    "#78ccf4",
+    "#c4ecff",
+    "#ffffff"
+   ]
+  },
+  "fps": 12,
+  "scale": 1,
+  "pivot": "center",
+  "dest": "Assets/Resources/Effects/Px/Spell/WaterMist",
+  "anchor": "bbox"
+ },
+ {
+  "name": "Tailwind",
+  "id": "nature/leaf-storm",
+  "opts": {
+   "palette": [
+    "#06201a",
+    "#0c3f30",
+    "#177050",
+    "#2aa070",
+    "#55d08f",
+    "#8cf0b4",
+    "#c8ffe0",
+    "#ffffff"
+   ]
+  },
+  "fps": 16,
+  "scale": 2,
+  "pivot": "bottom",
+  "dest": "Assets/Resources/Effects/Px/Spell/Tailwind"
+ }
+]

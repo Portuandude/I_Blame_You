@@ -36,6 +36,9 @@ namespace IBlameYou.Player
         public string Id;
         public int DustCost;
         public string Description;
+        // 전용 그림 (pixelfx, Tools/PixelFx/recipes.json): Resources/Effects/Px/Spell/<Art>/ 프레임. null이면 속성 공용 그림
+        public string Art;
+        public float ArtLead;             // 땅 마법: 피해 순간보다 몇 초 먼저 그림을 틀지 (운석이 떨어지는 동안 등)
     }
 
     // 플레이어 B의 공격 스킬 목록 (기획서 2.5). 고르면 마법진을 따라 그려 발동한다 (MagicCircleRules, 2026-11-16 영창 타이핑 대체).
@@ -62,7 +65,7 @@ namespace IBlameYou.Player
                 HomingTurnRate = 600f },
             new SpellDefinition { Element = Element.Earth, Name = "바위 가시", ManaCost = 25f, Chant = "대지여, 솟아올라라!",
                 Shape = SpellShape.GroundSpike, Radius = 1.2f, Range = 12f, DamageMultiplier = 0.7f,
-                Windup = 0.5f, CastDelay = 0.8f, Debuff = StatusDebuff.Stun },
+                Windup = 0.5f, CastDelay = 0.8f, Debuff = StatusDebuff.Stun, Art = "EarthSpike", ArtLead = 0.07f },
             null, // 무속성은 영창 스킬이 아니라 B의 평타(BasicBolt)
         };
 
@@ -109,33 +112,33 @@ namespace IBlameYou.Player
             new SpellDefinition { Id = "IceShackle", Element = Element.Water, Name = "얼음 족쇄", ManaCost = 20f, Chant = "얼음이여, 묶어라!",
                 Shape = SpellShape.Projectile, Speed = 9f, Radius = 0.35f, Range = 13f, DamageMultiplier = 0.4f,
                 HomingTurnRate = 220f, Debuff = StatusDebuff.Wet, DebuffAlways = true, DustCost = 60,
-                Description = "맞은 적을 반드시 젖게 해 3초 동안 40% 느리게 (정예·보스는 20%, 피해는 약함)" },
+                Description = "맞은 적을 반드시 젖게 해 3초 동안 40% 느리게 (정예·보스는 20%, 피해는 약함)", Art = "IceShackle" },
             new SpellDefinition { Id = "StoneLance", Element = Element.Earth, Name = "바위 창", ManaCost = 30f, Chant = "대지여, 창이 되어 꿰뚫어라!",
                 Shape = SpellShape.GroundSpike, Radius = 0.8f, Range = 12f, DamageMultiplier = 1.75f,
                 Windup = 0.6f, CastDelay = 0.6f, Debuff = StatusDebuff.Stun, DustCost = 60,
-                Description = "좁은 자리에 큰 창 하나: 바위 가시의 2.5배 피해 (선딜이 조금 더 김)" },
+                Description = "좁은 자리에 큰 창 하나: 바위 가시의 2.5배 피해 (선딜이 조금 더 김)", Art = "StoneLance", ArtLead = 0.12f },
             new SpellDefinition { Id = "FlameCurtain", Element = Element.Fire, Name = "불꽃 장막", ManaCost = 25f, Chant = "불꽃이여, 벽이 되어라!",
                 Shape = SpellShape.FireWall, Radius = 2.5f, Range = 6f, DamageMultiplier = 0.3f, Duration = 2f,
                 Debuff = StatusDebuff.Burn, DustCost = 60,
-                Description = "앞 5칸에 2초 동안 불벽: 안의 적 모두 0.4초마다 데고, 처음 닿으면 반드시 화상" },
+                Description = "앞 5칸에 2초 동안 불벽: 안의 적 모두 0.4초마다 데고, 처음 닿으면 반드시 화상", Art = "FlameCurtain" },
             new SpellDefinition { Id = "Tailwind", Element = Element.Wind, Name = "순풍", ManaCost = 15f, Chant = "바람이여, 등을 밀어라!",
                 Shape = SpellShape.Tailwind, Duration = 6f, DustCost = 60,
-                Description = "6초 동안 모든 마법진이 한 단계 쉬워진다 (대마법 → 숙련, 숙련 → 견습)" },
+                Description = "6초 동안 모든 마법진이 한 단계 쉬워진다 (대마법 → 숙련, 숙련 → 견습)", Art = "Tailwind" },
             new SpellDefinition { Id = "FlameRain", Element = Element.Fire, Name = "불꽃 비", ManaCost = 35f, Chant = "불꽃이여, 비가 되어 쏟아져라!",
                 Shape = SpellShape.FireWall, AtCursor = true, Radius = 4f, Height = 4f, Range = 14f, DamageMultiplier = 0.3f, Duration = 1.5f,
                 Debuff = StatusDebuff.Burn, DustCost = 90,
-                Description = "커서 둘레 넓은 자리(8칸)에 1.5초 불똥: 안의 적 모두 0.4초마다 데고 처음 맞으면 화상" },
+                Description = "커서 둘레 넓은 자리(8칸)에 1.5초 불똥: 안의 적 모두 0.4초마다 데고 처음 맞으면 화상", Art = "FlameRain" },
             new SpellDefinition { Id = "WaterMist", Element = Element.Water, Name = "물안개", ManaCost = 30f, Chant = "물이여, 안개로 감싸라!",
                 Shape = SpellShape.Mist, AtCursor = true, Radius = 3f, Range = 14f, Duration = 5f, DustCost = 90,
-                Description = "커서 자리에 5초 안개: 안의 적은 주는 피해 -30%, 받는 피해 +15%" },
+                Description = "커서 자리에 5초 안개: 안의 적은 주는 피해 -30%, 받는 피해 +15%", Art = "WaterMist" },
             new SpellDefinition { Id = "GaleBlades", Element = Element.Wind, Name = "칼바람", ManaCost = 25f, Chant = "베어라!",
                 Shape = SpellShape.Projectile, Volley = 3, Speed = 24f, Radius = 0.35f, Range = 16f, DamageMultiplier = 0.45f,
                 HomingTurnRate = 600f, DustCost = 90,
-                Description = "바람 칼날 3발을 빠르게 연달아" },
+                Description = "바람 칼날 3발을 빠르게 연달아", Art = "GaleBlades" },
             new SpellDefinition { Id = "Meteor", Element = Element.Earth, Name = "운석", ManaCost = 40f, Chant = "하늘의 바위여, 별이 되어 떨어져 모든 것을 부숴라!",
                 Shape = SpellShape.GroundSpike, AtCursor = true, Radius = 1f, Range = 16f, DamageMultiplier = 2.45f,
                 Windup = 0.8f, CastDelay = 0.7f, Debuff = StatusDebuff.Stun, DustCost = 90,
-                Description = "선딜 뒤 커서 자리에 운석: 바위 가시의 3.5배, 좁은 범위" },
+                Description = "선딜 뒤 커서 자리에 운석: 바위 가시의 3.5배, 좁은 범위", Art = "Meteor", ArtLead = 0.32f },
         };
 
         // 마법진 단계 (0 견습 · 1 숙련 · 2 대마법): 같은 속성의 기본 마법 + 아카데미 마법 중 코스트 순위. 배웠는지와 상관없이 고정.

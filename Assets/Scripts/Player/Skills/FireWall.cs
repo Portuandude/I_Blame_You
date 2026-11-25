@@ -25,7 +25,7 @@ namespace IBlameYou.Player
 
         // rain: 불꽃 비 — 높이 zoneHeight의 넓은 구역에 위에서 불똥이 떨어지는 그림 (판정은 같은 상자).
         public void Begin(CombatStats attacker, float width, float damagePerTick, float lifetime, System.Action<HealthSystem, bool> hit,
-            bool rain = false, float zoneHeight = WallHeight)
+            bool rain = false, float zoneHeight = WallHeight, Sprite[] art = null)
         {
             height = zoneHeight;
             owner = attacker;
@@ -34,8 +34,9 @@ namespace IBlameYou.Player
             duration = lifetime;
             onHit = hit;
 
-            // 그림: 불 비행 프레임을 가로로 늘어세운 불꽃 기둥들 (기존 속성 이펙트 다시 쓰기)
-            var frames = EffectLibrary.FlightFrames(Element.Fire);
+            // 그림: 전용 그림(pixelfx — 장막은 땅에 선 불꽃 기둥, 비는 아래로 떨어지는 불똥)이 있으면 그것,
+            // 없으면 불 비행 프레임을 가로로 늘어세운다 (예전 그림)
+            var frames = art ?? EffectLibrary.FlightFrames(Element.Fire);
             int count = Mathf.Max(3, Mathf.RoundToInt(halfWidth * 2f));
             for (int i = 0; i < count; i++)
             {
@@ -45,8 +46,16 @@ namespace IBlameYou.Player
                 {
                     // 불똥: 구역 위쪽 여기저기에서 아래로 (FireRainDrop이 떨어뜨리고 다시 위로)
                     flame.transform.localPosition = new Vector3(x, Random.Range(0.5f, height), 0f);
-                    flame.transform.localRotation = Quaternion.Euler(0f, 0f, -90f);
+                    if (art == null) flame.transform.localRotation = Quaternion.Euler(0f, 0f, -90f); // 전용 그림은 이미 아래를 향함
                     flame.gameObject.AddComponent<FireRainDrop>().Begin(height);
+                    continue;
+                }
+                if (art != null)
+                {
+                    // 아래 가운데 피벗이라 땅(0)에 세운다. 높낮이·속도를 조금씩 달리해 기둥이 똑같아 보이지 않게
+                    flame.transform.localPosition = new Vector3(x, 0f, 0f);
+                    flame.transform.localScale = new Vector3(1f, 1f + (i % 3) * 0.08f, 1f);
+                    flame.GetComponent<SpriteFrameAnimator>()?.SkipFrames(i * 5);
                     continue;
                 }
                 flame.transform.localPosition = new Vector3(x, 0.7f + (i % 2) * 0.25f, 0f);

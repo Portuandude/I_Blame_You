@@ -20,9 +20,12 @@ namespace IBlameYou.Player
         private float age;
         private bool struck;
         private GameObject telegraph;
+        private Sprite[] art;       // 전용 그림 (pixelfx). 피해와 따로 끝까지 재생하고 사라진다
+        private float artLead;
+        private bool artShown;
 
         public void Begin(CombatStats attacker, float width, float damageMultiplier, float strikeDelay, HealthSystem followTarget,
-            LayerMask ground, Action<HealthSystem> hit)
+            LayerMask ground, Action<HealthSystem> hit, Sprite[] spellArt = null, float spellArtLead = 0f)
         {
             owner = attacker;
             halfWidth = width;
@@ -31,6 +34,8 @@ namespace IBlameYou.Player
             target = followTarget;
             groundMask = ground;
             onHit = hit;
+            art = spellArt;
+            artLead = spellArtLead;
 
             // 예고: 솟아오를 자리에 납작한 갈색 표시.
             var color = ElementInfo.Color(Element.Earth);
@@ -45,17 +50,22 @@ namespace IBlameYou.Player
         {
             age += Time.deltaTime;
 
-            if (!struck && target != null && !target.IsDead) Follow();
+            if (!struck && !artShown && target != null && !target.IsDead) Follow(); // 그림이 시작되면 자리를 고정 (그림과 판정이 같은 자리)
+
+            if (art != null && !artShown && age >= delay - artLead) ShowArt();
 
             if (!struck && age >= delay)
             {
                 struck = true;
                 GameAudio.PlaySfx("Hit_Earth");
                 if (telegraph != null) Destroy(telegraph);
-                var frames = EffectLibrary.SpellFrames(Element.Earth);
-                var visual = EffectLibrary.CreateVisual(transform, "Visual", frames, 14f, false,
-                    ElementInfo.Color(Element.Earth), halfWidth * 1.5f);
-                if (frames == null) visual.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+                if (art == null)
+                {
+                    var frames = EffectLibrary.SpellFrames(Element.Earth);
+                    var visual = EffectLibrary.CreateVisual(transform, "Visual", frames, 14f, false,
+                        ElementInfo.Color(Element.Earth), halfWidth * 1.5f);
+                    if (frames == null) visual.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+                }
                 var center = (Vector2)transform.position + new Vector2(0f, 0.8f);
                 var hit = new System.Collections.Generic.HashSet<HealthSystem>();
                 foreach (var col in Physics2D.OverlapBoxAll(center, new Vector2(halfWidth * 2f, 1.6f), 0f))
@@ -69,6 +79,16 @@ namespace IBlameYou.Player
             }
 
             if (age >= delay + Lifetime) Destroy(gameObject);
+        }
+
+        // 그림은 피해 판정(Lifetime)보다 길어서 따로 두고 끝까지 재생한 뒤 사라진다 (바닥 = 아래 가운데 피벗).
+        private void ShowArt()
+        {
+            artShown = true;
+            var root = new GameObject("SpellArt_Earth");
+            root.transform.position = transform.position;
+            EffectLibrary.CreateVisual(root.transform, "Visual", art, 14f, false, ElementInfo.Color(Element.Earth), 1f, 5, destroyAtEnd: true);
+            Destroy(root, art.Length / 14f + 0.1f);
         }
 
         private void Follow()
