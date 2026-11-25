@@ -31,7 +31,7 @@ namespace IBlameYou.Systems
             }
             VfxPlayer.Dust(feet, 0.35f);
 
-            if (!SlimeSplitFx.OnScreen(feet) || Time.time < nextSpikeSfx) return;
+            if (!SlimeSplitFx.OnScreen(feet) || Time.time < nextSpikeSfx && nextSpikeSfx - Time.time <= SfxGap) return; // 도메인 리로드 없이 다시 플레이해 시계가 0으로 돌아가도 소리가 막히지 않게
             nextSpikeSfx = Time.time + SfxGap;
             GameAudio.PlaySfx("SpikeStab", 0.55f);
         }
@@ -46,7 +46,7 @@ namespace IBlameYou.Systems
                     i % 2 == 0 ? EmberOrange : EmberYellow, Random.Range(0.05f, 0.09f));
             }
 
-            if (!SlimeSplitFx.OnScreen(body) || Time.time < nextSizzleSfx) return;
+            if (!SlimeSplitFx.OnScreen(body) || Time.time < nextSizzleSfx && nextSizzleSfx - Time.time <= SfxGap) return;
             nextSizzleSfx = Time.time + SfxGap;
             GameAudio.PlaySfx("FlameSizzle", 0.5f);
         }

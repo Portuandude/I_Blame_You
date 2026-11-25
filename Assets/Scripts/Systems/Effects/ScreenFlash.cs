@@ -114,9 +114,12 @@ namespace IBlameYou.Systems
             return edgeSprite;
         }
 
+        private Camera cam;
+        private Camera Cam => cam != null ? cam : (cam = GetComponent<Camera>()); // 번쩍임이 보이는 동안 매 프레임 찾지 않게
+
         private void UpdateEdge()
         {
-            var cam = GetComponent<Camera>();
+            var cam = Cam;
             float t = (Time.unscaledTime - edgeStartedAt) / edgeDuration;
             if (t >= 1f || cam == null)
             {
@@ -187,7 +190,7 @@ namespace IBlameYou.Systems
 
         private void UpdateOverlay()
         {
-            var cam = GetComponent<Camera>();
+            var cam = Cam;
             float a = CurrentAlpha();
             if (a <= 0f || cam == null)
             {
