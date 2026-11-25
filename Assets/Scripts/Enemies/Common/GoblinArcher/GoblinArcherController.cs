@@ -145,6 +145,8 @@ namespace IBlameYou.Enemies
                 drawing = false;
                 Aiming.Remove(this);
                 RemoveAimLine();
+                // 당기는 사이 플레이어가 머리 위·뒤로 넘어갔으면 쏘기 직전에 돌아선다 (몸 뒤에서 화살이 나가던 것, 버그 점검 2026-11-25)
+                if (target != null) SetFacing(target.position.x >= transform.position.x ? 1f : -1f);
                 Release(target);
                 EnemySquash.For(gameObject).Release(); // 쏘는 순간 늘어남
                 recovering = true;
