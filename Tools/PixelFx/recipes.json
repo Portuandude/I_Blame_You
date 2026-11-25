@@ -719,7 +719,7 @@
  },
  {
   "name": "Player/Idle",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "idle"
   },
@@ -748,7 +748,7 @@
  },
  {
   "name": "Player/Walk",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "walk"
   },
@@ -778,7 +778,7 @@
  },
  {
   "name": "Player/Run",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "run"
   },
@@ -808,7 +808,7 @@
  },
  {
   "name": "Player/Dash",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "dash"
   },
@@ -836,7 +836,7 @@
  },
  {
   "name": "Player/Attack",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "attack"
   },
@@ -866,7 +866,7 @@
  },
  {
   "name": "Player/Hurt",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "hurt"
   },
@@ -890,7 +890,7 @@
  },
  {
   "name": "Player/Rise",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "rise"
   },
@@ -914,7 +914,7 @@
  },
  {
   "name": "Player/Fall",
-  "id": "critters/mage-sd",
+  "id": "critters/mage-ba",
   "opts": {
    "mode": "fall"
   },
