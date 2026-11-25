@@ -24,6 +24,7 @@ namespace IBlameYou.UI
         private GUIStyle noticeStyle;
         private string noticePlainSource; // 태그를 뺀 글자를 다시 만들지 않게 원문을 기억
         private string noticePlain;
+        private float noticePlainWidth;
 
         private void DrawNotice()
         {
@@ -43,6 +44,7 @@ namespace IBlameYou.UI
             {
                 noticePlainSource = notice;
                 noticePlain = Regex.Replace(notice, "<[^>]*>", ""); // 색 태그가 있어도 테두리는 한 색으로
+                noticePlainWidth = noticeStyle.CalcSize(new GUIContent(noticePlain)).x; // 글이 바뀔 때만 잰다 (OnGUI마다 재던 것)
             }
 
             float age = Time.time - noticeTime;
@@ -52,7 +54,7 @@ namespace IBlameYou.UI
             var previousMatrix = GUI.matrix;
             var previousColor = GUI.color;
             DrawOldNotice();
-            DrawNoticeRibbon(rect, noticeStyle.CalcSize(new GUIContent(noticePlain)).x, age, alpha);
+            DrawNoticeRibbon(rect, noticePlainWidth, age, alpha);
             GUIUtility.ScaleAroundPivot(Vector2.one * NoticePopScale(age), rect.center);
 
             GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -120,8 +122,9 @@ namespace IBlameYou.UI
             GUI.DrawTexture(new Rect(band.x, band.yMax - 2f, band.width, 2f), Texture2D.whiteTexture);
 
             var previousMatrix = GUI.matrix;
-            foreach (float x in new[] { band.x, band.xMax })
+            for (int side = 0; side < 2; side++) // 리본 양 끝 마름모 (배열을 매번 만들지 않게)
             {
+                float x = side == 0 ? band.x : band.xMax;
                 var pivot = new Vector2(x, band.center.y);
                 GUIUtility.RotateAroundPivot(45f, pivot);
                 GUI.DrawTexture(new Rect(pivot.x - 4f, pivot.y - 4f, 8f, 8f), Texture2D.whiteTexture);
