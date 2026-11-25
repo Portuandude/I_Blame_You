@@ -103,6 +103,11 @@ namespace IBlameYou.Systems
             // 연출 (그림·소리만): 밟은 자리 쇳조각·먼지 + "찡" (TrapHitFx)
             float top = transform.position.y + 0.5f; // 가시 끝 높이
             TrapHitFx.SpikeStab(new Vector3(player.transform.position.x, top, 0f));
+            if (health.IsDead) // 이 가시로 쓰러졌으면 쓰러진 몸을 위로 튕기지 않는다 (버그 점검 2026-11-25)
+            {
+                nextHitTime = Time.time + Cooldown;
+                return;
+            }
             var rb = player.GetComponent<Rigidbody2D>();
             // 이미 더 빠르게 오르는 중(버섯·바람)이면 깎지 않고, 낮은 점프 끊기·코요테 점프가 튕김에 끼어들지 않게 (버그 점검 2026-11-25)
             if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, BounceSpeed));
