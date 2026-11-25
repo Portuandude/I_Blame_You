@@ -213,6 +213,7 @@ namespace IBlameYou.Core
         // 유물을 고르면 도감에 남긴다. 처음 고른 유물이면 true.
         public static bool RecordRelic(int relicId)
         {
+            if (relicId < 0 || relicId >= RelicCodex.MaxRelics) return false; // 범위 밖 id는 비트마스크를 오염시킨다
             if (GameSession.FeatureTest) return false; // 기능 테스트 모드는 기록하지 않는다
             bool dev = GameSession.DevMode;
             long mask = RelicCodexMask(dev);

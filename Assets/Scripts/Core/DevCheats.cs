@@ -32,7 +32,7 @@ namespace IBlameYou.Core
                 if (!GodMode) health.Invulnerable = false;
             }
 
-            if (Input.GetKeyDown(KeyCode.F2)) mana.Infinite = !mana.Infinite;
+            if (Input.GetKeyDown(KeyCode.F2) && mana != null) mana.Infinite = !mana.Infinite;
             if (Input.GetKeyDown(KeyCode.F3)) KillNearbyEnemies();
             if (Input.GetKeyDown(KeyCode.F4)) health.Heal(health.Max);
         }
@@ -45,6 +45,7 @@ namespace IBlameYou.Core
 
         private void KillNearbyEnemies()
         {
+            if (player == null) return;
             foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None))
             {
                 if (Vector2.Distance(enemy.transform.position, player.position) > KillRadius) continue;
