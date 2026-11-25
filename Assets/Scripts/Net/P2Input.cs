@@ -15,6 +15,8 @@ namespace IBlameYou.Net
             get
             {
                 if (!Remote) return Input.mousePosition;
+                // 친구가 들어온 직후 첫 입력이 오기 전(또는 다시 들어온 직후)에는 지난 값·(0, 0) 대신 화면 가운데 (조준이 구석으로 튀지 않게, 버그 점검 2026-11-25)
+                if (!NetSession.Tracker.HasState) return new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
                 var s = NetSession.Tracker.Latest;
                 return new Vector3(s.MouseX * Screen.width, s.MouseY * Screen.height, 0f);
             }

@@ -146,6 +146,7 @@ namespace IBlameYou.Net
             if (!NetSession.RemoteP2Active || Event.current.type != EventType.Repaint) return;
             GUI.depth = -1000;
             DrawPeerStatus();
+            if (!NetSession.Tracker.HasState) return; // 첫 입력 전: 지난 친구 값·(0, 0) 구석에 십자를 그리지 않는다
             var s = NetSession.Tracker.Latest;
             if (!s.MouseInside) return;
             float x = s.MouseX * Screen.width;
@@ -163,14 +164,27 @@ namespace IBlameYou.Net
         {
             if (statusStyle == null)
                 statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerRight, richText = true };
-            float silent = NetSession.PeerSilentSeconds;
-            string line = silent > 2f
-                ? $"<color=#ffa659>{NetSession.PeerName} 응답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김)"
-                : $"<color=#ffa659>P2</color> {NetSession.PeerName} · {NetClientView.LatencyText(NetSession.RttMs)}{NetSession.TrafficText()}";
+            // 0.25초마다만 다시 만든다 (친구 화면 상태줄과 같음 — Repaint마다 문자열 여러 개를 만들던 것)
+            if (statusLine == null || Time.unscaledTime >= statusLineAt)
+            {
+                statusLineAt = Time.unscaledTime + 0.25f;
+                statusLine = BuildPeerStatus();
+            }
             var previous = GUI.color;
             GUI.color = new Color(1f, 1f, 1f, 0.7f);
-            GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), line, statusStyle);
+            GUI.Label(new Rect(0f, Screen.height - 22f, Screen.width - 8f, 20f), statusLine, statusStyle);
             GUI.color = previous;
+        }
+
+        private string statusLine;
+        private float statusLineAt;
+
+        private static string BuildPeerStatus()
+        {
+            float silent = NetSession.PeerSilentSeconds;
+            return silent > 2f
+                ? $"<color=#ffa659>{NetSession.PeerName} 응답 없음 {silent:0}초</color> ({PingTracker.Timeout:0}초면 끊김)"
+                : $"<color=#ffa659>P2</color> {NetSession.PeerName} · {NetClientView.LatencyText(NetSession.RttMs)}{NetSession.TrafficText()}";
         }
 
         private static void DrawCross(float x, float y)
