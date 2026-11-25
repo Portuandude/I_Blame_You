@@ -121,7 +121,7 @@ namespace IBlameYou.Core
                 GUILayout.Space(3f);
             }
             if (bought >= 0) Buy(bought);
-            if (!string.IsNullOrEmpty(feedback)) GUILayout.Label(feedback, small);
+            GUILayout.Label(feedback ?? "", small); // 늘 그린다: 사고 마신 그 이벤트에 칸 수가 바뀌면 IMGUI가 [다음]·[저장] 클릭을 잃는다
 
             GUILayout.FlexibleSpace();
             bool next = MenuButton(SlotNext, $"다음 스테이지 {data.stage}로", 50f, pressed);
@@ -175,6 +175,7 @@ namespace IBlameYou.Core
                 GameAudio.PlaySfx("UiClick", 0.4f, 0.02f);
                 return;
             }
+            if (keySelection > SlotShop(index)) keySelection--; // 산 칸이 빠지며 아래 칸이 당겨진다: Enter가 [다음] 대신 [저장하고 시작 화면]을 누르지 않게
             data.gold -= cost;
             buyReadyAt = Time.unscaledTime + BuyGap;
             data.goldSpent += cost;
