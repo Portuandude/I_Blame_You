@@ -64,6 +64,7 @@ namespace IBlameYou.Systems
             if (settings.Interval <= 0f) return;
 
             timer -= Time.deltaTime;
+            timer = Mathf.Max(timer, -settings.Interval * 3f); // 히트스톱·창 닫은 직후 긴 프레임에 입자를 수십 개 몰아 만들지 않게 (최대 4개)
             while (timer <= 0f)
             {
                 timer += settings.Interval;

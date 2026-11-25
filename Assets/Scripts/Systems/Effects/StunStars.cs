@@ -35,7 +35,7 @@ namespace IBlameYou.Systems
             hitStun = GetComponent<HitStun>();
             health = GetComponent<HealthSystem>();
             body = GetComponent<Collider2D>();
-            if (!framesLoaded)
+            if (!framesLoaded || frames == null || frames.Length == 0 || frames[0] == null) // 다시 플레이로 파괴된 그림이면 다시 읽는다
             {
                 framesLoaded = true;
                 frames = EffectLibrary.LoadRuntimeFrames("Effects/StunStars");
