@@ -32,6 +32,7 @@ namespace IBlameYou.EditorTools
                 if (!File.Exists(scene))
                 {
                     Debug.LogError($"[WindowsBuild] 씬이 없습니다: {scene}");
+                    if (Application.isBatchMode) EditorApplication.Exit(1); // 명령줄 빌드가 exe 없이 성공(0)으로 끝나지 않게
                     return false;
                 }
             }

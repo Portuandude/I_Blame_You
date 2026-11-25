@@ -79,24 +79,25 @@ namespace IBlameYou.EditorTools
             }
 
             // 고블린류는 Tools/ArtGen/generate_sprites.py로 만든 임시 아트. 프레임이 없으면 비워 두고 스포너가 단색 사각형으로 대체한다.
-            (config.goblinAnimatorController, config.goblinDefaultSprite) =
-                GenerateGoblinAnimations("Goblin", "goblin", GoblinController.AttackFrameRate);
-            (config.goblinArcherAnimatorController, config.goblinArcherDefaultSprite) =
-                GenerateGoblinAnimations("GoblinArcher", "goblin_archer", GoblinArcherController.AttackFrameRate);
-            (config.goblinSoldierAnimatorController, config.goblinSoldierDefaultSprite) =
-                GenerateGoblinAnimations("GoblinSoldier", "goblin_soldier", GoblinController.AttackFrameRate);
-            (config.goblinWarriorAnimatorController, config.goblinWarriorDefaultSprite) =
-                GenerateGoblinAnimations("GoblinWarrior", "goblin_warrior", GoblinController.AttackFrameRate);
+            // 프레임 폴더가 빠진 컴퓨터에서 다시 돌려도 이미 있던 값을 지우지 않는다 (플레이어·슬라임과 같게, 버그 점검 2026-11-25)
+            var goblin = GenerateGoblinAnimations("Goblin", "goblin", GoblinController.AttackFrameRate);
+            if (goblin.Item1 != null) (config.goblinAnimatorController, config.goblinDefaultSprite) = goblin;
+            var goblinArcher = GenerateGoblinAnimations("GoblinArcher", "goblin_archer", GoblinArcherController.AttackFrameRate);
+            if (goblinArcher.Item1 != null) (config.goblinArcherAnimatorController, config.goblinArcherDefaultSprite) = goblinArcher;
+            var goblinSoldier = GenerateGoblinAnimations("GoblinSoldier", "goblin_soldier", GoblinController.AttackFrameRate);
+            if (goblinSoldier.Item1 != null) (config.goblinSoldierAnimatorController, config.goblinSoldierDefaultSprite) = goblinSoldier;
+            var goblinWarrior = GenerateGoblinAnimations("GoblinWarrior", "goblin_warrior", GoblinController.AttackFrameRate);
+            if (goblinWarrior.Item1 != null) (config.goblinWarriorAnimatorController, config.goblinWarriorDefaultSprite) = goblinWarrior;
 
-            config.fireballFrames = LoadEffectFrames("Fireball", "fx_fireball_");
-            config.waterLanceFrames = LoadEffectFrames("WaterLance", "fx_water_");
-            config.windGustFrames = LoadEffectFrames("WindGust", "fx_wind_");
-            config.earthSpikeFrames = LoadEffectFrames("EarthSpike", "fx_earth_", SpriteAlignment.BottomCenter);
-            config.arcaneOrbFrames = LoadEffectFrames("ArcaneOrb", "fx_arcane_");
-            config.shieldFrames = LoadEffectFrames("Shield", "fx_shield_");
-            config.teleportFrames = LoadEffectFrames("Teleport", "fx_teleport_");
-            config.arrowFrames = LoadEffectFrames("Arrow", "fx_arrow_");
-            config.slashFrames = LoadEffectFrames("Slash", "fx_slash_");
+            config.fireballFrames = KeepFrames(config.fireballFrames, LoadEffectFrames("Fireball", "fx_fireball_"));
+            config.waterLanceFrames = KeepFrames(config.waterLanceFrames, LoadEffectFrames("WaterLance", "fx_water_"));
+            config.windGustFrames = KeepFrames(config.windGustFrames, LoadEffectFrames("WindGust", "fx_wind_"));
+            config.earthSpikeFrames = KeepFrames(config.earthSpikeFrames, LoadEffectFrames("EarthSpike", "fx_earth_", SpriteAlignment.BottomCenter));
+            config.arcaneOrbFrames = KeepFrames(config.arcaneOrbFrames, LoadEffectFrames("ArcaneOrb", "fx_arcane_"));
+            config.shieldFrames = KeepFrames(config.shieldFrames, LoadEffectFrames("Shield", "fx_shield_"));
+            config.teleportFrames = KeepFrames(config.teleportFrames, LoadEffectFrames("Teleport", "fx_teleport_"));
+            config.arrowFrames = KeepFrames(config.arrowFrames, LoadEffectFrames("Arrow", "fx_arrow_"));
+            config.slashFrames = KeepFrames(config.slashFrames, LoadEffectFrames("Slash", "fx_slash_"));
             EditorUtility.SetDirty(config);
 
             AssetDatabase.SaveAssets();
@@ -279,6 +280,8 @@ namespace IBlameYou.EditorTools
             var controller = BuildEnemyAnimatorController($"{outputFolder}/{folder}Animator.controller", idleClip, runClip, dieClip, attackClip);
             return (controller, idleFrames[0]);
         }
+
+        private static Sprite[] KeepFrames(Sprite[] existing, Sprite[] loaded) => loaded != null && loaded.Length > 0 ? loaded : existing;
 
         private static Sprite[] LoadEffectFrames(string folder, string prefix, SpriteAlignment alignment = SpriteAlignment.Center)
         {
