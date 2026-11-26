@@ -63,6 +63,13 @@ namespace IBlameYou.Systems
         private bool reapplyCameraBounds; // 떠난 방의 잠긴 전투 구역이 프레임 끝에 사라지며 옛 카메라 영역을 되돌려 놓는 경우 대비
         private readonly HashSet<int> visitedRooms = new HashSet<int>();
 
+        // 방 전환 페이드 (2026-11-24): 문을 지나면 화면이 까매질 동안 플레이어를 문 앞에 세워 두었다가, 다 까매진 뒤 옮긴다
+        private DoorDir pendingDoor = DoorDir.None;
+        private float pendingMoveAt;
+        private Vector2 pendingHold;
+        private RigidbodyConstraints2D pendingConstraints;
+        public bool IsChangingRoom => pendingDoor != DoorDir.None;
+
         public RoomLayoutData Rooms => rooms;
         public int CurrentRoom => currentRoom;
         public bool IsRoomMode => rooms != null;
@@ -589,6 +596,13 @@ namespace IBlameYou.Systems
         // 좌우 문: 방 양 끝을 넘음 · 위 문: 천장 구멍 위로 올라감 · 아래 문: 바닥 구멍 아래로 떨어짐 (낭떠러지 복귀보다 먼저).
         private void CheckDoors()
         {
+            if (pendingDoor != DoorDir.None)
+            {
+                if (Time.time >= pendingMoveAt) FinishRoomMove();
+                else HoldAtDoor();
+                return;
+            }
+
             if (Time.time < doorReadyTime) return;
             var room = rooms.Rooms[currentRoom];
             var local = (Vector2)player.position - Origin(currentRoom);
@@ -601,15 +615,67 @@ namespace IBlameYou.Systems
             else if (local.y < -0.5f && inHole && (room.Doors & DoorDir.Down) != 0) passed = DoorDir.Down;
             if (passed == DoorDir.None) return;
 
-            var next = rooms.Neighbor(room, passed);
-            if (next == null) return;
+            if (rooms.Neighbor(room, passed) == null) return;
+            BeginRoomMove(passed);
+        }
+
+        // 문을 지난 순간: 화면을 까맣게 덮기 시작하고, 그동안 플레이어를 그 자리에 세워 둔다 (방 밖 허공으로 떨어지거나 맞지 않게).
+        private void BeginRoomMove(DoorDir passed)
+        {
+            pendingDoor = passed;
+            pendingMoveAt = Time.time + ScreenFlash.RoomFadeOutTime;
+            pendingHold = player.position;
+            var body = player.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                pendingConstraints = body.constraints;
+                body.linearVelocity = Vector2.zero;
+                body.constraints = RigidbodyConstraints2D.FreezeAll;
+            }
+            var health = player.GetComponent<HealthSystem>();
+            if (health != null) health.GrantGrace(ScreenFlash.RoomFadeOutTime + 0.4f); // 까매지는 동안 + 새 방에 나온 직후 잠깐
+            ScreenFlash.RoomFadeOut();
+            GameAudio.PlaySfx("RoomPass", 0.8f, 0.05f); // 어두워지는 순간 가벼운 "휙" (Tools/AudioGen RoomPass, 2026-11-13 방 입장 연출)
+        }
+
+        // 까매지는 동안 순간이동 등으로 자리가 바뀌지 않게 붙잡아 둔다.
+        private void HoldAtDoor()
+        {
+            var body = player.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.linearVelocity = Vector2.zero;
+                if ((body.position - pendingHold).sqrMagnitude > 0.0001f) body.position = pendingHold;
+            }
+            if (((Vector2)player.position - pendingHold).sqrMagnitude > 0.0001f)
+                player.position = new Vector3(pendingHold.x, pendingHold.y, player.position.z);
+        }
+
+        // 다 까매진 뒤: 옆 방으로 옮기고 화면을 다시 밝힌다.
+        private void FinishRoomMove()
+        {
+            var passed = pendingDoor;
+            ReleaseDoorHold();
+            var next = rooms.Neighbor(rooms.Rooms[currentRoom], passed);
+            if (next == null)
+            {
+                ScreenFlash.RoomFadeIn();
+                return;
+            }
             currentRoom = next.Index;
             DespawnOtherRoomEnemies();
             Refresh();
             PlaceAtArrival(next.Index, RoomLayout.Opposite(passed));
             EnterRoom(next.Index);
-            ScreenFlash.RoomFade(); // 옮긴 순간을 어둡게 덮었다가 밝혀 순간이동처럼 튀어 보이지 않게
-            GameAudio.PlaySfx("RoomPass", 0.8f, 0.05f); // 어두워지는 순간 가벼운 "휙" (Tools/AudioGen RoomPass, 2026-11-13 방 입장 연출)
+            ScreenFlash.RoomFadeIn();
+        }
+
+        private void ReleaseDoorHold()
+        {
+            if (pendingDoor == DoorDir.None) return;
+            pendingDoor = DoorDir.None;
+            var body = player != null ? player.GetComponent<Rigidbody2D>() : null;
+            if (body != null) body.constraints = pendingConstraints;
         }
 
         // 방을 옮기면 떠난 방의 적은 바로 치운다 (쓰러뜨린 것으로 치지 않아 그 방에 다시 들어가면 다시 나온다).
@@ -773,6 +839,11 @@ namespace IBlameYou.Systems
 
         private void OnDestroy()
         {
+            if (pendingDoor != DoorDir.None)
+            {
+                ReleaseDoorHold(); // 까매지는 도중 판이 끝나면 플레이어 고정을 풀고 화면을 밝힌다
+                ScreenFlash.RoomFadeIn();
+            }
             GameAudio.SetMusicDuck(1f); // 보스 방 앞에서 판이 끝나도 다음 화면 음악은 원래 크기로
             StageEvents.Depth = 0f;
             StageEvents.RoomDistance = -1;
